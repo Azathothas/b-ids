@@ -1,0 +1,33 @@
+/**
+ * PRIVACY RESEARCH USE ONLY
+ *
+ * Run exclusively inside authorized privacy research labs with synthetic data only.
+ * Never target production traffic or violate any Terms of Service.
+ *
+ * See https://github.com/botswin/BotBrowser/blob/main/tests/README.md
+ * and https://github.com/botswin/BotBrowser/blob/main/DISCLAIMER.md
+ */
+
+
+import { expect, test } from '../global-setup';
+import { sleep } from '../utils';
+
+test('botdetection', async ({ page }) => {
+    await page.goto('https://fingerprint.com/products/bot-detection/');
+
+    expect(
+        await page.waitForSelector('h2 >> text=You are not a bot', {
+            timeout: 20_000,
+        })
+    ).toBeTruthy();
+});
+
+test('playground', async ({ page }) => {
+    await page.goto('https://demo.fingerprint.com/playground');
+
+    await sleep(2_000);
+    for (let i = 0; i < 20; i++) {
+        await page.mouse.wheel(0, 50);
+        await sleep(300);
+    }
+});

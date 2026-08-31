@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AudioLab Test Scene</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #222; line-height: 1.6; }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 16px; }
+    pre { background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; padding: 12px; font-size: 12px; overflow: auto; max-height: 600px; white-space: pre-wrap; }
+    .pass { color: #059669; }
+    .section { color: #2563eb; font-weight: 600; }
+    .ctx-label { color: #7c3aed; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>AudioLab Test Scene</h1>
+  <p class="subtitle">Exercises multiple AudioContext patterns recorded by <code>--bot-audio-record-file</code>. Each section creates an independent context to test multi-context display in the Audio Viewer.</p>
+  <pre id="log"></pre>
+
+<script>
+const log = document.getElementById('log');
+function L(msg, cls) {
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = msg + '\n';
+  log.appendChild(span);
+}
+
+(async function() {
+  try {
+
+    // ================================================================
+    // Context 1: Standard pattern (triangle + compressor, 44100 frames)
+    // The most common audio fingerprinting pattern
+    // ================================================================
+    L('Context 1: Standard Pattern (triangle + compressor)', 'ctx-label');
+    {
+      const ctx = new OfflineAudioContext(1, 44100, 44100);
+      const osc = ctx.createOscillator();
+      const comp = ctx.createDynamicsCompressor();
+
+      osc.type = 'triangle';
+      osc.frequency.value = 10000;
+      comp.threshold.value = -50;
+      comp.knee.value = 40;
+      comp.ratio.value = 12;
+      comp.attack.value = 0;
+      comp.release.value = 0.25;
+
+      osc.connect(comp);
+      comp.connect(ctx.destination);
+      osc.start(0);
+
+      const buf = await ctx.startRendering();
+      const data = buf.getChannelData(0);
+      let sum = 0;
+      for (let i = 4500; i < 5000; i++) sum += Math.abs(data[i]);
+      L('  Rendered: ' + data.length + ' samples, sum[4500..5000) = ' + sum);
+    }
+
+    // ================================================================
+    // Context 2: Short buffer pattern (5000 frames)
+    // ================================================================
+    L('\nContext 2: Short Buffer Pattern (5000 frames)', 'ctx-label');
+    {
+      const ctx = new OfflineAudioContext(1, 5000, 44100);
+      const osc = ctx.createOscillator();
+      const comp = ctx.createDynamicsCompressor();
+
+      osc.type = 'triangle';
+      osc.frequency.value = 10000;
+      comp.threshold.value = -50;
+      comp.knee.value = 40;
+      comp.ratio.value = 12;
+      comp.attack.value = 0;
+      comp.release.value = 0.25;
+
+      osc.connect(comp);
+      comp.connect(ctx.destination);
+      osc.start(0);
+
+      const buf = await ctx.startRendering();
+      const data = buf.getChannelData(0);
+      let sum = 0;
+      for (let i = 4500; i < data.length; i++) sum += Math.abs(data[i]);
+      L('  Rendered: ' + data.length + ' samples, sum[4500..end) = ' + sum);
+    }
+
+    // ================================================================
+    // Context 3: Analyser pattern (triangle + compressor + AnalyserNode)
+    // Combines getChannelData + getFloatFrequencyData + getFloatTimeDomainData
+    // ================================================================
+    L('\nContext 3: Analyser Pattern (with AnalyserNode)', 'ctx-label');
+    {
+      const ctx = new OfflineAudioContext(1, 5000, 44100);
+      const osc = ctx.createOscillator();
+      const comp = ctx.createDynamicsCompressor();
+      const analyser = ctx.createAnalyser();
+
+      osc.type = 'triangle';
+      osc.frequency.value = 10000;
+      comp.threshold.value = -50;
+      comp.knee.value = 40;
+      comp.attack.value = 0;
+
+      // Routing: osc -> comp -> analyser -> destination
+      //                comp -> destination (dual connection)
+      osc.connect(comp);
+      comp.connect(analyser);
+      comp.connect(ctx.destination);
+      analyser.connect(ctx.destination);
+      osc.start(0);
+
+      const buf = await ctx.startRendering();
+      const channelData = buf.getChannelData(0);
+      const reduction = comp.reduction;
+
+      const freqData = new Float32Array(analyser.frequencyBinCount);
+      analyser.getFloatFrequencyData(freqData);
+
+      const timeData = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(timeData);
+
+      const byteFreq = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(byteFreq);
+
+      const byteTime = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(byteTime);
+
+      L('  channelData: ' + channelData.length + ' samples');
+      L('  reduction: ' + reduction);
+      L('  floatFreqData: ' + freqData.length + ', floatTimeData: ' + timeData.length);
+      L('  byteFreqData: ' + byteFreq.length + ', byteTimeData: ' + byteTime.length);
+    }
+
+    // ================================================================
+    // Context 4: Sine oscillator pattern (sine, not triangle)
+    // Uses setValueAtTime for all parameters
+    // ================================================================
+    L('\nContext 4: Sine Oscillator Pattern', 'ctx-label');
+    {
+      const ctx = new OfflineAudioContext(1, 44100, 44100);
+      const osc = ctx.createOscillator();
+      const comp = ctx.createDynamicsCompressor();
+      const currentTime = 0;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(10000, currentTime);
+      comp.threshold.setValueAtTime(-50, currentTime);
+      comp.knee.setValueAtTime(40, currentTime);
+      comp.ratio.setValueAtTime(12, currentTime);
+      comp.attack.setValueAtTime(0, currentTime);
+      comp.release.setValueAtTime(0.25, currentTime);
+
+      osc.connect(comp);
+      comp.connect(ctx.destination);
+      osc.start(0);
+
+      const buf = await ctx.startRendering();
+      const data = buf.getChannelData(0);
+      let sum = 0;
+      for (let i = 4500; i < 5000; i++) if (data[i]) sum += Math.abs(data[i]);
+      L('  Rendered: ' + data.length + ' samples, sum[4500..5000) = ' + sum);
+    }
+
+    // ================================================================
+    // Context 5: Tiny buffer pattern (9 frames, 8003 Hz)
+    // Raw sample comparison at discriminating indices
+    // ================================================================
+    L('\nContext 5: Tiny Buffer Pattern (9 frames, 8003 Hz)', 'ctx-label');
+    {
+      // Recipe A: triangle + compressor
+      const ctx = new OfflineAudioContext(1, 9, 8003);
+      const osc = ctx.createOscillator();
+      const comp = ctx.createDynamicsCompressor();
+
+      osc.type = 'triangle';
+      osc.frequency.value = 10000;
+      comp.threshold.value = -50;
+      comp.knee.value = 40;
+      comp.ratio.value = 12;
+      comp.attack.value = 0;
+      comp.release.value = 0.25;
+
+      osc.connect(comp);
+      comp.connect(ctx.destination);
+      osc.start(0);
+
+      const buf = await ctx.startRendering();
+      const data = buf.getChannelData(0);
+      const samples = Array.from({ length: 9 }, (_, i) => data[i]);
+      L('  9 samples: [' + samples.map(v => v === 0 ? 'null' : v.toFixed(6)).join(', ') + ']');
+
+      // Recipe B: sine, no compressor
+      const ctx2 = new OfflineAudioContext(1, 9, 8003);
+      const osc2 = ctx2.createOscillator();
+      // Defaults: type=sine, frequency=440
+      osc2.connect(ctx2.destination);
+      osc2.start(0);
+
+      const buf2 = await ctx2.startRendering();
+      const data2 = buf2.getChannelData(0);
+      L('  Sine raw: [' + Array.from(data2).map(v => v.toFixed(6)).join(', ') + ']');
+    }
+
+    // ================================================================
+    // Context 6: Full API surface test
+    // All node types, parameter automation, frequency response
+    // ================================================================
+    L('\nContext 6: Full API Surface', 'ctx-label');
+    {
+      const ctx = new OfflineAudioContext(1, 44100, 44100);
+
+      // Create all node types
+      const osc = ctx.createOscillator();
+      const comp = ctx.createDynamicsCompressor();
+      const analyser = ctx.createAnalyser();
+      const gain = ctx.createGain();
+      const biquad = ctx.createBiquadFilter();
+      const bufSrc = ctx.createBufferSource();
+      const constSrc = ctx.createConstantSource();
+      const sp = ctx.createScriptProcessor(4096, 1, 1);
+      const stereoPanner = ctx.createStereoPanner();
+      const waveShaper = ctx.createWaveShaper();
+      const panner3d = ctx.createPanner();
+      const convolver = ctx.createConvolver();
+      const delay = ctx.createDelay(1.0);
+      const splitter = ctx.createChannelSplitter(2);
+      const merger = ctx.createChannelMerger(2);
+      const iir = ctx.createIIRFilter([1, 0], [1, -0.9]);
+      L('  16 node types created');
+
+      // PeriodicWave + Buffer
+      const pw = ctx.createPeriodicWave(
+        new Float32Array([0, 0.5, 0.3]),
+        new Float32Array([0, 0, 0])
+      );
+      const audioBuf = ctx.createBuffer(1, 1024, 44100);
+      L('  PeriodicWave + AudioBuffer created');
+
+      // Parameter automation
+      osc.type = 'triangle';
+      osc.frequency.value = 10000;
+      gain.gain.setValueAtTime(0.5, 0);
+      gain.gain.linearRampToValueAtTime(1.0, 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, 0.2);
+      gain.gain.setTargetAtTime(0.5, 0.3, 0.1);
+      gain.gain.setValueCurveAtTime(new Float32Array([0, 0.5, 1.0, 0.5, 0]), 0.5, 0.2);
+      gain.gain.cancelScheduledValues(0.8);
+      gain.gain.cancelAndHoldAtTime(0.9);
+      L('  7 automation methods exercised');
+
+      // AnalyserNode config
+      analyser.fftSize = 2048;
+      analyser.minDecibels = -100;
+      analyser.maxDecibels = -30;
+      analyser.smoothingTimeConstant = 0.8;
+
+      // setPeriodicWave
+      osc.setPeriodicWave(pw);
+      osc.type = 'triangle'; // reset
+
+      // Connections
+      osc.connect(comp);
+      comp.connect(analyser);
+      analyser.connect(ctx.destination);
+      osc.start(0);
+
+      const rendered = await ctx.startRendering();
+      const channelData = rendered.getChannelData(0);
+      L('  getChannelData: ' + channelData.length + ' samples');
+
+      // copyFromChannel
+      const copyDest = new Float32Array(100);
+      rendered.copyFromChannel(copyDest, 0, 4500);
+      L('  copyFromChannel: 100 samples from offset 4500');
+
+      // Frequency response
+      const freqHz = new Float32Array([100, 1000, 10000]);
+      const magResp = new Float32Array(3);
+      const phaseResp = new Float32Array(3);
+      biquad.getFrequencyResponse(freqHz, magResp, phaseResp);
+      L('  BiquadFilter.getFrequencyResponse: mag=[' + Array.from(magResp).map(v => v.toFixed(4)).join(', ') + ']');
+
+      const iirMag = new Float32Array(3);
+      const iirPhase = new Float32Array(3);
+      iir.getFrequencyResponse(freqHz, iirMag, iirPhase);
+      L('  IIRFilter.getFrequencyResponse: mag=[' + Array.from(iirMag).map(v => v.toFixed(4)).join(', ') + ']');
+
+      // Disconnect
+      osc.disconnect();
+      L('  oscillator.disconnect()');
+    }
+
+    // ================================================================
+    // Context 7: Realtime AudioContext (property reads)
+    // ================================================================
+    L('\nContext 7: Realtime AudioContext', 'ctx-label');
+    {
+      const ctx = new AudioContext();
+      L('  baseLatency: ' + ctx.baseLatency);
+      L('  outputLatency: ' + ctx.outputLatency);
+      const ts = ctx.getOutputTimestamp();
+      L('  getOutputTimestamp: contextTime=' + ts.contextTime + ', performanceTime=' + ts.performanceTime);
+
+      // Start + Stop
+      const osc = ctx.createOscillator();
+      osc.connect(ctx.destination);
+      osc.start(0);
+      osc.stop(ctx.currentTime + 0.01);
+      await new Promise(r => setTimeout(r, 50));
+      await ctx.close();
+      L('  start + stop + close complete');
+    }
+
+    // ================================================================
+    // Context 8: decodeAudioData
+    // ================================================================
+    L('\nContext 8: decodeAudioData', 'ctx-label');
+    {
+      try {
+        const wavHeader = new ArrayBuffer(46);
+        const view = new DataView(wavHeader);
+        view.setUint32(0, 0x52494646, false); // RIFF
+        view.setUint32(4, 38, true);
+        view.setUint32(8, 0x57415645, false); // WAVE
+        view.setUint32(12, 0x666d7420, false); // fmt
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);  // PCM
+        view.setUint16(22, 1, true);  // mono
+        view.setUint32(24, 44100, true);
+        view.setUint32(28, 88200, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        view.setUint32(36, 0x64617461, false); // data
+        view.setUint32(40, 2, true);
+        view.setInt16(44, 0, true);
+        const ctx = new OfflineAudioContext(1, 1, 44100);
+        await ctx.decodeAudioData(wavHeader);
+        L('  decodeAudioData: success');
+      } catch (e) {
+        L('  decodeAudioData: ' + e.message + ' (expected in some configurations)');
+      }
+    }
+
+    // ================================================================
+    // Codec Checks (no AudioContext needed)
+    // ================================================================
+    L('\nCodec Checks', 'ctx-label');
+    {
+      const audio = document.createElement('audio');
+      const codecs = [
+        'audio/ogg; codecs="vorbis"',
+        'audio/mpeg',
+        'audio/wav; codecs="1"',
+        'audio/aac',
+        'audio/webm; codecs="opus"',
+        'audio/mp4; codecs="mp4a.40.2"',
+      ];
+      for (const codec of codecs) {
+        L('  canPlayType("' + codec + '"): ' + (audio.canPlayType(codec) || '""'));
+      }
+
+      if (typeof MediaSource !== 'undefined') {
+        const msCodecs = [
+          'audio/webm;codecs=opus',
+          'audio/mp4;codecs="mp4a.40.2"',
+        ];
+        for (const codec of msCodecs) {
+          L('  isTypeSupported("' + codec + '"): ' + MediaSource.isTypeSupported(codec));
+        }
+      } else {
+        L('  MediaSource not available');
+      }
+    }
+
+    // ================================================================
+    L('\n8 contexts + codec checks exercised successfully.', 'pass');
+    document.title = 'DONE';
+  } catch (e) {
+    L('\nERROR: ' + e.message + '\n' + e.stack);
+    document.title = 'ERROR';
+  }
+})();
+</script>
+
+<footer style="margin-top: 24px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 12px;">
+  <a href="https://github.com/botswin/BotBrowser" style="color:#666;">BotBrowser</a> AudioLab test scene. For privacy protection research only.
+</footer>
+</body>
+</html>

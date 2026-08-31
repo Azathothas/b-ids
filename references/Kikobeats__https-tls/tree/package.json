@@ -1,0 +1,103 @@
+{
+  "name": "https-tls",
+  "description": "Setup HTTPS details related to TLS according to the User Agent provided.",
+  "homepage": "https://github.com/Kikobeats/https-tls",
+  "version": "1.0.25",
+  "main": "src/index.js",
+  "author": {
+    "email": "josefrancisco.verdu@gmail.com",
+    "name": "Kiko Beats",
+    "url": "https://kikobeats.com"
+  },
+  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kikobeats/https-tls.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kikobeats/https-tls/issues"
+  },
+  "keywords": [
+    "algorithms",
+    "ciphers",
+    "curve",
+    "ecdh",
+    "got",
+    "https",
+    "network",
+    "signature",
+    "tls"
+  ],
+  "devDependencies": {
+    "@commitlint/cli": "latest",
+    "@commitlint/config-conventional": "latest",
+    "ava": "latest",
+    "c8": "latest",
+    "ci-publish": "latest",
+    "finepack": "latest",
+    "git-authors-cli": "latest",
+    "github-generate-release": "latest",
+    "nano-staged": "latest",
+    "simple-git-hooks": "latest",
+    "standard": "latest",
+    "standard-markdown": "latest",
+    "standard-version": "latest",
+    "top-user-agents": "latest",
+    "unique-random-array": "2"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "files": [
+    "hook.js",
+    "index.js",
+    "scripts",
+    "src"
+  ],
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "contributors": "(npx git-authors-cli && npx finepack && git add package.json && git commit -m 'build: contributors' --no-verify) || true",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "lint": "standard-markdown README.md && standard",
+    "postinstall": "node scripts/postinstall.js",
+    "postrelease": "npm run release:tags && npm run release:github && (ci-publish || npm publish --access=public)",
+    "prerelease": "npm run contributors",
+    "pretest": "npm run lint",
+    "release": "standard-version -a",
+    "release:github": "github-generate-release",
+    "release:tags": "git push --follow-tags origin HEAD:master",
+    "test": "c8 ava"
+  },
+  "license": "MIT",
+  "ava": {
+    "files": [
+      "test/**/*.js",
+      "!test/helpers.js"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "body-max-line-length": [
+        0
+      ]
+    }
+  },
+  "nano-staged": {
+    "*.js": [
+      "standard --fix"
+    ],
+    "*.md": [
+      "standard-markdown"
+    ],
+    "package.json": [
+      "finepack"
+    ]
+  },
+  "simple-git-hooks": {
+    "commit-msg": "npx commitlint --edit",
+    "pre-commit": "npx nano-staged"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "virginaustralia-docker",
+  "version": "1.0.0",
+  "description": "BotBrowser + puppeteer-core capture for Virgin Australia booking page",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer-core": "24.31.0",
+    "prettier": "^3.7.3"
+  }
+}

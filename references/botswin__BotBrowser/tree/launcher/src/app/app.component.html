@@ -1,0 +1,352 @@
+<mat-sidenav-container class="sidenav-container">
+    <mat-sidenav mode="side" opened class="sidenav">
+        <div class="sidenav-header">{{ AppName }}</div>
+        <mat-nav-list>
+            <a mat-list-item (click)="currentNav = 'profiles'" [activated]="currentNav === 'profiles'">
+                <mat-icon matListItemIcon>person</mat-icon>
+                <span matListItemTitle>Profiles</span>
+            </a>
+            <a mat-list-item (click)="currentNav = 'proxies'" [activated]="currentNav === 'proxies'">
+                <mat-icon matListItemIcon>vpn_key</mat-icon>
+                <span matListItemTitle>Proxies</span>
+            </a>
+            <a mat-list-item (click)="currentNav = 'kernels'" [activated]="currentNav === 'kernels'">
+                <mat-icon matListItemIcon>memory</mat-icon>
+                <span matListItemTitle>Kernels</span>
+            </a>
+        </mat-nav-list>
+
+        <div class="sidenav-footer">
+            @switch (updateService.status()) {
+                @case ('checking') {
+                    <div class="download-progress">
+                        <div class="download-info">
+                            <mat-icon>sync</mat-icon>
+                            <span class="download-text">Checking for launcher update...</span>
+                        </div>
+                        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                    </div>
+                }
+                @case ('downloading') {
+                    <div class="download-progress">
+                        <div class="download-info">
+                            <mat-icon>download</mat-icon>
+                            <span class="download-text">Downloading launcher update...</span>
+                        </div>
+                        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                    </div>
+                }
+                @case ('building') {
+                    <div class="download-progress">
+                        <div class="download-info">
+                            <mat-icon>build</mat-icon>
+                            <span class="download-text">Building launcher update...</span>
+                        </div>
+                        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                    </div>
+                }
+                @case ('ready') {
+                    <div class="download-progress update-ready">
+                        <div class="download-info">
+                            <mat-icon>update</mat-icon>
+                            <span class="download-text">Update ready.</span>
+                        </div>
+                        <button mat-flat-button color="primary" class="restart-button" (click)="restartApp()">
+                            Restart Now
+                        </button>
+                    </div>
+                }
+                @case ('error') {
+                    <div class="download-progress">
+                        <div class="download-error" [matTooltip]="updateService.errorMessage()">
+                            <mat-icon>error</mat-icon>
+                            <span class="error-text">Launcher update failed</span>
+                        </div>
+                    </div>
+                }
+            }
+            @if (kernelService.isAutoUpdating()) {
+                <div class="download-progress">
+                    <div class="download-info">
+                        <mat-icon>sync</mat-icon>
+                        <span class="download-text">Checking for updates...</span>
+                    </div>
+                    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                </div>
+            }
+            @for (progress of kernelService.downloadProgresses(); track progress.tagName) {
+                <div class="download-progress">
+                    @if (progress.status === 'failed') {
+                        <div class="download-error" [matTooltip]="progress.error || 'Unknown error'">
+                            <mat-icon>error</mat-icon>
+                            <span class="error-text">
+                                @if (is7ZipError(progress.error)) {
+                                    7-Zip extraction failed.
+                                    <a class="download-link" (click)="openExternalUrl('https://7-zip.org/')">
+                                        Download 7-Zip
+                                    </a>
+                                } @else {
+                                    {{ progress.error }}
+                                }
+                            </span>
+                        </div>
+                    } @else {
+                        <div class="download-info">
+                            <mat-icon>{{ progress.status === 'completed' ? 'check_circle' : 'download' }}</mat-icon>
+                            <span class="download-text">
+                                @if (progress.status === 'downloading') {
+                                    Downloading {{ progress.tagName }}
+                                } @else if (progress.status === 'extracting') {
+                                    Extracting {{ progress.tagName }}
+                                } @else if (progress.status === 'completed') {
+                                    Completed {{ progress.tagName }}
+                                }
+                            </span>
+                        </div>
+                        @if (progress.status === 'downloading' || progress.status === 'extracting') {
+                            <mat-progress-bar
+                                [mode]="progress.status === 'extracting' ? 'indeterminate' : 'determinate'"
+                                [value]="(progress.downloadedBytes / progress.totalBytes) * 100"
+                            ></mat-progress-bar>
+                        }
+                    }
+                </div>
+            }
+            @if (updateService.currentVersion()) {
+                <div class="version-label">v{{ updateService.currentVersion() }}</div>
+            }
+        </div>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="sidenav-content">
+        @if (currentNav === 'profiles') {
+            <div class="content-panel">
+                <mat-toolbar>
+                    <button mat-button (click)="newProfile()">
+                        <mat-icon>add</mat-icon>
+                        New Profile
+                    </button>
+                    <button mat-button (click)="editSelectedProfile()" [disabled]="!highlightedId">
+                        <mat-icon>edit</mat-icon>
+                        Edit
+                    </button>
+                    <button mat-button (click)="deleteProfiles()" [disabled]="selection.selected.length == 0">
+                        <mat-icon>delete</mat-icon>
+                        Delete
+                    </button>
+                    <button mat-button (click)="startSelectedProfiles()" [disabled]="!hasIdleProfiles()">
+                        <mat-icon>play_arrow</mat-icon>
+                        Start
+                    </button>
+                    <button mat-button (click)="stopSelectedProfiles()" [disabled]="!hasRunningProfiles()">
+                        <mat-icon>stop</mat-icon>
+                        Stop
+                    </button>
+                    <button mat-button [matMenuTriggerFor]="moreMenu">
+                        <mat-icon>more_horiz</mat-icon>
+                        More
+                    </button>
+                    <mat-menu #moreMenu="matMenu">
+                        <button mat-menu-item (click)="importProfile()">
+                            <mat-icon>download</mat-icon>
+                            <span>Import Profile</span>
+                        </button>
+                        <button mat-menu-item (click)="exportToCSV()">
+                            <mat-icon>upload</mat-icon>
+                            <span>Export to CSV</span>
+                        </button>
+                        <button mat-menu-item (click)="importProfilesFromCSV()">
+                            <mat-icon>download</mat-icon>
+                            <span>Import from CSV</span>
+                        </button>
+                    </mat-menu>
+                </mat-toolbar>
+
+                @if (loading) {
+                    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+                }
+
+                <div class="table-container">
+                    @if (dataSource.data.length === 0 && !loading) {
+                        <div class="empty-state">
+                            <mat-icon>person</mat-icon>
+                            <p>No profiles configured</p>
+                            <p class="hint">Click "New Profile" to create a browser profile</p>
+                        </div>
+                    } @else {
+                        <table mat-table [dataSource]="dataSource" matSort>
+                            <ng-container matColumnDef="select">
+                                <th mat-header-cell *matHeaderCellDef>
+                                    <mat-checkbox
+                                        (change)="$event ? toggleAllRows() : null"
+                                        [checked]="selection.hasValue() && isAllSelected"
+                                        [indeterminate]="selection.hasValue() && !isAllSelected"
+                                        [aria-label]="checkboxLabel()"
+                                    >
+                                    </mat-checkbox>
+                                </th>
+                                <td mat-cell *matCellDef="let row">
+                                    <mat-checkbox
+                                        (click)="$event.stopPropagation()"
+                                        (change)="$event ? selection.toggle(row) : null"
+                                        [checked]="selection.isSelected(row)"
+                                        [aria-label]="checkboxLabel(row)"
+                                    >
+                                    </mat-checkbox>
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="name" sticky>
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+                                <td mat-cell *matCellDef="let element">
+                                    <div class="flex-container">
+                                        <a
+                                            class="content profile-name-link"
+                                            app-stop-propagation
+                                            (click)="editProfile(element)"
+                                            >{{ element.basicInfo.profileName }}</a
+                                        >
+                                        <button mat-icon-button [matMenuTriggerFor]="menu" app-stop-propagation>
+                                            <mat-icon>more_vert</mat-icon>
+                                        </button>
+                                        <mat-menu #menu="matMenu">
+                                            @if (
+                                                browserLauncherService.getRunningStatus(element) ==
+                                                BrowserProfileStatus.Idle
+                                            ) {
+                                                <button mat-menu-item (click)="editProfile(element)">
+                                                    <mat-icon>edit</mat-icon>
+                                                    <span>Edit</span>
+                                                </button>
+                                                <button mat-menu-item (click)="changeProxy(element)">
+                                                    <mat-icon>swap_horiz</mat-icon>
+                                                    <span>Change Proxy</span>
+                                                </button>
+                                                <button mat-menu-item (click)="runBrowserProfile(element)">
+                                                    <mat-icon>play_arrow</mat-icon>
+                                                    <span>Run</span>
+                                                </button>
+                                            } @else if (
+                                                browserLauncherService.getRunningStatus(element) ==
+                                                BrowserProfileStatus.Running
+                                            ) {
+                                                <button mat-menu-item (click)="stopBrowserProfile(element)">
+                                                    <mat-icon>cancel</mat-icon>
+                                                    <span>Stop</span>
+                                                </button>
+                                            }
+                                            <button mat-menu-item (click)="deleteProfile(element)">
+                                                <mat-icon>delete</mat-icon>
+                                                <span>Delete</span>
+                                            </button>
+                                            <button mat-menu-item (click)="cloneProfile(element)">
+                                                <mat-icon>content_copy</mat-icon>
+                                                <span>Clone</span>
+                                            </button>
+                                            <button mat-menu-item (click)="exportProfile(element)">
+                                                <mat-icon>upgrade</mat-icon>
+                                                <span>Export</span>
+                                            </button>
+                                            <button mat-menu-item (click)="copyCliCommand(element)">
+                                                <mat-icon>terminal</mat-icon>
+                                                <span>Copy CLI</span>
+                                            </button>
+                                            @if (
+                                                browserLauncherService.getRunningStatus(element) ==
+                                                BrowserProfileStatus.Idle
+                                            ) {
+                                                <button mat-menu-item (click)="warmupProfile(element)">
+                                                    <mat-icon>local_fire_department</mat-icon>
+                                                    <span>Warmup</span>
+                                                </button>
+                                                <button mat-menu-item (click)="clearUserData(element)">
+                                                    <mat-icon>delete_sweep</mat-icon>
+                                                    <span>Clear User Data</span>
+                                                </button>
+                                            }
+                                        </mat-menu>
+                                    </div>
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="group">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Group</th>
+                                <td mat-cell *matCellDef="let element">{{ element.basicInfo.groupName }}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="platform">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Platform</th>
+                                <td mat-cell *matCellDef="let element">{{ getProfilePlatform(element) || '-' }}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="proxy">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Proxy</th>
+                                <td mat-cell *matCellDef="let element">
+                                    <a class="proxy-link" app-stop-propagation (click)="changeProxy(element)">{{
+                                        formatProxyDisplay(element.proxyServer) || 'Set proxy'
+                                    }}</a>
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="kernel">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Kernel</th>
+                                <td mat-cell *matCellDef="let element">{{ getKernelVersion(element) || '-' }}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="status">
+                                <th mat-header-cell *matHeaderCellDef></th>
+                                <td mat-cell *matCellDef="let element">
+                                    @if (
+                                        browserLauncherService.getRunningStatus(element) ==
+                                        BrowserProfileStatus.Idle
+                                    ) {
+                                        <button
+                                            mat-icon-button
+                                            app-stop-propagation
+                                            (click)="runBrowserProfile(element)"
+                                            matTooltip="Run"
+                                        >
+                                            <mat-icon>play_arrow</mat-icon>
+                                        </button>
+                                    } @else if (
+                                        browserLauncherService.getRunningStatus(element) ==
+                                        BrowserProfileStatus.Running
+                                    ) {
+                                        <button
+                                            mat-icon-button
+                                            app-stop-propagation
+                                            (click)="stopBrowserProfile(element)"
+                                            matTooltip="Stop"
+                                        >
+                                            <mat-icon class="status-running">cancel</mat-icon>
+                                        </button>
+                                    }
+                                </td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="lastUsedAt">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Launch</th>
+                                <td mat-cell *matCellDef="let element">{{ formatDateTime(element.lastUsedAt) }}</td>
+                            </ng-container>
+
+                            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+                            <tr
+                                mat-row
+                                *matRowDef="let element; columns: displayedColumns"
+                                [class.row-selected]="highlightedId === element.id"
+                                (click)="selectRow(element)"
+                                (dblclick)="editProfile(element)"
+                            ></tr>
+                        </table>
+                    }
+                </div>
+            </div>
+        } @else if (currentNav === 'proxies') {
+            <app-proxy-management></app-proxy-management>
+        } @else if (currentNav === 'kernels') {
+            <app-kernel-management></app-kernel-management>
+        }
+    </mat-sidenav-content>
+</mat-sidenav-container>
+
+<router-outlet />

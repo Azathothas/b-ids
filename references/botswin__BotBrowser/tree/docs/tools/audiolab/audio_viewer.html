@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BotBrowser AudioLab JSONL Viewer</title>
+  <style>
+    :root { --bg: #fff; --fg: #222; --border: #ddd; --card-bg: #f8f8f8; --code-bg: #0c0c0c; --code-fg: #d8d8d8; --accent: #2563eb; --accent-light: #dbeafe; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 16px; color: var(--fg); line-height: 1.5; background: var(--bg); }
+    h1 { font-size: 1.6rem; margin: 0 0 4px 0; }
+    .subtitle { color: #666; font-size: 14px; margin-bottom: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+    input[type="file"] { padding: 8px; }
+    .btn { appearance: none; border: 1px solid #ccc; padding: 6px 14px; border-radius: 6px; background: var(--card-bg); cursor: pointer; font-size: 13px; }
+    .btn:hover { background: #f1f1f1; }
+    .stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    .stat-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; background: var(--card-bg); min-width: 120px; }
+    .stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 1.4rem; font-weight: 700; }
+
+    /* Context cards */
+    .ctx-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+    .ctx-header { padding: 10px 14px; background: var(--card-bg); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .ctx-title { font-weight: 700; font-size: 14px; }
+    .ctx-meta { font-size: 12px; color: #888; }
+    .ctx-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    @media (max-width: 900px) { .ctx-body { grid-template-columns: 1fr; } }
+
+    /* Graph */
+    .graph-pane { padding: 12px; overflow: auto; border-right: 1px solid #eee; min-height: 120px; }
+    @media (max-width: 900px) { .graph-pane { border-right: none; border-bottom: 1px solid #eee; } }
+    .graph-node rect { rx: 6; ry: 6; }
+    .graph-node text { font-family: system-ui; font-size: 11px; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+
+    /* Code pane */
+    .code-pane { display: flex; flex-direction: column; }
+    .code-toolbar { padding: 6px 12px; background: #f5f5f5; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .code-toolbar .label { font-size: 12px; font-weight: 600; color: #666; }
+    .btn-copy { font-size: 11px; padding: 3px 8px; border: 1px solid #bbb; background: #fff; border-radius: 4px; cursor: pointer; }
+    .btn-copy.copied { background: #e6ffed; border-color: #34c759; }
+    .code-block { background: var(--code-bg); color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; padding: 12px; overflow: auto; max-height: 400px; white-space: pre; flex: 1; margin: 0; }
+
+    /* Events panel */
+    .events-section { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+    .events-header { padding: 10px 12px; background: var(--card-bg); border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .events-header .label { font-weight: 600; font-size: 14px; }
+    .event-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-chip { font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+    .filter-chip.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+    .event-list { max-height: 500px; overflow-y: auto; }
+    .event-item { padding: 6px 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .event-item:hover { background: #f8f9fa; }
+    .event-item.selected { background: var(--accent-light); }
+    .event-seq { font-family: monospace; color: #999; font-size: 11px; min-width: 28px; text-align: right; }
+    .event-ctx-id { font-family: monospace; font-size: 10px; color: #fff; background: #6b7280; border-radius: 3px; padding: 1px 4px; min-width: 18px; text-align: center; }
+    .event-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; color: #fff; font-weight: 600; white-space: nowrap; }
+    .event-desc { flex: 1; font-size: 12px; }
+    .badge-context_create { background: #1d4ed8; } .badge-node_create { background: #f59e0b; }
+    .badge-param_set { background: #7c3aed; } .badge-connect { background: #059669; }
+    .badge-start { background: #d97706; } .badge-stop { background: #6b7280; }
+    .badge-start_rendering { background: #dc2626; }
+    .badge-read_channel_data, .badge-copy_from_channel { background: #2563eb; }
+    .badge-analyser_read, .badge-analyser_read_bytes { background: #8b5cf6; }
+    .badge-reduction_read { background: #ef4444; } .badge-freq_response { background: #06b6d4; }
+    .badge-property_read { background: #6b7280; } .badge-codec_check { background: #ec4899; }
+
+    /* Detail */
+    .detail-panel { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: none; margin-bottom: 16px; }
+    .detail-panel.show { display: block; }
+    .detail-body { padding: 12px; }
+    .detail-json { background: var(--code-bg); color: var(--code-fg); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; padding: 12px; border-radius: 6px; overflow: auto; max-height: 300px; white-space: pre-wrap; word-break: break-all; }
+
+    .loading { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(255,255,255,0.7); z-index: 9999; }
+    .loading.show { display: flex; }
+    .spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid #ccc; border-top-color: #111; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+    .empty-state h2 { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>AudioLab JSONL Viewer</h1>
+  <p class="subtitle">Web Audio API forensics for privacy protection research. Load a JSONL recording from <code>--bot-audio-record-file</code> to inspect audio fingerprint collection.</p>
+
+  <div class="row">
+    <input type="file" id="fileInput" accept=".jsonl,.json,.txt" />
+    <button class="btn" id="btnLoadUrl">Load from URL</button>
+    <button class="btn" id="btnSample">Load Sample</button>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    <h2>No recording loaded</h2>
+    <p>Load a <code>.jsonl</code> file from <code>--bot-audio-record-file</code>, or click <strong>Load Sample</strong> for a demo.</p>
+  </div>
+
+  <div id="content" style="display:none;">
+    <div class="stats" id="statsRow"></div>
+    <div id="contextCards"></div>
+    <div id="eventsSection"></div>
+    <div class="detail-panel" id="detailPanel">
+      <div class="ctx-header"><span class="ctx-title">Event Detail</span></div>
+      <div class="detail-body">
+        <div id="samplesViz"></div>
+        <div class="detail-json" id="detailJson"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+
+  <svg style="position:absolute;width:0;height:0;">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#999" />
+      </marker>
+    </defs>
+  </svg>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+let allEvents = [];
+let activeFilters = new Set();
+
+// --- File loading ---
+$('#fileInput').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  showLoading(true);
+  const reader = new FileReader();
+  reader.onload = ev => { parseAndRender(ev.target.result); showLoading(false); };
+  reader.readAsText(f);
+});
+$('#btnSample').addEventListener('click', async () => {
+  showLoading(true);
+  try {
+    let resp = await fetch('audio_sample.jsonl');
+    if (!resp.ok) resp = await fetch(new URL('audio_sample.jsonl', window.location.href).href);
+    if (!resp.ok) throw new Error('Sample not found');
+    parseAndRender(await resp.text());
+  } catch (e) { alert('Could not load sample: ' + e.message); }
+  showLoading(false);
+});
+$('#btnLoadUrl').addEventListener('click', async () => {
+  const url = prompt('Enter JSONL URL:'); if (!url) return;
+  showLoading(true);
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    parseAndRender(await resp.text());
+  } catch (e) { alert('Failed to load: ' + e.message); }
+  showLoading(false);
+});
+(async () => {
+  const jsonlUrl = new URLSearchParams(window.location.search).get('jsonl');
+  if (jsonlUrl) { showLoading(true); try { const r = await fetch(jsonlUrl); if (r.ok) parseAndRender(await r.text()); } catch {} showLoading(false); }
+})();
+function showLoading(show) { $('#loading').classList.toggle('show', show); }
+
+// ========== Parse & Render ==========
+function parseAndRender(text) {
+  allEvents = text.trim().split('\n').filter(Boolean).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  if (!allEvents.length) { alert('No valid events found.'); return; }
+  $('#emptyState').style.display = 'none';
+  $('#content').style.display = '';
+  renderStats();
+  renderContextCards();
+  renderEventsSection();
+}
+
+// ========== Stats ==========
+function renderStats() {
+  const types = {}, contexts = new Set(), nodes = new Set();
+  allEvents.forEach(e => {
+    types[e.type] = (types[e.type] || 0) + 1;
+    if (e.context_id !== undefined) contexts.add(e.context_id);
+    if (e.node_id !== undefined) nodes.add(e.context_id + ':' + e.node_id);
+  });
+  const stats = [
+    { label: 'Total Events', value: allEvents.length },
+    { label: 'Event Types', value: Object.keys(types).length },
+    { label: 'Contexts', value: contexts.size },
+    { label: 'Nodes', value: nodes.size },
+  ];
+  $('#statsRow').innerHTML = stats.map(s =>
+    `<div class="stat-card"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div>`
+  ).join('');
+}
+
+// ========== Per-Context Cards (Graph + Code) ==========
+function renderContextCards() {
+  const container = $('#contextCards');
+  // Group events by context_id, then merge orphan contexts (no context_create)
+  // into the preceding context that has one. This handles AudioBuffer's separate
+  // context_id for getChannelData/copyFromChannel after startRendering.
+  const rawMap = new Map();
+  const globalEvents = [];
+  allEvents.forEach(e => {
+    const cid = e.context_id;
+    if (cid === undefined) { globalEvents.push(e); return; }
+    if (!rawMap.has(cid)) rawMap.set(cid, { create: null, events: [] });
+    const entry = rawMap.get(cid);
+    if (e.type === 'context_create') entry.create = e;
+    entry.events.push(e);
+  });
+
+  // Merge orphans into previous context with a create event
+  const ctxMap = new Map();
+  let lastCreateCid = null;
+  for (const [cid, data] of rawMap) {
+    if (data.create) {
+      ctxMap.set(cid, { create: data.create, events: [...data.events] });
+      lastCreateCid = cid;
+    } else if (lastCreateCid !== null && ctxMap.has(lastCreateCid)) {
+      // Orphan: merge events into the last created context
+      ctxMap.get(lastCreateCid).events.push(...data.events);
+    } else {
+      // No parent found, keep as-is
+      ctxMap.set(cid, data);
+    }
+  }
+
+  let html = '';
+  for (const [cid, data] of ctxMap) {
+    const c = data.create;
+    const label = c ? `${c.context_type === 'offline' ? 'OfflineAudioContext' : 'AudioContext'}` : 'Context';
+    const meta = c ? `${c.channels}ch, ${c.frames} frames, ${c.sampleRate} Hz` : '';
+    const graphSvg = buildGraphSvg(cid, data.events);
+    const code = generateCode(cid, data.events, globalEvents);
+    const codeId = `code-${cid}`;
+
+    html += `<div class="ctx-card">
+      <div class="ctx-header">
+        <span class="ctx-title">Context ${cid}: ${label}</span>
+        <span class="ctx-meta">${meta}</span>
+      </div>
+      <div class="ctx-body">
+        <div class="graph-pane">${graphSvg}</div>
+        <div class="code-pane">
+          <div class="code-toolbar">
+            <span class="label">Generated JavaScript</span>
+            <button class="btn-copy" data-target="${codeId}">Copy</button>
+          </div>
+          <pre class="code-block" id="${codeId}">${escHtml(code)}</pre>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Global events card (codec checks etc.)
+  if (globalEvents.length > 0) {
+    const codecCode = generateCodecCode(globalEvents);
+    if (codecCode) {
+      html += `<div class="ctx-card">
+        <div class="ctx-header">
+          <span class="ctx-title">Codec Checks</span>
+          <span class="ctx-meta">${globalEvents.length} events</span>
+        </div>
+        <div class="code-pane" style="border-top:none;">
+          <div class="code-toolbar">
+            <span class="label">Generated JavaScript</span>
+            <button class="btn-copy" data-target="code-global">Copy</button>
+          </div>
+          <pre class="code-block" id="code-global">${escHtml(codecCode)}</pre>
+        </div>
+      </div>`;
+    }
+  }
+
+  container.innerHTML = html;
+
+  // Copy button handlers
+  container.querySelectorAll('.btn-copy').forEach(btn => {
+    btn.onclick = () => {
+      const target = document.getElementById(btn.dataset.target);
+      navigator.clipboard.writeText(target.textContent).then(() => {
+        btn.textContent = 'Copied!'; btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      });
+    };
+  });
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ========== Graph SVG (per context) ==========
+function buildGraphSvg(contextId, events) {
+  const nodeMap = new Map();
+  const edges = [];
+
+  // destination node (id comes from connect events' to_node for AudioDestinationNode)
+  const destIds = new Set();
+  events.filter(e => e.type === 'connect' && (e.to_type === 'AudioDestinationNode' || e.to_type === 'destination')).forEach(e => destIds.add(e.to_node));
+  // Also add 0 as default destination
+  destIds.add(0);
+  destIds.forEach(id => nodeMap.set(id, { type: 'destination', label: 'destination' }));
+
+  events.filter(e => e.type === 'node_create').forEach(e => {
+    // Skip non-audio types in graph (periodic_wave, buffer)
+    if (e.node_type === 'periodic_wave' || e.node_type === 'buffer') return;
+    nodeMap.set(e.node_id, { type: e.node_type, label: e.node_type });
+  });
+
+  events.filter(e => e.type === 'connect' && e.to_type !== 'disconnect_all').forEach(e => {
+    edges.push({ from: e.from_node, to: e.to_node });
+  });
+
+  // Filter to only connected nodes + destination
+  const connectedNodes = new Set();
+  edges.forEach(e => { connectedNodes.add(e.from); connectedNodes.add(e.to); });
+  // Also include nodes that exist even if unconnected
+  nodeMap.forEach((_, k) => connectedNodes.add(k));
+
+  const nodeKeys = Array.from(connectedNodes).filter(k => nodeMap.has(k));
+  if (nodeKeys.length === 0) return '<p style="color:#999;font-size:12px;text-align:center;">No audio graph</p>';
+
+  const nodeW = 120, nodeH = 32, gapX = 50, gapY = 16, padX = 16, padY = 12;
+
+  // Topological sort
+  const adj = new Map(), inDeg = new Map();
+  nodeKeys.forEach(k => { adj.set(k, []); inDeg.set(k, 0); });
+  edges.forEach(e => {
+    if (adj.has(e.from) && inDeg.has(e.to)) {
+      adj.get(e.from).push(e.to);
+      inDeg.set(e.to, inDeg.get(e.to) + 1);
+    }
+  });
+  const queue = nodeKeys.filter(k => inDeg.get(k) === 0);
+  const layers = [], visited = new Set();
+  while (queue.length > 0) {
+    const layer = [], next = [];
+    queue.forEach(k => {
+      if (!visited.has(k)) { visited.add(k); layer.push(k); (adj.get(k) || []).forEach(n => { inDeg.set(n, inDeg.get(n) - 1); if (inDeg.get(n) === 0) next.push(n); }); }
+    });
+    if (layer.length > 0) layers.push(layer);
+    queue.length = 0; queue.push(...next);
+  }
+  nodeKeys.filter(k => !visited.has(k)).forEach(k => layers.push([k]));
+
+  const positions = new Map();
+  let maxLayer = 0;
+  layers.forEach((layer, li) => { maxLayer = Math.max(maxLayer, layer.length); layer.forEach((k, ni) => { positions.set(k, { x: padX + li * (nodeW + gapX), y: padY + ni * (nodeH + gapY) }); }); });
+  const svgW = padX * 2 + layers.length * (nodeW + gapX) - gapX;
+  const svgH = padY * 2 + maxLayer * (nodeH + gapY) - gapY;
+
+  const colors = { oscillator: '#f59e0b', dynamics_compressor: '#ef4444', analyser: '#8b5cf6', gain: '#10b981', biquad_filter: '#06b6d4', destination: '#6b7280', buffer_source: '#f97316', constant_source: '#a855f7', stereo_panner: '#14b8a6', wave_shaper: '#e11d48', panner: '#0ea5e9', convolver: '#84cc16', delay: '#f43f5e', channel_splitter: '#7c3aed', channel_merger: '#2563eb', iir_filter: '#0891b2', script_processor: '#6366f1' };
+
+  let svg = `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">`;
+  edges.forEach(e => {
+    const from = positions.get(e.from), to = positions.get(e.to);
+    if (from && to) svg += `<line x1="${from.x + nodeW}" y1="${from.y + nodeH/2}" x2="${to.x}" y2="${to.y + nodeH/2}" stroke="#999" stroke-width="2" marker-end="url(#arrowhead)" />`;
+  });
+  nodeKeys.forEach(k => {
+    const pos = positions.get(k), info = nodeMap.get(k);
+    if (!pos || !info) return;
+    const c = colors[info.type] || '#ec4899';
+    svg += `<g class="graph-node"><rect x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${nodeH}" fill="${c}" /><text x="${pos.x + nodeW/2}" y="${pos.y + nodeH/2}">${info.label.replace(/_/g, ' ')}</text></g>`;
+  });
+  svg += '</svg>';
+  return svg;
+}
+
+// ========== JS Code Generation ==========
+function generateCode(contextId, events, globalEvents) {
+  const lines = [];
+  const vars = new Map();       // node_id -> varName
+  const nodeTypes = new Map();  // node_id -> node_type (e.g. 'oscillator')
+  const create = events.find(e => e.type === 'context_create');
+  if (!create) return '// No context_create event found';
+
+  const isOffline = create.context_type === 'offline';
+  const ctxVar = isOffline ? 'ctx' : 'audioCtx';
+
+  if (isOffline) {
+    lines.push(`const ${ctxVar} = new OfflineAudioContext(${create.channels}, ${create.frames}, ${create.sampleRate});`);
+  } else {
+    lines.push(`const ${ctxVar} = new AudioContext();`);
+  }
+
+  const nodeNames = { oscillator: 'osc', dynamics_compressor: 'comp', analyser: 'analyser', gain: 'gain', biquad_filter: 'biquad', buffer_source: 'bufSrc', constant_source: 'constSrc', script_processor: 'scriptProc', stereo_panner: 'panner', wave_shaper: 'waveShaper', panner: 'panner3d', convolver: 'convolver', delay: 'delay', channel_splitter: 'splitter', channel_merger: 'merger', iir_filter: 'iir' };
+  const createMethods = { oscillator: 'createOscillator', dynamics_compressor: 'createDynamicsCompressor', analyser: 'createAnalyser', gain: 'createGain', biquad_filter: 'createBiquadFilter', buffer_source: 'createBufferSource', constant_source: 'createConstantSource', stereo_panner: 'createStereoPanner', wave_shaper: 'createWaveShaper', panner: 'createPanner', convolver: 'createConvolver', delay: 'createDelay', channel_splitter: 'createChannelSplitter', channel_merger: 'createChannelMerger' };
+  // Map "NodeType" prefix in param names (e.g. "Oscillator") to node_type keys
+  const prefixToType = { Oscillator: 'oscillator', DynamicsCompressor: 'dynamics_compressor', Analyser: 'analyser', Gain: 'gain', BiquadFilter: 'biquad_filter', StereoPanner: 'stereo_panner', Panner: 'panner', Delay: 'delay', ConstantSource: 'constant_source' };
+  const nameCount = {};
+  let readVarCount = 0; // avoid duplicate const names for reads
+
+  // Helper: resolve owner variable for a param_set event.
+  // AudioParam objects get their own node_id in the JSONL, but the param field
+  // format "NodeType.paramName" tells us which parent node type owns it.
+  function resolveParamOwner(e) {
+    // If node_id is already in vars, use it directly
+    if (vars.has(e.node_id)) return vars.get(e.node_id);
+    // Parse "NodeType.paramName" to find the parent node type
+    const param = e.param || '';
+    const dot = param.indexOf('.');
+    if (dot > 0) {
+      const prefix = param.substring(0, dot);
+      const parentType = prefixToType[prefix];
+      if (parentType) {
+        // Find the first node with this type that has a variable
+        for (const [nid, vn] of vars) {
+          if (nodeTypes.get(nid) === parentType) return vn;
+        }
+      }
+    }
+    return `node_${e.node_id}`;
+  }
+
+  for (const e of events) {
+    if (e.type === 'context_create') continue;
+
+    if (e.type === 'node_create') {
+      const nt = e.node_type;
+      if (nt === 'periodic_wave' || nt === 'buffer') continue;
+      const base = nodeNames[nt] || nt;
+      nameCount[base] = (nameCount[base] || 0) + 1;
+      const vn = nameCount[base] > 1 ? `${base}${nameCount[base]}` : base;
+      vars.set(e.node_id, vn);
+      nodeTypes.set(e.node_id, nt);
+
+      if (nt === 'script_processor') lines.push(`const ${vn} = ${ctxVar}.createScriptProcessor(4096, 1, 1);`);
+      else if (nt === 'iir_filter') lines.push(`const ${vn} = ${ctxVar}.createIIRFilter([1, 0], [1, -0.9]);`);
+      else if (nt === 'delay') lines.push(`const ${vn} = ${ctxVar}.createDelay(1.0);`);
+      else if (nt === 'channel_splitter') lines.push(`const ${vn} = ${ctxVar}.createChannelSplitter(2);`);
+      else if (nt === 'channel_merger') lines.push(`const ${vn} = ${ctxVar}.createChannelMerger(2);`);
+      else { const method = createMethods[nt]; if (method) lines.push(`const ${vn} = ${ctxVar}.${method}();`); else lines.push(`// ${nt} node created (id=${e.node_id})`); }
+      continue;
+    }
+
+    if (e.type === 'param_set') {
+      const param = e.param || '';
+      const val = e.value;
+      const method = e.method;
+      const owner = resolveParamOwner(e);
+      const paramParts = param.split('.');
+      const paramName = paramParts.length > 1 ? paramParts[1] : paramParts[0];
+
+      if (param === 'type') {
+        lines.push(`${owner}.type = '${val}';`);
+      } else if (method === 'value' && ['fftSize','minDecibels','maxDecibels','smoothingTimeConstant'].includes(paramName)) {
+        lines.push(`${owner}.${paramName} = ${val};`);
+      } else if (method === 'setPeriodicWave') {
+        lines.push(`${owner}.setPeriodicWave(periodicWave);`);
+      } else if (method === 'cancelScheduledValues') {
+        lines.push(`${owner}.${paramName}.cancelScheduledValues(${e.time || 0});`);
+      } else if (method === 'cancelAndHoldAtTime') {
+        lines.push(`${owner}.${paramName}.cancelAndHoldAtTime(${e.time || 0});`);
+      } else if (method === 'value') {
+        lines.push(`${owner}.${paramName}.value = ${val};`);
+      } else if (method === 'setValueAtTime') {
+        lines.push(`${owner}.${paramName}.setValueAtTime(${val}, ${e.time || 0});`);
+      } else if (method === 'linearRampToValueAtTime') {
+        lines.push(`${owner}.${paramName}.linearRampToValueAtTime(${val}, ${e.time || 0});`);
+      } else if (method === 'exponentialRampToValueAtTime') {
+        lines.push(`${owner}.${paramName}.exponentialRampToValueAtTime(${val}, ${e.time || 0});`);
+      } else if (method === 'setTargetAtTime') {
+        lines.push(`${owner}.${paramName}.setTargetAtTime(${val}, ${e.time || 0}, 0.1);`);
+      } else if (method === 'setValueCurveAtTime') {
+        lines.push(`${owner}.${paramName}.setValueCurveAtTime(new Float32Array([/* ${val} */]), ${e.time || 0}, 0.2);`);
+      } else {
+        lines.push(`// ${method}: ${owner}.${paramName} = ${val}`);
+      }
+      continue;
+    }
+
+    if (e.type === 'connect') {
+      if (e.to_type === 'disconnect_all') {
+        const vn = vars.get(e.from_node) || `node_${e.from_node}`;
+        lines.push(`${vn}.disconnect();`);
+      } else {
+        const fromVn = vars.get(e.from_node) || `node_${e.from_node}`;
+        const toVn = (e.to_type === 'AudioDestinationNode' || e.to_type === 'destination')
+          ? `${ctxVar}.destination` : (vars.get(e.to_node) || `node_${e.to_node}`);
+        lines.push(`${fromVn}.connect(${toVn});`);
+      }
+      continue;
+    }
+
+    if (e.type === 'start') { lines.push(`${vars.get(e.node_id) || `node_${e.node_id}`}.start(${e.when || 0});`); continue; }
+    if (e.type === 'stop') { lines.push(`${vars.get(e.node_id) || `node_${e.node_id}`}.stop(${e.when !== undefined ? e.when : ''});`); continue; }
+    if (e.type === 'start_rendering') { lines.push(''); lines.push(`const rendered = await ${ctxVar}.startRendering();`); continue; }
+
+    if (e.type === 'read_channel_data') {
+      const preview = e.samples_preview || e.samples;
+      const sum = preview?.sum_abs_4500_5000;
+      lines.push(`const channelData = rendered.getChannelData(${e.channel});`);
+      if (sum !== undefined) lines.push(`// ${e.sample_count} samples, sum[4500..5000) = ${sum}`);
+      continue;
+    }
+    if (e.type === 'copy_from_channel') {
+      lines.push(`const copyDest = new Float32Array(${e.copy_count});`);
+      lines.push(`rendered.copyFromChannel(copyDest, ${e.channel}, ${e.buffer_offset || 0});`);
+      continue;
+    }
+    if (e.type === 'analyser_read' || e.type === 'analyser_read_bytes') {
+      const isByte = e.type === 'analyser_read_bytes' || e.method?.startsWith('getByte');
+      const arrType = isByte ? 'Uint8Array' : 'Float32Array';
+      const suffix = isByte ? 'Byte' : 'Float';
+      const vn = e.method?.includes('Frequency') ? `${suffix.toLowerCase()}FreqData` : `${suffix.toLowerCase()}TimeData`;
+      lines.push(`const ${vn} = new ${arrType}(${e.data_length});`);
+      lines.push(`analyser.${e.method}(${vn});`);
+      continue;
+    }
+    if (e.type === 'reduction_read') {
+      lines.push(`const reduction = comp.reduction; // ${e.reduction_value !== undefined ? e.reduction_value : e.reduction}`);
+      continue;
+    }
+    if (e.type === 'freq_response') {
+      readVarCount++;
+      const vn = vars.get(e.node_id) || (e.node_type === 'biquad_filter' ? 'biquad' : (e.node_type === 'iir_filter' ? 'iir' : `node_${e.node_id}`));
+      const s = readVarCount > 1 ? readVarCount : '';
+      lines.push(`const freqHz${s} = new Float32Array([100, 1000, 10000]);`);
+      lines.push(`const magResp${s} = new Float32Array(${e.length || 3});`);
+      lines.push(`const phaseResp${s} = new Float32Array(${e.length || 3});`);
+      lines.push(`${vn}.getFrequencyResponse(freqHz${s}, magResp${s}, phaseResp${s});`);
+      continue;
+    }
+    if (e.type === 'property_read') {
+      if (e.property === 'baseLatency') lines.push(`const baseLatency = ${ctxVar}.baseLatency; // ${e.value}`);
+      else if (e.property === 'outputLatency') lines.push(`const outputLatency = ${ctxVar}.outputLatency; // ${e.value}`);
+      else if (e.property === 'getOutputTimestamp') lines.push(`const timestamp = ${ctxVar}.getOutputTimestamp(); // ${e.value}`);
+      else if (e.property === 'decodeAudioData') lines.push(`await ${ctxVar}.decodeAudioData(audioData); // ${e.value}`);
+      else lines.push(`// ${e.property} = ${e.value}`);
+      continue;
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function generateCodecCode(events) {
+  const codecEvents = events.filter(e => e.type === 'codec_check');
+  if (codecEvents.length === 0) return '';
+  const lines = ["const audio = document.createElement('audio');", ''];
+  codecEvents.forEach(e => {
+    if (e.method === 'canPlayType') {
+      lines.push(`audio.canPlayType('${e.mime}'); // "${e.result}"`);
+    } else if (e.method === 'isTypeSupported') {
+      lines.push(`MediaSource.isTypeSupported('${e.mime}'); // ${e.result}`);
+    }
+  });
+  return lines.join('\n');
+}
+
+// ========== Events Timeline ==========
+function renderEventsSection() {
+  const types = new Set(allEvents.map(e => e.type));
+  activeFilters = new Set(types);
+
+  let filtersHtml = '<span class="filter-chip active" data-type="__all__">All</span>';
+  types.forEach(t => { filtersHtml += `<span class="filter-chip active" data-type="${t}">${t}</span>`; });
+
+  $('#eventsSection').innerHTML = `<div class="events-section">
+    <div class="events-header">
+      <span class="label">Events Timeline</span>
+      <div class="event-filters" id="eventFilters">${filtersHtml}</div>
+    </div>
+    <div class="event-list" id="eventList"></div>
+  </div>`;
+
+  document.querySelectorAll('#eventFilters .filter-chip').forEach(chip => {
+    chip.onclick = () => {
+      const t = chip.dataset.type;
+      if (t === '__all__') {
+        activeFilters = new Set(types);
+        document.querySelectorAll('#eventFilters .filter-chip').forEach(c => c.classList.add('active'));
+      } else {
+        if (activeFilters.has(t)) activeFilters.delete(t); else activeFilters.add(t);
+        chip.classList.toggle('active');
+      }
+      renderEventsList();
+    };
+  });
+
+  renderEventsList();
+}
+
+function renderEventsList() {
+  const list = $('#eventList');
+  const filtered = allEvents.filter(e => activeFilters.has(e.type));
+  list.innerHTML = filtered.map(e => {
+    const idx = allEvents.indexOf(e);
+    const desc = eventDescription(e);
+    const ctxBadge = e.context_id !== undefined ? `<span class="event-ctx-id">${e.context_id}</span>` : '';
+    return `<div class="event-item" data-idx="${idx}">
+      <span class="event-seq">${e.seq || ''}</span>
+      ${ctxBadge}
+      <span class="event-badge badge-${e.type}">${e.type}</span>
+      <span class="event-desc">${desc}</span>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.event-item').forEach(el => {
+    el.onclick = () => {
+      list.querySelectorAll('.event-item').forEach(x => x.classList.remove('selected'));
+      el.classList.add('selected');
+      showDetail(allEvents[parseInt(el.dataset.idx)]);
+    };
+  });
+}
+
+function eventDescription(e) {
+  switch (e.type) {
+    case 'context_create': return `${e.context_type} (${e.channels}ch, ${e.frames} frames, ${e.sampleRate} Hz)`;
+    case 'node_create': return `${e.node_type} [id=${e.node_id}]`;
+    case 'param_set': return `${e.param} = ${e.value} (${e.method}${e.time !== undefined ? ', t=' + e.time : ''})`;
+    case 'connect': return e.to_type === 'disconnect_all' ? `${e.from_type}[${e.from_node}].disconnect()` : `${e.from_type}[${e.from_node}] -> ${e.to_type}[${e.to_node}]`;
+    case 'start': return `node[${e.node_id}] start(${e.when})`;
+    case 'stop': return `node[${e.node_id}] stop(${e.when !== undefined ? e.when : ''})`;
+    case 'start_rendering': return `startRendering()`;
+    case 'read_channel_data': { const p = e.samples_preview || e.samples; return `ch${e.channel}, ${e.sample_count} samples` + (p?.sum_abs_4500_5000 ? `, sum=${p.sum_abs_4500_5000}` : ''); }
+    case 'copy_from_channel': return `ch${e.channel}, ${e.copy_count} samples, offset=${e.buffer_offset || 0}`;
+    case 'analyser_read': case 'analyser_read_bytes': return `${e.method}, ${e.data_length} values`;
+    case 'reduction_read': return `reduction = ${e.reduction_value !== undefined ? e.reduction_value : e.reduction}`;
+    case 'freq_response': return `${e.node_type}.getFrequencyResponse (${e.length} freqs)`;
+    case 'property_read': return `${e.property} = ${e.value}`;
+    case 'codec_check': return `${e.method}("${e.mime}") = ${e.result}`;
+    default: return JSON.stringify(e).substring(0, 80);
+  }
+}
+
+// ========== Detail Panel ==========
+function showDetail(event) {
+  const panel = $('#detailPanel');
+  panel.classList.add('show');
+  const vizContainer = $('#samplesViz');
+  vizContainer.innerHTML = '';
+
+  if (event.type === 'read_channel_data' && (event.samples_preview || event.samples)) {
+    const preview = event.samples_preview || event.samples;
+    let first10 = preview.first10 || [], last10 = preview.last10 || [];
+    if (typeof first10 === 'string') try { first10 = JSON.parse(first10); } catch {}
+    if (typeof last10 === 'string') try { last10 = JSON.parse(last10); } catch {}
+    const allSamples = [...first10, ...last10];
+    if (allSamples.length > 0) {
+      const w = 400, h = 80, pad = 4, max = Math.max(0.001, ...allSamples.map(Math.abs)), barW = (w - pad*2)/allSamples.length, mid = h/2;
+      let bars = '';
+      allSamples.forEach((v, i) => { const bH = Math.abs(v)/max*(mid-pad); bars += `<rect x="${pad+i*barW}" y="${v>=0?mid-bH:mid}" width="${barW-1}" height="${bH}" fill="${i<10?'#2563eb':'#10b981'}" rx="1" />`; });
+      let info = preview.sum_abs_4500_5000 !== undefined ? `<div style="font-size:12px;color:#666;margin-top:4px;">sum[4500..5000) = <strong>${preview.sum_abs_4500_5000}</strong></div>` : '';
+      vizContainer.innerHTML = `<div style="margin-bottom:8px;"><div style="font-size:12px;color:#888;margin-bottom:4px;">Samples: <span style="color:#2563eb;">first 10</span> | <span style="color:#10b981;">last 10</span></div><svg width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="#fafafa" rx="4" /><line x1="${pad}" y1="${mid}" x2="${w-pad}" y2="${mid}" stroke="#ddd" />${bars}</svg>${info}</div>`;
+    }
+  }
+
+  $('#detailJson').textContent = JSON.stringify(event, null, 2);
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+
+<footer style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #999;">
+  <a href="https://github.com/botswin/BotBrowser" style="color: #666;">BotBrowser</a> AudioLab. For authorized fingerprint protection and privacy research only.
+</footer>
+</body>
+</html>

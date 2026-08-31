@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Bulk Import Proxies</h2>
+
+<mat-dialog-content>
+    <mat-form-field appearance="outline">
+        <mat-label>Proxy List</mat-label>
+        <textarea
+            matInput
+            [(ngModel)]="input"
+            (ngModelChange)="onInputChange()"
+            placeholder="Paste proxies here, one per line"
+            rows="10"
+        ></textarea>
+        <mat-hint
+            >Supports: scheme://user:pass&#64;host:port, host:port:user:pwd, user:pwd&#64;host:port, etc.</mat-hint
+        >
+    </mat-form-field>
+
+    @if (results.length > 0) {
+        <div class="results-summary">
+            <span class="valid">✓ {{ validCount }} valid</span>
+            @if (errorCount > 0) {
+                <span class="error">✗ {{ errorCount }} invalid</span>
+            }
+        </div>
+
+        <div class="results-list">
+            @for (result of results; track result.line) {
+                <div class="result-item" [class.error]="result.error">
+                    <span class="line-number">{{ result.line }}</span>
+                    @if (result.proxy) {
+                        <span class="proxy-info">{{ result.proxy.host }}:{{ result.proxy.port }}</span>
+                        @if (result.proxy.username) {
+                            <span class="auth-badge">auth</span>
+                        }
+                    } @else {
+                        <span class="error-text">{{ result.input }} - {{ result.error }}</span>
+                    }
+                </div>
+            }
+        </div>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close [disabled]="importing">Cancel</button>
+    <button mat-flat-button color="primary" (click)="onImportClick()" [disabled]="validCount === 0 || importing">
+        {{ importing ? 'Importing...' : 'Import ' + validCount + ' Proxies' }}
+    </button>
+</mat-dialog-actions>

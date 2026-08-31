@@ -1,0 +1,28 @@
+# Dependency updates.
+#
+# Weekly, not daily. A daily cadence on a small project produces more pull
+# requests than anyone reads, and unread updates are worse than none: they
+# train you to merge without looking.
+#
+# Grouping matters. Ungrouped, a lockfile bump becomes twelve pull requests
+# that each need a CI run.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      # No tool attribution anywhere in this repository history.
+      prefix: ci
+
+  # ⚠ THERE IS NO PACKAGE ECOSYSTEM HERE YET, because this repository has no
+  # dependency manifest. TOOL-01 in TODO/tooling.md creates the workspace, and
+  # adding the ecosystem for it is part of that entry.
+  # ⛔ A commented-out block for an ecosystem this project does not use is dead
+  # configuration: it looks like a decision somebody made and it is a decision
+  # nobody has made.

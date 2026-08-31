@@ -1,0 +1,15 @@
+{
+  "name": "botbrowser-benchmark",
+  "version": "1.0.0",
+  "description": "Performance benchmark: Stock Chrome vs BotBrowser",
+  "type": "module",
+  "scripts": {
+    "setup": "bash setup-benchmarks.sh",
+    "bench:baseline": "node scripts/bench-baseline.js",
+    "bench:scale": "node scripts/bench-scale.js",
+    "bench:all": "node scripts/run-all.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.50.0"
+  }
+}

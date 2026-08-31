@@ -1,0 +1,15 @@
+{
+  "name": "botbrowser-storage-access",
+  "version": "1.0.0",
+  "description": "Read browser storage data from BotBrowser sessions",
+  "scripts": {
+    "cookies": "node read_cookies.js",
+    "passwords": "node read_passwords.js",
+    "cards": "node read_credit_cards.js",
+    "localstorage": "node read_localstorage.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "level": "^8.0.0"
+  }
+}

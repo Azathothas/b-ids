@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>BotBrowser Fingerprint API Benchmark</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #e0e0e0; }
+    .running { color: #ffa500; }
+    .done { color: #00ff00; }
+    .error { color: #ff4444; }
+    table { border-collapse: collapse; margin: 10px 0; }
+    td, th { border: 1px solid #444; padding: 4px 8px; text-align: right; }
+    th { text-align: left; background: #333; }
+    #status { font-size: 18px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Fingerprint API Benchmark</h2>
+  <div id="status" class="running">Running...</div>
+  <div id="progress"></div>
+  <table id="results-table">
+    <thead><tr><th>API</th><th>Operation</th><th>Iterations</th><th>Median (ms)</th><th>P95 (ms)</th><th>Mean (ms)</th></tr></thead>
+    <tbody id="results-body"></tbody>
+  </table>
+
+  <script>
+    const ITERATIONS = 1000;
+    const results = {};
+
+    function calcStats(arr) {
+      const sorted = [...arr].sort((a, b) => a - b);
+      const n = sorted.length;
+      const mean = sorted.reduce((s, v) => s + v, 0) / n;
+      return {
+        median: sorted[Math.floor(n / 2)],
+        p95: sorted[Math.floor(n * 0.95)],
+        mean: Math.round(mean * 1000) / 1000,
+        min: sorted[0],
+        max: sorted[n - 1],
+        n
+      };
+    }
+
+    function bench(name, fn) {
+      const times = [];
+      // Warm-up
+      for (let i = 0; i < 10; i++) fn();
+
+      for (let i = 0; i < ITERATIONS; i++) {
+        const start = performance.now();
+        fn();
+        times.push(performance.now() - start);
+      }
+      return calcStats(times);
+    }
+
+    async function benchAsync(name, fn) {
+      const times = [];
+      for (let i = 0; i < 5; i++) await fn();
+      for (let i = 0; i < Math.min(ITERATIONS, 100); i++) {
+        const start = performance.now();
+        await fn();
+        times.push(performance.now() - start);
+      }
+      return calcStats(times);
+    }
+
+    function addResult(api, operation, stat) {
+      const key = `${api}.${operation}`;
+      results[key] = { api, operation, ...stat };
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${api}</td><td>${operation}</td><td>${stat.n}</td>` +
+        `<td>${stat.median.toFixed(4)}</td><td>${stat.p95.toFixed(4)}</td><td>${stat.mean.toFixed(4)}</td>`;
+      document.getElementById('results-body').appendChild(row);
+    }
+
+    function setProgress(msg) {
+      document.getElementById('progress').textContent = msg;
+    }
+
+    async function runAll() {
+      try {
+        // ── Canvas 2D ──────────────────────────────────────────
+        setProgress('Canvas 2D: toDataURL...');
+        {
+          const canvas = document.createElement('canvas');
+          canvas.width = 256; canvas.height = 256;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#f00';
+          ctx.fillRect(0, 0, 128, 128);
+          ctx.fillStyle = '#0f0';
+          ctx.arc(128, 128, 64, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = '18px Arial';
+          ctx.fillText('BotBrowser Benchmark', 10, 200);
+
+          addResult('Canvas2D', 'toDataURL', bench('canvas.toDataURL', () => canvas.toDataURL()));
+          setProgress('Canvas 2D: getImageData...');
+          addResult('Canvas2D', 'getImageData', bench('canvas.getImageData', () => ctx.getImageData(0, 0, 256, 256)));
+        }
+
+        // ── WebGL ──────────────────────────────────────────────
+        setProgress('WebGL: getParameter...');
+        {
+          const glCanvas = document.createElement('canvas');
+          glCanvas.width = 256; glCanvas.height = 256;
+          const gl = glCanvas.getContext('webgl');
+          if (gl) {
+            addResult('WebGL', 'getParameter(RENDERER)', bench('gl.getParameter', () => gl.getParameter(gl.RENDERER)));
+            addResult('WebGL', 'getParameter(VENDOR)', bench('gl.getParameter', () => gl.getParameter(gl.VENDOR)));
+
+            setProgress('WebGL: getSupportedExtensions...');
+            addResult('WebGL', 'getSupportedExtensions', bench('gl.getSupportedExtensions', () => gl.getSupportedExtensions()));
+
+            setProgress('WebGL: getShaderPrecisionFormat...');
+            addResult('WebGL', 'getShaderPrecisionFormat', bench('gl.getShaderPrecisionFormat', () =>
+              gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT)
+            ));
+
+            setProgress('WebGL: readPixels...');
+            const pixels = new Uint8Array(256 * 256 * 4);
+            addResult('WebGL', 'readPixels', bench('gl.readPixels', () =>
+              gl.readPixels(0, 0, 256, 256, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+            ));
+          } else {
+            addResult('WebGL', 'N/A', { median: -1, p95: -1, mean: -1, min: -1, max: -1, n: 0 });
+          }
+        }
+
+        // ── WebGL2 ─────────────────────────────────────────────
+        setProgress('WebGL2: getParameter...');
+        {
+          const gl2Canvas = document.createElement('canvas');
+          gl2Canvas.width = 64; gl2Canvas.height = 64;
+          const gl2 = gl2Canvas.getContext('webgl2');
+          if (gl2) {
+            addResult('WebGL2', 'getParameter(RENDERER)', bench('gl2.getParameter', () => gl2.getParameter(gl2.RENDERER)));
+          } else {
+            addResult('WebGL2', 'N/A', { median: -1, p95: -1, mean: -1, min: -1, max: -1, n: 0 });
+          }
+        }
+
+        // ── AudioContext ───────────────────────────────────────
+        setProgress('AudioContext...');
+        {
+          try {
+            const audioCtx = new OfflineAudioContext(1, 44100, 44100);
+            const oscillator = audioCtx.createOscillator();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(10000, audioCtx.currentTime);
+            const compressor = audioCtx.createDynamicsCompressor();
+            oscillator.connect(compressor);
+            compressor.connect(audioCtx.destination);
+            oscillator.start(0);
+
+            const audioStart = performance.now();
+            const buffer = await audioCtx.startRendering();
+            const audioElapsed = performance.now() - audioStart;
+            const channelData = buffer.getChannelData(0);
+            // Hash a sample of the audio data
+            let audioHash = 0;
+            for (let i = 4500; i < 5000; i++) audioHash += Math.abs(channelData[i]);
+
+            addResult('AudioContext', 'OfflineRender+Hash', {
+              median: audioElapsed, p95: audioElapsed, mean: audioElapsed,
+              min: audioElapsed, max: audioElapsed, n: 1
+            });
+          } catch (e) {
+            addResult('AudioContext', 'Error', { median: -1, p95: -1, mean: -1, min: -1, max: -1, n: 0 });
+          }
+        }
+
+        // ── Navigator Properties ───────────────────────────────
+        setProgress('Navigator properties...');
+        {
+          addResult('Navigator', 'userAgent', bench('navigator.userAgent', () => navigator.userAgent));
+          addResult('Navigator', 'platform', bench('navigator.platform', () => navigator.platform));
+          addResult('Navigator', 'hardwareConcurrency', bench('navigator.hardwareConcurrency', () => navigator.hardwareConcurrency));
+          addResult('Navigator', 'languages', bench('navigator.languages', () => navigator.languages));
+          addResult('Navigator', 'deviceMemory', bench('navigator.deviceMemory', () => navigator.deviceMemory));
+        }
+
+        // ── Screen ─────────────────────────────────────────────
+        setProgress('Screen properties...');
+        {
+          addResult('Screen', 'width+height', bench('screen.width', () => [screen.width, screen.height]));
+          addResult('Screen', 'colorDepth', bench('screen.colorDepth', () => screen.colorDepth));
+          addResult('Screen', 'availWidth+Height', bench('screen.avail', () => [screen.availWidth, screen.availHeight]));
+        }
+
+        // ── Performance.now ────────────────────────────────────
+        setProgress('performance.now...');
+        {
+          addResult('Performance', 'now()', bench('performance.now', () => performance.now()));
+        }
+
+        // ── Font Measurement ───────────────────────────────────
+        setProgress('Font measurement...');
+        {
+          const testFonts = [
+            'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Georgia',
+            'Verdana', 'Trebuchet MS', 'Palatino Linotype', 'Lucida Console', 'Tahoma',
+            'Impact', 'Comic Sans MS', 'Arial Black', 'Garamond', 'Book Antiqua',
+            'Segoe UI', 'Calibri', 'Cambria', 'Consolas', 'Lucida Sans',
+            'Noto Sans', 'Roboto', 'Open Sans', 'Lato', 'Montserrat',
+            'Source Code Pro', 'Fira Code', 'Ubuntu', 'Droid Sans', 'PT Sans',
+            'Merriweather', 'Playfair Display', 'Oswald', 'Raleway', 'Inter',
+            'Nunito', 'Poppins', 'Work Sans', 'Barlow', 'Quicksand',
+            'Karla', 'Inconsolata', 'Lora', 'Bitter', 'Josefin Sans',
+            'Dancing Script', 'Pacifico', 'Caveat', 'Permanent Marker', 'Architects Daughter'
+          ];
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const testString = 'mmmmmmmmmmlli1|WMQ@#$';
+
+          addResult('Font', 'measureText(50fonts)', bench('font.measureText', () => {
+            for (const font of testFonts) {
+              ctx.font = `16px "${font}", monospace`;
+              ctx.measureText(testString);
+            }
+          }));
+        }
+
+        // ── Date/Timezone ──────────────────────────────────────
+        setProgress('Timezone...');
+        {
+          addResult('Intl', 'DateTimeFormat.resolvedOptions', bench('intl.timezone', () =>
+            Intl.DateTimeFormat().resolvedOptions()
+          ));
+        }
+
+        // ── Done ───────────────────────────────────────────────
+        document.getElementById('status').textContent = 'Complete';
+        document.getElementById('status').className = 'done';
+        setProgress(`All benchmarks finished. ${Object.keys(results).length} tests completed.`);
+
+        // Expose results for Playwright extraction
+        window.__benchResults = results;
+        window.__benchDone = true;
+
+      } catch (e) {
+        document.getElementById('status').textContent = `Error: ${e.message}`;
+        document.getElementById('status').className = 'error';
+        window.__benchResults = results;
+        window.__benchDone = true;
+        window.__benchError = e.message;
+      }
+    }
+
+    // Start
+    runAll();
+  </script>
+</body>
+</html>
