@@ -1,0 +1,26 @@
+[package]
+name = "b-ids-schema"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# decides what a package registry ever sees.
+publish = false
+
+[lints]
+workspace = true
+
+# ⚠ Off by default, so nothing a consumer links carries it. Two crates test
+# against the same fixture, and a fixture copied into a second place is two
+# fixtures that drift.
+[features]
+fixtures = []
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+b-ids-schema = { path = ".", features = ["fixtures"] }

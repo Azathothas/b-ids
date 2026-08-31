@@ -13,7 +13,7 @@ built, and it can be finished before a single capture exists.
 ## VALID-01. The coherence checks, as a library and a command and a schema
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** validator, **Priority** P0, **Effort** M, **Status** open
+**Category** validator, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
 
@@ -74,6 +74,130 @@ cargo test -p b-ids-validator -- --nocapture
 Passing means: eight checks, eight tests, each planting the exact contradiction
 its check exists to catch and asserting a non-zero exit with a message naming
 the field.
+
+### Closing
+
+**Closed 2026-08-31.** Eight checks, twenty-six tests, and a command that
+returns three different exit codes for three different facts.
+
+```text
+$ cargo test -p b-ids-validator -- --nocapture
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### ⭐ Three outcomes, because a check that cannot run has not passed
+
+⛔ **This is the design decision the entry did not anticipate and it changes
+what the component reports.** Most of these checks read a header VALUE, and
+`SCHEMA-04`'s default capture policy records header NAMES only. A validator
+that reported those as passes would be green over a profile it had not read,
+which is the "step that exits 0 having done nothing it was asked to do" defect
+in the one component whose whole job is refusing things.
+
+So every check answers `Passed`, `Failed` or `NotCheckable`, the last carrying
+the reason, and the command's exit code separates them: 0 clean, 1 a check
+refused, 2 nothing could be checked at all. ⚠ It still does not WARN, which is
+what the entry forbids: `NotCheckable` is a statement about what was read, not
+a softened refusal.
+
+### ⛔ Check 4 cannot be decided within one profile, and it says so
+
+The entry describes check 4 as "the `ClientHello` came from a build whose major
+matches the claimed one". **Deciding that inside one profile needs a per-build
+corpus of handshakes to compare against, and this project has captured none.**
+Answering it anyway would be inventing the comparison.
+
+⭐ **So it ships in the form that CAN run today**, across a set of profiles:
+`shared_handshakes` reports two profiles of one browser claiming different
+majors and carrying a byte-identical TLS half, because at most one of them was
+measured. That is exactly the shipped violation the sweep located, where five
+modules of one reference database return a neighbour's fingerprint wholesale
+beside their own User-Agent. `VALID-02` is what runs it over that tree.
+
+⚠ The within-profile leg reports `NotCheckable` naming what would make it
+checkable, and still refuses outright a hello with no extensions at all.
+
+### The eight, and what each was planted with
+
+| check | the contradiction its test plants |
+| --- | --- |
+| version | a Chrome 151 User-Agent on a profile claiming 152, and separately a brand list claiming 151 |
+| platform | a Windows User-Agent on a Linux capture; a `macOS` hint; a mobile hint on a desktop capture **and** the reverse |
+| brand | an unbranded build whose list carries a vendor entry, and a branded one whose list does not |
+| handshake | two majors sharing one byte-identical TLS half |
+| grease | a position list disagreeing with the hello; one draw reused across both slots; a shuffle state claimed from one draw |
+| encoding | a profile advertising `zstd` to a consumer that decodes `gzip` only |
+| absence | a stack that cannot omit a setting, and separately a target with four holes at once |
+| provenance | a `vendor` field while publishing, and an unreasoned `substituted` field either way |
+
+⛔ **Every test asserts the failure AND that the same check passes over the
+unmodified fixture.** One without the other proves half of it: a check that
+refused everything would pass a test that only planted a defect.
+
+### Driven, not only tested
+
+```text
+$ cargo run -q -p b-ids-validator -- .tmp/profile.json
+.tmp/profile.json: ok    version
+.tmp/profile.json: ok    platform
+.tmp/profile.json: ok    brand
+.tmp/profile.json: SKIP  handshake -- deciding whether this hello came from a 152 build needs a per-build corpus to compare against, and none exists yet. b-ids-validator::shared_handshakes is the form that runs across a set of profiles today
+.tmp/profile.json: ok    grease
+.tmp/profile.json: SKIP  encoding -- the caller did not say what the consuming client can decode
+.tmp/profile.json: SKIP  absence -- the caller named no target stack
+.tmp/profile.json: ok    provenance
+exit=0
+
+$ cargo run -q -p b-ids-validator -- --publishing --decodes gzip .tmp/broken.json
+.tmp/broken.json: FAIL  version: http.headers.user-agent: carries major 151, and browser.major is 152
+.tmp/broken.json: ok    platform
+.tmp/broken.json: FAIL  brand: http.headers.sec-ch-ua: browser.branded is true and the brand list has no Google Chrome entry
+.tmp/broken.json: SKIP  handshake -- deciding whether this hello came from a 152 build needs a per-build corpus to compare against, and none exists yet. b-ids-validator::shared_handshakes is the form that runs across a set of profiles today
+.tmp/broken.json: ok    grease
+.tmp/broken.json: FAIL  encoding: http.headers.accept-encoding: advertises deflate, which the consuming client cannot decode
+.tmp/broken.json: FAIL  encoding: http.headers.accept-encoding: advertises br, which the consuming client cannot decode
+.tmp/broken.json: FAIL  encoding: http.headers.accept-encoding: advertises zstd, which the consuming client cannot decode
+.tmp/broken.json: SKIP  absence -- the caller named no target stack
+.tmp/broken.json: ok    provenance
+exit=1
+```
+
+⭐ **The profile it was driven against is generated rather than hand-written**,
+by `cargo run -p b-ids-schema --features fixtures --example dump`, so the file
+the command reads cannot drift from the types.
+
+### The three ways it ships
+
+- **A library**, which is what `b-ids-harness` and `b-ids-conformance` will
+  call.
+- **A command**, above.
+- **A JSON Schema**, which is
+  [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json)
+  and landed with `SCHEMA-01`. ⚠ It expresses shape rather than coherence: a
+  schema cannot say that a User-Agent and a brand list disagree, which is why
+  the other two forms exist.
+
+### ⚠ What the header reader deliberately does not do
+
+`headers.rs` answers exactly the three questions the checks ask and returns
+`None` where it cannot, ⛔ never a guess. A header parser that guessed would
+turn a refusal into a coin toss. Two known limits are written into its own
+doc comment rather than defended against: a brand containing a comma or a
+semicolon would break the split, and neither appears in any shipped brand list.
+
+### ⚠ Still open, and this entry does not close them
+
+- **`VALID-02`** is the run over the prior art, and `shared_handshakes` is the
+  function it needs. The three violations are located at file and line and none
+  has been run against yet.
+- **`VALID-03`**, a family the resolver cannot produce, is the third check the
+  sweep derived and it is not one of these eight.
+- **`SCHEMA-04`'s privacy default and this component pull against each other**,
+  and the tension is real rather than a defect: the safest capture is the one
+  several of these checks cannot read. The answer is per-capture rather than
+  per-model, and it is recorded here so nobody resolves it by weakening the
+  default.
 
 ---
 

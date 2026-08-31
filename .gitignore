@@ -154,9 +154,12 @@ $RECYCLE.BIN/
 **/*.rs.bk
 *.pdb
 
-# ⛔ Cargo.lock IS committed for a binary, because it is what makes a build
-# reproducible. It is conventionally NOT committed for a library. Decide once,
-# say which this is, and hold to it.
+# ⛔ Cargo.lock IS COMMITTED HERE. Ruled 2026-08-31 with TOOL-01. The
+# convention is to commit it for a binary and not for a library, and this
+# workspace is both: b-ids and b-ids-schema are libraries, and the harness, the
+# driver and the CLI are programs an operator runs to take a measurement.
+# ⭐ A measurement taken with an unrecorded dependency set cannot be retaken,
+# which settles it for a project whose product is measurements.
 
 # Criterion benchmark output. The RUNNERS are tracked source; the CAPTURES are
 # not. A run that IS the evidence for an item goes in deliberately:

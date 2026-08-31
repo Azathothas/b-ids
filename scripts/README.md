@@ -158,11 +158,19 @@ bootstrap, and as a gate afterwards.
 ### `common/check-docs.sh`
 
 Do the documents still resolve, and are they written the way this repository
-writes documents. Four things, and no more: every relative link resolves, every
-fenced shell block parses, no block carries an angle-bracket placeholder that a
-shell reads as a redirect, and no page is linked from nowhere. Plus the
-**banned vocabulary**, over the fourteen of its eighteen words that are always
-a quality assertion.
+writes documents. Every relative link resolves, ⭐ **every cited path in a code
+span resolves**, every fenced shell block parses, no block carries an
+angle-bracket placeholder that a shell reads as a redirect, and no page is
+linked from nowhere. Plus the **banned vocabulary**, over the fourteen of its
+eighteen words that are always a quality assertion.
+
+⛔ **The cited-path half is scoped to the top-level directories this repository
+owns**, and the scope was measured rather than guessed: without it the check
+reported 30 spans and every one was legitimate, because the sweep documents cite
+paths inside the reference trees as shorthand. ⚠ A path this tree deliberately
+does not have is written as plain text rather than in a code span, and
+[`../docs/conventions/prose.md`](../docs/conventions/prose.md) carries that
+rule.
 
 ⛔ **No file is exempt from the link check**, and the exemption that used to be
 here was removed rather than emptied: it covered a template directory this
@@ -261,6 +269,33 @@ prints "Binary files differ" so a code review shows no diff at all.
 
 ⚠ The runtime value is identical either way, so only reviewability is ever at
 stake. That is exactly why it survives unnoticed.
+
+### `common/check-msrv.sh`
+
+Is the declared minimum supported Rust version derived from the dependency
+graph, or is it a number somebody typed?
+
+⭐ **Two legs, and they answer different questions.** The default leg reads
+`cargo metadata` and takes the highest `rust-version` any package OUTSIDE this
+workspace declares; a declared value under that floor is refused. `--verify`
+compiles the workspace with the declared toolchain, which is the only leg that
+can say the declared value is reachable at all.
+
+⛔ **Workspace members are excluded from the floor, and that exclusion is why
+the check can fail.** Every member inherits the field from the workspace, so a
+floor taken over all packages would read back the value it is checking and
+agree with itself forever.
+
+⚠ **`--write` is the fix flag and it refuses when the graph imposes no floor**,
+which is this tree's state today. A version invented there would be the
+fabricated number the check exists to find. It patches through
+[`common/write-file.mjs`](common/) rather than with its own writer, so a
+substitution that matched the wrong number of times leaves the file untouched.
+
+⚠ **Exit 2 means cargo or jq is absent, and the gate reports that as a SKIP
+rather than a pass.** A host with no cargo has verified nothing about the
+manifest. ⛔ That is a different fact from `check-changelog`'s 2, which is a
+pass because a project with no changelog has satisfied its rules vacuously.
 
 ### `common/check-gate.sh`
 

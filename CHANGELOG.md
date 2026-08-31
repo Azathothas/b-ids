@@ -8,7 +8,85 @@ repository changes, not published artefacts, and every one says so.
 
 ---
 
-## 2026-08-31T00:30:00Z - the repository is initialised
+## Unreleased
+
+⛔ **Nothing here has been released.** The section exists because an entry is a
+`### ` heading under a `## ` section, and a file with no section has no
+entries a check can read. TOOL-14.
+
+### 2026-08-31T22:40:00Z - the schema, the validator and the capture oracle
+
+**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and `SCHEMA-01` through
+`SCHEMA-05`, `SCHEMA-07`, `SCHEMA-09`, `VALID-01`, `HARNESS-01`, `TOOL-03`,
+`TOOL-05`, `TOOL-10`, `TOOL-14`.
+**Deployed:** no. Nothing is published from this repository yet, and no capture
+has been taken.
+
+What landed:
+
+- ⭐ **The profile schema, written first and published**, with the Rust types
+  checked against it by a validator that refuses a schema keyword it does not
+  implement.
+- ⭐ **Eight coherence checks and a command**, with three outcomes rather than
+  two: a check that cannot run reports that rather than passing.
+- ⭐ **A capture oracle** that reads a `ClientHello` off a real loopback socket,
+  parses permissively, keeps the bytes whatever happens, and compares a run
+  against a committed golden.
+- **The gate went from 15 checks to 19 and from 13 twin pairs to 15.**
+
+⛔ **`check-changelog` had been asserting four rules over zero entries since the
+first commit**, because it reads an entry as a `### ` heading and this file
+wrote them at `## `. It is fixed, this file is reshaped, and zero entries is now
+a failure rather than a pass.
+
+⛔ **The credential rule had a third door.** Capture-time filtering was gated in
+two places and tested in both; deserialisation was neither, so a profile read
+from a file could carry a cookie header. Found by the door sweep and closed.
+
+⚠ **Two guards were too wide as their entries specified them**, and running them
+is what said so: one reported 30 findings that were all legitimate. Neither hex
+rule was widened, which was the tempting fix in both cases.
+
+---
+
+### 2026-08-31T14:10:15Z - the workspace exists, and the gate runs a suite
+
+**Record:** [`TODO/tooling.md`](TODO/tooling.md), `TOOL-01` and `TOOL-02`.
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- **A Rust workspace of eight crates**, one per name the entries already use,
+  with the toolchain pinned to an exact version rather than a channel. All
+  libraries: an entry whose acceptance says `cargo run` adds its binary target
+  with the behaviour.
+- ⭐ **`scripts/common/check-msrv`, in both halves.** The declared minimum
+  supported version is now held by a check that derives the floor from the
+  resolved dependency graph and can compile the workspace with the declared
+  toolchain, rather than by a number in a manifest.
+- **The suite in both halves of the gate**, as three separately scored entries
+  rather than one, and the placeholder comment that stood in for it removed. The
+  gate went from 15 checks to 19.
+
+⚠ **The suite is eight empty crates and zero tests, so it passes vacuously
+today**, and both halves of the runner say so in a comment. The three entries
+were each mutation-proved by planting the defect they exist to catch.
+
+⛔ **A defect in the new check was found by running it**, and it is the shape
+this project cares most about: the `--verify` guard probed `cargo` where the
+compile needs `rustc`, so a toolchain installed incompletely was reported as
+"the workspace does not compile" rather than "could not run". A broken host was
+accusing the tree. Both halves probe both binaries now.
+
+⭐ **And the first attempt to mutation-prove the graph comparison did not
+fire**, because Cargo promotes a path dependency of a member into a workspace
+member, which is exactly the set the check excludes. The fixture had to be
+declared `exclude`d before it was a dependency at all. A guard recorded as
+working on the strength of that first run would have been theatre.
+
+---
+
+### 2026-08-31T00:30:00Z - the repository is initialised
 
 **Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and
 [`TODO/INDEX.md`](TODO/INDEX.md) for the 77 entries this created.

@@ -1,0 +1,35 @@
+# The workspace. TODO/tooling.md, TOOL-01.
+#
+# ⛔ THE TOOLCHAIN IS PINNED IN rust-toolchain.toml TO AN EXACT VERSION, never a
+# floating channel, so every host builds this tree with one compiler.
+#
+# ⛔ rust-version BELOW IS DERIVED, NOT CHOSEN. scripts/common/check-msrv.sh
+# reads the floor the resolved dependency graph imposes and refuses a declared
+# value under it; its --verify leg compiles the workspace with the declared
+# toolchain. A number nobody derived is a claim rather than a constraint.
+
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.88.0"
+license = "0BSD"
+repository = "https://github.com/Azathothas/b-ids"
+
+# ⛔ deny rather than forbid. docs/conventions/code.md allows an escape hatch
+# with a comment saying why, and forbid removes the possibility of writing one.
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+# ⛔ ONE VERSION PER LIBRARY, DECLARED HERE, so two crates cannot pin one
+# library twice and drift. A member depends on `serde.workspace = true`.
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -264,7 +264,10 @@ check sees:
    upper-case name or a quoted variable.
 3. **No literal control bytes.** Documentation about escape sequences has a
    proven habit of containing the character it is warning about.
-4. **Every relative link resolves**, and every cited path exists.
+4. **Every relative link resolves**, and every cited path exists. ⚠ A path in
+   a code span asserts that it resolves, so a path this tree deliberately does
+   NOT have is written as plain text instead. That is what lets the check hold
+   the second half of this rule without refusing legitimate writing.
 5. **None of the banned vocabulary.**
 6. **No page under the docs directory that nothing links to.**
 

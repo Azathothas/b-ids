@@ -45,6 +45,7 @@ judging the tree.
 | [`../scripts/common/check-changelog`](../scripts/common/) | the four changelog rules a machine can hold |
 | ⭐ [`../scripts/common/check-record`](../scripts/common/) | do the record's counts still agree with its rows |
 | [`../scripts/common/check-no-secrets`](../scripts/common/) | does anything in the tree carry something that must not be published |
+| ⭐ [`../scripts/common/check-msrv`](../scripts/common/) | is the declared minimum Rust version derived from the dependency graph, or typed by somebody |
 | [`../scripts/common/check-remote-items`](../scripts/common/) | do the open items against this repository say anything that survives being checked |
 | [`../scripts/common/check-powershell`](../scripts/common/) | does every tracked PowerShell file parse, and is the analyzer clean |
 | [`../scripts/common/check-twins`](../scripts/common/) | do both halves of every pair still answer the same way |

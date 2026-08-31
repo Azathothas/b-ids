@@ -11,7 +11,7 @@ entries define, so they are first.
 ## SCHEMA-01. The profile: one browser, one build, one platform, one channel, one instant
 
 **Source** the founding brief; the four provenance kinds are [`../docs/glossary.md`](../docs/glossary.md)
-**Category** schema, **Priority** P0, **Effort** M, **Status** open
+**Category** schema, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
 
@@ -77,12 +77,78 @@ Passing means: a hand-written profile validates against the published schema, a
 profile missing `captured.at` is rejected with a message naming that field, and
 a profile whose `id` disagrees with its four keys is rejected.
 
+### Closing
+
+**Closed 2026-08-31.** The published schema is the artefact and the Rust types
+are checked against it, in that order.
+
+```text
+$ cargo test -p b-ids-schema -- --nocapture
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+⚠ Five result lines because the acceptance runs five test binaries, one per
+entry in this file. 45 tests. The two `0 passed` lines the raw output also
+carries are the library and its doc-tests, which have none yet.
+
+### What landed
+
+- [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json),
+  written first, and the Rust types checked against it.
+- The three measured halves in their own modules, with `digests` and `raw` as
+  siblings. ⭐ A test asserts that shape rather than trusting the sentence:
+  `digests_and_raw_are_siblings_of_the_measured_halves` walks each half and
+  fails if any of them carries a derived key.
+- The identifier derived from the four keys, with a test that moves **each of
+  the four** and asserts the identifier moves with it. ⚠ A test that moved one
+  would pass over an identifier that ignored the other three.
+
+### ⭐ The schema checker refuses a keyword it does not implement
+
+⛔ **This is the part worth reading.** The published schema is validated by a
+subset checker written here rather than by a library. A subset checker is a
+guard that silently ignores what it does not implement, so a keyword added to
+the schema and implemented by nobody would be a constraint the schema states
+and nothing enforces.
+
+So `KNOWN_KEYWORDS` is declared and `check_schema_is_supported` walks the whole
+schema and fails on anything outside it. ⚠ The alternative was a full JSON
+Schema dependency; the trade is recorded rather than assumed, and the checker
+says in its own header that it is a subset and must not be reached for as an
+implementation.
+
+### The platform token is not the platform
+
+⚠ **`platform` is `{os, arch, distribution}` and the identifier carries
+`linux64`.** They are different spellings on purpose: the identifier uses the
+token a download index uses, so a published path and a downloaded build spell
+the platform the same way. An architecture the mapping does not know is joined
+with a dash rather than refused, because refusing there would design a ceiling
+into every published path.
+
+### Mutation-proved
+
+```text
+=== SCHEMA-01: captured.at is never optional ===
+test a_profile_with_no_capture_instant_is_rejected_naming_the_field ... FAILED
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+```
+
+The guard was replaced with `if false` and the test refused. ⭐ The schema
+checker was proved the same way, by a test that plants an undeclared property
+and asserts the checker reports it.
+
 ---
 
 ## SCHEMA-02. The TLS half, in wire order, with unknown codepoints kept
 
 **Source** the founding brief; the extension model is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 1
-**Category** schema, **Priority** P0, **Effort** M, **Status** open
+**Category** schema, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
 
@@ -135,12 +201,71 @@ Passing means: a fixture containing an extension the parser has no name for
 round-trips to identical bytes, and a fixture whose GREASE extension carries one
 zero byte parses rather than erroring.
 
+### Closing
+
+**Closed 2026-08-31.** An ordered list of codepoint-and-body pairs, taken from
+`utls`'s `ClientHelloSpec` rather than from either alternative.
+
+```text
+$ cargo test -p b-ids-schema tls_extensions -- --nocapture
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### What the model refuses to lose
+
+- **A codepoint with no name**, kept with its bytes and round-tripped to an
+  identical string. The fixture carries `0xca34`, which is one of the two that
+  stopped a version bump in the origin repository.
+- **A GREASE extension carrying one zero byte.** ⛔ No GREASE codepoint is a
+  typed field, because a typed field for one makes its body unparseable.
+- **A declared length that disagrees with the recorded body**, reported rather
+  than repaired. ⚠ Padding or truncating to make the two agree is the forbidden
+  pattern; the disagreement is itself the measurement.
+- **Key-share entry lengths** beside the group identifiers, because two builds
+  sending one group with different key sizes are two different handshakes.
+
+### ⭐ Two tests that would otherwise have been vacuous
+
+⛔ **A round-trip test over a fixture with nothing unusual in it proves
+nothing.** So the test asserts first that the fixture contains `0xca34` at all,
+and the wire-order test asserts that the fixture's order differs from its sorted
+form. Without the second assertion, a model that sorted its extensions would
+pass a test named for keeping their order.
+
+⚠ **And the GREASE predicate is counted rather than spot-checked.** RFC 8701
+defines sixteen values; the test enumerates the whole `u16` space, asserts
+exactly sixteen match, and checks the near misses `0x0b0b` and `0x0a0b`, which a
+predicate written as "high equals low" would wrongly accept.
+
+### Mutation-proved
+
+```text
+=== SCHEMA-02: the fixture must carry a codepoint with no name ===
+test tls_extensions_unknown_codepoint_round_trips_to_identical_bytes ... FAILED
+test tls_extensions_validate_against_the_published_schema ... FAILED
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+⭐ **Two tests refused, and the second is the interesting one.** Removing the
+unnamed codepoint from the fixture also broke the schema test, which asserts the
+extension array has at least three entries. A fixture quietly shrinking is a way
+for a suite to keep passing over less than it was written for.
+
+### ⚠ What is designed rather than measured
+
+**Every field here is a shape, and this project has captured nothing.** The
+fixture's values are shaped like a real capture and are not one; the support
+module says so in as many words, and no field of it may be copied into the
+corpus. [`../docs/inherited-claims.md`](../docs/inherited-claims.md) is where a
+value that came from somewhere else lives.
+
 ---
 
 ## SCHEMA-03. The HTTP/2 half, as an ordered frame sequence
 
 **Source** the founding brief; the units are [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 2
-**Category** schema, **Priority** P0, **Effort** S, **Status** open
+**Category** schema, **Priority** P0, **Effort** S, **Status** done
 
 ### Problem
 
@@ -189,12 +314,67 @@ cargo test -p b-ids-schema http2_frames -- --nocapture
 Passing means: a profile that omits one settings key and a profile that carries
 it at the protocol default serialise differently and compare unequal.
 
+### Closing
+
+**Closed 2026-08-31.** An ordered frame list, so order and absence are both
+expressible.
+
+```text
+$ cargo test -p b-ids-schema http2_frames -- --nocapture
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+The acceptance is `http2_frames_omitting_a_setting_differs_from_sending_it_at_the_default`,
+which builds both profiles, asserts they compare unequal and asserts their
+serialisations differ.
+
+### The three units, named for the wire
+
+⛔ **The connection quantity is `window_size_increment`**, and a test asserts
+that no field is named for the window: a name carrying the other unit is how one
+shipped database ended up holding both meanings in one field, with seven of its
+entries 65,535 short.
+
+⛔ **The stream weight is `weight_wire`**, the value as encoded, which HTTP/2
+defines as the weight minus one. `weight_spec()` derives the other unit on
+request, and a test asserts it is **not** stored: storing both is how a field
+ends up holding whichever unit its last writer believed in.
+
+### ⭐ The rendered string is derived, and the test states what it loses
+
+`akamai_text()` is computed from the model rather than stored. ⚠ The test
+asserts the rendering AND the loss: an absent priority block and a block of
+zeroes both render as `0`, while the model still compares them unequal. That is
+why the field is the parsed five bytes, and it is why two of the three sources
+reporting a zero for this field were reading a tool that could not write the
+block rather than a browser.
+
+### Mutation-proved
+
+```text
+=== SCHEMA-03: an absent setting is never a default value ===
+test http2_frames_omitting_a_setting_differs_from_sending_it_at_the_default ... FAILED
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+`sends_setting` was replaced with one that answers for the frame rather than the
+entry, which is the shape a settings map filled in with defaults would have. The
+test refused.
+
+### ⚠ Still open, and named here so it is not lost
+
+**`SCHEMA-09` is partly satisfied and stays open.** The two quantities this half
+carries are named for the wire; the third, and a sweep of every other field for
+the same trap, is that entry's. **`HARNESS-05`** is what turns the priority
+block from `vendor` provenance into a measurement.
+
 ---
 
 ## SCHEMA-04. The HTTP half, its variants, and the one privacy rule
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** schema, **Priority** P0, **Effort** S, **Status** open
+**Category** schema, **Priority** P0, **Effort** S, **Status** done
 
 ### Problem
 
@@ -250,12 +430,71 @@ and a capture taken with the switch on contains no `cookie` and no
 `authorization`. Both are asserted, and the first is asserted over a fixture
 that does contain values, so the test can fail.
 
+### Closing
+
+**Closed 2026-08-31.** The privacy rule is the default shape rather than a flag
+a caller has to remember.
+
+```text
+$ cargo test -p b-ids-schema header_privacy -- --nocapture
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### ⭐ One construction path, and the fixture that makes the test able to fail
+
+⛔ **`HeaderSet::record` is the only way to build a header set from wire
+input**, and the filter lives inside it. A second path that skipped the filter
+would be the "control gated on one of several paths" defect in the one place
+this project cannot afford it.
+
+⛔ **The input fixture carries values and a credential**, and a test asserts
+that separately, before anything else. A privacy test over an empty input passes
+forever and proves nothing, so the assertion that the input has something to
+drop is its own test.
+
+⚠ **`ValuePolicy::NamesOnly` is the `Default`**, and a test asserts that rather
+than the documentation of it. A switch that has to be turned off for safety is a
+switch that ships on.
+
+⚠ **The credential filter is case-insensitive**, because HTTP/2 lower-cases
+header names and a read from an HTTP/1.1 connection does not. A rule that
+catches one spelling catches nothing on the other wire.
+
+### ⚠ A design note, recorded rather than acted on
+
+**Dropping `cookie` and `authorization` entirely also drops the fact that the
+header was present**, and presence is a fingerprint signal in its own right. The
+acceptance in this entry says the capture contains neither, so that is what
+landed. ⛔ Recording presence without the value would be a different shape and a
+different ruling, and changing an approved acceptance while implementing it is
+not this session's to make. It is written here so a later entry can take it up.
+
+### Mutation-proved
+
+```text
+=== SCHEMA-04: the default records no value ===
+test header_privacy_the_default_records_no_value_at_all ... FAILED
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+The policy match was replaced with one that always keeps the value. One test
+refused, and the six around it did not, which is what tells you the failure is
+the policy rather than the harness.
+
+### ⚠ The variant model is still designed, not derived
+
+This project has **no** measured example of two request kinds differing, and the
+claim that sent this entry to be written was refuted against the capture it came
+from. The first capture of two kinds at one version is what turns `variants`
+into evidence.
+
 ---
 
 ## SCHEMA-05. Provenance is per field, with four kinds and no more
 
 **Source** the founding brief; the four provenance kinds are [`../docs/glossary.md`](../docs/glossary.md)
-**Category** schema, **Priority** P0, **Effort** S, **Status** open
+**Category** schema, **Priority** P0, **Effort** S, **Status** done
 
 ### Problem
 
@@ -306,6 +545,59 @@ cargo test -p b-ids-schema provenance -- --nocapture
 Passing means: a profile with an unreasoned `substituted` field is rejected with
 a message naming that field, and a profile with a `vendor` field validates as a
 draft and fails the published-profile check.
+
+### Closing
+
+**Closed 2026-08-31**, with one part of the acceptance landing in a different
+place from where it was written, and that is said plainly below.
+
+```text
+$ cargo test -p b-ids-schema provenance -- --nocapture
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### The vocabulary is closed in the type
+
+⛔ **Four kinds, and a fifth is refused by the parser rather than carried as a
+string.** `ProvenanceEntry::parse` returns a defect naming the field and listing
+the four, and a fifth kind written into a profile's JSON fails to deserialise at
+all. Two tests, because those are two different doors into the same rule.
+
+⚠ **A reason is required by `substituted` and `unreproducible`, and tested on
+both.** A test over one of the two would pass over a rule applied to half its
+subject.
+
+### ⚠ Where the acceptance's second half actually lives
+
+The acceptance says a `vendor` field "validates as a draft and fails the
+published-profile check". **The draft half is here and the refusal is not.**
+
+⛔ **A draft is not malformed**, and conflating the two would have been the
+wrong model: `Profile::check` answers whether these bytes describe a profile at
+all, and whether a profile may be PUBLISHED is a different question with a
+different consumer. So this crate exposes `is_draft()` and
+`Provenance::vendor_fields()`, which returns the field list a publisher has to
+print, and `VALID-01` check 8 is what refuses. ⚠ That entry is open, so the
+refusal does not exist yet; it is named here rather than left to be discovered.
+
+### Mutation-proved
+
+```text
+=== SCHEMA-05: substituted and unreproducible need a reason ===
+test provenance_an_unreasoned_unreproducible_field_is_rejected_too ... FAILED
+test provenance_an_unreasoned_substituted_field_is_rejected_naming_the_field ... FAILED
+```
+
+`requires_reason` was replaced with one that answers `false`, and both tests
+refused.
+
+### The map is ordered, and that is not cosmetic
+
+⚠ **A `BTreeMap`, so two serialisations of one profile are byte-identical.** An
+unordered map turns a no-op re-emit into a diff, and a diff nobody can explain
+is a diff nobody reviews. The round-trip test serialises twice and compares the
+two strings, because a single pass would not have shown it.
 
 ---
 
@@ -366,7 +658,7 @@ path, and the result compares equal to the parsed profile field by field.
 ## SCHEMA-07. What must never be in the model
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** schema, **Priority** P1, **Effort** S, **Status** open
+**Category** schema, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -401,6 +693,54 @@ cargo test -p b-ids-schema refused_fields -- --nocapture
 Passing means: a profile whose identifier is derived from a digest is rejected,
 and a profile carrying a session ticket in its TLS half is rejected, both with
 messages naming the field.
+
+### Closing
+
+**Closed 2026-08-31.** Both classes are refused by `Profile::refused_fields`,
+which `Profile::check` calls, so no consumer has to remember to run it.
+
+```text
+$ cargo test -p b-ids-schema refused_fields -- --nocapture
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### ⭐ The distinction the entry rests on, made precise
+
+The entry says a session ticket in the TLS half is refused. **What is refused is
+the ticket's CONTENTS, not the codepoint's presence**, and the difference is
+load-bearing in both directions:
+
+| what | why |
+| --- | --- |
+| `session_ticket` present with an EMPTY body | ⭐ identity. A browser sends it that way on a cold connection, and the extension being in the list at all is part of the fingerprint. Kept. |
+| `session_ticket` carrying bytes | ⛔ connection state. The browser learned it from a previous connection, and a profile carrying it changes for reasons nothing in the corpus can explain. Refused. |
+
+⚠ **Both codepoints, not one.** A resumed handshake offers `pre_shared_key`
+(`0x0029`) where a fresh one offers `session_ticket` (`0x0023`), so a rule
+holding one would pass over exactly the connection this project must not average
+in. Two tests, one per codepoint.
+
+⛔ **And the raw hello is never edited.** The entry says so directly: the bytes
+stay in `raw.client_hello_hex` and what is refused is promoting them into a
+parsed field. A test asserts that a raw capture containing ticket bytes is not
+itself a defect, because a capture is a moment that cannot be retaken.
+
+### The digest rule, and the pass beside the refusal
+
+⛔ A profile whose `id` equals any of its five digests is refused, naming which
+digest. ⭐ **And a test asserts that STORING a digest beside the identity is
+fine**, because without it the refusal test proves only that something was
+refused rather than that the boundary is in the right place. That is what
+`digests` is for; keying on one is what is forbidden.
+
+### ⚠ What this does not reach
+
+**"Settings a server echoed" is named in the approach and is not refused here**,
+because nothing in the model can carry one: the HTTP/2 half records what the
+CLIENT sent. It becomes reachable when `HARNESS-03` terminates a handshake and a
+server's own SETTINGS frame is on the connection, and the rule is written down
+here so that entry does not have to rediscover it.
 
 ---
 
@@ -457,7 +797,7 @@ the generator produce byte-identical output.
 ## SCHEMA-09. Name every field for the wire, because three quantities have two units
 
 **Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 2
-**Category** schema, **Priority** P1, **Effort** S, **Status** open
+**Category** schema, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -502,6 +842,66 @@ cargo test -p b-ids-schema units -- --nocapture
 Passing means: a profile whose named increment and named window do not differ by
 exactly 65,535 is rejected, and a profile whose weight field is 256 is rejected
 with a message naming the encoding.
+
+### Closing
+
+**Closed 2026-08-31.** Both quantities carry the wire number, the human number
+is a separately named second field, and a check asserts the arithmetic between
+them.
+
+```text
+$ cargo test -p b-ids-schema units -- --nocapture
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### ⛔ The check computes; it does not quote
+
+The approach says "have a check assert the arithmetic between them rather than a
+comment asserting it", and the reason is in the premise: in the reference
+database the comment was CORRECT and seven entries beside it were still wrong.
+So `Http2Half::check_units` subtracts, and a test walks four offsets around the
+boundary rather than checking one wrong value.
+
+### ⭐ The weight message names both units
+
+A plain `u8` already makes 256 unrepresentable, ⚠ **and that is not enough**:
+the error it produces reads "expected u8", which sends a reader looking for a
+bounds bug rather than telling them they wrote the specification's unit into the
+wire's field. So the field is read as a `u16` and refused above 255, and the
+message says so:
+
+```text
+http2.stream_priority.weight_wire is 256, and the wire encoding is weight minus one,
+so it holds 0 to 255. 256 is the specification's unit and 255 is the wire's
+```
+
+⚠ A test asserts 255 is ACCEPTED beside the one asserting 256 is refused, or the
+pair proves only that something was refused.
+
+### ⚠ A test in SCHEMA-03 forbade what this entry requires
+
+`http2_frames_window_update_is_named_for_the_wire` asserted that no field is
+named `connection_window` at all. That was right when it was written and became
+wrong here, and the two entries are not actually in conflict once the rule is
+stated exactly:
+
+⛔ **No field is named for the window INSTEAD OF the increment.** A second field
+named for the window BESIDE the increment, with a check asserting the difference,
+is what this entry asks for. The assertion now forbids a bare `window_size`,
+which is the name that could hold either, and asserts the arithmetic check
+passes.
+
+⭐ **The finding is that the earlier test was a proxy for the rule rather than
+the rule.** It caught the right defect by forbidding a string, and a string ban
+cannot tell "instead of" from "beside".
+
+### The third quantity is a different shape, and it is already held
+
+"The settings a stack does not override" is the same class and is not a naming
+problem: an absent setting produces the stack's own default on the wire. The
+model distinguishes absent from defaulted, which is `SCHEMA-03`, and a test here
+asserts the two entries agree about it rather than leaving that to a reading.
 
 ---
 

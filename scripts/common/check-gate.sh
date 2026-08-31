@@ -50,6 +50,21 @@
 #   --fast                 106s
 #   check-twins alone      294s
 #
+# ⚠ RE-MEASURED THE SAME DAY, AFTER THE GATE GREW. The workspace landed and this
+# runner gained four checks: check-msrv and the three suite entries. check-twins
+# gained two pairs, so it compares 15. Same machine, same shells:
+#
+#   --fast                 171s
+#   full run               ⛔ NOT RE-TAKEN. The run went green, all 19 checks,
+#                          and the timing line was lost when the shell holding
+#                          it was killed. A figure nobody measured does not go
+#                          here, so this row stays a dash until somebody times
+#                          it.
+#
+# ⚠ The two --fast figures are 106s and 171s on one machine with the same tree
+# plus a Rust workspace, and the difference is four checks of which three
+# compile. They are separate runs on a machine doing other things.
+#
 # ⭐ So --fast removes about 300 of the 403 seconds. ⚠ Every figure is one run on
 # a machine doing other things, and the three do not add up because they are
 # separate runs. Each carries its conditions, which is what makes a later one
@@ -170,6 +185,30 @@ check_simple 'check-control-bytes'   sh "$HERE/check-control-bytes.sh"
 check_simple 'check-record'          sh "$HERE/check-record.sh"
 check_simple 'check-no-secrets'      sh "$HERE/check-no-secrets.sh" --public
 
+# Run one check whose 2 means "could not run", and report that as a SKIP.
+# ⛔ NOT AS A PASS. check-changelog's 2 is a pass because a project with no
+# changelog has satisfied the rule vacuously; a host with no cargo has verified
+# NOTHING about the manifest, and those are different facts.
+check_skippable() {
+  cs_name=$1
+  cs_why=$2
+  shift 2
+  cs_out=$("$@" 2>&1)
+  cs_rc=$?
+  case "$cs_rc" in
+    0) record_pass "$cs_name" ;;
+    2) record_skip "$cs_name" "$cs_why" ;;
+    *)
+      record_fail "$cs_name" "$cs_rc"
+      [ "$JSON" = 1 ] || printf '%s\n' "$cs_out" | sed 's/^/  | /'
+      ;;
+  esac
+}
+
+# -- the workspace, and the version floor it declares ------------------------
+check_skippable 'check-msrv' 'cargo or jq is not on this host' \
+  sh "$HERE/check-msrv.sh"
+
 # ⚠ 2 is "could not run", which is the honest answer in a project with no
 # CHANGELOG.md, and it is a pass here rather than a failure. ⛔ Collapsing 2 into
 # 0 with `|| true` would hide a genuine exit 1 as well.
@@ -287,13 +326,33 @@ if [ -n "$PWSH" ]; then
     *'analyzer=issues'*)  record_fail 'PSScriptAnalyzer' 1 ;;
     *) record_skip 'PSScriptAnalyzer' 'check-powershell printed no analyzer status line' ;;
   esac
-  # ⚠ NO SUITE RUNS HERE YET, and that is a real gap rather than a design.
-  # Part (a) of docs/methodology/gate.md is the suite as well as the checks, and
-  # this tree has no code to test. The line that runs it goes here, beside the
-  # other checks, on the day the first crate lands.
 else
   record_skip 'powershell parse' 'no pwsh, pwsh.exe or powershell.exe on PATH'
   record_skip 'PSScriptAnalyzer' 'no pwsh, pwsh.exe or powershell.exe on PATH'
+fi
+
+# -- part (a) is the SUITE as well as the checks -----------------------------
+#
+# ⛔ THREE ENTRIES, NOT ONE, and the reason is the one this file already makes
+# about the parse and the analyzer: they can have different answers, and one
+# verdict over three answers is how a skipped one reads as a passed one.
+# docs/methodology/gate.md part (a) is "typecheck, lint, format, the full test
+# suite", so the format and the lint are gates here rather than advice.
+#
+# ⚠ A SUITE OF ZERO TESTS PASSES VACUOUSLY, and today that is what this is: the
+# workspace TOOL-01 created is eight empty crates. The line is here anyway,
+# because the defect it removes is a gate that grows a suite line months after
+# the first crate lands. TOOL-02 mutation-proved it by planting a failing test.
+if command -v cargo >/dev/null 2>&1; then
+  check_simple 'cargo fmt'    cargo fmt --all --check
+  check_simple 'cargo clippy' cargo clippy --workspace --all-targets --all-features -- -D warnings
+  # ⚠ No --all-targets here on purpose: it would drop the doc-tests, and a
+  # doc-test is the one test that proves the documentation compiles.
+  check_simple 'cargo test'   cargo test --workspace --all-features
+else
+  record_skip 'cargo fmt'    'cargo is not on this host'
+  record_skip 'cargo clippy' 'cargo is not on this host'
+  record_skip 'cargo test'   'cargo is not on this host'
 fi
 
 # -- the probe is not a gate, but it exiting non-zero is a real failure ------

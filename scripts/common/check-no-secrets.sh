@@ -179,6 +179,37 @@ if [ "$PUBLIC" = "1" ]; then
   # below are a markdown code span being MATCHED, not a substitution to run.
   # Double quotes here would hand the shell a command to execute.
   _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '`[0-9a-f]{40}`' || true)
+
+  # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT EXISTS TO PRODUCE ---
+  #
+  # A raw ClientHello recorded as hex is hundreds of hex characters, and
+  # SCHEMA-06 requires one on every capture. The comment above predicted this
+  # would fail the gate on the day the first one landed, and it did: TOOL-01
+  # created crates/b-ids-harness/fixtures/client-hello.hex and this rule
+  # refused it.
+  #
+  # ⛔ THE HEX RULE ITSELF IS NOT WIDENED. That was the tempting fix and it
+  # removes the rule. Three narrow exclusions instead, each by NAME or by FILE
+  # TYPE, exactly like the three above:
+  #
+  #   1. a hex run assigned to an identifier ending in `_hex`. That is this
+  #      project's own naming rule for a field that holds wire bytes:
+  #      raw_hex, body_hex, session_id_hex, client_hello_hex, payload_hex.
+  #      ⚠ A credential is not assigned to something called body_hex, and a
+  #      credential assigned to a field with any OTHER name is still refused,
+  #      including one sitting in the same file.
+  #   2. a `.hex` file, which this project defines as one raw capture on one
+  #      line and nothing else.
+  #   3. `checksum = "..."` in a lock file, which is a declared digest of a
+  #      published artefact and is the same shape as the pin above.
+  #
+  # ⛔ Mutation-proved: a credential-shaped value planted inside a raw capture
+  # file under a different field name is still refused. TOOL-03 carries the run.
+  _hex_out=$(printf '%s\n' "$_hex_out" \
+    | grep -vE '[A-Za-z0-9_]*_hex"?[[:space:]]*[:=]' \
+    | grep -vE '^[^:]*\.hex:' \
+    | grep -vE '^[^:]*(Cargo\.lock|\.lock):[0-9]+:[[:space:]]*checksum[[:space:]]*=' || true)
+
   [ -n "$_hex_out" ] && hit "a long hex identifier" "$_hex_out"
   # ⚠ Narrowed rather than switched off. `/home/linuxbrew/` and `/home/runner/`
   # are well-known generic paths, not a fingerprint of anybody's machine, and a

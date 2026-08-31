@@ -33,9 +33,15 @@ project says so.** A server deciding whether a caller is a real browser needs
 the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
-⛔ **Nothing has been built yet.** There is no harness, no schema, no corpus and
-no code. This tree carries the methodology, the tooling, the reading, and the
-work list. [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next.
+⛔ **Nothing has been captured yet, and the corpus is empty.** What exists is
+the schema, a validator, a capture oracle that reads a `ClientHello` off a real
+socket, the methodology, the tooling and the reading.
+[`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next.
+
+⚠ **So every value in this tree is a fixture or an inherited claim, and neither
+is a measurement.** A fixture is shaped like a capture and says so in its own
+header; an inherited value lives in [`inherited-claims.md`](inherited-claims.md)
+with its source. ⛔ Nothing from either may be published as data.
 
 ⚠ **One thing about this project is unlike an ordinary one, and it decides
 everything else.** The product is *measurements*, so a value that cannot be

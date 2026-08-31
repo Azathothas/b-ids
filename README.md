@@ -3,9 +3,15 @@
 A dated, provenance-carrying corpus of what real browsers put on a wire: TLS
 `ClientHello` bytes, HTTP/2 settings and framing, and header sets in order.
 
-⛔ **Nothing has been captured yet.** This repository holds the methodology, the
-tooling, a reading of the prior art, and the work list. There is no harness, no
-schema and no corpus.
+⛔ **Nothing has been captured yet, and the corpus is empty.** What is here is
+the profile schema, a validator that refuses a combination no browser could
+send, a capture oracle that reads a `ClientHello` off a real socket, the
+methodology, the tooling and a reading of the prior art.
+
+⚠ **Every value in the tree today is a fixture or an inherited claim.** A
+fixture is shaped like a capture and is not one; an inherited value was measured
+somewhere else and is recorded with its source. Neither is data this project
+publishes.
 
 ---
 

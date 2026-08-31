@@ -30,7 +30,7 @@ in as many words that no single reference exists yet.
 
 ### Approach
 
-When `SCHEMA-01` lands, write `docs/architecture.md`: the schema, the pipeline
+When `SCHEMA-01` lands, write docs/architecture.md: the schema, the pipeline
 between the five components, the state a capture passes through, and the limits.
 Then rewrite the conflict rule to name it, and move the interim wording to
 [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) rather than deleting
@@ -48,7 +48,7 @@ to the history directory.
 sh scripts/common/check-docs.sh
 ```
 
-Passing means: `docs/architecture.md` exists, every claim in it names a file in
+Passing means: docs/architecture.md exists, every claim in it names a file in
 the tree, the conflict rule names it, and the interim wording is in the history
 directory with its date.
 

@@ -1,0 +1,156 @@
+{
+  "schema": "harness-capture/1",
+  "connection": 1,
+  "peer": "REDACTED",
+  "protocol": "tls_raw",
+  "bytes_read": 317,
+  "raw_hex": "1603010138010001340303000000000000000000000000000000000000000000000000000000000000000020111111111111111111111111111111111111111111111111111111111111111100200a0a130113021303c02bc02fc02cc030cca9cca8c013c014009c009d002f0035010000cb0a0a00000000000d000b000008617364662e636f6d00170000002b0007060a0a03040303000a000c000a0a0a11ec001d00170018000d00120010040308040401050308050501080606010010000e000c02683208687474702f312e310033002b00290a0a000100001d00202222222222222222222222222222222222222222222222222222222222222222ca340004deadbeeffe0d000300002000150028000000000000000000000000000000000000000000000000000000000000000000000000000000005a5a000100",
+  "tls": {
+    "record_version": 769,
+    "legacy_version": 771,
+    "session_id_len": 32,
+    "session_id_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+    "cipher_suites": [
+      2570,
+      4865,
+      4866,
+      4867,
+      49195,
+      49199,
+      49196,
+      49200,
+      52393,
+      52392,
+      49171,
+      49172,
+      156,
+      157,
+      47,
+      53
+    ],
+    "compression_methods": [
+      0
+    ],
+    "extensions": [
+      {
+        "codepoint": 2570,
+        "length": 0,
+        "body_hex": ""
+      },
+      {
+        "codepoint": 0,
+        "length": 13,
+        "body_hex": "000b000008617364662e636f6d"
+      },
+      {
+        "codepoint": 23,
+        "length": 0,
+        "body_hex": ""
+      },
+      {
+        "codepoint": 43,
+        "length": 7,
+        "body_hex": "060a0a03040303"
+      },
+      {
+        "codepoint": 10,
+        "length": 12,
+        "body_hex": "000a0a0a11ec001d00170018"
+      },
+      {
+        "codepoint": 13,
+        "length": 18,
+        "body_hex": "001004030804040105030805050108060601"
+      },
+      {
+        "codepoint": 16,
+        "length": 14,
+        "body_hex": "000c02683208687474702f312e31"
+      },
+      {
+        "codepoint": 51,
+        "length": 43,
+        "body_hex": "00290a0a000100001d00202222222222222222222222222222222222222222222222222222222222222222"
+      },
+      {
+        "codepoint": 51764,
+        "length": 4,
+        "body_hex": "deadbeef"
+      },
+      {
+        "codepoint": 65037,
+        "length": 3,
+        "body_hex": "000020"
+      },
+      {
+        "codepoint": 21,
+        "length": 40,
+        "body_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "codepoint": 23130,
+        "length": 1,
+        "body_hex": "00"
+      }
+    ],
+    "key_exchange_groups": [
+      2570,
+      4588,
+      29,
+      23,
+      24
+    ],
+    "key_shares": [
+      {
+        "group": 2570,
+        "entry_len": 1
+      },
+      {
+        "group": 29,
+        "entry_len": 32
+      }
+    ],
+    "signature_algorithms": [
+      1027,
+      2052,
+      1025,
+      1283,
+      2053,
+      1281,
+      2054,
+      1537
+    ],
+    "signature_algorithms_cert": null,
+    "alpn": [
+      "h2",
+      "http/1.1"
+    ],
+    "ech": {
+      "mode": 0,
+      "kem_id": 32
+    },
+    "padding_len": 40,
+    "shuffled": {
+      "state": "unknown"
+    },
+    "grease": {
+      "extension_positions": [
+        0,
+        11
+      ],
+      "values": [
+        2570,
+        23130
+      ],
+      "distinct": true,
+      "bodies_hex": [
+        "",
+        "00"
+      ]
+    }
+  },
+  "request_line": null,
+  "header_names": [],
+  "header_values": [],
+  "notes": []
+}

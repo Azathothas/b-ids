@@ -141,6 +141,24 @@ foreach ($line in $lines) {
 }
 Complete-Entry
 
+# ⛔ ZERO ENTRIES IS A FAILURE, NOT A PASS, and this block exists because the
+# opposite shipped. This check reads an entry as a '### ' heading; this
+# repository's CHANGELOG.md wrote its entries at '## ', which this check reads
+# as a SECTION. So it found no entries, asserted all four rules over nothing,
+# and printed "0 entries, in order, each dated with a record and a deploy
+# line". It was green in the gate from the first commit. TODO/tooling.md
+# TOOL-14.
+#
+# ⚠ 1 RATHER THAN 2, and the difference decides whether this is visible. The
+# gate treats this check's 2 as a pass, because a project with no CHANGELOG.md
+# has satisfied these rules vacuously. A file that EXISTS and presents nothing
+# this check can read has not: it is a finding about the document.
+if ($entries -eq 0) {
+    $script:problems++
+    [void]$report.Add(("  {0}: no entry heading found. An entry is a '### ' heading under a '## '" -f $File))
+    [void]$report.Add('  section, and rules 1 to 4 were about to be reported clean over nothing.')
+}
+
 $problems = $script:problems
 
 if ($Json) {

@@ -75,6 +75,19 @@ jobs:
         shell: pwsh
         run: Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -ErrorAction Stop
 
+      # ⛔ THE TOOLCHAIN IS PINNED BY THE TREE, NOT BY THIS FILE. Naming a
+      # version here would be a second copy of the pin, and two copies is how
+      # one of them goes stale. rust-toolchain.toml names the exact version and
+      # the components; `rustup show active-toolchain` is what reads it and
+      # installs it, so this step cannot disagree with the pin.
+      # ⚠ The versions are printed rather than asserted here: check-msrv is what
+      # asserts, and it runs inside the gate below on both hosts.
+      - name: the pinned Rust toolchain
+        run: |
+          rustup show active-toolchain
+          cargo --version
+          rustc --version
+
       # ⭐ THE WHOLE GATE, IN ONE COMMAND, INCLUDING THE TWIN COMPARISON. Every
       # line it runs delegates to a check that already exists and reads that
       # check's own exit code, unpiped.
@@ -153,6 +166,15 @@ jobs:
           choco install shellcheck --no-progress -y
           if ($LASTEXITCODE -ne 0) { exit 1 }
           shellcheck --version
+
+      # ⛔ THE SAME PIN, READ FROM THE SAME FILE. See the ubuntu job's copy of
+      # this step for why no version is written here.
+      - name: the pinned Rust toolchain
+        shell: pwsh
+        run: |
+          rustup show active-toolchain
+          cargo --version
+          rustc --version
 
       # ⚠ -Fast HERE, AND THE UBUNTU JOB RUNS THE FULL ONE. The twin comparison
       # runs both halves of every pair and needs a POSIX shell for the sh half;

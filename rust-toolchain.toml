@@ -1,0 +1,11 @@
+# ⛔ AN EXACT VERSION, NEVER A CHANNEL. "stable" is a different compiler every
+# six weeks, so a tree pinned to it is a tree that cannot be rebuilt as it was.
+#
+# This is the toolchain the gate runs. It is NOT the minimum supported version:
+# that is rust-version in Cargo.toml, and scripts/common/check-msrv.sh is what
+# derives and holds it.
+
+[toolchain]
+channel = "1.98.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

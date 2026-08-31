@@ -460,7 +460,8 @@ a rewrite.
 ## 15. Driving a browser: what a navigation actually does
 
 `references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/browser-capture.rs`,
-with the resolver at `crates/bit-cli-core/src/browser.rs`. Two jobs kept
+with the resolver at
+`references/Azathothas__bit-cli/tree/crates/bit-cli-core/src/browser.rs`. Two jobs kept
 separate: **resolve** a browser on this machine, and **drive** it at a URL.
 `DRIVER-01` is that split.
 

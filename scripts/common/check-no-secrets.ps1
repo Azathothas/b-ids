@@ -180,7 +180,30 @@ if ($Public) {
         # the one THIS project produces. Excluded by SHAPE, narrowly: exactly 40
         # lower-case hex inside a markdown code span.
         # ⛔ Keep this identical to the sh twin.
-        Where-Object { $_ -cnotmatch '`[0-9a-f]{40}`' })
+        Where-Object { $_ -cnotmatch '`[0-9a-f]{40}`' } |
+        # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT PRODUCES ------
+        #
+        # A raw ClientHello recorded as hex is hundreds of hex characters, and
+        # SCHEMA-06 requires one on every capture. The comment above predicted
+        # this would fail the gate on the day the first one landed, and it did.
+        #
+        # ⛔ THE HEX RULE ITSELF IS NOT WIDENED. That was the tempting fix and
+        # it removes the rule. Three narrow exclusions instead, each by NAME or
+        # by FILE TYPE, exactly like the three above:
+        #
+        #   1. a hex run assigned to an identifier ending in _hex, which is
+        #      this project's own naming rule for a field holding wire bytes.
+        #      ⚠ A credential assigned to a field with any OTHER name is still
+        #      refused, including one in the same file.
+        #   2. a .hex file, which this project defines as one raw capture on
+        #      one line and nothing else.
+        #   3. checksum = "..." in a lock file, a declared digest of a
+        #      published artefact, the same shape as the pin above.
+        #
+        # ⛔ Keep this identical to the sh twin. TOOL-03.
+        Where-Object { $_ -cnotmatch '[A-Za-z0-9_]*_hex"?\s*[:=]' } |
+        Where-Object { $_ -cnotmatch '^[^:]*\.hex:' } |
+        Where-Object { $_ -cnotmatch '^[^:]*(Cargo\.lock|\.lock):[0-9]+:\s*checksum\s*=' })
     Add-Hit 'a long hex identifier' $hex
 
     # ⚠ Narrowed rather than switched off. These are well-known generic paths,

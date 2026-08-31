@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 81  open 74  blocked 0  done 7
+total 82  open 59  blocked 0  done 22
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
-| P0 | 8 | 0 | 1 | 9 |
-| P1 | 29 | 0 | 4 | 33 |
-| P2 | 33 | 0 | 1 | 34 |
+| P0 | 0 | 0 | 8 | 9 |
+| P1 | 23 | 0 | 11 | 34 |
+| P2 | 32 | 0 | 2 | 34 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **74** | **0** | **7** | **81** |
+| **all** | **59** | **0** | **22** | **82** |
 
 ---
 
@@ -57,8 +57,8 @@ total 81  open 74  blocked 0  done 7
 | EMIT-02 | P2 | L | open | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
 | EMIT-03 | P2 | S | open | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
 | EMIT-04 | P3 | M | open | Emitters for the stacks a consumer already uses | [`emitters.md`](emitters.md) |
-| HARNESS-01 | P0 | L | open | The oracle is a server, not a client | [`harness.md`](harness.md) |
-| HARNESS-02 | P0 | M | open | The switches, each of which exists because something went wrong without it | [`harness.md`](harness.md) |
+| HARNESS-01 | P0 | L | done | The oracle is a server, not a client | [`harness.md`](harness.md) |
+| HARNESS-02 | P0 | M | partial | The switches, each of which exists because something went wrong without it | [`harness.md`](harness.md) |
 | HARNESS-03 | P1 | M | open | Read HTTP/2 settings, the window update and the priority block | [`harness.md`](harness.md) |
 | HARNESS-04 | P1 | M | open | Decode HPACK Huffman, because header order is behind it | [`harness.md`](harness.md) |
 | HARNESS-05 | P1 | S | open | Settle the priority block, and do it first | [`harness.md`](harness.md) |
@@ -81,31 +81,32 @@ total 81  open 74  blocked 0  done 7
 | PUB-07 | P1 | S | open | The licence stated in three places | [`publish.md`](publish.md) |
 | PUB-08 | P2 | S | open | One generator for the release body and the changelog | [`publish.md`](publish.md) |
 | PUB-09 | P2 | M | open | Signed and attested captures | [`publish.md`](publish.md) |
-| SCHEMA-01 | P0 | M | open | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
-| SCHEMA-02 | P0 | M | open | The TLS half, in wire order, with unknown codepoints kept | [`schema.md`](schema.md) |
-| SCHEMA-03 | P0 | S | open | The HTTP/2 half, as an ordered frame sequence | [`schema.md`](schema.md) |
-| SCHEMA-04 | P0 | S | open | The HTTP half, its variants, and the one privacy rule | [`schema.md`](schema.md) |
-| SCHEMA-05 | P0 | S | open | Provenance is per field, with four kinds and no more | [`schema.md`](schema.md) |
+| SCHEMA-01 | P0 | M | done | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
+| SCHEMA-02 | P0 | M | done | The TLS half, in wire order, with unknown codepoints kept | [`schema.md`](schema.md) |
+| SCHEMA-03 | P0 | S | done | The HTTP/2 half, as an ordered frame sequence | [`schema.md`](schema.md) |
+| SCHEMA-04 | P0 | S | done | The HTTP half, its variants, and the one privacy rule | [`schema.md`](schema.md) |
+| SCHEMA-05 | P0 | S | done | Provenance is per field, with four kinds and no more | [`schema.md`](schema.md) |
 | SCHEMA-06 | P1 | M | open | Record everything the wire carried, from the first commit | [`schema.md`](schema.md) |
-| SCHEMA-07 | P1 | S | open | What must never be in the model | [`schema.md`](schema.md) |
+| SCHEMA-07 | P1 | S | done | What must never be in the model | [`schema.md`](schema.md) |
 | SCHEMA-08 | P1 | L | open | Every generated format, from one generator, round-tripped | [`schema.md`](schema.md) |
-| SCHEMA-09 | P1 | S | open | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
+| SCHEMA-09 | P1 | S | done | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
 | SCHEMA-10 | P2 | M | open | Record the shuffle as a property, and consider recording its seed | [`schema.md`](schema.md) |
 | SCHEMA-11 | P2 | S | open | The multipart boundary, which is a per-browser surface nobody listed | [`schema.md`](schema.md) |
-| TOOL-01 | P1 | S | open | There is no toolchain, and the minimum version is measured rather than chosen | [`tooling.md`](tooling.md) |
-| TOOL-02 | P1 | S | open | The gate has no suite in it, and says so in a comment | [`tooling.md`](tooling.md) |
-| TOOL-03 | P1 | S | open | The secret check will refuse the raw captures | [`tooling.md`](tooling.md) |
+| TOOL-01 | P1 | S | done | There is no toolchain, and the minimum version is measured rather than chosen | [`tooling.md`](tooling.md) |
+| TOOL-02 | P1 | S | done | The gate has no suite in it, and says so in a comment | [`tooling.md`](tooling.md) |
+| TOOL-03 | P1 | S | done | The secret check will refuse the raw captures | [`tooling.md`](tooling.md) |
 | TOOL-04 | P2 | S | open | The reference fetcher stops when one of its two routes is down | [`tooling.md`](tooling.md) |
-| TOOL-05 | P2 | S | open | One twin pair has no comparison at all | [`tooling.md`](tooling.md) |
+| TOOL-05 | P2 | S | done | One twin pair has no comparison at all | [`tooling.md`](tooling.md) |
 | TOOL-06 | P2 | S | open | The route check does not exist and it is three lines | [`tooling.md`](tooling.md) |
 | TOOL-07 | P3 | S | done | The gate's cost on a real host has never been measured | [`tooling.md`](tooling.md) |
 | TOOL-08 | P1 | S | done | The gate's strict mode was documented and did not exist | [`tooling.md`](tooling.md) |
 | TOOL-09 | P1 | S | done | The licence filler was documented and absent, and the documentation was the defect | [`tooling.md`](tooling.md) |
-| TOOL-10 | P1 | S | open | A cited path is not checked, and that is how this tree broke | [`tooling.md`](tooling.md) |
+| TOOL-10 | P1 | S | done | A cited path is not checked, and that is how this tree broke | [`tooling.md`](tooling.md) |
 | TOOL-11 | P1 | S | done | The banned-vocabulary rule was documented and unenforced | [`tooling.md`](tooling.md) |
 | TOOL-12 | P0 | S | done | A mined tree brings its own ignore rules, and 92 files of the corpus were never committed | [`tooling.md`](tooling.md) |
 | TOOL-13 | P1 | S | done | The Windows job skipped a lint and the workflow counted it as allowed | [`tooling.md`](tooling.md) |
-| VALID-01 | P0 | M | open | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
+| TOOL-14 | P1 | S | done | The changelog check read a heading level this repository does not use | [`tooling.md`](tooling.md) |
+| VALID-01 | P0 | M | done | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
 | VALID-02 | P1 | S | open | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | open | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |
 | VALID-04 | P2 | M | open | Reference digest implementations, with published test vectors | [`validator.md`](validator.md) |

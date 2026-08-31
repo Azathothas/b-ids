@@ -308,6 +308,20 @@ compare_pair "check-record"         check-record.sh         "--json"          ch
 compare_pair "check-no-secrets"     check-no-secrets.sh     "--json"          check-no-secrets.ps1     "-Json"
 compare_pair "check-no-secrets pub" check-no-secrets.sh     "--public --json" check-no-secrets.ps1     "-Public -Json"
 
+# ⚠ THE READ-ONLY MODE ONLY. --write patches Cargo.toml, and a comparison that
+# ran it would edit the tree it is measuring. --verify is also left out: it
+# compiles the workspace on a toolchain that may not be installed, and a gate
+# check does not download one.
+compare_pair "check-msrv"           check-msrv.sh           "--json"          check-msrv.ps1           "-Json"
+
+# ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
+# in this tree with no comparison at all, and it was left out because fetching
+# needs the network and a gate check must not. ⭐ Its self-test does not: it
+# drives the page joiner and the joiner's own guard against a built-in fixture,
+# which is the half of the script that has actually been wrong. TOOL-05.
+# ⛔ Never add a row here that needs the network.
+compare_pair "mine-repo selftest"   mine-repo.sh            "--selftest --json" mine-repo.ps1          "-Selftest -Json"
+
 # ⚠ THE GATE RUNNER'S TWO HALVES RUN DIFFERENT PROGRAMS TO REACH THE SAME
 # ANSWER, which is exactly the drift this file exists to catch. The sh half
 # runs every check's sh implementation and spawns a PowerShell for the

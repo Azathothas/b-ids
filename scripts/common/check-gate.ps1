@@ -52,6 +52,20 @@
 #   this half, -Fast        31s
 #   check-twins alone      294s
 #
+# ⚠ RE-MEASURED THE SAME DAY, AFTER THE GATE GREW. The workspace landed and this
+# runner gained four checks: check-msrv and the three suite entries. check-twins
+# gained two pairs, so it compares 15. Same machine, same shells:
+#
+#   sh --fast              171s
+#   this half, -Fast        65s
+#   full sh run            ⛔ NOT RE-TAKEN. The run went green, all 19 checks,
+#                          and the timing line was lost when the shell holding
+#                          it was killed. A figure nobody measured does not go
+#                          here.
+#
+# ⚠ This half went from 31s to 65s and the sh half from 106s to 171s, and the
+# difference in both is four checks of which three compile.
+#
 # ⚠ Each figure is one run on a machine doing other things, and they do not add
 # up because they are separate runs.
 #
@@ -140,12 +154,20 @@ function Invoke-Check {
       -PassCodes exists for check-changelog, whose 2 means "could not run" and
       is the honest answer in a project with no CHANGELOG.md. Collapsing that
       into 0 with a blanket ignore would hide a genuine 1 as well.
+
+      ⛔ -SkipCodes IS THE OTHER HALF OF THAT, AND IT IS NOT THE SAME THING.
+      check-changelog's 2 is a PASS because a project with no changelog has
+      satisfied the rule vacuously. check-msrv's 2 is a SKIP because a host
+      with no cargo has verified NOTHING about the manifest. Collapsing the
+      second into the first is how a check quietly stops applying.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Name,
         [Parameter(Mandatory = $true)][string]$FilePath,
         [string[]]$Arguments = @(),
-        [int[]]$PassCodes = @(0)
+        [int[]]$PassCodes = @(0),
+        [int[]]$SkipCodes = @(),
+        [string]$SkipReason = 'the check reported it could not run'
     )
     $prev = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
@@ -157,6 +179,7 @@ function Invoke-Check {
 
     if ($null -eq $code) { $code = 1 }
     if ($PassCodes -contains $code) { Add-Pass $Name; return }
+    if ($SkipCodes -contains $code) { Add-Skip $Name $SkipReason; return }
 
     Add-Fail $Name $code
     if (-not $Json) {
@@ -186,7 +209,9 @@ function Invoke-PsCheck {
         [Parameter(Mandatory = $true)][string]$Name,
         [Parameter(Mandatory = $true)][string]$Script,
         [string[]]$Arguments = @(),
-        [int[]]$PassCodes = @(0)
+        [int[]]$PassCodes = @(0),
+        [int[]]$SkipCodes = @(),
+        [string]$SkipReason = 'the check reported it could not run'
     )
     $full = Join-Path $root $Script
     if (-not (Test-Path -LiteralPath $full)) {
@@ -195,7 +220,8 @@ function Invoke-PsCheck {
         return
     }
     Invoke-Check -Name $Name -FilePath (Get-Process -Id $PID).Path `
-        -Arguments (@('-NoProfile', '-File', $full) + $Arguments) -PassCodes $PassCodes
+        -Arguments (@('-NoProfile', '-File', $full) + $Arguments) -PassCodes $PassCodes `
+        -SkipCodes $SkipCodes -SkipReason $SkipReason
 }
 
 function Get-PosixShell {
@@ -272,6 +298,10 @@ Invoke-PsCheck -Name 'check-record'        -Script 'scripts/common/check-record.
 Invoke-PsCheck -Name 'check-no-secrets'    -Script 'scripts/common/check-no-secrets.ps1' -Arguments @('-Public')
 Invoke-PsCheck -Name 'check-changelog'     -Script 'scripts/common/check-changelog.ps1' -PassCodes @(0, 2)
 
+# -- the workspace, and the version floor it declares ------------------------
+Invoke-PsCheck -Name 'check-msrv' -Script 'scripts/common/check-msrv.ps1' `
+    -SkipCodes @(2) -SkipReason 'cargo is not on this host'
+
 # -- line endings, from git's own answer rather than a second table ----------
 # ⛔ IT USED TO LIVE INSIDE THE sh BRANCH AND NEEDS NO SHELL. On a host without
 # one it was neither run nor skipped, so it left the report entirely: the counts
@@ -297,10 +327,33 @@ else {
 # -- the probe, through its own twin -----------------------------------------
 Invoke-PsCheck -Name 'doctor probe' -Script 'scripts/doctor/doctor.ps1' -Arguments @('-Fast')
 
-# ⚠ NO SUITE RUNS HERE YET, and that is a real gap rather than a design. Part
-# (a) of docs/methodology/gate.md is the suite as well as the checks, and this
-# tree has no code to test. The line that runs it goes here, beside the other
-# checks, on the day the first crate lands.
+# -- part (a) is the SUITE as well as the checks -----------------------------
+#
+# ⛔ THREE ENTRIES, NOT ONE, and the reason is the one this file already makes
+# about the parse and the analyzer: they can have different answers, and one
+# verdict over three answers is how a skipped one reads as a passed one.
+# docs/methodology/gate.md part (a) is "typecheck, lint, format, the full test
+# suite", so the format and the lint are gates here rather than advice.
+#
+# ⚠ A SUITE OF ZERO TESTS PASSES VACUOUSLY, and today that is what this is: the
+# workspace TOOL-01 created is eight empty crates. The line is here anyway,
+# because the defect it removes is a gate that grows a suite line months after
+# the first crate lands. TOOL-02 mutation-proved it by planting a failing test.
+$cargo = Get-Command 'cargo' -CommandType Application -ErrorAction SilentlyContinue |
+         Select-Object -First 1
+if ($cargo) {
+    Invoke-Check -Name 'cargo fmt'    -FilePath $cargo.Source -Arguments @('fmt', '--all', '--check')
+    Invoke-Check -Name 'cargo clippy' -FilePath $cargo.Source `
+        -Arguments @('clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings')
+    # ⚠ No --all-targets here on purpose: it would drop the doc-tests, and a
+    # doc-test is the one test that proves the documentation compiles.
+    Invoke-Check -Name 'cargo test'   -FilePath $cargo.Source -Arguments @('test', '--workspace', '--all-features')
+}
+else {
+    Add-Skip 'cargo fmt'    'cargo is not on this host'
+    Add-Skip 'cargo clippy' 'cargo is not on this host'
+    Add-Skip 'cargo test'   'cargo is not on this host'
+}
 
 if (-not $sh) {
     # ⛔ Not a silent degrade. What is left below genuinely needs a POSIX shell,

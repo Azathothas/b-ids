@@ -10,7 +10,7 @@ what arrives, and the traps that cost somebody a day each.
 ## HARNESS-01. The oracle is a server, not a client
 
 **Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 14
-**Category** harness, **Priority** P0, **Effort** L, **Status** open
+**Category** harness, **Priority** P0, **Effort** L, **Status** done
 
 ### Problem
 
@@ -53,12 +53,100 @@ Passing means: a committed fixture of raw bytes is fed to the listener over a
 loopback socket and produces the profile committed beside it, byte for byte, with
 no browser involved.
 
+### Closing
+
+**Closed 2026-08-31.** The oracle binds, accepts, reads and records, and the
+acceptance runs over a real loopback socket with no browser involved.
+
+```text
+$ cargo test -p b-ids-harness listener -- --nocapture
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+exit=0
+```
+
+### ⭐ The fixture is generated, not pasted
+
+⛔ **The committed bytes are CONSTRUCTED and are not a capture**, and the file
+that builds them says so in its own header. They are shaped like a Chromium
+hello so the parser meets the shapes a real one has: GREASE at both ends, a
+codepoint with no name, a trailing GREASE carrying one zero byte, a
+supported-versions extension whose list length is one byte rather than two, and
+an extension order that is not sorted.
+
+```text
+cargo run -p b-ids-harness --example make-fixture > crates/b-ids-harness/fixtures/client-hello.hex
+```
+
+⭐ **A reader can re-derive it**, and a change to the fixture is a change to a
+readable file rather than to an opaque blob. ⛔ No value in it is a measurement
+and none of it may enter the corpus.
+
+### What the seven tests cover
+
+| test | what it would catch |
+| --- | --- |
+| the golden comparison | any change to what a capture records, byte for byte |
+| the raw bytes are kept | a parser defect taking the one artefact that survives every parser defect |
+| a socket opened and abandoned | a run that drops the connections a browser abandons, and so under-reports what a navigation does |
+| ⭐ a record split across two reads | a truncation report for a truncation that never happened |
+| more than one connection, in order | a harness that can only ever see one, when one navigation has produced thirteen |
+| a cleartext request | the multi-protocol seam, on the second surface |
+| the base URL names the bound port | a caller with no way to learn the port before the accept blocks |
+
+### ⛔ The parser cannot panic on input
+
+Every read goes through a bounds-checked cursor that returns `None` at the end
+rather than slicing past it. ⚠ A panic here is a denial of service in the one
+component that faces the network, and `HARNESS-09` is the entry that fuzzes it
+rather than trusting this sentence.
+
+**Two rules the parser follows and a test holds:**
+
+- ⛔ **Count what arrived; do not trust what was declared.** A declared record
+  length that disagrees with the bytes becomes a NOTE on the capture, never a
+  repair. Padding to match a declared length would record bytes nobody sent.
+- ⛔ **Parse permissively, emit exactly.** Everything unreadable inside a
+  well-framed hello becomes a note; only bytes that are not a `ClientHello`
+  record at all are an error. A parser that refused a hello it did not
+  recognise would have thrown the capture away.
+
+### ⚠ The shuffle is UNKNOWN from one hello, never Fixed
+
+One handshake is not a sample, so the parser records `Shuffle::Unknown` and
+never claims a fixed order. `HARNESS-08` is what takes more than one draw.
+⭐ `VALID-01` refuses a profile that claims a shuffle state from fewer than two
+draws, so the rule is held at both ends.
+
+### Mutation-proved
+
+```text
+=== HARNESS-01: a record split across two reads is reassembled ===
+test listener_reassembles_a_record_split_across_two_reads ... FAILED
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+```
+
+The completeness test was replaced with one that stops at the first read. Six
+tests still passed and one refused, which is what says the failure is the
+reassembly rather than the harness.
+
+### ⚠ What is NOT here, named rather than left to be discovered
+
+- ⛔ **HTTP/2 is not read**, because reaching it needs the handshake terminated
+  and terminating one can change what the client offers. `HARNESS-03`.
+- **The digest expectations are not shipped.** The sweep asks for
+  `--expect-ja4`, `--expect-ja3` and `--expect-akamai` in this change;
+  computing them needs MD5 and SHA-256 implementations with published test
+  vectors, which is `VALID-04`. ⭐ What DID ship is the half that needs no
+  hashing and carries the same property: `--write-golden` and `--expect-file`
+  compare the whole capture and exit 1 on a difference, so the harness is
+  already a regression check rather than only a probe.
+
 ---
 
 ## HARNESS-02. The switches, each of which exists because something went wrong without it
 
 **Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 14
-**Category** harness, **Priority** P0, **Effort** M, **Status** open
+**Category** harness, **Priority** P0, **Effort** M, **Status** partial
 
 ### Problem
 
@@ -96,6 +184,100 @@ cargo test -p b-ids-harness switches -- --nocapture
 
 Passing means: every switch is exercised, `--bind 0.0.0.0` is refused with a
 message naming the reason, and the default run's output contains no header value.
+
+### Closing
+
+⚠ **PARTIAL, 2026-08-31.** Seven of the nine switches are implemented,
+exercised and mutation-proved. Two are blocked on `HARNESS-03` and the entry
+stays open with the blocker named.
+
+```text
+$ cargo test -p b-ids-harness switches -- --nocapture
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+exit=0
+```
+
+| switch | state |
+| --- | --- |
+| `--raw` | done, and it is the DEFAULT rather than a mode somebody opts into |
+| `--plain` | done |
+| `--bind ADDR` | done, refusing a hostname and the unspecified address, each by name |
+| `--hello-out PATH` | done |
+| `--header-values` | done, off by default, and it does not lift the credential rule |
+| `--json` | done, base URL first, then one object per connection |
+| `--handshakes N` | done, with `--once` beside it |
+| ⛔ `--ca-out PATH` | **blocked on `HARNESS-03`**: minting an authority is only useful once the handshake is terminated |
+| ⛔ `--until-h2` | **blocked on `HARNESS-03`**: there is no HTTP/2 to stop at |
+
+⭐ **The two blocked switches are ABSENT, not present and inert**, and the
+command refuses them by name:
+
+```text
+$ b-ids-harness --ca-out unused
+b-ids-harness: --ca-out needs the handshake terminated, which is HARNESS-03. It is absent rather than inert, because a flag that parsed and did nothing would be worse
+```
+
+⚠ A flag that parsed and did nothing would be the "setting or flag that no code
+reads" row in
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+An absent flag fails loudly and names what would implement it.
+
+### ⭐ The tests drive the COMMAND, not the library
+
+⛔ **A switch is a property of the command.** A test that called the library
+would prove the library, and the shape this project has already been bitten by
+is a flag documented, parsed, and never passed through. So the switch tests
+spawn the compiled binary, read its base URL line, connect to the port it
+printed, and read its exit code.
+
+⚠ **They block on that first line rather than sleeping.** The port is not
+knowable until the command says so, and a sleep long enough to be safe is a
+sleep that makes the suite slow for no reason.
+
+### The two halves of the acceptance, both asserted
+
+```text
+$ b-ids-harness --bind 0.0.0.0
+b-ids-harness: --bind 0.0.0.0: is the unspecified address, which accepts the local network as well. Name the interface
+```
+
+And the default run over a request carrying a value and a credential records
+neither the value nor the credential.
+
+### ⛔ A defect in this entry's own test, found by mutating the guard
+
+**The command-level refusal test would have HUNG rather than failed.** With the
+unspecified-address refusal removed, the command bound successfully and blocked
+on the accept, and the test waited on a process that was never going to exit.
+
+⚠ **A guard whose test cannot fail loudly is a guard nobody knows works**, and a
+hang is worse than a failure: it produces no message and no exit code, and in
+continuous integration it consumes the job's whole timeout. The test now polls
+with a deadline and kills the child, so a regression reports instead of waiting.
+
+### Mutation-proved
+
+```text
+=== HARNESS-02: --bind refuses the unspecified address ===
+test switches_bind_refuses_the_unspecified_address_by_name ... FAILED
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+=== HARNESS-02: the credential filter on the capture path ===
+test switches_header_values_still_drops_a_credential ... FAILED
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.15s
+```
+
+⭐ **The second is the one worth noting.** The credential filter exists in the
+MODEL, in `b-ids-schema`, and the capture path is a different door into the
+same rule. Removing it from the listener alone was enough to leak a credential
+into the command's output, which is the "control gated on one of several paths"
+shape. Both doors are gated and both are tested.
+
+### What would close this entry
+
+`HARNESS-03` terminating the handshake, at which point `--ca-out` mints the
+authority and `--until-h2` has an HTTP/2 connection to stop at. Nothing else is
+outstanding.
 
 ---
 

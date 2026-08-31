@@ -138,10 +138,17 @@ trap 'rm -rf "$TMP"' EXIT INT TERM
 # and prose.md says which half owns them.
 BANNED_WORDS="seamless blazing effortless robust powerful cutting-edge state-of-the-art world-class elegant revolutionary game-changing rock-solid bulletproof lightning-fast"
 
+# ⭐ THE TOP-LEVEL DIRECTORIES THIS REPOSITORY OWNS, read from git rather than
+# written down, so a new one is covered without anybody remembering to add it.
+# It is what scopes the cited-path check to this tree.
+ROOTS=$(git ls-files | awk -F/ 'NF > 1 { print $1 }' | sort -u | tr '
+' ' ')
+
 PROBLEMS=""
 COUNT=0
 NFILES=0
 NLINKS=0
+NSPANS=0
 NBLOCKS=0
 
 report() { PROBLEMS="$PROBLEMS  $1
@@ -155,12 +162,57 @@ for f in $FILES; do
   # ⚠ Stripping code spans is why `[int](2.65)` inside backticks is not
   # reported as a broken link. Markdown does not linkify a code span, and an
   # earlier ad-hoc version of this check reported exactly that as broken.
-  awk -v BANNED="$BANNED_WORDS" '
+  awk -v BANNED="$BANNED_WORDS" -v ROOTS="$ROOTS" '
     BEGIN { FS = "\n" }
     /^[ \t]*```/ { fence = !fence; next }
     fence { next }
     {
       line = $0
+
+      # -- ⭐ A CITED PATH IS CHECKED, NOT ONLY A LINK ------------------------
+      #
+      # A markdown link is resolved below and a path written in a code span was
+      # not, which is how most of this tree names a file. Seven code spans named
+      # a licence filler, its twin and a directory of texts, none of which
+      # existed; every link resolved and this check was green throughout.
+      # TODO/tooling.md TOOL-10.
+      #
+      # ⛔ NARROW, AND IT REFUSES TO GUESS. A span is a path only when it holds
+      # a slash, ends in a known extension, has no whitespace, no angle bracket
+      # and no glob character, carries no scheme, and has no ALL-CAPS segment,
+      # which is the placeholder convention this tree uses. ⚠ An apostrophe
+      # cannot appear anywhere in this awk program: it is one single-quoted
+      # shell string, and one apostrophe ends it. A bare filename with no
+      # directory is out of scope, and so is anything inside a fenced block,
+      # which never reaches here. A guard that refuses legitimate writing is
+      # worse than an honest one.
+      probe = line
+      while (match(probe, /`[^`]*`/)) {
+        span = substr(probe, RSTART + 1, RLENGTH - 2)
+        probe = substr(probe, RSTART + RLENGTH)
+        if (span !~ /\//) continue
+        if (span ~ /[ \t<>*?]/) continue
+        if (span ~ /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//) continue
+        if (span !~ /\.(md|sh|ps1|psm1|mjs|cjs|js|ts|rs|toml|json|jsonc|yml|yaml|txt|py|go|lock|hex)$/) continue
+        placeholder = 0
+        n2 = split(span, seg, "/")
+        for (j = 1; j <= n2; j++)
+          if (seg[j] ~ /^[A-Z0-9_]+$/) placeholder = 1
+        if (placeholder) continue
+
+        # ⛔ AND IT MUST START AT ONE OF THIS REPOSITORY OWN TOP-LEVEL
+        # DIRECTORIES. Measured on 2026-08-31: without this the check reported
+        # 30 spans and every one was legitimate, because the sweep documents
+        # cite paths INSIDE the reference trees as shorthand. A guard with a
+        # thirty-to-nothing false positive rate is a guard somebody switches
+        # off. ⚠ The list is read from git rather than written here, so a new
+        # top-level directory is covered without anybody remembering to add it.
+        head = seg[1]
+        if (n2 < 2) continue
+        if (index(" " ROOTS " ", " " head " ") == 0) continue
+        print "SPAN\t" NR "\t" span
+      }
+
       while (match(line, /`[^`]*`/))
         line = substr(line, 1, RSTART - 1) substr(line, RSTART + RLENGTH)
 
@@ -201,6 +253,16 @@ for f in $FILES; do
           fi
         else
           report "$f:$ln broken link -> $detail"
+        fi ;;
+      SPAN)
+        # ⚠ Resolved against the REPOSITORY ROOT and against the citing file's
+        # own directory, and reported only when neither exists. Most of this
+        # tree writes a root-relative path in prose and a directory-relative
+        # one in a link, and refusing either would be refusing legitimate
+        # writing.
+        NSPANS=$((NSPANS + 1))
+        if [ ! -e "$detail" ] && [ ! -e "$dir/$detail" ]; then
+          report "$f:$ln cited path does not exist -> $detail"
         fi ;;
       VOCAB)
         report "$f:$ln banned vocabulary: $detail. docs/conventions/prose.md" ;;
@@ -296,8 +358,8 @@ done
 
 # -- report ------------------------------------------------------------------
 if [ "$JSON" = "1" ]; then
-  printf '{"schema":"check-docs/1","problems":%s,"files":%s,"links":%s,"shell_blocks":%s}\n' \
-    "$COUNT" "$NFILES" "$NLINKS" "$NBLOCKS"
+  printf '{"schema":"check-docs/1","problems":%s,"files":%s,"links":%s,"cited_paths":%s,"shell_blocks":%s}\n' \
+    "$COUNT" "$NFILES" "$NLINKS" "$NSPANS" "$NBLOCKS"
   [ "$COUNT" -gt 0 ] && exit 1
   exit 0
 fi
@@ -307,6 +369,6 @@ if [ "$COUNT" -gt 0 ]; then
   exit 1
 fi
 
-printf 'docs ok: %s files, %s relative links, %s shell blocks. Links and prose clean.\n' \
-  "$NFILES" "$NLINKS" "$NBLOCKS"
+printf 'docs ok: %s files, %s relative links, %s cited paths, %s shell blocks. Links, paths and prose clean.\n' \
+  "$NFILES" "$NLINKS" "$NSPANS" "$NBLOCKS"
 exit 0

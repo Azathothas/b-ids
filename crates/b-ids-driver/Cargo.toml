@@ -1,0 +1,13 @@
+[package]
+name = "b-ids-driver"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# decides what a package registry ever sees.
+publish = false
+
+[lints]
+workspace = true

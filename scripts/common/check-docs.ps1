@@ -123,6 +123,7 @@ $bannedWords = @(
 $problems = New-Object System.Collections.ArrayList
 $count = 0
 $nlinks = 0
+$nspans = 0
 $nblocks = 0
 function Add-Problem([string]$Text) {
     [void]$script:problems.Add('  ' + $Text)
@@ -150,6 +151,65 @@ $skippedParse = 0
 # path would have inherited it silently.
 
 $linked = New-Object System.Collections.Generic.HashSet[string]
+
+# ⭐ THE TOP-LEVEL DIRECTORIES THIS REPOSITORY OWNS, read from git rather than
+# written down, so a new one is covered without anybody remembering to add it.
+# It is what scopes the cited-path check to this tree.
+$roots = New-Object System.Collections.Generic.HashSet[string]
+foreach ($tracked in (& git ls-files)) {
+    $head = ($tracked -split '/')[0]
+    if ($head -and $head -ne $tracked) { [void]$roots.Add($head) }
+}
+
+# The extensions a code span has to end in before it is treated as a path.
+$pathExtensions = @(
+    'md', 'sh', 'ps1', 'psm1', 'mjs', 'cjs', 'js', 'ts', 'rs', 'toml',
+    'json', 'jsonc', 'yml', 'yaml', 'txt', 'py', 'go', 'lock', 'hex'
+)
+
+function Get-CitedPath([string]$Text) {
+    <#
+      ⭐ A CITED PATH IS CHECKED, NOT ONLY A LINK.
+
+      A markdown link is resolved elsewhere in this file and a path written in
+      a code span was not, which is how most of this tree names a file. Seven
+      code spans named a licence filler, its twin and a directory of texts,
+      none of which existed; every link resolved and this check was green
+      throughout. TODO/tooling.md TOOL-10.
+
+      ⛔ NARROW, AND IT REFUSES TO GUESS. A span is a path only when it holds a
+      slash, ends in a known extension, has no whitespace, no angle bracket and
+      no glob character, carries no scheme, has no ALL-CAPS segment, and starts
+      at one of this repository's own top-level directories. Measured
+      2026-08-31: without that last rule the check reported 30 spans and every
+      one was legitimate, because the sweep documents cite paths INSIDE the
+      reference trees as shorthand.
+    #>
+    $out = New-Object System.Collections.ArrayList
+    $fence = $false
+    $n = 0
+    foreach ($line in ($Text -split "`r?`n")) {
+        $n++
+        if ($line -match '^[ \t]*```') { $fence = -not $fence; continue }
+        if ($fence) { continue }
+        foreach ($m in [regex]::Matches($line, '`([^`]*)`')) {
+            $span = $m.Groups[1].Value
+            if ($span -notmatch '/') { continue }
+            if ($span -match '[\s<>*?]') { continue }
+            if ($span -match '^[a-zA-Z][a-zA-Z0-9+.-]*://') { continue }
+            $ext = ($span -split '\.')[-1]
+            if ($pathExtensions -notcontains $ext) { continue }
+            $segments = $span -split '/'
+            if ($segments.Count -lt 2) { continue }
+            $placeholder = $false
+            foreach ($seg in $segments) { if ($seg -cmatch '^[A-Z0-9_]+$') { $placeholder = $true } }
+            if ($placeholder) { continue }
+            if (-not $roots.Contains($segments[0])) { continue }
+            [void]$out.Add([pscustomobject]@{ Line = $n; Target = $span })
+        }
+    }
+    return $out
+}
 
 function Get-LinkTarget([string]$Text) {
     # Strip fenced blocks, then code spans, then take every ](...) target.
@@ -236,6 +296,20 @@ foreach ($rel in $files) {
             if ($LASTEXITCODE -eq 0) {
                 Add-Problem ($rel + ':' + $t.Line + ' link target is on disk and NOT COMMITTED -> ' + $target)
             }
+        }
+    }
+
+    # -- cited paths, which a link check cannot see ---------------------------
+    # ⚠ Resolved against the REPOSITORY ROOT and against the citing file's own
+    # directory, and reported only when neither exists. Most of this tree
+    # writes a root-relative path in prose and a directory-relative one in a
+    # link, and refusing either would be refusing legitimate writing.
+    foreach ($c in (Get-CitedPath $text)) {
+        $script:nspans++
+        $atRoot = Join-Path $root $c.Target
+        $atFile = Join-Path (Split-Path -Parent $full) $c.Target
+        if (-not (Test-Path -LiteralPath $atRoot) -and -not (Test-Path -LiteralPath $atFile)) {
+            Add-Problem ($rel + ':' + $c.Line + ' cited path does not exist -> ' + $c.Target)
         }
     }
 
@@ -331,7 +405,7 @@ foreach ($rel in $files) {
 $count = $script:count
 
 if ($Json) {
-    Write-Output ('{"schema":"check-docs/1","problems":' + $count + ',"files":' + $files.Count + ',"links":' + $nlinks + ',"shell_blocks":' + $nblocks + '}')
+    Write-Output ('{"schema":"check-docs/1","problems":' + $count + ',"files":' + $files.Count + ',"links":' + $nlinks + ',"cited_paths":' + $nspans + ',"shell_blocks":' + $nblocks + '}')
     if ($skippedParse -gt 0) {
         [Console]::Error.WriteLine('⚠ no POSIX shell on PATH: ' + $skippedParse + ' shell block(s) counted but NOT parsed')
     }
@@ -350,7 +424,7 @@ if ($count -gt 0) {
     exit 1
 }
 
-Write-Output ('docs ok: ' + $files.Count + ' files, ' + $nlinks + ' relative links, ' + $nblocks + ' shell blocks. Links and prose clean.')
+Write-Output ('docs ok: ' + $files.Count + ' files, ' + $nlinks + ' relative links, ' + $nspans + ' cited paths, ' + $nblocks + ' shell blocks. Links, paths and prose clean.')
 if ($skippedParse -gt 0) {
     Write-Output ('⚠ no POSIX shell on PATH: ' + $skippedParse + ' shell block(s) counted but NOT parsed')
 }

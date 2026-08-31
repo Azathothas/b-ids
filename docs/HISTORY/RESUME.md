@@ -13,16 +13,16 @@ rather than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Rescue the tree. The founding brief had been transcribed without fetching the repository its measurements came from, so about sixty inherited values cited nothing, five claims went unchecked, and two gate checks were failing. |
-| the resume point | ⭐ Nothing is in flight. Start at [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1, `TOOL-01`. |
-| in flight | Nothing. |
-| the state of the tree | Clean. One commit, pushed. The gate passes, all fifteen checks, both halves of every pair, and both required checks are green on the remote. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-08-31T14:10:15Z to 2026-08-31T16:43:25Z. |
+| the resume point | ⭐ [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1: `HARNESS-03` and `HARNESS-04`. Terminating the handshake is the single biggest unlock left: it closes `HARNESS-02` and `HARNESS-05` cannot be taken without it. |
+| in flight | Nothing half-edited. ⚠ `HARNESS-02` is `partial` by decision, not by interruption: seven of nine switches are done and `--ca-out` and `--until-h2` are blocked on `HARNESS-03`. The entry says so and the command refuses both by name. |
+| the state of the tree | Clean. The gate passes, all 19 checks, both halves of every pair, and 92 tests across four crates. No capture has been taken and the corpus is empty. |
 | the paste | below |
 
 ---
 
 ```text
-Read ./docs/AGENTS.md in full, DO NOT SKIP, DO NOT GREP.
+Read ./docs/AGENTS.md in full & follow.
 ```
 
 ⭐ **That is the whole prompt.** The router names what to read, in what order,
