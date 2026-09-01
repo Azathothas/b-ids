@@ -116,6 +116,81 @@ to completion, every pair agrees and both halves answer
 and exit 0. ⛔ A timeout around a comparison turns a slow half into a false
 finding, and that is worth knowing before somebody believes one.
 
+## The three review passes, and what each one swept
+
+⛔ **Three different questions, not one sweep written up three times.**
+[`../docs/methodology/reviews.md`](../docs/methodology/reviews.md) is the
+specification.
+
+### 1. The door sweep: what other door reaches this code
+
+Swept: every reader of `Capture::termination` and `Termination::plaintext_hex`,
+every caller of `read_first_message`, every call site of the credential filter,
+every constructor of `Oracle`, every caller of `drive` and `Launch`, and every
+path that could leave a throwaway profile behind.
+
+⭐ **Finding, and it is open question 1.** The credential rule now has a third
+door. The parsed fields drop `cookie` and `authorization` on all three surfaces,
+which the sweep confirmed at four call sites, and the terminated surface keeps
+the decrypted first message beside them. ⚠ That is the surface where a real
+browser's credentials will actually appear, unlike the cleartext one.
+
+⛔ Nothing can publish it today, because nothing writes a profile, and the sweep
+confirmed that by finding no construction of one outside the schema fixtures.
+
+⭐ **What the other passes did not look at:** the callers. Both of the others
+read what was written; this one grepped for what was not enumerated.
+
+### 2. The guard mutation: can the new guards actually fail
+
+Swept: nine guards, each planted and each read unpiped. `check-vendor` on three
+defects and on both halves, the derived series against an unregenerated tree,
+the secret rule narrowed by name, the raw block taken from the wrong bytes, the
+bind refusal, the golden schema version, the reference reader going blind, the
+reference report losing its order, and the throwaway profile being kept.
+
+⭐ **Finding: one mutation reported nothing.** Removing the sort from the
+reference importer changed no test result, because the walk underneath is
+already stable on this host. The acceptance asked for "byte-identical output
+across runs" and a test written to those words could never have failed. A second
+test asserts sortedness directly and the same mutation fails it.
+
+⚠ **Two guards were NOT mutated**, and saying so is the point: the headless
+normalisation leaving a windowed capture alone, and the resolver refusing an
+executable no source could version. Both would fire on a fixture rather than on
+a plant, and neither is reached by a capture path yet.
+
+⭐ **What the other passes did not look at:** whether a green result means
+anything. The door sweep reads structure and the claim audit reads prose.
+
+### 3. The claim audit: which sentence is not backed by an artefact
+
+Swept: every number and every quoted output in the seven closings, this file,
+[`SUMMARY.md`](SUMMARY.md), the changelog, and the two documents the work made
+stale.
+
+⛔ **Finding, and it is the most valuable one of the session: a fabricated
+number, in this project's own writing.** The secret-scan reading over the
+vendored tree was written as 41 hits with 33 long hex runs, from a read of the
+output rather than a count of it. Counted with `awk`: 38, as 4 and 4 and 30, of
+which ten rather than eight are commit ids in links. It had reached three files
+including a security check's own header. All three are corrected.
+
+⭐ **Two other claims were checked and stood.** The priority block was asserted
+as `80000000ff` "on every one" after being printed for three connections;
+counted across all thirteen HEADERS frames, it holds. The brand list was
+asserted identical between headless and headful by eye; compared byte for byte,
+it is.
+
+⚠ **One stale document claim, fixed.** `scripts/README.md` said the dependency
+graph imposes no floor on the minimum Rust version, "which is this tree's state
+today". It stopped being true when the certificate minter arrived: the floor is
+now 1.88, which happens to equal the declared value.
+
+⭐ **What the other passes did not look at:** the prose. A guard can be correct
+and mutation-proved while the sentence describing it is a number nobody counted.
+
+---
 ## What is in progress
 
 ⛔ **Nothing is half-edited.** Every entry this session touched is closed with
