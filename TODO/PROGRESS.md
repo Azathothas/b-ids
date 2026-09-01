@@ -129,6 +129,26 @@ tree and every one of its 52,396 hits was categorised.
 zeroes both render as `0`. They do not: a block of zeroes renders `1:0:0:0`. The
 comment now states what the rendering actually loses.
 
+### ⚠ The Windows CI job fails on a runner-side toolchain race, and it is not the tree
+
+⛔ **A future session will see this and think it broke something.** The first run
+of this session's commit failed on the Windows job at the step that installs the
+pinned toolchain, before anything in this repository was compiled:
+
+```text
+info: recovering from a partially installed toolchain
+error: failed to install component: 'rust-std-x86_64-pc-windows-msvc',
+       detected conflict: 'lib\rustlib\x86_64-pc-windows-msvc\lib\liballoc-...rlib'
+```
+
+Three things say it is the runner rather than the change: it failed **before**
+any project code was built, the Ubuntu job passed on the same tree, and a
+re-run with no edit at all passed both jobs.
+
+⭐ **So the response is `gh run rerun ID --failed`, not a code change.** If it
+recurs often enough to be a cost, the entry to write is one that pins the
+toolchain install rather than one that touches this workspace.
+
 ## What is in progress
 
 ⛔ **Nothing is half-edited.** `HARNESS-02` is `partial` by decision: eight of
