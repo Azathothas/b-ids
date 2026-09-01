@@ -141,6 +141,30 @@ gone.
 passed vacuously there would make the suite green on the one machine that could
 not have run it. ⚠ That is why the skip is printed rather than silent.
 
+### ⛔ A browser being INSTALLED is not a browser that can complete a capture
+
+The capture test asserted the first and claimed the second, and the remote
+checks refused it on both runners. ⚠ **Both of them ship a browser**, so the
+no-browser skip never fired.
+
+| runner | what happened |
+| --- | --- |
+| Linux | the launch exited on its own after 3.0s, having connected to nothing |
+| Windows | the browser connected and the handshake aborted with `os error 10053` |
+
+⭐ **Neither is a defect in this tree.** Both are a headful browser on a machine
+with nobody at it, which is a different environment rather than a broken one.
+
+⛔ **So the capture half is gate part (b) and it is opt-in**, behind
+`B_IDS_DRIVE=1`, with a printed skip that says why. The resolve half stays in
+part (a) and passed on both runners.
+[`../docs/methodology/gate.md`](../docs/methodology/gate.md) already put the
+driven pass in the agent's hands rather than in the suite; this entry had it in
+the wrong part of the gate, and the output above is the run that did it.
+
+⚠ **The suite is faster for it**: the capture test was 30s of every `cargo
+test`, and on the Linux runner it was 97s.
+
 ### ⚠ What is NOT here
 
 - **No version is fetched from anywhere.** `DRIVER-02` reads what is serving
