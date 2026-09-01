@@ -381,6 +381,13 @@ per-profile leg needed cargo and did not get it. The gate reports both as a
 SKIP. ⛔ The git leg still decides a failure: a published file edited after its
 first commit is exit 1 whether or not cargo was there.
 
+⛔ **The derived `index.json` and `latest.json` are excluded from the history
+leg**, and that was a defect rather than a design: they are regenerated whenever
+a profile is added, so a rule refusing their modification would refuse the second
+profile the corpus ever gets. ⚠ Nothing goes unchecked, because their content is
+asserted by the other leg against what the tree derives to. It fired on exactly
+that, on the first commit after the corpus had one.
+
 ### `common/check-routes.sh`
 
 Does any published route file that carries exactly one value end with a

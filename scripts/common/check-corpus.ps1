@@ -85,7 +85,17 @@ try {
     # ⚠ M, D and R together. A modification is the obvious one; a deletion
     # breaks "never delete a superseded profile"; and a rename is a published
     # route changing under a consumer who pinned it.
-    $editLines = @(& git log --diff-filter=MDR --name-status --format='commit %h' -- $corpusDir $rawDir 2>$null)
+    # ⛔ THE DERIVED FILES ARE EXCLUDED, AND THIS WAS A DEFECT RATHER THAN A
+    # DESIGN. index.json and latest.json are regenerated from the tree every
+    # time a profile is added, so they change by construction; a rule refusing
+    # their modification would refuse the second profile this corpus ever gets.
+    # It fired on exactly that.
+    #
+    # ⚠ NOTHING GOES UNCHECKED. Their CONTENT is asserted by the second leg,
+    # which re-derives both from the profiles and compares. ⛔ Keep this
+    # identical to the sh twin.
+    $scope = @($corpusDir, $rawDir, ":(exclude)$corpusDir/*/index.json", ":(exclude)$corpusDir/*/latest.json")
+    $editLines = @(& git log --diff-filter=MDR --name-status --format='commit %h' -- @scope 2>$null)
     $edits = @($editLines | Where-Object { $_ -and -not $_.StartsWith('commit ') })
     $editCount = $edits.Count
 

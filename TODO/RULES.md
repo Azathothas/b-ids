@@ -178,6 +178,33 @@ here. [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md)
 also settles that upstreaming is not a topic, and `TOOL-04` is the first entry
 this applies to.
 
+## 8.5 ⚠ The Windows CI job fails at the toolchain step, and it is not yours
+
+⛔ **A standing fact, and it lives here rather than in
+[`PROGRESS.md`](PROGRESS.md) because that file is rewritten every session and
+this was lost that way once.**
+
+The Windows runner intermittently fails installing the pinned toolchain, with a
+component conflict rather than anything about this tree:
+
+```text
+error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc', detected conflict: 'bin\cargo-fmt.exe'
+```
+
+⭐ **How to tell it apart from a real failure**: it happens at the toolchain
+install, before any check runs, and the Ubuntu job of the same run passes. Rerun
+the failed job rather than changing anything.
+
+```bash
+gh run rerun RUN_ID --failed
+```
+
+⚠ **Measured 2026-09-01**: one run failed this way and the rerun of the same
+commit passed with no change to the tree. ⛔ A red build is still not left
+behind: the rerun is confirmed green before the session ends.
+
+---
+
 ## 9. What a session owes at its end
 
 ⛔ **Section 10 is the list, and it is the only copy.** It is written there

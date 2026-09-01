@@ -84,7 +84,22 @@ fi
 # "never delete a superseded profile"; and a rename is a published route
 # changing under a consumer who pinned it, which is the same defect wearing a
 # different name.
-EDITS=$(git log --diff-filter=MDR --name-status --format='commit %h' -- "$CORPUS_DIR" "$RAW_DIR" 2>/dev/null)
+# ⛔ THE DERIVED FILES ARE EXCLUDED, AND THIS WAS A DEFECT RATHER THAN A DESIGN.
+# `index.json` and `latest.json` are regenerated from the tree every time a
+# profile is added, so they change by construction; a rule that refused their
+# modification would refuse the second profile this corpus ever gets. It fired
+# on exactly that: the commit that changed the pointer file's schema.
+#
+# ⚠ NOTHING GOES UNCHECKED BY EXCLUDING THEM. Their CONTENT is asserted by the
+# second leg, which re-derives both from the profiles and compares. What the
+# history leg owns is the rule they are not subject to: a published PROFILE and
+# its raw sidecar are immutable.
+#
+# ⛔ Narrow, and by exact name at the layout root. A profile cannot collide with
+# either: one lives four components deep and these live at one.
+EDITS=$(git log --diff-filter=MDR --name-status --format='commit %h' -- \
+  "$CORPUS_DIR" "$RAW_DIR" \
+  ":(exclude)$CORPUS_DIR/*/index.json" ":(exclude)$CORPUS_DIR/*/latest.json" 2>/dev/null)
 EDIT_COUNT=$(printf '%s' "$EDITS" | awk 'NF && $1 != "commit"' | wc -l | tr -d ' ')
 
 # -- leg two: does every profile still agree with itself ---------------------

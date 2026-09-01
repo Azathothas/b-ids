@@ -213,6 +213,38 @@ exclusion acceptable: `Raw::check` decodes the recorded bytes and refuses the
 profile if they spell out a credential header. The one class of credential that
 could hide inside a frame array is the one already checked by the model itself.
 
+#### ⛔ The history leg refused the derived files, and that was its own defect
+
+⭐ **Found the moment a SECOND commit touched the corpus**, which is the earliest
+it could have been found and is why it was not visible when this entry closed.
+`check-corpus` reported:
+
+```text
+corpus check failed: 1 published file(s) modified, deleted or renamed after
+their first commit.
+
+commit af11973
+
+M	corpus/v1/latest.json
+```
+
+⛔ **`index.json` and `latest.json` are DERIVED and change by construction.** They
+are regenerated from the tree every time a profile is added, so a rule refusing
+their modification would refuse the second profile this corpus ever gets. The
+rule belongs to a published PROFILE and its raw sidecar, and to nothing else.
+
+⚠ **Nothing goes unchecked by excluding them.** Their content is asserted by the
+other leg, which re-derives both from the profiles and compares; a hand-edited
+index is refused there and `CORPUS-03` carries that mutation.
+
+⛔ **Mutation-proved in a throwaway repository, both halves, three directions:**
+
+| what was committed | edits | exit |
+| --- | --- | --- |
+| the derived index and pointer, regenerated | 0 | ⭐ allowed |
+| a published profile, edited in place | 1 | refused |
+| a raw sidecar, deleted | 2 | refused |
+
 #### ⚠ What is NOT in the first profile, and is not hidden
 
 | | |
