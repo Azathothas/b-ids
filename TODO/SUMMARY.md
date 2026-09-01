@@ -14,12 +14,12 @@ this one is stale.
 | row | measured |
 | --- | --- |
 | Elapsed | 3h12m, from the recorded start instant to the last commit |
-| Commits | 3 local, squashed to 1 and pushed, on `main`, from `bd02855` |
+| Commits | the session work squashed to 1, then 3 more: the review record, a red-build fix, and this table. 4 pushed on `main` from `bd02855`. |
 | Work | **7 entries completed**, 15 effort points. 0 deferred, 0 failed. Operator interrupt ended the session before the twenty-point quota. |
 | Changes | 273 files changed, 73,058 insertions, 343 deletions. ⚠ 210 of those files are the vendored tree; 63 are this project's own. |
 | Size | 43,268 lines tracked outside `references/` and `vendor/` |
-| Checks | ⭐ green. 20 checks, 19 passed and `check-twins` skipped by `--fast`; run separately it agrees on every pair. At the start: 19 checks, same shape. |
-| Tests | 192 across 22 test files in 4 crates, up from 166 in 16 |
+| Checks | ⭐ green, local and remote. 20 checks, 19 passed and `check-twins` skipped by `--fast`; run separately, 1025s, every pair agrees. At the start: 19 checks, same shape. ⚠ The remote went red once, on a test of this session's own, and was fixed before the session ended. |
+| Tests | 192 across 22 test files in 4 crates, up from 166 in 16. ⚠ One of them, the driven capture, is opt-in behind an environment variable and is gate part (b). |
 | Cost | no money. Network: one shallow clone of rustls, two crates.io resolutions, one reference-corpus read. |
 | Health | ⛔ 1 fabricated number found in this session's own writing and corrected in three files. 3 traps paid for and written down. 1 stale document claim fixed. Tree clean, nothing deployed, nothing published. |
 

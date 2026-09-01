@@ -16,7 +16,7 @@ rather than a document about the project.
 | the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-01T03:47:48Z to its operator interrupt, unattended, seven entries closed. |
 | the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1: **`CORPUS-01`**, which turns a capture into a profile. ⛔ It is the single thing in the way: the harness takes captures from real browsers and nothing writes one down. |
 | in flight | ⛔ Nothing. Every entry touched is closed with its acceptance command run, the record moved in the same change, and the tree committed. |
-| the state of the tree | Clean, one squashed commit on `main`, pushed. The gate passes 20 checks, with `check-twins` run separately and agreeing on every pair. ⛔ The corpus is empty: captures exist, no profile does. |
+| the state of the tree | Clean and pushed on `main`. The gate passes 20 checks locally, `check-twins` agrees on every pair, and the remote checks are green. ⛔ The corpus is empty: captures exist, no profile does. |
 | the paste | below |
 
 ---
