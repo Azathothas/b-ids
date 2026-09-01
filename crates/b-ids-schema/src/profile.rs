@@ -188,12 +188,196 @@ pub struct Digests {
 }
 
 /// The bytes, kept because a capture is a moment that cannot be retaken.
+///
+/// ⛔ **Everything the wire carried, and it is the backstop against this
+/// project's own parser being wrong**, which it will be. A field dropped
+/// because nobody could imagine a consumer is a field nobody can recover: the
+/// build will be gone, the download will stop being served, and the machine
+/// will be reimaged.
+///
+/// ⭐ **A profile is rebuildable from this block alone.** That is asserted by a
+/// test rather than intended, and it is what makes the raw block a backstop
+/// rather than a gesture.
+///
+/// ⚠ **The schema is additive.** Fields are added, never removed and never
+/// repurposed. Removing one is a new major, and a new major is a promise to
+/// keep serving the old one.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Raw {
     /// The whole `ClientHello`, hex-encoded.
+    ///
+    /// ⭐ The one artefact in which a GREASE question is answerable at all.
+    /// Every digest, JA4_ro included, strips GREASE before it is computed.
     pub client_hello_hex: Option<String>,
     /// The SETTINGS frame, hex-encoded.
+    ///
+    /// ⚠ Kept for the profiles written before `http2_frames_hex` existed. It
+    /// is the first entry of that list wherever both are present, and
+    /// [`Raw::check`] asserts they agree.
     pub settings_frame_hex: Option<String>,
+    /// Every HTTP/2 frame the connection opened with, in arrival order,
+    /// hex-encoded, head and payload together.
+    ///
+    /// ⛔ Every frame, including a frame type this project has no name for. A
+    /// sequence that silently omits one is a sequence nobody can compare.
+    #[serde(default)]
+    pub http2_frames_hex: Vec<String>,
+    /// The bytes of the HTTP/1.1 request line, exactly.
+    ///
+    /// ⚠ The BYTES rather than the text. A request line is not guaranteed to
+    /// be UTF-8 and a capture that stored it as text could not reproduce one
+    /// that was not.
+    #[serde(default)]
+    pub request_line_hex: Option<String>,
+    /// The whole first message of the connection, hex-encoded, before anything
+    /// was made of it.
+    ///
+    /// ⭐ The widest backstop there is: whatever the parser got wrong, this is
+    /// what it read.
+    #[serde(default)]
+    pub connection_hex: Option<String>,
+    /// What the TLS record layer itself carried.
+    #[serde(default)]
+    pub record_layer: Option<RecordLayer>,
+}
+
+/// The TLS record layer, which is a fingerprint surface of its own.
+///
+/// ⚠ **Its version is not the handshake's version and not the negotiated
+/// one.** Three quantities called "the version" live in one hello, and a
+/// profile that carried only one of them cannot say which.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecordLayer {
+    /// The version in the record header.
+    pub version: u16,
+    /// The length the record header declared.
+    pub declared_length: u16,
+    /// ⛔ How many bytes actually arrived after the header. Counting what
+    /// arrived rather than trusting what was declared is the rule; recording
+    /// both is what makes a disagreement visible instead of repaired.
+    pub bytes_arrived: usize,
+    /// Whether the hello arrived spread over more than one record.
+    ///
+    /// ⚠ A client that fragments its hello is a client that stands out, and a
+    /// reassembling parser loses the fact unless it is recorded here.
+    pub fragmented: bool,
+}
+
+impl Raw {
+    /// Whether this block carries enough to rebuild anything at all.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.client_hello_hex.is_none()
+            && self.settings_frame_hex.is_none()
+            && self.http2_frames_hex.is_empty()
+            && self.request_line_hex.is_none()
+            && self.connection_hex.is_none()
+    }
+
+    /// Every place two fields of this block disagree.
+    ///
+    /// ⛔ **A value in two places needs a check that they agree**, or the copy
+    /// a reader trusts is the wrong one.
+    #[must_use]
+    pub fn check(&self) -> Vec<crate::Defect> {
+        let mut defects = Vec::new();
+        if let (Some(settings), Some(first)) = (
+            self.settings_frame_hex.as_ref(),
+            self.http2_frames_hex.first(),
+        ) && settings != first
+        {
+            defects.push(crate::Defect::FieldMalformed {
+                field: "raw.settings_frame_hex".to_owned(),
+                why: format!(
+                    "is {settings} and the first recorded frame is {first}. They are one frame in \
+                     two fields and the older one is kept only for profiles written before the \
+                     list existed"
+                ),
+            });
+        }
+        // ⛔ THE CREDENTIAL RULE REACHES THE RAW BLOCK, and it did not until
+        // this check existed. `SCHEMA-04` says a capture carries no `cookie`
+        // and no `authorization`; `SCHEMA-07` says the raw bytes are never
+        // edited. On a CLEARTEXT surface those two rules collide: the parsed
+        // fields drop the credential and the bytes beside them still spell it
+        // out, hex-encoded, where a grep for the plaintext finds nothing.
+        //
+        // ⛔ The profile is REFUSED rather than repaired. Editing the bytes
+        // would destroy the one artefact that survives every parser defect,
+        // and dropping them silently is the failure this whole project is
+        // about. Fail loud; the operator decides what to do with the capture.
+        //
+        // ⚠ Only the cleartext fields are scanned. A `ClientHello` carries no
+        // header lines, and scanning it would be a rule firing on entropy.
+        for (field, hex) in [
+            ("raw.connection_hex", self.connection_hex.as_ref()),
+            ("raw.request_line_hex", self.request_line_hex.as_ref()),
+        ] {
+            if let Some(hex) = hex
+                && let Some(name) = credential_header_in_hex(hex)
+            {
+                defects.push(crate::Defect::FieldMalformed {
+                    field: field.to_owned(),
+                    why: format!(
+                        "carries a {name} header line. A capture records no credential, and these \
+                         bytes spell one out even though the parsed fields do not"
+                    ),
+                });
+            }
+        }
+
+        if let Some(record) = &self.record_layer
+            && let Some(hello) = &self.client_hello_hex
+        {
+            // ⚠ Two hex digits per byte, and the five-byte record head is part
+            // of what `client_hello_hex` carries.
+            let bytes = hello.len() / 2;
+            let expected = record.bytes_arrived + 5;
+            if bytes != expected {
+                defects.push(crate::Defect::FieldMalformed {
+                    field: "raw.record_layer.bytes_arrived".to_owned(),
+                    why: format!(
+                        "says {} byte(s) after a five-byte head, and raw.client_hello_hex holds \
+                         {bytes}",
+                        record.bytes_arrived
+                    ),
+                });
+            }
+        }
+        defects
+    }
+}
+
+/// Which credential header a run of hex spells out, if any.
+///
+/// ⚠ **Case-insensitive, and it looks for the header LINE rather than the
+/// word.** HTTP/1.1 does not lower-case its names and HTTP/2 does, so a rule
+/// holding one spelling holds nothing on the other wire; and the bare word
+/// appears in ordinary text, where a colon after it does not.
+fn credential_header_in_hex(hex: &str) -> Option<&'static str> {
+    let Ok(bytes) = decode_hex(hex) else {
+        return None;
+    };
+    let text = String::from_utf8_lossy(&bytes).to_ascii_lowercase();
+    crate::http::NEVER_RECORDED
+        .iter()
+        .find(|name| text.contains(&format!("{name}:")))
+        .copied()
+}
+
+/// Decode a hex run, refusing anything that is not one.
+fn decode_hex(text: &str) -> Result<Vec<u8>, ()> {
+    if !text.len().is_multiple_of(2) {
+        return Err(());
+    }
+    let bytes = text.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len() / 2);
+    for pair in bytes.chunks(2) {
+        let high = char::from(pair[0]).to_digit(16).ok_or(())?;
+        let low = char::from(pair[1]).to_digit(16).ok_or(())?;
+        out.push(u8::try_from(high * 16 + low).map_err(|_| ())?);
+    }
+    Ok(out)
 }
 
 /// One browser, one build, one platform, one channel, one instant.
@@ -316,6 +500,11 @@ impl Profile {
                 field: "captured.harness".to_owned(),
             });
         }
+
+        // ⛔ The raw block's own internal agreement. It is the backstop against
+        // this parser being wrong, so a backstop that disagrees with itself is
+        // worse than none.
+        defects.extend(self.raw.check());
 
         let derived = self.derived_id();
         if derived != self.id {

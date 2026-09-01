@@ -23,6 +23,12 @@
 #   sh scripts/common/check-no-secrets.sh --public     also the fingerprint rules
 #   sh scripts/common/check-no-secrets.sh --json
 #   sh scripts/common/check-no-secrets.sh --all-history   ⚠ slow; scans every blob
+#   sh scripts/common/check-no-secrets.sh --scope references   the exempt corpus
+#
+# --scope PATH scans ONLY that path, including one the default scope exempts.
+# ⛔ It is how the reference corpus exemption below is re-checked when a tree is
+# added, and the exemption's own instruction named it for one session before it
+# existed. A guard's re-check procedure that cannot be run is not a procedure.
 #
 # --public adds the rules that only matter for a repository that is or will be
 # public: emails, absolute home paths, long hex identifiers. In a private
@@ -38,12 +44,18 @@ set -u
 PUBLIC=0
 JSON=0
 HISTORY=0
+SCOPE=
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --public)      PUBLIC=1 ;;
     --json)        JSON=1 ;;
     --all-history) HISTORY=1 ;;
+    --scope)
+      shift
+      [ $# -gt 0 ] || { printf 'check-no-secrets: --scope needs a path\n' >&2; exit 2; }
+      SCOPE=$1
+      ;;
     -h|--help) awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print } else exit }' "$0"; exit 0 ;;
     *) printf 'check-no-secrets: unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -89,11 +101,50 @@ cd "$REPO_ROOT" || { printf '%s: cannot enter %s\n' "$SELF" "$REPO_ROOT" >&2; ex
 #                         same shape, and the pattern matching inside fetched
 #                         API JSON
 #
-# ⛔ Not one is a live credential. ⚠ A future sweep adds trees this reading did
-# not cover, so re-run with `--scope references` and READ the hits before
-# trusting this exemption again. docs/reference-sweeps/findings.md records it.
+# ⛔ Not one is a live credential.
+#
+# ⭐ RE-READ ON 2026-09-01, over the tree HARNESS-04 added, with
+# `--public --scope references/http2jp__hpack-test-case`. 52,396 hits in three
+# categories and every one was read:
+#
+#   a long hex identifier 52,330 hits: the `wire` field of every test case,
+#                         which is the HPACK-coded bytes the corpus exists to
+#                         carry.
+#   an absolute home path 62 hits: `:path` header VALUES in the recorded
+#                         requests, each a home directory prefix followed by a
+#                         year and an image name. They are URL paths on
+#                         2012-era websites and not filesystem paths at all. A
+#                         false positive on the shape.
+#   an email address      4 hits: the upstream author's own published address
+#                         in their CI configuration, a token VARIABLE
+#                         interpolated into a code-hosting URL, and an ssh
+#                         remote form.
+#
+# ⚠ Those two rows describe their hits rather than quoting them, because a
+# guard that carries a specimen of what it refuses refuses itself. Widening the
+# rule so it can read its own comment would be widening a credential rule to
+# make a comment legal.
+#
+# ⚠ That CI file also carries a `secure:` blob, which is a value the CI service
+# encrypted to its own key, published by its author in a public repository, for
+# a service that no longer runs. It is named here because it is the closest
+# thing in the tree to a credential shape and an unmentioned one reads like an
+# unnoticed one.
+#
+# ⚠ A future sweep adds trees these readings did not cover, so re-run with
+# `--scope references` and READ the hits before trusting this exemption again.
+# docs/reference-sweeps/findings.md records it.
 
 list_files() {
+  if [ -n "$SCOPE" ]; then
+    # ⛔ Under --scope the corpus exemption does NOT apply, which is the whole
+    # point of the flag: it exists to read the thing the default scope skips.
+    {
+      git ls-files -- "$SCOPE" 2>/dev/null
+      git ls-files --others --exclude-standard -- "$SCOPE" 2>/dev/null
+    } | sort -u
+    return
+  fi
   {
     git ls-files -- "$@" 2>/dev/null
     git ls-files --others --exclude-standard -- "$@" 2>/dev/null

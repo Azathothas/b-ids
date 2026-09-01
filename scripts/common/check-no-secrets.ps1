@@ -27,6 +27,12 @@
 #   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1
 #   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1 -Public
 #   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1 -Json
+#   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1 -Scope references
+#
+# -Scope PATH scans ONLY that path, including one the default scope exempts.
+# ⛔ It is how the reference corpus exemption below is re-checked when a tree is
+# added, and the exemption's own instruction named it for one session before it
+# existed. A guard's re-check procedure that cannot be run is not a procedure.
 #
 # Exit codes: 0 nothing found, 1 something found, 2 could not run.
 #
@@ -35,7 +41,8 @@
 [CmdletBinding()]
 param(
     [switch]$Public,
-    [switch]$Json
+    [switch]$Json,
+    [string]$Scope
 )
 
 Set-StrictMode -Version Latest
@@ -69,8 +76,19 @@ finally { Pop-Location }
 # reading them. The sh twin's header carries the counts and the categories, and
 # docs/reference-sweeps/findings.md records the reading.
 # ⛔ Keep this identical to the sh twin.
-$files = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -cnotmatch '^references/' } | Sort-Object -Unique)
+if ($Scope) {
+    # ⛔ Under -Scope the corpus exemption does NOT apply, which is the whole
+    # point of the parameter: it exists to read the thing the default scope
+    # skips.
+    $prefix = $Scope.TrimEnd('/', '\') + '/'
+    $files = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -and ($_ -eq $Scope -or $_.StartsWith($prefix)) } |
+        Sort-Object -Unique)
+}
+else {
+    $files = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -and $_ -cnotmatch '^references/' } | Sort-Object -Unique)
+}
 
 $script:found = 0
 $script:report = New-Object System.Collections.ArrayList

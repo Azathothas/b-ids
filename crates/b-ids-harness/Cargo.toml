@@ -19,3 +19,8 @@ serde_json.workspace = true
 
 [dev-dependencies]
 b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }
+# ⛔ A DEV dependency, not a real one. HARNESS-06 is about the parser's model
+# and the emitter's model being two types, and its test needs both. The harness
+# itself must never depend on the emitter: a capture tool that imported an
+# emitter would be one component with two jobs.
+b-ids-emit = { path = "../b-ids-emit" }

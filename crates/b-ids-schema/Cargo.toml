@@ -24,3 +24,10 @@ serde_json.workspace = true
 
 [dev-dependencies]
 b-ids-schema = { path = ".", features = ["fixtures"] }
+# ⛔ A DEV dependency, and it points BACK at a crate that depends on this one.
+# Cargo permits that cycle for dev-dependencies alone, and SCHEMA-06 is why one
+# is taken: the acceptance asks whether a profile can be rebuilt from its raw
+# block, and rebuilding needs the parser. ⚠ Nothing a consumer links carries it,
+# and the arrow that matters still runs one way: the harness depends on the
+# schema, never the reverse.
+b-ids-harness = { path = "../b-ids-harness" }

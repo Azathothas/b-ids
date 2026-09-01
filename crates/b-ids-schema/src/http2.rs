@@ -242,8 +242,11 @@ impl Http2Half {
     /// ⛔ DERIVED, and derived here so that nothing has to store it. A digest is
     /// derived from a profile and a profile is never derived from a digest.
     ///
-    /// ⚠ The rendering loses what the model keeps: an absent priority block and
-    /// a block of zeroes both render as `0`.
+    /// ⚠ The rendering loses what the model keeps. An absent block renders as
+    /// `0`, and `0` is also what a source that could not read a block reports
+    /// and what a stack that cannot write one emits. Three published readings
+    /// of this field disagree for exactly that reason, so the string is a
+    /// rendering of the model and never a substitute for it.
     #[must_use]
     pub fn akamai_text(&self) -> String {
         let settings = self.settings().map_or_else(String::new, |entries| {

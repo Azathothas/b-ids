@@ -13,11 +13,28 @@ rather than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-08-31T14:10:15Z to 2026-08-31T16:43:25Z. |
-| the resume point | ⭐ [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1: `HARNESS-03` and `HARNESS-04`. Terminating the handshake is the single biggest unlock left: it closes `HARNESS-02` and `HARNESS-05` cannot be taken without it. |
-| in flight | Nothing half-edited. ⚠ `HARNESS-02` is `partial` by decision, not by interruption: seven of nine switches are done and `--ca-out` and `--until-h2` are blocked on `HARNESS-03`. The entry says so and the command refuses both by name. |
-| the state of the tree | Clean. The gate passes, all 19 checks, both halves of every pair, and 92 tests across four crates. No capture has been taken and the corpus is empty. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-01T00:50:02Z to its operator interrupt. |
+| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1: **author an entry for the vendored TLS server**, then implement it. It is the single blocker on the whole browser half of the project. |
+| in flight | ⛔ Nothing half-edited. `HARNESS-02` is `partial` by decision, with `--ca-out` absent rather than inert. `HARNESS-05`'s probe half is done and its entry names what is left. |
+| the state of the tree | Clean, committed and pushed. The gate passes all 19 checks, both halves of every pair. 166 tests in 16 files across 3 crates. ⛔ No capture has been taken and the corpus is empty. |
 | the paste | below |
+
+---
+
+## ⭐ The ruling this session was given, and it is now settled
+
+**The TLS terminator is VENDORED here and patched here**, rather than taken as
+a registry dependency or written from scratch. The operator ruled it on
+2026-09-01 and named the practice to follow: `Azathothas/bit-cli`'s, whose
+shape is a manifest naming what is vendored and at which commit, a record of
+every local change, a derived patch series regenerated from the tree, and a
+scan that reports when upstream has moved.
+[`../methodology/vendoring.md`](../methodology/vendoring.md) is this tree's own
+half of the rule, and [`../../TODO/RULES.md`](../../TODO/RULES.md) records the
+ruling.
+
+⚠ **Nothing is vendored yet and no entry exists for it.** Authoring one is the
+first step, and ⛔ authoring does not implement.
 
 ---
 

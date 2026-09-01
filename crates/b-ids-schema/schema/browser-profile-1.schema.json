@@ -20,139 +20,272 @@
     "supersedes"
   ],
   "properties": {
-    "schema": { "const": "browser-profile/1" },
+    "schema": {
+      "const": "browser-profile/1"
+    },
     "id": {
       "type": "string",
       "description": "Derived from the four keys, not a hash, so a published path can be built without an index."
     },
-    "browser": { "$ref": "#/$defs/browser" },
-    "platform": { "$ref": "#/$defs/platform" },
-    "captured": { "$ref": "#/$defs/captured" },
-    "tls": { "$ref": "#/$defs/tls" },
-    "http2": { "$ref": "#/$defs/http2" },
-    "http": { "$ref": "#/$defs/http" },
-    "digests": { "$ref": "#/$defs/digests" },
-    "raw": { "$ref": "#/$defs/raw" },
-    "provenance": { "$ref": "#/$defs/provenance" },
+    "browser": {
+      "$ref": "#/$defs/browser"
+    },
+    "platform": {
+      "$ref": "#/$defs/platform"
+    },
+    "captured": {
+      "$ref": "#/$defs/captured"
+    },
+    "tls": {
+      "$ref": "#/$defs/tls"
+    },
+    "http2": {
+      "$ref": "#/$defs/http2"
+    },
+    "http": {
+      "$ref": "#/$defs/http"
+    },
+    "digests": {
+      "$ref": "#/$defs/digests"
+    },
+    "raw": {
+      "$ref": "#/$defs/raw"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
     "supersedes": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "A published profile is immutable. A correction is a new profile naming the one it replaces."
     }
   },
   "$defs": {
-    "u8": { "type": "integer" },
-    "u16": { "type": "integer" },
-    "u32": { "type": "integer" },
-    "hex": { "type": "string" },
-
+    "u8": {
+      "type": "integer"
+    },
+    "u16": {
+      "type": "integer"
+    },
+    "u32": {
+      "type": "integer"
+    },
+    "hex": {
+      "type": "string"
+    },
     "browser": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "version", "major", "channel", "branded"],
+      "required": [
+        "name",
+        "version",
+        "major",
+        "channel",
+        "branded"
+      ],
       "properties": {
-        "name": { "type": "string" },
+        "name": {
+          "type": "string"
+        },
         "version": {
           "type": "string",
           "description": "The exact build, never a major alone."
         },
-        "major": { "$ref": "#/$defs/u32" },
+        "major": {
+          "$ref": "#/$defs/u32"
+        },
         "channel": {
-          "enum": ["stable", "beta", "dev", "nightly", "canary", "esr"],
+          "enum": [
+            "stable",
+            "beta",
+            "dev",
+            "nightly",
+            "canary",
+            "esr"
+          ],
           "description": "latest is not a channel. It means stable and nothing else."
         },
-        "branded": { "type": "boolean" }
+        "branded": {
+          "type": "boolean"
+        }
       }
     },
-
     "platform": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["os", "arch", "distribution"],
+      "required": [
+        "os",
+        "arch",
+        "distribution"
+      ],
       "properties": {
-        "os": { "enum": ["linux", "windows", "mac", "android", "ios"] },
-        "arch": { "type": "string" },
-        "distribution": { "type": ["string", "null"] }
+        "os": {
+          "enum": [
+            "linux",
+            "windows",
+            "mac",
+            "android",
+            "ios"
+          ]
+        },
+        "arch": {
+          "type": "string"
+        },
+        "distribution": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
-
     "captured": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["at", "method", "harness", "operator"],
+      "required": [
+        "at",
+        "method",
+        "harness",
+        "operator"
+      ],
       "properties": {
         "at": {
           "type": "string",
           "description": "ISO 8601 UTC, and never optional."
         },
-        "method": { "type": "string" },
-        "harness": { "type": "string" },
-        "operator": { "type": "string" }
+        "method": {
+          "type": "string"
+        },
+        "harness": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        }
       }
     },
-
     "extension": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["codepoint", "length", "body_hex"],
+      "required": [
+        "codepoint",
+        "length",
+        "body_hex"
+      ],
       "properties": {
-        "codepoint": { "$ref": "#/$defs/u16" },
-        "length": { "$ref": "#/$defs/u16" },
-        "body_hex": { "$ref": "#/$defs/hex" }
+        "codepoint": {
+          "$ref": "#/$defs/u16"
+        },
+        "length": {
+          "$ref": "#/$defs/u16"
+        },
+        "body_hex": {
+          "$ref": "#/$defs/hex"
+        }
       }
     },
-
     "key_share": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["group", "entry_len"],
+      "required": [
+        "group",
+        "entry_len"
+      ],
       "properties": {
-        "group": { "$ref": "#/$defs/u16" },
-        "entry_len": { "$ref": "#/$defs/u16" }
+        "group": {
+          "$ref": "#/$defs/u16"
+        },
+        "entry_len": {
+          "$ref": "#/$defs/u16"
+        }
       }
     },
-
     "ech": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mode", "kem_id"],
+      "required": [
+        "mode",
+        "kem_id"
+      ],
       "properties": {
-        "mode": { "$ref": "#/$defs/u8" },
-        "kem_id": { "$ref": "#/$defs/u16" }
+        "mode": {
+          "$ref": "#/$defs/u8"
+        },
+        "kem_id": {
+          "$ref": "#/$defs/u16"
+        }
       }
     },
-
     "shuffle": {
       "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["state", "draws"],
+          "required": [
+            "state",
+            "draws"
+          ],
           "properties": {
-            "state": { "enum": ["observed", "fixed"] },
-            "draws": { "$ref": "#/$defs/u32" }
+            "state": {
+              "enum": [
+                "observed",
+                "fixed"
+              ]
+            },
+            "draws": {
+              "$ref": "#/$defs/u32"
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["state"],
-          "properties": { "state": { "const": "unknown" } }
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "unknown"
+            }
+          }
         }
       ]
     },
-
     "grease": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["extension_positions", "values", "distinct", "bodies_hex"],
+      "required": [
+        "extension_positions",
+        "values",
+        "distinct",
+        "bodies_hex"
+      ],
       "properties": {
-        "extension_positions": { "type": "array", "items": { "$ref": "#/$defs/u32" } },
-        "values": { "type": "array", "items": { "$ref": "#/$defs/u16" } },
-        "distinct": { "type": "boolean" },
-        "bodies_hex": { "type": "array", "items": { "$ref": "#/$defs/hex" } }
+        "extension_positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/u32"
+          }
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/u16"
+          }
+        },
+        "distinct": {
+          "type": "boolean"
+        },
+        "bodies_hex": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hex"
+          }
+        }
       }
     },
-
     "tls": {
       "type": "object",
       "additionalProperties": false,
@@ -175,61 +308,142 @@
         "grease"
       ],
       "properties": {
-        "record_version": { "$ref": "#/$defs/u16" },
-        "legacy_version": { "$ref": "#/$defs/u16" },
-        "session_id_len": { "$ref": "#/$defs/u8" },
-        "session_id_hex": { "$ref": "#/$defs/hex" },
-        "cipher_suites": { "type": "array", "items": { "$ref": "#/$defs/u16" } },
-        "compression_methods": { "type": "array", "items": { "$ref": "#/$defs/u8" } },
+        "record_version": {
+          "$ref": "#/$defs/u16"
+        },
+        "legacy_version": {
+          "$ref": "#/$defs/u16"
+        },
+        "session_id_len": {
+          "$ref": "#/$defs/u8"
+        },
+        "session_id_hex": {
+          "$ref": "#/$defs/hex"
+        },
+        "cipher_suites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/u16"
+          }
+        },
+        "compression_methods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/u8"
+          }
+        },
         "extensions": {
           "type": "array",
-          "items": { "$ref": "#/$defs/extension" },
+          "items": {
+            "$ref": "#/$defs/extension"
+          },
           "description": "Ordered, keyed by codepoint, with an arbitrary body. An unknown codepoint is kept with its bytes, never dropped and never named as a typed field."
         },
-        "key_exchange_groups": { "type": "array", "items": { "$ref": "#/$defs/u16" } },
-        "key_shares": { "type": "array", "items": { "$ref": "#/$defs/key_share" } },
-        "signature_algorithms": { "type": "array", "items": { "$ref": "#/$defs/u16" } },
+        "key_exchange_groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/u16"
+          }
+        },
+        "key_shares": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/key_share"
+          }
+        },
+        "signature_algorithms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/u16"
+          }
+        },
         "signature_algorithms_cert": {
-          "type": ["array", "null"],
-          "items": { "$ref": "#/$defs/u16" }
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/u16"
+          }
         },
-        "alpn": { "type": "array", "items": { "type": "string" } },
+        "alpn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "ech": {
-          "oneOf": [{ "$ref": "#/$defs/ech" }, { "type": "null" }]
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ech"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
-        "padding_len": { "type": ["integer", "null"] },
-        "shuffled": { "$ref": "#/$defs/shuffle" },
-        "grease": { "$ref": "#/$defs/grease" }
+        "padding_len": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "shuffled": {
+          "$ref": "#/$defs/shuffle"
+        },
+        "grease": {
+          "$ref": "#/$defs/grease"
+        }
       }
     },
-
     "setting_entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "value"],
+      "required": [
+        "id",
+        "value"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/u16" },
-        "value": { "$ref": "#/$defs/u32" }
+        "id": {
+          "$ref": "#/$defs/u16"
+        },
+        "value": {
+          "$ref": "#/$defs/u32"
+        }
       }
     },
-
     "frame": {
       "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["frame", "entries"],
+          "required": [
+            "frame",
+            "entries"
+          ],
           "properties": {
-            "frame": { "const": "settings" },
-            "entries": { "type": "array", "items": { "$ref": "#/$defs/setting_entry" } }
+            "frame": {
+              "const": "settings"
+            },
+            "entries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/setting_entry"
+              }
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["frame", "window_size_increment"],
+          "required": [
+            "frame",
+            "window_size_increment"
+          ],
           "properties": {
-            "frame": { "const": "window_update" },
+            "frame": {
+              "const": "window_update"
+            },
             "window_size_increment": {
               "$ref": "#/$defs/u32",
               "description": "The increment, which is the window minus the protocol's own 65535 default."
@@ -239,50 +453,82 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["frame", "stream_id", "has_priority_block"],
+          "required": [
+            "frame",
+            "stream_id",
+            "has_priority_block"
+          ],
           "properties": {
-            "frame": { "const": "headers" },
-            "stream_id": { "$ref": "#/$defs/u32" },
-            "has_priority_block": { "type": "boolean" }
+            "frame": {
+              "const": "headers"
+            },
+            "stream_id": {
+              "$ref": "#/$defs/u32"
+            },
+            "has_priority_block": {
+              "type": "boolean"
+            }
           }
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["frame", "frame_type", "payload_hex"],
+          "required": [
+            "frame",
+            "frame_type",
+            "payload_hex"
+          ],
           "properties": {
-            "frame": { "const": "other" },
-            "frame_type": { "$ref": "#/$defs/u8" },
-            "payload_hex": { "$ref": "#/$defs/hex" }
+            "frame": {
+              "const": "other"
+            },
+            "frame_type": {
+              "$ref": "#/$defs/u8"
+            },
+            "payload_hex": {
+              "$ref": "#/$defs/hex"
+            }
           }
         }
       ]
     },
-
     "stream_priority": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["exclusive", "stream_dependency", "weight_wire"],
+      "required": [
+        "exclusive",
+        "stream_dependency",
+        "weight_wire"
+      ],
       "properties": {
-        "exclusive": { "type": "boolean" },
-        "stream_dependency": { "$ref": "#/$defs/u32" },
+        "exclusive": {
+          "type": "boolean"
+        },
+        "stream_dependency": {
+          "$ref": "#/$defs/u32"
+        },
         "weight_wire": {
           "$ref": "#/$defs/u8",
           "description": "The weight as encoded, which HTTP/2 defines as the weight minus one."
         }
       }
     },
-
     "priority_frame": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["stream_id", "priority"],
+      "required": [
+        "stream_id",
+        "priority"
+      ],
       "properties": {
-        "stream_id": { "$ref": "#/$defs/u32" },
-        "priority": { "$ref": "#/$defs/stream_priority" }
+        "stream_id": {
+          "$ref": "#/$defs/u32"
+        },
+        "priority": {
+          "$ref": "#/$defs/stream_priority"
+        }
       }
     },
-
     "http2": {
       "type": "object",
       "additionalProperties": false,
@@ -296,86 +542,222 @@
       "properties": {
         "frames": {
           "type": "array",
-          "items": { "$ref": "#/$defs/frame" },
+          "items": {
+            "$ref": "#/$defs/frame"
+          },
           "description": "Ordered. An absent setting is expressed by omission and never as a default value."
         },
         "stream_priority": {
-          "oneOf": [{ "$ref": "#/$defs/stream_priority" }, { "type": "null" }],
+          "oneOf": [
+            {
+              "$ref": "#/$defs/stream_priority"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "null means no block was sent, which is a measurement."
         },
-        "priority_frames": { "type": "array", "items": { "$ref": "#/$defs/priority_frame" } },
-        "pseudo_header_order": { "type": "array", "items": { "type": "string" } },
+        "priority_frames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/priority_frame"
+          }
+        },
+        "pseudo_header_order": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "connection_window": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "description": "The window in the human unit, carried beside the increment rather than instead of it. A check asserts they differ by the protocol default."
         }
       }
     },
-
     "header_field": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string" },
+        "name": {
+          "type": "string"
+        },
         "value": {
           "type": "string",
           "description": "Absent under the default policy. Present only where values were deliberately recorded, and never for cookie or authorization."
         }
       }
     },
-
     "header_set": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["variant", "headers"],
+      "required": [
+        "variant",
+        "headers"
+      ],
       "properties": {
-        "variant": { "enum": ["navigate", "subresource", "reload"] },
-        "headers": { "type": "array", "items": { "$ref": "#/$defs/header_field" } }
+        "variant": {
+          "enum": [
+            "navigate",
+            "subresource",
+            "reload"
+          ]
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/header_field"
+          }
+        }
       }
     },
-
     "http": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["variants"],
+      "required": [
+        "variants"
+      ],
       "properties": {
         "variants": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "#/$defs/header_set" }
+          "items": {
+            "$ref": "#/$defs/header_set"
+          }
         }
       }
     },
-
     "digests": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ja3", "ja4", "ja4_r", "ja4_ro", "akamai"],
+      "required": [
+        "ja3",
+        "ja4",
+        "ja4_r",
+        "ja4_ro",
+        "akamai"
+      ],
       "description": "Derived, and a sibling of the measured halves rather than inside one. None of them is a key.",
       "properties": {
-        "ja3": { "type": ["string", "null"] },
-        "ja4": { "type": ["string", "null"] },
-        "ja4_r": { "type": ["string", "null"] },
-        "ja4_ro": { "type": ["string", "null"] },
-        "akamai": { "type": ["string", "null"] }
+        "ja3": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ja4": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ja4_r": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ja4_ro": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "akamai": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
-
     "raw": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["client_hello_hex", "settings_frame_hex"],
+      "required": [
+        "client_hello_hex",
+        "settings_frame_hex"
+      ],
       "properties": {
-        "client_hello_hex": { "type": ["string", "null"] },
-        "settings_frame_hex": { "type": ["string", "null"] }
+        "client_hello_hex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "settings_frame_hex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "http2_frames_hex": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hex"
+          }
+        },
+        "request_line_hex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "connection_hex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "record_layer": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/record_layer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
       }
     },
-
     "provenance": {
       "type": "object",
       "description": "Per field, keyed by the field's dotted path. The value is a kind, optionally followed by a colon and a reason.",
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "record_layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "declared_length",
+        "bytes_arrived",
+        "fragmented"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/u16"
+        },
+        "declared_length": {
+          "$ref": "#/$defs/u16"
+        },
+        "bytes_arrived": {
+          "type": "integer"
+        },
+        "fragmented": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }

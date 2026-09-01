@@ -133,6 +133,13 @@ reassembly rather than the harness.
 
 - ⛔ **HTTP/2 is not read**, because reaching it needs the handshake terminated
   and terminating one can change what the client offers. `HARNESS-03`.
+
+  ⛔ **The reason above is half wrong, and `HARNESS-03` measured it.** Reaching
+  HTTP/2 from a BROWSER needs the handshake terminated. Reaching HTTP/2 at all
+  does not: a client with prior knowledge opens a cleartext connection with the
+  preface, and every frame that carries the fingerprint arrives before the
+  first response. The premise keeps its wording and the correction is written
+  underneath it.
 - **The digest expectations are not shipped.** The sweep asks for
   `--expect-ja4`, `--expect-ja3` and `--expect-akamai` in this change;
   computing them needs MD5 and SHA-256 implementations with published test
@@ -187,34 +194,34 @@ message naming the reason, and the default run's output contains no header value
 
 ### Closing
 
-⚠ **PARTIAL, 2026-08-31.** Seven of the nine switches are implemented,
-exercised and mutation-proved. Two are blocked on `HARNESS-03` and the entry
-stays open with the blocker named.
+⚠ **PARTIAL, and updated 2026-09-01.** Eight of the nine switches are
+implemented, exercised and mutation-proved. One is blocked and the entry stays
+open with the blocker named.
 
 ```text
 $ cargo test -p b-ids-harness switches -- --nocapture
-test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
 exit=0
 ```
 
 | switch | state |
 | --- | --- |
 | `--raw` | done, and it is the DEFAULT rather than a mode somebody opts into |
-| `--plain` | done |
+| `--plain` | done, and it reads whichever cleartext protocol the peer spoke rather than HTTP/1.1 alone. `HARNESS-03`. |
 | `--bind ADDR` | done, refusing a hostname and the unspecified address, each by name |
 | `--hello-out PATH` | done |
 | `--header-values` | done, off by default, and it does not lift the credential rule |
 | `--json` | done, base URL first, then one object per connection |
 | `--handshakes N` | done, with `--once` beside it |
-| ⛔ `--ca-out PATH` | **blocked on `HARNESS-03`**: minting an authority is only useful once the handshake is terminated |
-| ⛔ `--until-h2` | **blocked on `HARNESS-03`**: there is no HTTP/2 to stop at |
+| `--until-h2` | done 2026-09-01. `HARNESS-03` reached HTTP/2 over cleartext with prior knowledge, so there is one to stop at. |
+| ⛔ `--ca-out PATH` | **blocked on a TLS server this tree does not have**: minting an authority is only useful once the handshake is terminated, and terminating one needs a TLS implementation. The ruling is to vendor and patch one. |
 
-⭐ **The two blocked switches are ABSENT, not present and inert**, and the
-command refuses them by name:
+⭐ **The blocked switch is ABSENT, not present and inert**, and the command
+refuses it by name:
 
 ```text
 $ b-ids-harness --ca-out unused
-b-ids-harness: --ca-out needs the handshake terminated, which is HARNESS-03. It is absent rather than inert, because a flag that parsed and did nothing would be worse
+b-ids-harness: --ca-out needs the TLS handshake terminated, which needs a TLS server this tree does not have yet. It is absent rather than inert, because a flag that parsed and did nothing would be worse
 ```
 
 ⚠ A flag that parsed and did nothing would be the "setting or flag that no code
@@ -275,16 +282,18 @@ shape. Both doors are gated and both are tested.
 
 ### What would close this entry
 
-`HARNESS-03` terminating the handshake, at which point `--ca-out` mints the
-authority and `--until-h2` has an HTTP/2 connection to stop at. Nothing else is
-outstanding.
+A TLS server that can terminate a handshake, at which point `--ca-out` mints
+the authority a client verifies against. Nothing else is outstanding.
+
+⚠ **`--until-h2` was closed by `HARNESS-03` rather than by a terminated
+handshake**, because reaching HTTP/2 at all did not need one.
 
 ---
 
 ## HARNESS-03. Read HTTP/2 settings, the window update and the priority block
 
 **Source** the founding brief; the block is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5
-**Category** harness, **Priority** P1, **Effort** M, **Status** open
+**Category** harness, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -320,12 +329,154 @@ Passing means: a fixture of frame bytes produces a profile whose settings list
 is in arrival order, and a fixture that omits one settings key produces a
 profile that records it as absent rather than as its default.
 
+### Closing
+
+**Closed 2026-09-01.** The reader takes the preface and every frame behind it,
+and the cleartext surface reaches HTTP/2 with prior knowledge, so the acceptance
+runs over a real loopback socket as well as over the frame bytes.
+
+```text
+$ cargo test -p b-ids-harness http2 -- --nocapture
+running 15 tests
+test http2_refuses_bytes_that_are_not_a_connection_preface ... ok
+test http2_skips_the_pad_length_byte_before_the_priority_block ... ok
+test http2_notes_a_truncated_frame_rather_than_padding_it ... ok
+test http2_keeps_a_frame_type_it_has_no_name_for ... ok
+test http2_records_a_standalone_priority_frame_separately_from_the_block ... ok
+test http2_the_frame_list_is_the_arrival_sequence ... ok
+test http2_reads_the_window_update_increment_and_never_the_window ... ok
+test http2_reads_the_priority_block_as_bytes_and_reports_the_raw_five ... ok
+test http2_records_an_absent_setting_as_absent_rather_than_as_its_default ... ok
+test http2_reads_the_settings_in_the_order_they_arrived ... ok
+test http2_the_akamai_string_is_derived_from_the_frames ... ok
+test http2_a_cleartext_http1_request_is_still_read_as_http1 ... ok
+test http2_reaches_the_listener_over_a_cleartext_socket ... ok
+test http2_until_h2_stops_at_the_first_connection_that_reached_it ... ok
+test http2_reassembles_a_connection_split_across_two_reads ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+exit=0
+```
+
+### ⭐ HTTP/2 was reached WITHOUT terminating TLS, and that is the finding
+
+The entry sat behind `--ca-out` because reaching HTTP/2 from a browser needs a
+terminated handshake. ⭐ **It does not need one to reach HTTP/2 at all.** A
+client with prior knowledge opens a cleartext connection with the preface, and
+every frame that carries the fingerprint arrives before the first response.
+
+So the cleartext surface reads whichever protocol the peer actually spoke, and
+⛔ **the bytes decide rather than a flag the operator passed.** A run does not
+get to declare what its peer will send, and a capture that recorded an HTTP/2
+connection as an unparseable HTTP/1.1 request would be recording the harness.
+
+⚠ **What this does NOT reach is a browser.** No browser speaks cleartext
+HTTP/2, so the browser half still needs the handshake terminated. That is what
+`--ca-out` is for and it stays absent.
+
+### The capture record is `harness-capture/2`
+
+Two changes, and a version is part of the data rather than implied by the
+reader:
+
+- the `http2` half is a new sibling of `tls`;
+- `plain_http1` became `cleartext`, because the surface is cleartext and the
+  peer picks the protocol. A surface named for one protocol that can produce
+  the other is a field that lies.
+
+### ⚠ The pad length byte comes before the priority block
+
+⛔ **A reader that takes the five bytes straight after the frame head is right
+on every unpadded frame and silently wrong on a padded one**, reporting a
+dependency assembled from the pad length and four bytes of the real block.
+RFC 9113 puts `Pad Length` first when `PADDED` is set, and the block after it.
+
+⚠ The instrument this project inherited its predicted answer from reads the five
+bytes at a fixed offset. That is correct for the browsers it was pointed at and
+it is not a general rule, so this reader skips the pad byte and a test proves it
+by sending a padded frame.
+
+### What the fifteen tests cover
+
+| test | what it would catch |
+| --- | --- |
+| the settings arrive in order | a reader that sorted, or that used a map. ⭐ The fixture sends 6, 1, 4, 2 because nothing sorts to that. |
+| ⭐ an absent setting is absent | a default filled in for a key nobody sent, which is the one substitution the model exists to make impossible |
+| the increment, never the window | the two units of one quantity, which one shipped database holds in a single field |
+| the priority block as bytes, and the raw five | a rendered string standing in for a measurement |
+| ⚠ the pad length byte is skipped | a dependency read out of the padding |
+| a frame type with no name is kept | a sequence nobody can compare |
+| a standalone PRIORITY frame is separate | two seams merged into one field |
+| the frame list is the arrival sequence | any reordering, and a reserved bit nobody looked at |
+| bytes that are not a preface are refused | the surface detection picking the wrong reader |
+| a truncated frame is noted, not padded | a truncated frame recorded as complete |
+| ⭐ a connection split across two reads | a completeness rule that stops at the preface's own blank line |
+| the listener reads it over a socket | a library that works and a listener that does not |
+| an HTTP/1.1 request is still HTTP/1.1 | the second reader taking the first one away |
+| `--until-h2` stops at the first one | a run that keeps the abandoned preconnect |
+| the Akamai string is derived | a digest stored beside the measurement it is derived from |
+
+### Mutation-proved
+
+⛔ Four guards, each mutated on its own and the failure read.
+
+```text
+=== HARNESS-03: the settings arrive in order, mutated to sort ===
+assertion `left == right` failed: the arrival order is not preserved
+  left: [1, 2, 4, 6]
+ right: [6, 1, 4, 2]
+test result: FAILED. 12 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+=== HARNESS-03: an absent setting is absent, mutated to fill in the default ===
+test result: FAILED. 10 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+=== HARNESS-03: the pad length byte is skipped, mutated to ignore it ===
+the pad byte was read as the block
+test result: FAILED. 13 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+=== HARNESS-03: the preface is asked about FIRST, mutated to ask the blank line first ===
+assertion `left == right` failed: the read stopped early
+  left: 24
+ right: 111
+test result: FAILED. 14 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+```
+
+### ⛔ The fourth mutation found a missing test rather than proving one
+
+**The first attempt at it reported fifteen passing tests, and the mutation had
+not been applied.** A quoting difference between the shell and the patch tool
+left the file untouched, so the green result was the unmutated tree.
+
+⭐ **Applying it properly showed the guard was genuinely untested**, for a
+reason worth carrying: every existing test wrote its whole connection in one
+call, and a message that arrives complete on the first read is complete
+whatever the rule says. A completeness rule that stops too early passes every
+single-write test and truncates every real client.
+`http2_reassembles_a_connection_split_across_two_reads` was added for it, and
+the mutation then reported 24 bytes read against 111.
+
+⚠ **The same shape had already been paid for once**, on the TLS side, in
+`HARNESS-01`. It was not carried across to the second protocol because the
+second protocol's tests were written from the parser's side rather than the
+socket's.
+
+### What is NOT read here
+
+- ⛔ **The header block is not decoded**, so `pseudo_header_order` is empty and
+  the capture carries a note saying which entry decodes it. An empty list with
+  no note would read as a client that sent no pseudo-headers. `HARNESS-04`.
+- **A stream-level WINDOW_UPDATE is kept as the frame it is**, with its
+  payload, rather than answering for the connection-level increment.
+- **A SETTINGS acknowledgement is kept as the frame it is.** Recording it as a
+  SETTINGS frame with an empty entry list would read as a client that sent no
+  settings.
+
 ---
 
 ## HARNESS-04. Decode HPACK Huffman, because header order is behind it
 
 **Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 14
-**Category** harness, **Priority** P1, **Effort** M, **Status** open
+**Category** harness, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -362,6 +513,150 @@ cargo test -p b-ids-harness hpack -- --nocapture
 Passing means: every case in the fetched vector corpus decodes to its expected
 output, and the count of cases run is asserted, so a table that stopped early
 cannot report green over a smaller suite.
+
+### Closing
+
+**Closed 2026-09-01.** The corpus was fetched, the decoder was written against
+it, and header order is readable off a captured connection.
+
+```text
+$ cargo test -p b-ids-harness hpack -- --nocapture
+running 15 tests
+test hpack_records_a_dynamic_table_size_update ... ok
+test hpack_evicts_from_the_dynamic_table_by_size_and_not_by_count ... ok
+test hpack_refuses_a_size_update_above_what_the_peer_was_allowed ... ok
+test hpack_records_which_indexing_form_the_encoder_chose ... ok
+test hpack_reads_the_header_order_off_a_captured_connection ... ok
+test hpack_fills_the_pseudo_header_order_from_the_recorded_fields ... ok
+test hpack_refuses_an_index_that_names_nothing ... ok
+test hpack_records_the_indexing_form_of_every_captured_field ... ok
+test hpack_drops_a_credential_the_dynamic_table_had_to_see ... ok
+test hpack_refuses_padding_longer_than_seven_bits ... ok
+test hpack_records_whether_each_field_was_huffman_coded ... ok
+test hpack_the_transcribed_table_is_a_canonical_huffman_code ... ok
+test hpack_refuses_padding_that_is_not_the_end_of_string_code ... ok
+test hpack_records_no_header_value_by_default ... ok
+hpack: 47142 case(s) across 446 file(s)
+test hpack_decodes_every_case_in_the_fetched_vector_corpus ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.69s
+exit=0
+```
+
+### The corpus was fetched, and it is tracked
+
+```text
+sh scripts/common/mine-repo.sh http2jp/hpack-test-case --out references
+```
+
+[`../references/http2jp__hpack-test-case/`](../references/http2jp__hpack-test-case/)
+at commit `8a1406e7d14bfcb6c046021f13cc15cfb162726d`, fetched 2026-09-01 through
+`gh`, with no gaps reported. ⭐ **47,142 cases across 446 story files**, and
+every one decodes.
+
+⚠ **One directory of the corpus is skipped and the skip is asserted rather than
+inferred.** It holds the header lists with no wire bytes, which is the
+encoders' input rather than a decoder's. 478 files minus those 32 is the 446 the
+test pins.
+
+**The measurement that decided keeping it whole.** It adds 66 MB on disk and
+6.0 MiB packed, taking the reference corpus from 22.7 MiB packed to 26.9 MiB.
+[`RULES.md`](RULES.md) sets the threshold for re-taking that decision at about
+100 MiB packed, so nothing was trimmed and no citation was invalidated.
+
+### ⛔ The decoder does NOT filter credentials, and a test proves why
+
+**The dynamic table has to see every field the encoder inserted or every later
+index is wrong.** A decoder that dropped `cookie` before storing it would
+resolve every subsequent indexed field against a table one entry short of the
+encoder's, and produce a header set that is plausible and wrong.
+
+⭐ **So the credential rule is applied where the capture is BUILT, which is the
+third door into it**, beside the model's and the HTTP/1.1 reader's. The
+committed fixture is built to separate the two requirements: it adds a `cookie`
+field to the dynamic table and then sends an indexed field at the slot behind
+it, so index 63 names the marker header if and only if the credential took slot
+62.
+
+⚠ **Mutating the decoder to filter, which is the tempting defence-in-depth fix,
+produces a wrong capture rather than a safer one.** The proof is below.
+
+### What is recorded that a header list alone would not carry
+
+| what | why it is not droppable |
+| --- | --- |
+| ⭐ whether each name was Huffman-coded | a choice the encoder made, and it differs between clients |
+| whether each value was Huffman-coded | the same, and the two are independent |
+| ⚠ an ABSENT flag where a field came from an index | it was not coded at all, and `false` would say the encoder chose plain text |
+| which of the four indexing forms was used | indexed, incremental, without indexing, never indexed are four visible choices |
+| every dynamic table size update, in order | a choice about a table the encoder owns, and one a settings value does not predict |
+
+### ⛔ A mutation found that the transcribed code table was not load-bearing
+
+**The first attempt at mutating one row of the Huffman table changed nothing:
+all 47,142 cases still decoded.**
+
+⭐ **The reason is worth carrying.** Canonical decoding needs only the bit
+length of each symbol and the order of the symbols within each length; the code
+column is then derived. The construction here derived it from the counts, so a
+transcription error that preserved the sort order was invisible, and the column
+a reader would check against the specification was decoration.
+
+Two changes came out of it:
+
+- the first code at each bit length is now read from the **transcribed** table
+  rather than derived from the counts, so a wrong row moves every symbol behind
+  it;
+- ⭐ `check_table_is_canonical` states the assumption the decoder rests on, out
+  of the table rather than out of a comment, and a test asserts it. Canonical
+  decoding is correct only where the codes at each length are consecutive and
+  ascending in symbol order, and nothing in the tree said so.
+
+⚠ **The mutation that reported nothing is the one that produced the finding.**
+A guard that cannot fail is not evidence, and neither is a table nothing reads.
+
+### Mutation-proved
+
+```text
+=== HARNESS-04: the Huffman table, mutated by one row ===
+failures:
+    hpack_the_transcribed_table_is_a_canonical_huffman_code
+    hpack_records_whether_each_field_was_huffman_coded
+    hpack_decodes_every_case_in_the_fetched_vector_corpus
+the table is canonical: "symbol 58 is transcribed as 0x5d over 7 bit(s), and the canonical construction puts it at 0x5c over 7"
+47142 case(s) ran, and these failed:
+test result: FAILED. 12 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.07s
+
+=== HARNESS-04: the credential filter at the HTTP/2 door, mutated away ===
+failures:
+    hpack_drops_a_credential_the_dynamic_table_had_to_see
+    hpack_reads_the_header_order_off_a_captured_connection
+    hpack_records_the_indexing_form_of_every_captured_field
+test result: FAILED. 12 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.78s
+
+=== HARNESS-04: the decoder filtering a credential out of the dynamic table ===
+  left: [":method", ":authority", ":scheme", ":path", "x-fixture-marker", "user-agent", "x-fixture-marker", ":authority"]
+ right: [":method", ":authority", ":scheme", ":path", "x-fixture-marker", "user-agent", "x-fixture-marker"]
+  left: ":authority"
+ right: "x-fixture-marker"
+```
+
+⭐ **The third is the one worth reading.** Filtering inside the decoder does not
+merely fail a test: it shifts the dynamic table by one and turns the last field
+of the request into a different header. That is a capture that is wrong rather
+than a capture that is missing something.
+
+### ⚠ What is NOT here
+
+- **Encoding.** This decodes. An emitter that has to reproduce a captured
+  header block is `EMIT-01`, and it needs the Huffman table in the other
+  direction.
+- **More than the first request.** A connection carries several, and the reader
+  records the first header block and notes when more arrived. `SCHEMA-04`'s
+  variants are how a navigation and a subresource fetch are told apart, and
+  that is a driver question rather than a decoder one.
+- **A fuzz target.** `HARNESS-09` owns it, and this decoder is now the fourth
+  parser it has to cover.
 
 ---
 
@@ -426,12 +721,46 @@ set and the five raw bytes when it was; the positive control shows the flag set;
 and the result is written into [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 with the browser, the build and
 the date, beside the inherited reading and saying whether the two agree.
 
+### ⚠ Still open on 2026-09-01, with what was tried and what would open it
+
+⛔ **The probe half is done and the browser half is not, and the two are worth
+separating** so a later session does not redo the first.
+
+**Done, by `HARNESS-03`:** the reader takes the HEADERS flags byte, tests
+`0x20`, skips the pad length byte where `PADDED` is set, and decodes the five
+bytes behind it into an exclusive bit, a 31-bit dependency and a wire weight.
+⭐ It reports the parsed block AND the five raw bytes, so nothing rests on a
+rendered string. `Http2Capture::priority_block_hex` is the raw half and
+`Http2Half::stream_priority` is the parsed one.
+
+**The positive control exists**, as the committed HTTP/2 fixture: it sets the
+flag and carries a block reading exclusive, dependency zero, weight 255 on the
+wire. A probe that reported nothing over it would be a probe looking in the
+wrong place, and the test refuses that.
+
+⛔ **What is missing is a BROWSER, and it is missing for one reason: no browser
+speaks cleartext HTTP/2.** The reader reaches HTTP/2 today only over a
+connection opened with prior knowledge, which is a client behaviour. Reaching a
+browser's HTTP/2 needs the TLS handshake terminated, which needs a TLS server
+this tree does not have.
+
+**What would open it**, in order:
+
+1. a vendored TLS server, per the ruling in [`RULES.md`](RULES.md), so
+   `--ca-out` can mint an authority and terminate;
+2. `DRIVER-01`, to launch a browser at the resulting URL;
+3. this entry's own command, over at least two browsers and two versions.
+
+⚠ **Nothing about the predicted answer has changed**, and it stays unpublishable
+until it is measured here: it was measured somewhere else, which is `vendor`
+provenance.
+
 ---
 
 ## HARNESS-06. Parse permissively, emit exactly
 
 **Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
-**Category** harness, **Priority** P1, **Effort** S, **Status** open
+**Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -468,12 +797,98 @@ Passing means: a fixture per GREASE value, each with a one-byte body, all parse;
 and the emitter refuses a profile whose extension body it cannot reproduce,
 rather than emitting an approximation.
 
+### Closing
+
+**Closed 2026-09-01.** Two types, in two crates, and the conversion between them
+is fallible.
+
+```text
+$ cargo test -p b-ids-harness grease_bodies -- --nocapture
+running 5 tests
+test grease_bodies_the_emitter_refuses_a_body_it_cannot_reproduce ... ok
+test grease_bodies_the_emitter_reports_every_refusal_and_not_only_the_first ... ok
+test grease_bodies_the_parser_keeps_what_the_emitter_refuses ... ok
+test grease_bodies_every_reserved_value_parses_with_a_one_byte_body ... ok
+test grease_bodies_the_emitter_reproduces_every_body_byte_for_byte ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### ⭐ The two types, and what each one can represent that the other cannot
+
+| | `b-ids-schema`'s `Extension` | `b-ids-emit`'s `EmittableExtension` |
+| --- | --- | --- |
+| the codepoint | any `u16`, including one learned at run time | the same |
+| the body | any bytes, hex-encoded | any bytes |
+| the length | ⭐ **a separate field**, recorded as the wire DECLARED it | ⛔ **absent**, derived from the body when it is written |
+| a declared length that disagrees with the body | representable, and it is a finding worth keeping | ⛔ not representable at all |
+
+⭐ **The difference is one field and it is the whole entry.** A parser has to
+keep a disagreement between a declared length and a body, because that
+disagreement is what a truncated or padded hello looks like and the capture
+cannot be retaken. An emitter cannot put both numbers on the wire, so it has to
+refuse. One shared type would satisfy exactly one of those two requirements.
+
+⛔ **The emitter's length is derived at the moment of writing and nowhere else.**
+A length that came from any other source is a length that can disagree with the
+body it describes.
+
+### The refusals, and why each is a real capture shape
+
+| refusal | what produces it |
+| --- | --- |
+| the declared length disagrees with the body | a truncated or padded hello, which the parser records rather than repairs |
+| the recorded body is not hex | a capture written by something other than this parser |
+| the body is longer than a two-byte length | a capture whose body cannot be framed at all |
+
+⚠ **Every refusal is reported, not the first one.** An emitter that stopped at
+the first sends its author back for one more run per defect, and a capture
+cannot be retaken.
+
+### What the five tests cover
+
+| test | what it would catch |
+| --- | --- |
+| ⭐ all sixteen reserved values with a one-byte body | the measured defect: a parser mapping GREASE to a typed field with an empty body rejected three of the sixteen, so about one handshake in five, and a test over ONE value would have passed four times in five |
+| the emitter reproduces every body byte for byte | an approximation reaching the wire |
+| the emitter refuses what it cannot reproduce | a lossy path back into an emitter |
+| every refusal is reported | a run that names one defect per invocation |
+| ⭐ the parser keeps what the emitter refuses | the two models collapsing into one, which is the entry itself |
+
+### Mutation-proved
+
+⛔ Both directions, because a shared type gets one of them wrong and the
+question is which.
+
+```text
+=== HARNESS-06: the emitter refuses rather than approximates, mutated to approximate ===
+failures:
+    grease_bodies_the_emitter_refuses_a_body_it_cannot_reproduce
+    grease_bodies_the_emitter_reports_every_refusal_and_not_only_the_first
+    grease_bodies_the_parser_keeps_what_the_emitter_refuses
+test result: FAILED. 2 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+=== HARNESS-06: a GREASE codepoint takes an arbitrary body, mutated to force it empty ===
+failures:
+    grease_bodies_every_reserved_value_parses_with_a_one_byte_body
+    grease_bodies_the_emitter_reproduces_every_body_byte_for_byte
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+### ⚠ The dependency runs one way and it is a DEV dependency
+
+`b-ids-harness` dev-depends on `b-ids-emit`, because this entry's acceptance
+needs both models in one test. ⛔ The harness itself does not depend on the
+emitter and must not: a capture tool that imported an emitter would be one
+component with two jobs, and the schema is the seam between them.
+
 ---
 
 ## HARNESS-07. A browser opens sockets it abandons, and it resumes
 
 **Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
-**Category** harness, **Priority** P1, **Effort** S, **Status** open
+**Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -511,12 +926,101 @@ Passing means: a fixture of a thirteen-connection navigation selects connection
 two, and the resumed connections are emitted as a separate labelled set whose
 digest differs from the cold one.
 
+### Closing
+
+**Closed 2026-09-01.** The selection rule is code, not a sentence, and the
+thirteen-connection shape is a committed fixture the rule is exercised over.
+
+```text
+$ cargo test -p b-ids-harness connection_selection -- --nocapture
+running 6 tests
+test connection_selection_classifies_a_connection_that_sent_nothing_as_abandoned ... ok
+test connection_selection_the_resumed_handshake_differs_from_the_cold_one ... ok
+test connection_selection_never_deduplicates_two_connections_that_agree ... ok
+test connection_selection_keeps_the_first_connection_that_reached_http2 ... ok
+test connection_selection_records_the_resumed_ones_as_their_own_set ... ok
+test connection_selection_says_when_resumption_is_not_observable ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+exit=0
+```
+
+### Four sets, not two
+
+| set | what it holds |
+| --- | --- |
+| `cold` | ⭐ the FIRST connection that reached HTTP/2, which is the one a profile is built from |
+| `resumed` | every connection that reached HTTP/2 and offered a pre-shared key |
+| `additional_cold` | ⚠ a LATER connection that reached HTTP/2 without resuming |
+| `abandoned` | every connection that never reached HTTP/2 |
+
+⚠ **The third set exists because folding it into either of the others would be
+a label the bytes contradict.** A second cold handshake is not a resumed one,
+and it is not the one the profile is built from either. Two sets would have
+forced a wrong answer for it.
+
+### ⛔ A capture with no hello cannot be asked whether it resumed
+
+`resumption_observable` is a field on the selection rather than an assumption in
+the code. A cleartext capture carries no `ClientHello`, so the cold-against-
+resumed split says nothing about resumption on such a run and the selection
+says so. ⛔ An unavailable field is absent with a reason, never assumed to be
+the safe value.
+
+### ⚠ "Digest" in the acceptance is read as the RAW HELLO, and that is stronger
+
+No digest implementation exists yet: `VALID-04` owns MD5 and SHA-256 with
+published test vectors. The comparison the acceptance asks for is made over the
+raw hello bytes instead.
+
+⭐ **That is a stronger discriminator rather than a weaker one.** Every digest
+strips GREASE and most sort before hashing, so two hellos that genuinely differ
+can share a digest. `T-263` in the origin tree records one client and one
+browser producing the SAME JA4 over two different wire orders. No two differing
+hellos share their bytes.
+
+### The fixture is CONSTRUCTED and it needs termination to arise for real
+
+⛔ **No value in it is a measurement.** It rebuilds the SHAPE of a reading that
+is inherited: thirteen connections from one navigation, the first carrying no
+HTTP/2 at all, every one after the second offering a pre-shared key.
+[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 carries
+that reading and its source.
+
+⚠ **Only a terminated connection carries both a `ClientHello` and HTTP/2
+frames**, so this shape cannot arise from a browser until `--ca-out` works. The
+shape is representable today and the rule is written against it now, so the
+first terminated capture is selected by a tested rule rather than by eye.
+
+### Mutation-proved
+
+```text
+=== HARNESS-07: the cold handshake is the first that reached HTTP/2, mutated to the first socket ===
+failures:
+    connection_selection_classifies_a_connection_that_sent_nothing_as_abandoned
+    connection_selection_keeps_the_first_connection_that_reached_http2
+    connection_selection_records_the_resumed_ones_as_their_own_set
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+=== HARNESS-07: two connections that differ are the data, mutated to deduplicate ===
+failures:
+    connection_selection_keeps_the_first_connection_that_reached_http2
+    connection_selection_never_deduplicates_two_connections_that_agree
+    connection_selection_records_the_resumed_ones_as_their_own_set
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+```
+
+⭐ **The second is the one worth reading.** Deduplicating by digest is the
+tempting tidy-up and it destroys a measurement: how many connections a
+navigation opens is itself data, and eleven identical resumed handshakes are
+eleven observations rather than one.
+
 ---
 
 ## HARNESS-08. One handshake is not a sample
 
 **Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
-**Category** harness, **Priority** P1, **Effort** S, **Status** open
+**Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -549,6 +1053,102 @@ cargo test -p b-ids-harness sampling -- --nocapture
 
 Passing means: a run configured for eight handshakes where the fixture supplies
 six exits non-zero with a message naming both numbers.
+
+### Closing
+
+**Closed 2026-09-01.** The default is eight, a run reports what it drew, and a
+run that did not get what it asked for exits 1 naming both numbers.
+
+```text
+$ cargo test -p b-ids-harness sampling -- --nocapture
+running 6 tests
+test sampling_the_default_is_eight_handshakes_and_never_one ... ok
+test sampling_an_accepted_connection_is_not_a_completed_one ... ok
+test sampling_reports_the_per_draw_variation ... ok
+test sampling_a_run_that_completed_every_handshake_exits_zero ... ok
+test sampling_a_run_with_a_deadline_ends_rather_than_waiting_forever ... ok
+test sampling_a_run_that_completed_six_of_eight_says_six_and_eight ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.57s
+exit=0
+```
+
+### ⭐ Accepted is not completed, and the two are counted separately
+
+A browser opens sockets it abandons. They are accepted, they are recorded, and
+they are useless as a draw. A run that counted them would report a sample larger
+than the one it took, which is the "hardcoded or synthetic metric" defect in the
+component whose whole job is measuring.
+
+```text
+b-ids-harness: 6 of 8 handshake(s) completed, from 6 accepted connection(s)
+```
+
+⚠ **Both numbers, and the accepted count beside them.** "Some handshakes
+failed" is a sentence nobody can act on, and six-completed-of-six-accepted is a
+different diagnosis from six-completed-of-eight-accepted: the first says the
+subject failed and the second says the run ran out of time.
+
+### ⛔ A run needed a deadline before six of eight could even be reported
+
+**Without one, a run configured for eight that gets six does not report six: it
+blocks on the seventh accept forever.** A hang has no message and no exit code,
+and in continuous integration it consumes the job's whole timeout and reports
+nothing about what went wrong. That is the same shape `HARNESS-02` already paid
+for in a refusal test.
+
+`--run-timeout-ms` is the switch. ⛔ It is absent by default, because a run
+driving a browser wants to block until the browser connects, and a deadline
+somebody has to remember to turn off is a deadline that will one day truncate a
+real capture.
+
+⚠ **A stream accepted from a non-blocking listener inherits that mode on some
+platforms**, and a non-blocking read returns immediately, which the reader would
+record as a peer that sent nothing. The accept puts it back to blocking, once,
+rather than each reader remembering to.
+
+### What the run reports about the draw itself
+
+```text
+sampling: 3 of 3 handshake(s) completed, 3 distinct GREASE draw(s), 3 distinct extension order(s)
+```
+
+⭐ **Two consecutive captures of one binary must produce two different draws, or
+the capture is wrong.** A run that reported only a count could not say whether
+it had seen one behaviour eight times or eight behaviours once, and that is the
+difference between a sample and a repetition.
+
+⚠ **The values drawn and the order they arrive in are counted separately.** One
+distinct order across eight handshakes is not proof of a fixed order: it is also
+what a shuffle whose input list is exhaustive produces, which is a defect
+measured elsewhere and one that reports nothing on its own. `SCHEMA-10` is where
+the property is recorded.
+
+### ⚠ Every test that feeds fewer than eight connections now says so
+
+The default moved from one to eight, so twenty call sites that passed
+`Config::default()` and fed one connection would have waited for seven more.
+They say `one_connection()` now, in one place, which is what stops the next test
+from quietly waiting on connections nobody is going to make.
+
+### Mutation-proved
+
+```text
+=== HARNESS-08: a short run exits non-zero, mutated to report success ===
+failures:
+    sampling_a_run_that_completed_six_of_eight_says_six_and_eight
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.64s
+
+=== HARNESS-08: the default is eight, mutated back to one ===
+failures:
+    sampling_the_default_is_eight_handshakes_and_never_one
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.64s
+
+=== HARNESS-08: accepted is not completed, mutated to count accepts ===
+failures:
+    sampling_an_accepted_connection_is_not_a_completed_one
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.65s
+```
 
 ---
 

@@ -34,8 +34,10 @@ the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
 ⛔ **Nothing has been captured yet, and the corpus is empty.** What exists is
-the schema, a validator, a capture oracle that reads a `ClientHello` off a real
-socket, the methodology, the tooling and the reading.
+the schema, a validator, a capture oracle that reads a `ClientHello` and an
+HTTP/2 connection off a real socket, the methodology, the tooling and the
+reading. ⚠ It does not terminate a TLS handshake, so it does not yet reach a
+browser's HTTP/2.
 [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next.
 
 ⚠ **So every value in this tree is a fixture or an inherited claim, and neither

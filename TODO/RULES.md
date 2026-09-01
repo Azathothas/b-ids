@@ -111,10 +111,18 @@ reason nobody can read. ⛔ An exemption or a row is deleted, never emptied.
 
 ## 5. The reference corpus is tracked, and it is not this project's code
 
-⭐ [`../references/`](../references/) holds eighteen repositories' trees at
+⭐ [`../references/`](../references/) holds nineteen repositories' trees at
 named commits, one of which is the origin every inherited value came from. It is the evidence behind
 [`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md),
 and a conclusion nobody can re-check is an opinion.
+
+⚠ **Eighteen were swept and the nineteenth was not, and the two are different
+things.** A swept reference was read in passes and carries a verdict.
+[`../references/http2jp__hpack-test-case/`](../references/http2jp__hpack-test-case/)
+is a corpus of test VECTORS that a check in this tree runs against, fetched by
+`HARNESS-04` because a decoder written without them is a decoder checked
+against its own misreading. It has no verdict because nothing was concluded
+from reading it.
 
 Three rules on it:
 
@@ -280,10 +288,15 @@ copy of it going stale.
   Ruled 2026-08-30. A second one at the repository root would restate the
   absolutes, and two files stating one rule is two places for it to be wrong.
 - **The reference corpus stays in the tree** rather than on a side branch.
-  Ruled 2026-08-30 and re-measured 2026-08-31 after the origin repository was
-  added: it packs to about 22 MiB across eighteen trees, which is small enough
-  that a side branch would cost more in ceremony than it saves in bytes.
-  ⚠ Re-take the measurement when it passes about 100 MiB packed.
+  Ruled 2026-08-30, and re-measured whenever a tree is added. On 2026-09-01,
+  after the HPACK vector corpus landed, `references/` packs to 26.9 MiB across
+  nineteen trees, which is small enough that a side branch would cost more in
+  ceremony than it saves in bytes. ⚠ Re-take the measurement when it passes
+  about 100 MiB packed.
+
+  ```bash
+  tar cf - references/ | gzip -9 | wc -c
+  ```
 - ⭐ **`Azathothas/bit-cli` is kept like any other reference**, in the tree, at a
   named commit, under its own licence. Ruled 2026-08-31. It is where every
   inherited value was measured, so a tree without it is a tree in which none of

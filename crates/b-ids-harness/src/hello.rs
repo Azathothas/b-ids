@@ -8,98 +8,14 @@
 //! every parser defect.
 //!
 //! ⛔ **Nothing here panics on input.** Every read is bounds-checked through
-//! [`Cursor`], which returns `None` at the end rather than slicing past it. A
-//! panic in this module is a denial of service in the one component that faces
-//! the network.
+//! [`crate::bytes::Cursor`], which returns `None` at the end rather than
+//! slicing past it. A panic in this module is a denial of service in the one
+//! component that faces the network.
 
 use b_ids_schema::tls::{Ech, Extension, Grease, KeyShare, Shuffle, TlsHalf, is_grease_value};
 
-/// Something the parser could not read, kept beside the capture.
-///
-/// ⚠ A note is not an error. The capture still happened and the raw bytes are
-/// still there; the note says which derived field could not be filled in.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct Note {
-    /// The field the note is about.
-    pub field: String,
-    /// What could not be read.
-    pub why: String,
-}
-
-/// A bounds-checked reader over a byte slice.
-///
-/// ⛔ Every method returns `None` at the end of input rather than slicing past
-/// it. This is the whole defence against a malformed hello taking the process
-/// down.
-#[derive(Debug)]
-struct Cursor<'a> {
-    bytes: &'a [u8],
-    at: usize,
-}
-
-impl<'a> Cursor<'a> {
-    fn new(bytes: &'a [u8]) -> Self {
-        Self { bytes, at: 0 }
-    }
-
-    fn take(&mut self, n: usize) -> Option<&'a [u8]> {
-        let end = self.at.checked_add(n)?;
-        let slice = self.bytes.get(self.at..end)?;
-        self.at = end;
-        Some(slice)
-    }
-
-    fn u8(&mut self) -> Option<u8> {
-        Some(self.take(1)?[0])
-    }
-
-    fn u16(&mut self) -> Option<u16> {
-        let b = self.take(2)?;
-        Some(u16::from(b[0]) << 8 | u16::from(b[1]))
-    }
-
-    fn u24(&mut self) -> Option<u32> {
-        let b = self.take(3)?;
-        Some(u32::from(b[0]) << 16 | u32::from(b[1]) << 8 | u32::from(b[2]))
-    }
-
-    fn remaining(&self) -> usize {
-        self.bytes.len().saturating_sub(self.at)
-    }
-}
-
-/// Hex-encode bytes, lower case, no separators.
-#[must_use]
-pub fn hex(bytes: &[u8]) -> String {
-    let mut out = String::with_capacity(bytes.len() * 2);
-    for byte in bytes {
-        out.push(char::from_digit(u32::from(byte >> 4), 16).unwrap_or('0'));
-        out.push(char::from_digit(u32::from(byte & 0x0f), 16).unwrap_or('0'));
-    }
-    out
-}
-
-/// Decode a hex string, ignoring whitespace.
-///
-/// # Errors
-///
-/// Returns the offending character where the input is not hex, or a message
-/// where the length is odd.
-pub fn unhex(text: &str) -> Result<Vec<u8>, String> {
-    let digits: Vec<u8> = text
-        .chars()
-        .filter(|c| !c.is_whitespace())
-        .map(|c| {
-            c.to_digit(16)
-                .map(|d| u8::try_from(d).unwrap_or(0))
-                .ok_or_else(|| format!("{c} is not a hex digit"))
-        })
-        .collect::<Result<_, _>>()?;
-    if !digits.len().is_multiple_of(2) {
-        return Err(format!("{} hex digits is an odd number", digits.len()));
-    }
-    Ok(digits.chunks(2).map(|p| (p[0] << 4) | p[1]).collect())
-}
+use crate::bytes::{Cursor, hex, unhex};
+use crate::note::Note;
 
 /// What one `ClientHello` produced.
 #[derive(Debug, Clone, PartialEq, Eq)]

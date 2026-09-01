@@ -16,6 +16,10 @@ use std::time::Duration;
 
 use b_ids_harness::{Config, Oracle, Protocol, parse_bind};
 
+mod support;
+
+use support::one_connection;
+
 /// The compiled command, which is what a switch test has to drive.
 ///
 /// ⚠ Driving the LIBRARY would prove the library. A switch is a property of the
@@ -82,11 +86,7 @@ fn run_with(switches: &[&str], payload: Vec<u8>) -> (String, String, i32) {
 }
 
 fn fixture_bytes() -> Vec<u8> {
-    let text = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/client-hello.hex"),
-    )
-    .expect("the committed fixture is readable");
-    b_ids_harness::unhex(&text).expect("the committed fixture is hex")
+    support::fixture_bytes("client-hello.hex")
 }
 
 #[test]
@@ -227,7 +227,7 @@ fn switches_json_prints_the_base_url_first_then_one_object_per_connection() {
     assert!(first.starts_with("https://127.0.0.1:"), "{first}");
     let object = lines.next().expect("one object");
     assert!(
-        object.starts_with('{') && object.contains("harness-capture/1"),
+        object.starts_with('{') && object.contains("harness-capture/2"),
         "{object}"
     );
 }
@@ -242,7 +242,7 @@ fn switches_plain_changes_the_scheme_in_the_base_url() {
 fn switches_handshakes_accepts_exactly_that_many() {
     let oracle = Oracle::bind(Config {
         handshakes: 2,
-        ..Config::default()
+        ..one_connection()
     })
     .expect("loopback binds");
     let addr = oracle.local_addr().expect("a bound address");
@@ -291,19 +291,35 @@ fn switches_expect_file_exits_one_on_a_difference() {
 }
 
 #[test]
-fn switches_ca_out_and_until_h2_are_absent_rather_than_inert() {
-    // ⛔ Both need the handshake terminated, which is HARNESS-03. A flag that
-    // parsed and did nothing would be the "setting that no code reads" defect,
-    // so the command refuses and names the entry.
-    for switch in ["--ca-out", "--until-h2"] {
-        let output = Command::new(harness_bin())
-            .args([switch, "unused"])
-            .output()
-            .expect("the harness command runs");
-        assert_eq!(output.status.code(), Some(2), "{switch}");
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        assert!(stderr.contains("HARNESS-03"), "{switch}: {stderr}");
-    }
+fn switches_ca_out_is_absent_rather_than_inert() {
+    // ⛔ It needs the TLS handshake terminated, which needs a TLS server this
+    // tree does not have. A flag that parsed and did nothing would be the
+    // "setting that no code reads" defect, so the command refuses and says what
+    // is missing.
+    let output = Command::new(harness_bin())
+        .args(["--ca-out", "unused"])
+        .output()
+        .expect("the harness command runs");
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("TLS server"), "{stderr}");
+    assert!(stderr.contains("absent rather than inert"), "{stderr}");
+}
+
+#[test]
+fn switches_until_h2_is_accepted_and_reaches_the_run() {
+    // ⭐ It used to be refused beside `--ca-out`. Reaching HTTP/2 over
+    // cleartext with prior knowledge is what made it implementable, and a
+    // switch is a property of the COMMAND: this drives the compiled binary
+    // rather than the library, because a flag documented, parsed and never
+    // passed through is the shape this project has already been bitten by.
+    let request = b"GET / HTTP/1.1\r\nHost: example\r\n\r\n".to_vec();
+    let (out, err, code) = run_with(
+        &["--plain", "--until-h2", "--handshakes", "1", "--json"],
+        request,
+    );
+    assert_eq!(code, 0, "{err}");
+    assert!(out.contains("\"http2\":null"), "{out}");
 }
 
 #[test]

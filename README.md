@@ -5,8 +5,10 @@ A dated, provenance-carrying corpus of what real browsers put on a wire: TLS
 
 ⛔ **Nothing has been captured yet, and the corpus is empty.** What is here is
 the profile schema, a validator that refuses a combination no browser could
-send, a capture oracle that reads a `ClientHello` off a real socket, the
-methodology, the tooling and a reading of the prior art.
+send, a capture oracle that reads a `ClientHello` and an HTTP/2 connection off
+a real socket, the methodology, the tooling and a reading of the prior art.
+⚠ It does not terminate a TLS handshake, so a browser's HTTP/2 is still out of
+reach.
 
 ⚠ **Every value in the tree today is a fixture or an inherited claim.** A
 fixture is shaped like a capture and is not one; an inherited value was measured

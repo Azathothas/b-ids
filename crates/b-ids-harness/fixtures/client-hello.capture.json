@@ -1,5 +1,5 @@
 {
-  "schema": "harness-capture/1",
+  "schema": "harness-capture/2",
   "connection": 1,
   "peer": "REDACTED",
   "protocol": "tls_raw",
@@ -149,6 +149,7 @@
       ]
     }
   },
+  "http2": null,
   "request_line": null,
   "header_names": [],
   "header_values": [],

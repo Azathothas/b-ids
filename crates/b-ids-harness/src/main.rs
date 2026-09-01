@@ -4,11 +4,10 @@
 //! one below says which. A switch with no such sentence is a switch nobody
 //! needs.
 //!
-//! ⛔ **Two of the switches `HARNESS-02` specifies are not here**, and they are
+//! ⛔ **One of the switches `HARNESS-02` specifies is not here**, and it is
 //! absent rather than present-and-inert: `--ca-out` mints an authority so a
-//! client completes a VERIFIED handshake, and `--until-h2` stops at the first
-//! connection that reached HTTP/2. Both need the handshake terminated, which is
-//! `HARNESS-03`. A flag that parsed and did nothing would be the "setting that
+//! client completes a VERIFIED handshake, which needs the handshake
+//! terminated. A flag that parsed and did nothing would be the "setting that
 //! no code reads" defect, and an absent flag fails loudly instead.
 
 use std::io::Write as _;
@@ -23,22 +22,29 @@ usage: b-ids-harness [SWITCHES]
   --raw                do not terminate TLS, and read the ClientHello only.
                        The default, because completing a handshake can change
                        what a client offers.
-  --plain              cleartext HTTP/1.1: the request line and header order.
-                       The capture that works when a client cannot be told to
-                       trust anything.
+  --plain              cleartext: an HTTP/1.1 request, or an HTTP/2 connection
+                       preface and the frames behind it, decided by the bytes
+                       that arrive. The capture that works when a client cannot
+                       be told to trust anything.
   --bind ADDR          an address to reach a browser that is not on this
                        machine. Refuses a hostname and refuses the unspecified
                        address, by name.
   --port N             the port, or 0 to let the operating system choose.
-  --handshakes N       how many connections to accept before exiting. One
-                       handshake is not a sample.
+  --handshakes N       how many connections to accept before exiting. Eight by
+                       default, because one handshake is not a sample: anything
+                       drawn per connection means one handshake tests one draw.
   --once               stop at the first connection. Wrong for a browser, for
                        the same reason.
+  --run-timeout-ms N   how long the whole run may wait for connections. Without
+                       it a run whose subject never connects never returns.
   --hello-out PATH     write the raw ClientHello as one hex line. The one
                        artefact that survives every hashing scheme and every
                        parser defect.
   --header-values      record values, not only names. The one switch that can
                        log a credential, so it is off by default.
+  --until-h2           stop at the first connection that reached HTTP/2. A
+                       browser opens sockets it abandons, and the first one of
+                       a navigation has carried no HTTP/2 at all.
   --json               one object per connection on stdout, after one line
                        carrying the base URL.
   --expect-file PATH   compare the run against a committed capture and exit 1
@@ -46,7 +52,8 @@ usage: b-ids-harness [SWITCHES]
   --write-golden PATH  write the capture --expect-file reads.
   --timeout-ms N       how long to wait for bytes on an accepted connection.
 
-exit 0 clean, 1 a comparison failed, 2 the run could not start.";
+exit 0 clean, 1 a comparison failed or a handshake did not complete,
+       2 the run could not start.";
 
 struct Args {
     config: Config,
@@ -75,7 +82,8 @@ fn parse_args() -> Result<Args, String> {
     while let Some(arg) = argv.next() {
         match arg.as_str() {
             "--raw" => args.config.protocol = Protocol::TlsRaw,
-            "--plain" => args.config.protocol = Protocol::PlainHttp1,
+            "--plain" => args.config.protocol = Protocol::Cleartext,
+            "--until-h2" => args.config.until_h2 = true,
             "--header-values" => args.config.header_values = true,
             "--json" => args.json = true,
             "--once" => args.config.handshakes = 1,
@@ -96,6 +104,13 @@ fn parse_args() -> Result<Args, String> {
                     return Err("--handshakes 0 would accept nothing".to_owned());
                 }
             }
+            "--run-timeout-ms" => {
+                let value = argv.next().ok_or("--run-timeout-ms needs a number")?;
+                let ms = value
+                    .parse::<u64>()
+                    .map_err(|e| format!("--run-timeout-ms: {e}"))?;
+                args.config.run_timeout = Some(Duration::from_millis(ms));
+            }
             "--timeout-ms" => {
                 let value = argv.next().ok_or("--timeout-ms needs a number")?;
                 let ms = value
@@ -114,10 +129,11 @@ fn parse_args() -> Result<Args, String> {
             }
             // ⛔ Named, so the failure says WHICH entry implements it rather
             // than "unknown argument".
-            "--ca-out" | "--until-h2" => {
+            "--ca-out" => {
                 return Err(format!(
-                    "{arg} needs the handshake terminated, which is HARNESS-03. It is absent \
-                     rather than inert, because a flag that parsed and did nothing would be worse"
+                    "{arg} needs the TLS handshake terminated, which needs a TLS server this \
+                     tree does not have yet. It is absent rather than inert, because a flag \
+                     that parsed and did nothing would be worse"
                 ));
             }
             "-h" | "--help" => {
@@ -160,6 +176,12 @@ fn main() -> ExitCode {
         Ok(captures) => captures,
         Err(err) => return fail(&format!("accept failed: {err}")),
     };
+
+    // ⛔ Before anything else reads the captures. A run that did not get what
+    // it asked for reports that first, because every number downstream of it
+    // is over a smaller sample than the caller believes.
+    let sampling = b_ids_harness::summarise(args.config.handshakes, &captures);
+    let shortfall = sampling.shortfall();
 
     if let Some(path) = &args.hello_out {
         let hex_lines: String = captures
@@ -212,6 +234,25 @@ fn main() -> ExitCode {
         println!("matches {path}");
     }
 
+    if !args.json {
+        println!(
+            "sampling: {} of {} handshake(s) completed, {} distinct GREASE draw(s), \
+             {} distinct extension order(s)",
+            sampling.completed,
+            sampling.requested,
+            sampling.distinct_grease_draws,
+            sampling.distinct_extension_orders
+        );
+    }
+
+    // ⛔ A run where six of eight completed is a run that reports six, not a
+    // run that reports success. It names BOTH numbers, because "some
+    // handshakes failed" is a sentence nobody can act on.
+    if let Some(why) = shortfall {
+        eprintln!("b-ids-harness: {why}");
+        return ExitCode::from(1);
+    }
+
     ExitCode::SUCCESS
 }
 
@@ -246,6 +287,22 @@ fn print_capture(capture: &Capture) {
     if let Some(line) = &capture.request_line {
         println!("  http: {line}");
         println!("  headers: {}", capture.header_names.join(", "));
+    }
+    if let Some(http2) = &capture.http2 {
+        println!(
+            "  http2: {} frame(s), settings {:?}, window increment {:?}",
+            http2.frames.len(),
+            http2.half.settings().unwrap_or_default(),
+            http2.half.window_size_increment()
+        );
+        // ⛔ The parsed block AND the five raw bytes. A rendered string cannot
+        // tell a block that was not sent from one that was not read, which is
+        // why three published readings of this field disagree.
+        println!(
+            "  http2 priority block: {:?}, raw {:?}",
+            http2.half.stream_priority,
+            http2.priority_block_hex()
+        );
     }
     for note in &capture.notes {
         println!("  note: {}: {}", note.field, note.why);

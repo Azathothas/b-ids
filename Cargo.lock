@@ -21,11 +21,15 @@ version = "0.0.0"
 [[package]]
 name = "b-ids-emit"
 version = "0.0.0"
+dependencies = [
+ "b-ids-schema",
+]
 
 [[package]]
 name = "b-ids-harness"
 version = "0.0.0"
 dependencies = [
+ "b-ids-emit",
  "b-ids-schema",
  "serde",
  "serde_json",
@@ -35,6 +39,7 @@ dependencies = [
 name = "b-ids-schema"
 version = "0.0.0"
 dependencies = [
+ "b-ids-harness",
  "b-ids-schema",
  "serde",
  "serde_json",

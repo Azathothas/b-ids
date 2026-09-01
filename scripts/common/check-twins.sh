@@ -307,6 +307,17 @@ compare_pair "check-changelog"      check-changelog.sh      "--json"          ch
 compare_pair "check-record"         check-record.sh         "--json"          check-record.ps1         "-Json"
 compare_pair "check-no-secrets"     check-no-secrets.sh     "--json"          check-no-secrets.ps1     "-Json"
 compare_pair "check-no-secrets pub" check-no-secrets.sh     "--public --json" check-no-secrets.ps1     "-Public -Json"
+# ⛔ THE SCOPED MODE HAS ITS OWN ROW, because it is the one mode that turns the
+# reference-corpus exemption OFF. A twin that is written and not compared is
+# two behaviours, and this is the half where the two could disagree about which
+# files exist without either reporting anything.
+#
+# ⚠ IT IS THE SLOWEST ROW HERE and the number is measured rather than guessed:
+# the sh half alone took 70s over the 19 trees on the host that added it
+# (Windows 11, msys, 2026-09-01), because it greps every file of every
+# reference. It runs in the full gate and in CI, never under --fast.
+compare_pair "check-no-secrets scoped" check-no-secrets.sh  "--public --json --scope references" \
+                                       check-no-secrets.ps1 "-Public -Json -Scope references"
 
 # ⚠ THE READ-ONLY MODE ONLY. --write patches Cargo.toml, and a comparison that
 # ran it would edit the tree it is measuring. --verify is also left out: it

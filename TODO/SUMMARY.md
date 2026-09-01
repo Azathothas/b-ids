@@ -1,52 +1,63 @@
 # SUMMARY.md
 
-⚠ **The last session's table. A snapshot, never an authority.**
-[`PROGRESS.md`](PROGRESS.md) is the record and
-[`INDEX.md`](INDEX.md) is the list; where this file and either of those
-disagree, this one is the stale copy.
+⚠ **The last session's table, and a snapshot rather than an authority.**
+[`PROGRESS.md`](PROGRESS.md) is the record and [`INDEX.md`](INDEX.md) is the
+list; where this file disagrees with either, this one is stale.
 
-⛔ Overwritten every session. Every cell is grounded in something that can be
-pointed at, including the cells that say nothing moved.
+⛔ Overwritten every session. Every cell is grounded in something a reader can
+point at, including the cells that say nothing moved.
 
 ---
 
-## 2026-08-31
+## 2026-09-01
 
-| row | before | after | measured by |
+Session ran 2026-09-01T00:50:02Z to its operator interrupt.
+
+| entry | eff | what closed | acceptance |
 | --- | --- | --- | --- |
-| Elapsed | 2026-08-31T14:10:15Z | 2026-08-31T16:43:25Z, about 2h33m | `date -u`, at both ends |
-| Commits | 1 | 2 | `git log --oneline` |
-| Work | 7 done | 22 done, 1 partial | `check-record.sh` |
-| Work this session | | **15 entries closed, 21 effort points**, 1 left partial with its blocker named | [`INDEX.md`](INDEX.md) rows |
-| Changes | | 77 files, +9,872 / -286 | `git diff --cached --shortstat` |
-| Size | | 32,149 tracked lines outside `references/` | `git ls-files \| xargs wc -l` |
-| Checks | 15, and 14 of them green with 1 skipped | ⭐ **19, all green**, both halves of every pair | `check-gate.sh`, full run |
-| Twin pairs | 13 | 15 | `check-twins.sh` |
-| Suite | ⛔ none existed | 107 tests across 4 crates | `cargo test --workspace` |
-| Cost | | 2 Rust toolchains installed on this host, about 600 MB; 11 crates fetched from the registry | `rustup toolchain list`, `Cargo.lock` |
-| Health | 2 documented-and-absent tools | ⭐ 5 defects found by running the tree, all 5 fixed | below |
+| `HARNESS-03` | M | the HTTP/2 frame reader: preface, SETTINGS in arrival order, the WINDOW_UPDATE increment, PRIORITY frames, and the priority block as BYTES | `cargo test -p b-ids-harness http2`, 15 passed |
+| `HARNESS-04` | M | HPACK, checked against a fetched corpus rather than against itself | `cargo test -p b-ids-harness hpack`, 15 passed over 47,142 cases |
+| `HARNESS-06` | S | two types, in two crates: the parser keeps what the emitter refuses | `cargo test -p b-ids-harness grease_bodies`, 5 passed |
+| `HARNESS-07` | S | the connection selection rule, over a thirteen-connection fixture | `cargo test -p b-ids-harness connection_selection`, 6 passed |
+| `HARNESS-08` | S | eight handshakes by default, and a short run reports six rather than success | `cargo test -p b-ids-harness sampling`, 6 passed |
+| `SCHEMA-06` | M | a raw block a profile can be rebuilt from, asserted rather than intended | `cargo test -p b-ids-schema raw_backstop`, 11 passed |
+| **total** | **9 points** | six entries closed, one moved from two blocked switches to one | |
 
-## What the three review lenses found
+⚠ **Nine of the twenty points the quota asks for.** The session ended on an
+operator interrupt, which [`RULES.md`](RULES.md) section 10 names as the other
+way a session ends.
 
-⛔ **Three different questions, not one sweep written up three times.**
+### What moved that is not an entry
 
-| lens | what it swept that the others did not | what it found |
+| | |
+| --- | --- |
+| `HARNESS-02` | ⚠ still `partial`, and now eight of nine rather than seven. `--until-h2` is implemented; `--ca-out` is absent rather than inert. |
+| `HARNESS-05` | still open, with the probe half done and the browser half's blocker named at file and step |
+| `check-no-secrets` | gained `--scope`, which its own exemption had instructed sessions to use for one session before it existed. Both halves, with a `check-twins` row. |
+| `references/` | a nineteenth tree: the HPACK vector corpus, at a named commit, measured at 26.9 MiB packed against a 100 MiB threshold |
+
+### The three review lenses, and what each found that the others did not
+
+| lens | swept | found |
 | --- | --- | --- |
-| 1. the door sweep | every construction site of a header field, and every caller of the credential filter, by grep rather than from memory | ⭐ **A third door, open.** Two capture paths were gated and tested; deserialisation was neither, so a profile read from a file could carry a cookie header. Fixed, with a test that reads one from JSON. |
-| 2. the guard mutation | 12 guards, each planted with the defect it exists to catch and the exit code read unpiped | ⛔ **Two guards that could not fail as written**, and one **test that hung instead of failing**. All three fixed. The MSRV fixture also had to be re-planted: Cargo promotes a path dependency into the workspace, so the first attempt proved nothing. |
-| 3. the claim audit | every acceptance command in `TODO/`, every timing figure in the gate headers, and every path this session wrote into a document | ⚠ **The gate's timing figures described a 13-pair, 15-check tree.** Re-measured where it could be, and the full-run figure is a dash rather than a number nobody took. Every `-p <crate>` in the tree now resolves. |
+| ⭐ **door sweep** | every path into the credential rule, and every construction path that produces a recorded header | ⛔ **the fourth door, and it was open.** A capture drops `cookie` from its parsed fields and keeps it hex-encoded in the bytes beside them. `SCHEMA-06` had just routed those bytes into a published profile field. |
+| **guard mutation** | seventeen guards, planted one at a time, each exit code read unpiped | ⭐ **two mutations reported NOTHING**, and both produced better findings than the fifteen that failed: a transcribed table nothing read, and a comparison never seen to fire |
+| **claim audit** | every number in this table and in the record, re-derived from the tree | a test count written as 140 that measured 166, and ⚠ a probe process this session left running on the capture host |
 
-⭐ **Lens 1 is the one that paid.** It was run last, over code that lens 2 had
-already mutation-proved twice, and it still found an ungated path: the two
-guards were correct and the enumeration of doors was not.
+⛔ **The door sweep is the one that mattered**, and it is the second session
+running that this lens has found a credential path nobody enumerated.
 
-## What did not move
+### What the passes would have had to see to fire differently
 
-- ⛔ **No capture has been taken and the corpus is empty.** Every value in the
-  tree is a fixture or an inherited claim.
-- ⛔ **Nothing is published.** `PUB-01` and `PUB-02` are untouched.
-- **`HARNESS-02` is partial**, and `--ca-out` and `--until-h2` are absent rather
-  than inert.
-- **The full-gate wall time was not re-taken.** The run went green, all 19
-  checks; the timing line was lost when the shell holding it was killed, and a
-  figure nobody measured is not written down.
+The guard mutation reported on every guard, so it owes no such sentence. The
+claim audit's two findings were both arithmetic against the tree; had the tree
+agreed with the record it would have said so and named what it re-derived.
+
+### The gate
+
+```text
+gate ok: 18 passed, but 1 SKIPPED on this host: check-twins
+```
+
+⚠ `check-twins` is skipped by `--fast` by definition and was run separately:
+every pair agrees, including the new scoped row.

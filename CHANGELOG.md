@@ -14,6 +14,35 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-01T02:55:37Z - the half of the fingerprint above TLS
+
+**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and `HARNESS-03`,
+`HARNESS-04`, `HARNESS-06`, `HARNESS-07`, `HARNESS-08`, `SCHEMA-06`.
+**Deployed:** no. Nothing is published from this repository yet, and no capture
+has been taken.
+
+What landed:
+
+- ⭐ **An HTTP/2 reader**, reached WITHOUT terminating TLS: a client with prior
+  knowledge opens a cleartext connection and every frame that carries the
+  fingerprint arrives before the first response. SETTINGS in arrival order, the
+  WINDOW_UPDATE increment, and the priority block read as bytes rather than as
+  a rendered string.
+- ⭐ **An HPACK decoder**, checked against a fetched corpus of 47,142 cases
+  across 446 files rather than against itself, so header order is readable.
+- **The emitter's first content**, in `b-ids-emit`: a model that refuses what it
+  cannot put on the wire byte for byte, beside a parser's model that keeps it.
+  `HARNESS-06` has the difference in one table.
+- **The connection selection rule and the sampling rule**, each with a
+  committed fixture, and `--until-h2` and `--run-timeout-ms` behind them.
+- ⭐ **A raw block a profile can be rebuilt from**, asserted rather than
+  intended, and refused when its bytes spell out a credential the parsed fields
+  dropped.
+
+⚠ **The capture record moved to `harness-capture/2`**: the HTTP/2 half is a
+new sibling of the TLS one, and the cleartext surface stopped being named for
+HTTP/1.1 alone, because the peer picks the protocol.
+
 ### 2026-08-31T22:40:00Z - the schema, the validator and the capture oracle
 
 **Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and `SCHEMA-01` through

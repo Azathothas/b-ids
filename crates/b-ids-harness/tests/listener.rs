@@ -7,45 +7,20 @@
 //! ⛔ Every test name starts with `listener`, because
 //! `cargo test -p b-ids-harness listener` is the entry's acceptance command.
 
+mod support;
+
 use std::io::Write as _;
 use std::net::TcpStream;
-use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-use b_ids_harness::{Capture, Config, Oracle, Protocol, unhex};
+use b_ids_harness::{Config, Oracle, Protocol};
 
-fn fixtures() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures")
-}
+use support::{feed, fixtures, one_connection};
 
+/// The `ClientHello` fixture, which is what most of these tests feed.
 fn fixture_bytes() -> Vec<u8> {
-    let text = std::fs::read_to_string(fixtures().join("client-hello.hex"))
-        .expect("the committed fixture is readable");
-    unhex(&text).expect("the committed fixture is hex")
-}
-
-/// Bind, feed the given bytes over loopback, and return what the oracle read.
-fn feed(config: Config, payloads: Vec<Vec<u8>>) -> Vec<Capture> {
-    let oracle = Oracle::bind(config).expect("loopback binds");
-    let addr = oracle.local_addr().expect("a bound address");
-    let sender = thread::spawn(move || {
-        for payload in payloads {
-            let mut stream = TcpStream::connect(addr).expect("the oracle is listening");
-            if payload.is_empty() {
-                // ⚠ A socket opened and abandoned, which a browser really does.
-                drop(stream);
-                continue;
-            }
-            stream.write_all(&payload).expect("the write lands");
-            stream.flush().expect("the flush lands");
-            // Hold the socket open long enough for the oracle to read it.
-            thread::sleep(Duration::from_millis(20));
-        }
-    });
-    let captures = oracle.run().expect("the accept succeeds");
-    sender.join().expect("the sender finished");
-    captures
+    support::fixture_bytes("client-hello.hex")
 }
 
 #[test]
@@ -53,7 +28,7 @@ fn listener_reads_the_committed_fixture_and_produces_the_committed_capture() {
     let captures = feed(
         Config {
             handshakes: 1,
-            ..Config::default()
+            ..one_connection()
         },
         vec![fixture_bytes()],
     );
@@ -86,7 +61,7 @@ fn listener_keeps_the_raw_bytes_whatever_else_happens() {
     // ⛔ The one artefact that survives every hashing scheme and every parser
     // defect. A capture is a moment that cannot be retaken.
     let bytes = fixture_bytes();
-    let captures = feed(Config::default(), vec![bytes.clone()]);
+    let captures = feed(one_connection(), vec![bytes.clone()]);
     let capture = &captures[0];
     assert_eq!(capture.bytes_read, bytes.len());
     assert_eq!(capture.raw_hex, b_ids_harness::hex(&bytes));
@@ -102,7 +77,7 @@ fn listener_records_a_socket_that_was_opened_and_abandoned() {
         Config {
             handshakes: 1,
             read_timeout: Duration::from_millis(300),
-            ..Config::default()
+            ..one_connection()
         },
         vec![Vec::new()],
     );
@@ -122,7 +97,7 @@ fn listener_reassembles_a_record_split_across_two_reads() {
     // two-read hello reports a truncation that never happened. The length in
     // the record header is what says when to stop.
     let bytes = fixture_bytes();
-    let oracle = Oracle::bind(Config::default()).expect("loopback binds");
+    let oracle = Oracle::bind(one_connection()).expect("loopback binds");
     let addr = oracle.local_addr().expect("a bound address");
     let split = bytes.clone();
     let sender = thread::spawn(move || {
@@ -156,7 +131,7 @@ fn listener_reports_more_than_one_connection_in_order() {
     let captures = feed(
         Config {
             handshakes: 3,
-            ..Config::default()
+            ..one_connection()
         },
         vec![bytes.clone(), bytes.clone(), bytes],
     );
@@ -175,8 +150,8 @@ fn listener_reads_a_cleartext_request_when_that_is_the_surface() {
                     Cookie: not-a-real-value\r\nAccept: */*\r\n\r\n";
     let captures = feed(
         Config {
-            protocol: Protocol::PlainHttp1,
-            ..Config::default()
+            protocol: Protocol::Cleartext,
+            ..one_connection()
         },
         vec![request.to_vec()],
     );
@@ -191,15 +166,15 @@ fn listener_reads_a_cleartext_request_when_that_is_the_surface() {
 
 #[test]
 fn listener_base_url_names_the_bound_port() {
-    let oracle = Oracle::bind(Config::default()).expect("loopback binds");
+    let oracle = Oracle::bind(one_connection()).expect("loopback binds");
     let url = oracle.base_url().expect("a base url");
     let port = oracle.local_addr().expect("a bound address").port();
     assert!(url.starts_with("https://127.0.0.1:"), "{url}");
     assert!(url.ends_with(&format!(":{port}/")), "{url}");
 
     let plain = Oracle::bind(Config {
-        protocol: Protocol::PlainHttp1,
-        ..Config::default()
+        protocol: Protocol::Cleartext,
+        ..one_connection()
     })
     .expect("loopback binds");
     assert!(

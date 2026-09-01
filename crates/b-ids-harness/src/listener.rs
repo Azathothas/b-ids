@@ -4,39 +4,48 @@
 //! returns what it intended, which is a different thing and is the commonest
 //! way a whole set of numbers turns out to describe nothing.
 //!
-//! ⛔ **It does not complete the handshake.** Completing one can change what a
+//! ⛔ **It does not complete a TLS handshake.** Completing one can change what a
 //! client offers, so a digest read through a terminated handshake is not the
-//! digest that client ships. Reaching the HTTP/2 half needs termination and
-//! that is `HARNESS-03`, behind `--ca-out`.
+//! digest that client ships. Terminating one is what `--ca-out` needs and it is
+//! not here.
 //!
 //! ⭐ **Multi-protocol from the first commit, even with one protocol
-//! implemented.** [`Protocol`] is the seam: a TLS listener, an HTTP/1.1
-//! listener, an HTTP/2 listener and later a QUIC listener are four capture
-//! surfaces, and retrofitting the fourth into a TLS-shaped harness is a rewrite
-//! rather than an addition.
+//! implemented.** [`Protocol`] is the seam: a TLS listener, a cleartext
+//! listener and later a QUIC listener are capture surfaces, and retrofitting
+//! the third into a TLS-shaped harness is a rewrite rather than an addition.
+//!
+//! ⚠ **The surface is not the protocol the peer speaks.** A cleartext surface
+//! is offered and the peer decides: a browser sends an HTTP/1.1 request and a
+//! client with prior knowledge sends the HTTP/2 connection preface. The reader
+//! is chosen by the bytes that arrived, never by a flag the operator passed.
 
 use std::io::{ErrorKind, Read as _};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
+use b_ids_schema::http::ValuePolicy;
 use serde::{Deserialize, Serialize};
 
-use crate::hello::{HelloCapture, Note, hex, parse_record};
+use crate::bytes::hex;
+use crate::h2::{self, Http2Capture};
+use crate::hello::{HelloCapture, parse_record};
+use crate::note::Note;
 
 /// Which capture surface a listener presents.
 ///
-/// ⚠ Two variants today and the seam is here for four. A third is added as a
+/// ⚠ Two variants today and the seam is here for more. A third is added as a
 /// variant and a match arm, not as a second listener.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Protocol {
     /// Read the `ClientHello` and close, never completing the handshake.
     TlsRaw,
-    /// Cleartext HTTP/1.1: the request line and the header order.
+    /// Cleartext: an HTTP/1.1 request, or an HTTP/2 connection preface and the
+    /// frames behind it.
     ///
     /// ⭐ The capture that works when a client cannot be told to trust
     /// anything.
-    PlainHttp1,
+    Cleartext,
 }
 
 impl Protocol {
@@ -45,7 +54,7 @@ impl Protocol {
     pub fn scheme(self) -> &'static str {
         match self {
             Self::TlsRaw => "https",
-            Self::PlainHttp1 => "http",
+            Self::Cleartext => "http",
         }
     }
 }
@@ -75,9 +84,12 @@ pub struct Capture {
     pub raw_hex: String,
     /// The TLS half, where a `ClientHello` was read.
     pub tls: Option<b_ids_schema::tls::TlsHalf>,
-    /// The request line, where a cleartext request was read.
+    /// The HTTP/2 half, where a connection preface and its frames were read.
+    pub http2: Option<Http2Capture>,
+    /// The request line, where a cleartext HTTP/1.1 request was read.
     pub request_line: Option<String>,
-    /// The header names in wire order, where a cleartext request was read.
+    /// The header names in wire order, where a cleartext HTTP/1.1 request was
+    /// read.
     pub header_names: Vec<String>,
     /// The header values, only where the caller asked for them.
     ///
@@ -89,8 +101,31 @@ pub struct Capture {
     pub notes: Vec<Note>,
 }
 
+impl Capture {
+    /// Whether this connection reached HTTP/2 and opened a stream.
+    ///
+    /// ⭐ Derived rather than stored, so a capture cannot say one thing in a
+    /// flag and another in its frames.
+    #[must_use]
+    pub fn reached_h2(&self) -> bool {
+        self.http2
+            .as_ref()
+            .is_some_and(Http2Capture::opened_a_stream)
+    }
+}
+
+/// How often a deadlined accept looks again.
+///
+/// ⚠ Short enough that a run ends promptly and long enough that waiting costs
+/// no measurable processor time.
+const ACCEPT_POLL: Duration = Duration::from_millis(10);
+
 /// The schema identifier a capture carries.
-pub const CAPTURE_SCHEMA: &str = "harness-capture/1";
+///
+/// ⚠ Version 2 adds the HTTP/2 half and renames the cleartext surface, which
+/// used to name HTTP/1.1 alone. A version is part of the data rather than
+/// implied by the reader.
+pub const CAPTURE_SCHEMA: &str = "harness-capture/2";
 
 /// How a run is configured.
 #[derive(Debug, Clone)]
@@ -106,6 +141,20 @@ pub struct Config {
     /// ⚠ One handshake is not a sample, and one connection is not a
     /// navigation: driving a browser at a probe has produced thirteen.
     pub handshakes: u32,
+    /// How long the whole run may spend waiting for connections.
+    ///
+    /// ⛔ `None` blocks until every requested connection arrives, which is what
+    /// a run driving a browser wants. ⚠ A run whose subject never connects then
+    /// never returns, and a hang has no message and no exit code: in continuous
+    /// integration it consumes the job's whole timeout and reports nothing.
+    /// `HARNESS-08` is why a deadline is available at all.
+    pub run_timeout: Option<Duration>,
+    /// Stop at the first connection that reached HTTP/2.
+    ///
+    /// ⚠ A browser opens sockets it abandons, and the first connection of a
+    /// navigation has been measured carrying no HTTP/2 at all. This is how a
+    /// run keeps the cold handshake rather than the first socket.
+    pub until_h2: bool,
     /// Whether to record header values.
     pub header_values: bool,
     /// How long to wait for bytes on an accepted connection.
@@ -118,7 +167,13 @@ impl Default for Config {
             protocol: Protocol::TlsRaw,
             bind: IpAddr::from([127, 0, 0, 1]),
             port: 0,
-            handshakes: 1,
+            // ⛔ EIGHT, and never one. Anything drawn per connection means a
+            // single handshake tests a single draw, and a defect that fires on
+            // three values in sixteen reaches a one-handshake check four times
+            // in five and passes. `--once` is how a caller asks for one.
+            handshakes: crate::sampling::DEFAULT_HANDSHAKES,
+            run_timeout: None,
+            until_h2: false,
             header_values: false,
             read_timeout: Duration::from_secs(10),
         }
@@ -223,12 +278,61 @@ impl Oracle {
     ///
     /// Whatever the operating system said about the accept.
     pub fn run(&self) -> std::io::Result<Vec<Capture>> {
+        let deadline = self.config.run_timeout.map(|d| Instant::now() + d);
+        // ⚠ Non-blocking ONLY where there is a deadline. A blocking accept is
+        // what a run driving a browser wants, and polling for one would burn a
+        // core to no purpose.
+        self.listener.set_nonblocking(deadline.is_some())?;
+
         let mut out = Vec::new();
         for index in 1..=self.config.handshakes {
-            let (stream, peer) = self.listener.accept()?;
-            out.push(self.read_connection(&stream, peer, index));
+            let Some((stream, peer)) = self.accept_within(deadline)? else {
+                break;
+            };
+            let capture = self.read_connection(&stream, peer, index);
+            // ⛔ Read before the move, and read from the capture rather than
+            // from a flag set beside it.
+            let reached_h2 = capture.reached_h2();
+            out.push(capture);
+            if self.config.until_h2 && reached_h2 {
+                break;
+            }
         }
         Ok(out)
+    }
+
+    /// Accept one connection, giving up at `deadline`.
+    ///
+    /// ⛔ **A stream accepted from a non-blocking listener inherits that mode
+    /// on some platforms**, and a non-blocking read returns `WouldBlock`
+    /// immediately, which the reader would record as a peer that sent nothing.
+    /// It is put back to blocking here rather than at the read, because there
+    /// is one accept and several readers.
+    fn accept_within(
+        &self,
+        deadline: Option<Instant>,
+    ) -> std::io::Result<Option<(TcpStream, SocketAddr)>> {
+        loop {
+            match self.listener.accept() {
+                Ok((stream, peer)) => {
+                    if deadline.is_some() {
+                        stream.set_nonblocking(false)?;
+                    }
+                    return Ok(Some((stream, peer)));
+                }
+                Err(err) if err.kind() == ErrorKind::WouldBlock => {
+                    let Some(deadline) = deadline else {
+                        return Err(err);
+                    };
+                    if Instant::now() >= deadline {
+                        return Ok(None);
+                    }
+                    std::thread::sleep(ACCEPT_POLL);
+                }
+                Err(err) if err.kind() == ErrorKind::Interrupted => {}
+                Err(err) => return Err(err),
+            }
+        }
     }
 
     fn read_connection(&self, stream: &TcpStream, peer: SocketAddr, index: u32) -> Capture {
@@ -240,6 +344,7 @@ impl Oracle {
             bytes_read: 0,
             raw_hex: String::new(),
             tls: None,
+            http2: None,
             request_line: None,
             header_names: Vec::new(),
             header_values: Vec::new(),
@@ -250,10 +355,9 @@ impl Oracle {
         let bytes = match read_first_message(stream, self.config.protocol) {
             Ok(bytes) => bytes,
             Err(err) => {
-                capture.notes.push(Note {
-                    field: "connection".to_owned(),
-                    why: format!("read failed: {err}"),
-                });
+                capture
+                    .notes
+                    .push(Note::new("connection", format!("read failed: {err}")));
                 return capture;
             }
         };
@@ -261,10 +365,10 @@ impl Oracle {
         capture.bytes_read = bytes.len();
         capture.raw_hex = hex(&bytes);
         if bytes.is_empty() {
-            capture.notes.push(Note {
-                field: "connection".to_owned(),
-                why: "the peer opened a socket and sent nothing, then closed it".to_owned(),
-            });
+            capture.notes.push(Note::new(
+                "connection",
+                "the peer opened a socket and sent nothing, then closed it",
+            ));
             return capture;
         }
 
@@ -274,14 +378,38 @@ impl Oracle {
                     capture.tls = Some(tls);
                     capture.notes = notes;
                 }
-                Err(why) => capture.notes.push(Note {
-                    field: "tls".to_owned(),
-                    why,
-                }),
+                Err(why) => capture.notes.push(Note::new("tls", why)),
             },
-            Protocol::PlainHttp1 => self.read_http1(&bytes, &mut capture),
+            Protocol::Cleartext => self.read_cleartext(&bytes, &mut capture),
         }
         capture
+    }
+
+    /// Read whichever cleartext protocol the peer actually spoke.
+    ///
+    /// ⛔ The bytes decide. A run does not get to declare what its peer will
+    /// send, and a capture that recorded an HTTP/2 connection as an unparseable
+    /// HTTP/1.1 request would be recording the harness rather than the client.
+    fn read_cleartext(&self, bytes: &[u8], capture: &mut Capture) {
+        if !h2::starts_like_preface(bytes) {
+            self.read_http1(bytes, capture);
+            return;
+        }
+        let mut notes = Vec::new();
+        // ⛔ The same switch governs both protocols. A capture that recorded
+        // values over HTTP/2 while withholding them over HTTP/1.1 would be one
+        // rule enforced on one of two paths.
+        let policy = if self.config.header_values {
+            ValuePolicy::WithValues
+        } else {
+            ValuePolicy::NamesOnly
+        };
+        let parsed = h2::parse_connection(bytes, policy, &mut notes);
+        capture.notes.append(&mut notes);
+        match parsed {
+            Ok(http2) => capture.http2 = Some(http2),
+            Err(why) => capture.notes.push(Note::new("http2", why)),
+        }
     }
 
     fn read_http1(&self, bytes: &[u8], capture: &mut Capture) {
@@ -293,10 +421,10 @@ impl Oracle {
                 break;
             }
             let Some((name, value)) = line.split_once(':') else {
-                capture.notes.push(Note {
-                    field: "http.headers".to_owned(),
-                    why: format!("a header line carries no colon: {line}"),
-                });
+                capture.notes.push(Note::new(
+                    "http.headers",
+                    format!("a header line carries no colon: {line}"),
+                ));
                 continue;
             };
             let name = name.trim().to_owned();
@@ -352,6 +480,16 @@ fn message_is_complete(buffer: &[u8], protocol: Protocol) -> bool {
             let declared = usize::from(u16::from(buffer[3]) << 8 | u16::from(buffer[4]));
             buffer.len() >= 5 + declared
         }
-        Protocol::PlainHttp1 => buffer.windows(4).any(|w| w == b"\r\n\r\n"),
+        // ⚠ The preface is checked FIRST and the blank-line rule second. The
+        // HTTP/2 preface carries a blank line at byte 16, so a reader that
+        // asked the HTTP/1.1 question first would stop four bytes into an
+        // HTTP/2 connection and record none of its frames.
+        Protocol::Cleartext => {
+            if h2::starts_like_preface(buffer) {
+                h2::first_header_block_complete(buffer)
+            } else {
+                buffer.windows(4).any(|w| w == b"\r\n\r\n")
+            }
+        }
     }
 }

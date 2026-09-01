@@ -604,7 +604,7 @@ two strings, because a single pass would not have shown it.
 ## SCHEMA-06. Record everything the wire carried, from the first commit
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** schema, **Priority** P1, **Effort** M, **Status** open
+**Category** schema, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -652,6 +652,120 @@ cargo test -p b-ids-schema raw_backstop -- --nocapture
 
 Passing means: a profile is rebuilt from its `raw` block alone by a second code
 path, and the result compares equal to the parsed profile field by field.
+
+### Closing
+
+**Closed 2026-09-01, and BEFORE the first capture rather than after it.** That
+was the whole point of the ordering: retrofitting completeness is paid for in
+captures nobody can take again.
+
+```text
+$ cargo test -p b-ids-schema raw_backstop -- --nocapture
+running 9 tests
+test raw_backstop_rebuilds_a_cleartext_request_through_the_one_construction_path ... ok
+test raw_backstop_the_schema_is_additive ... ok
+test raw_backstop_keeps_a_frame_type_the_model_has_no_name_for ... ok
+test raw_backstop_rebuilds_the_http2_half_from_the_raw_block_alone ... ok
+test raw_backstop_refuses_a_raw_block_that_disagrees_with_itself ... ok
+test raw_backstop_refuses_a_record_layer_that_disagrees_with_the_hello ... ok
+test raw_backstop_reports_every_half_the_raw_block_does_not_reproduce ... ok
+test raw_backstop_rebuilds_the_tls_half_from_the_raw_block_alone ... ok
+test raw_backstop_reports_a_half_that_disagrees_with_its_own_bytes ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### What the raw block carries now
+
+| field | why it cannot be dropped |
+| --- | --- |
+| `client_hello_hex` | ⭐ the only artefact in which a GREASE question is answerable. Every digest, JA4_ro included, strips GREASE before it is computed. |
+| `http2_frames_hex` | every frame in arrival order, head and payload, INCLUDING a frame type this project has no name for |
+| `connection_hex` | the whole first message before anything was made of it, which is the widest backstop there is |
+| `request_line_hex` | the BYTES of the request line. A request line is not guaranteed to be UTF-8, and a capture that stored it as text could not reproduce one that was not. |
+| `record_layer` | the record's own version, its declared length, ⛔ how many bytes actually arrived, and whether the hello was fragmented |
+| `settings_frame_hex` | kept for profiles written before the frame list existed, ⛔ with a check that the two agree |
+
+⚠ **Three quantities in one hello are called "the version"**: the record
+layer's, the handshake's, and the negotiated one. The record layer's now has a
+home of its own, so a profile can say which it means.
+
+### ⭐ The rebuild is a second ENTRY into the parser, not a second parser
+
+Rebuilding with an independent implementation would test the two
+implementations against each other and say nothing about whether the stored
+bytes are sufficient. ⭐ **The question the raw block exists to answer is
+whether the bytes are enough to produce the model again**, and that is what is
+asserted: the capture path reads a socket, the rebuild path reads the stored
+hex, and the two produce equal halves.
+
+⚠ **The rebuild goes through `HeaderSet::record`**, which is the one
+construction path and the one place the credential rule lives. A rebuild that
+assembled the fields itself would be a fourth door into that rule, and a test
+plants a `cookie` in the stored bytes to prove it is not.
+
+### ⛔ A mutation reported nothing, and that was the finding
+
+**The first mutation removed the comparison from the rebuild check entirely, and
+all eight tests still passed.** Every one of them exercised the ABSENT branch,
+where the raw block carries no bytes for a half; not one made a rebuilt half
+DIFFER from a recorded one, so the comparison had never been seen to fire.
+
+⭐ `raw_backstop_reports_a_half_that_disagrees_with_its_own_bytes` plants the
+difference. That is what a parser change or a hand edit looks like from
+outside, and it is the whole reason to keep the bytes.
+
+⚠ **This is the second time this session that a mutation which reported nothing
+produced a better finding than one that failed.** `HARNESS-04`'s was the same
+shape.
+
+### The schema is additive, and a test says so
+
+A profile written before the frame list existed still reads: the new fields
+default rather than being required, and the published JSON Schema keeps the two
+original names in its `required` list. ⛔ Fields are added, never removed and
+never repurposed. Removing one is a new major, and a new major is a promise to
+keep serving the old one.
+
+### ⚠ What is named in the approach and is NOT here, with the entry that owns it
+
+⛔ Stated so that nobody reads an absence as a decision against it.
+
+| row | why not, and where it goes |
+| --- | --- |
+| TCP and IP: source port, MSS, window and scale, TTL, option order | ⛔ **This harness does not read them at all.** It needs a raw socket or an equivalent, which is a capability question rather than a code one, and adding the fields with nothing able to fill them would be the "value the engine reads that nobody can set" defect. `HARNESS-11` establishes the capability first. |
+| the TLS response, and whether the client continued or aborted | there is no response: the handshake is not terminated. `--ca-out`. |
+| inter-frame gaps, and how long the browser waited | ⚠ a timing surface, and the harness records no clock per frame yet. It is not blocked by anything except that nothing needs it before a capture exists. |
+| operating system, architecture, container digest, harness version | ⭐ already modelled, in `platform` and `captured`, rather than in `raw`. A duplicate in the raw block would be one fact in two places. |
+
+### ⚠ A gap in the published schema, found while extending it and not fixed here
+
+**The schema expresses no numeric bounds anywhere.** `u8`, `u16` and `u32` are
+each a bare `{"type": "integer"}`, so the published schema accepts 999 for a
+field the Rust type holds to a byte. Adding a `minimum` to one new field would
+have been one bounded field among dozens of unbounded ones, and the checker's
+own guard refuses a keyword it does not enforce, so the new field follows the
+convention that is there.
+
+⭐ **The guard behaved exactly as designed**: it refused the schema the moment
+it used a keyword nothing enforced. That is the check working rather than a
+defect in it.
+
+### Mutation-proved
+
+```text
+=== SCHEMA-06: the rebuilt half is COMPARED, mutated to accept any rebuild ===
+failures:
+    raw_backstop_reports_a_half_that_disagrees_with_its_own_bytes
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+=== SCHEMA-06: the raw block agrees with itself, mutated to skip the check ===
+failures:
+    raw_backstop_refuses_a_raw_block_that_disagrees_with_itself
+    raw_backstop_refuses_a_record_layer_that_disagrees_with_the_hello
+test result: FAILED. 7 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
 
 ---
 

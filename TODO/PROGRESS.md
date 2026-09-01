@@ -16,14 +16,15 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session started 2026-08-31T14:10:15Z
+session started 2026-09-01T00:50:02Z
 baseline        the gate passes, all 19 checks, both halves of every pair.
-                92 tests across 4 crates. No capture has been taken.
-entries         total 82  open 59  blocked 0  done 22
+                166 tests in 16 files across 3 crates. No capture has been taken.
+entries         total 82  open 53  blocked 0  done 28
 ```
 
-⚠ **One of the 59 open is `partial` rather than untouched**: `HARNESS-02`, with
-seven of its nine switches done and the other two blocked on `HARNESS-03`.
+⚠ **One of the 53 open is `partial` rather than untouched**: `HARNESS-02`, with
+eight of its nine switches done and `--ca-out` blocked on a TLS server this tree
+does not have.
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
 `scripts/common/check-record.sh`, which runs as a gate. ⛔ Do not edit them by
@@ -34,115 +35,148 @@ hand to make a check pass; fix whichever file is wrong.
 
 ## What this session did
 
-**2026-08-31. The project stopped being documents and started being code.**
-Every P0 is closed except one, which is `partial` with its blocker named.
+**2026-09-01. The harness learned to read the half of the fingerprint that sits
+above TLS.** Six entries closed, and the biggest unlock in the tree turned out
+to be cheaper than it looked.
+
+### ⭐ HTTP/2 was reached WITHOUT terminating TLS, and that is the session's finding
+
+`HARNESS-03` sat behind `--ca-out` because reaching HTTP/2 from a browser needs
+a terminated handshake. ⭐ **A client with prior knowledge needs no handshake at
+all**, and its frames carry the same fingerprint. The entry has the mechanism
+and the measurement: [`harness.md`](harness.md), `HARNESS-03`.
+
+So the cleartext surface now reads whichever protocol the peer actually spoke,
+⛔ **decided by the bytes rather than by a flag the operator passed.**
+
+⚠ **What it does NOT reach is a browser.** No browser speaks cleartext HTTP/2,
+so the browser half still needs termination. `HARNESS-05` says so in its own
+entry with what was tried and what would open it.
 
 ### What exists now that did not
 
-- ⭐ **A Rust workspace of eight crates**, with the toolchain pinned to an exact
-  version and the minimum supported version held by a check rather than by a
-  number somebody typed.
-- ⭐ **The profile schema**, published as
-  [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json)
-  and written FIRST, with the Rust types checked against it. Three measured
-  halves, `digests` and `raw` as siblings, per-field provenance with four kinds
-  and no more.
-- ⭐ **A validator**: eight coherence checks, a command, and three outcomes
-  rather than two, because a check that cannot run has not passed.
-- ⭐ **A capture oracle**: a listener that reads a `ClientHello` off a real
-  loopback socket, parses it permissively, keeps the bytes whatever happens, and
-  compares a run against a committed golden.
-- **Four more gate checks**, taking it from 15 to 19: `check-msrv`, `cargo fmt`,
-  `cargo clippy`, `cargo test`. **Two more twin pairs**, taking it from 13 to 15.
+- ⭐ **An HTTP/2 frame reader**: the preface, SETTINGS in arrival order, the
+  connection WINDOW_UPDATE increment, standalone PRIORITY frames, and the
+  HEADERS frame with its flags byte and its priority block read as BYTES.
+- ⭐ **An HPACK decoder**, checked against a fetched corpus of **47,142 cases
+  across 446 files** rather than against itself. Header order is readable.
+- ⭐ **The emitter's first real content**, in `b-ids-emit`: a type that cannot
+  represent a declared length disagreeing with its body, which is exactly what
+  the parser's type must represent.
+- **The connection selection rule** and **the sampling rule**, each with its
+  own module and its own committed fixture.
+- ⭐ **A raw block a profile can be rebuilt from**, asserted rather than
+  intended.
+- `--until-h2` moved from refused to implemented. `--run-timeout-ms` is new.
 
 ### ⛔ What is still true, and matters more than the list above
 
 **No capture has been taken.** Every value in the tree is a fixture or an
-inherited claim, and neither is a measurement. The fixture says so in its own
-header; the inherited values live in
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) with their sources.
-⛔ Nothing from either may be published as data.
+inherited claim, and neither is a measurement. ⛔ Nothing from either may be
+published as data.
 
-### ⚠ Five defects found by running the tree, not by reading it
+### ⭐ The door sweep found the credential rule's FOURTH door, and it was open
 
-| what | how it was found |
+⛔ **A capture drops `cookie` from its parsed fields and keeps it in the bytes
+beside them.** The existing test greps the output for the credential's
+plaintext, which is absent; the same credential is present hex-encoded in
+`raw_hex`, and `SCHEMA-06` had just routed those bytes into a published
+profile's raw block.
+
+Measured by driving the compiled command over loopback with a fixture
+credential in the request: the plaintext is absent from the capture and the
+same sixteen bytes, hex-encoded, are present in `raw_hex`.
+
+⚠ **The measurement is described rather than pasted**, because the paste is a
+long hex run and `check-no-secrets` refuses those in a tracked document. ⭐ The
+guard refused this very paragraph on its first draft, which is the check
+working rather than a nuisance.
+
+⭐ **Two of this project's own rules collide on the cleartext surface**, and
+neither is wrong: `SCHEMA-04` says a capture carries no credential, and
+`SCHEMA-07` says the raw bytes are never edited because a capture is a moment
+that cannot be retaken.
+
+**What landed is the loud failure, not a resolution.** `Raw::check` refuses a
+profile whose cleartext bytes spell out a credential header line, on both
+spellings, and `Profile::check` calls it. ⛔ The bytes are never edited: the
+profile is refused and the operator decides. The fork itself is an open
+question below.
+
+### ⚠ Two mutations reported NOTHING, and both produced better findings than the ones that failed
+
+| the mutation | what reporting nothing revealed |
 | --- | --- |
-| ⛔ **`check-changelog` asserted four rules over zero entries.** It reads an entry as a `### ` heading; this repository wrote them at `## `, which it reads as a section. Green in the gate from the first commit. | editing `CHANGELOG.md` and noticing the count said 0 |
-| ⛔ **`check-msrv --verify` reported a broken toolchain as "the workspace does not compile".** It probed `cargo` where the compile needs `rustc`. A broken host was accusing the tree. | an interrupted install left a toolchain with a working cargo and no rustc |
-| ⛔ **A refusal test HUNG instead of failing.** With the `--bind` guard removed, the command bound successfully and blocked on the accept. | mutating the guard the test exists to prove |
-| ⛔ **The credential rule had a third door and it was open.** Capture-time filtering was gated twice and tested twice; DESERIALISATION was neither, so a profile read from a file could carry a cookie header. | the door sweep, at the end of the session |
-| ⚠ **A sweep citation became ambiguous because THIS tree acquired the name.** A path beginning crates/bit-cli-core meant a path inside a reference tree until `TOOL-01` created a `crates/` directory here. | the cited-path check, on its first run |
+| ⛔ one wrong row in the HPACK Huffman table, and all 47,142 cases still passed | the canonical construction derived every code from the bit-length counts, so the transcribed code column was **decoration**. It is read from the table now, and `check_table_is_canonical` states the assumption the decoder rests on. |
+| ⛔ the rebuild's comparison removed, and all eight `raw_backstop` tests still passed | every test exercised the ABSENT branch. The comparison had never been seen to report a difference. A test now plants one. |
 
-⭐ **The last two are the ones worth carrying forward.** Neither is a rename and
-neither is a typo: one is a rule enforced at one of three doors, and one is a
-citation that rotted because the tree moved underneath it.
+⚠ A third mutation did not apply at all because of a shell quoting difference,
+so the green result it produced was the unmutated tree. Applied properly it
+found a missing test rather than proving one, and `HARNESS-03`'s closing
+carries the reason.
 
-### ⚠ Two guards were too wide as specified, and running them said so
+### ⚠ A documented flag did not exist, and its own instruction named it
 
-- **`TOOL-10`'s cited-path check, implemented exactly as the entry described,
-  reported 30 spans and every one was legitimate.** The sweep documents cite
-  paths inside the reference trees as shorthand. One more rule, read from git
-  rather than written down, took it to 6, and those six were read one at a time.
-- **`TOOL-03`'s exclusion had to be narrower than "a raw capture directory".**
-  It is by field name and file type, and it is mutation-proved against a
-  credential planted inside a raw capture under a different field name.
+`check-no-secrets`'s reference-corpus exemption says to re-run with
+`--scope references` when a tree is added. ⛔ **That flag did not exist.** It
+does now, on both halves, with a `check-twins` row and a measured cost of 70s
+for the sh half over nineteen trees. The exemption was then re-read over the new
+tree and every one of its 52,396 hits was categorised.
 
-⛔ **Neither hex rule was widened**, which was the tempting fix in both cases and
-would have removed the rule.
+### One false doc claim, fixed
 
-### ⚠ One acceptance was contradicted by an earlier one
-
-`SCHEMA-03`'s test asserted that no field is named `connection_window`.
-`SCHEMA-09` requires exactly that field, beside the increment, with a check
-asserting the arithmetic. They are not in conflict once the rule is stated
-precisely: no field is named for the window INSTEAD of the increment. ⭐ The
-finding is that the earlier test banned a string as a proxy for a rule, and a
-string ban cannot tell "instead of" from "beside".
+`Http2Half::akamai_text`'s comment said an absent priority block and a block of
+zeroes both render as `0`. They do not: a block of zeroes renders `1:0:0:0`. The
+comment now states what the rendering actually loses.
 
 ## What is in progress
 
-**`HARNESS-02` is `partial`.** Seven of its nine switches are implemented,
-exercised and mutation-proved. `--ca-out` and `--until-h2` both need the
-handshake terminated, which is `HARNESS-03`. ⛔ They are absent rather than
-present-and-inert: the command refuses each by name and says which entry
-implements it.
+⛔ **Nothing is half-edited.** `HARNESS-02` is `partial` by decision: eight of
+nine switches are done and `--ca-out` is absent rather than inert, refusing by
+name and saying what is missing.
 
 ---
 
 ## ⭐ The work order
 
-⚠ **Take these in order and the reason is written down.** The schema, the
-validator and the oracle exist now, so the order below is what turns them into
-a corpus.
+⚠ **Take these in order and the reason is written down.**
 
-1. ⭐ **`HARNESS-03` and `HARNESS-04`.** Terminate the handshake behind
-   `--ca-out`, read SETTINGS, the WINDOW_UPDATE and the PRIORITY block, and
-   decode HPACK Huffman so header order is readable. ⛔ This is the single
-   biggest unlock in the tree: it closes `HARNESS-02`, and `HARNESS-05` cannot
-   be taken without it.
-2. ⭐ **`HARNESS-05`**, which is one capture and settles the priority block
-   here. It has a predicted answer and a positive control, and it decides
-   whether `EMIT-03` is work at all.
-3. **`HARNESS-06`, `HARNESS-07`, `HARNESS-08`.** The three traps that decide
-   whether a capture means anything. ⚠ `HARNESS-06` needs an emitter type
-   distinct from the parser type, so it reaches into `b-ids-emit`.
-4. **`SCHEMA-06`**, in the same change as the first capture and never after it.
-   Retrofitting completeness is paid for in captures nobody can take again.
-5. **`DRIVER-01` and `DRIVER-02`**, then one profile end to end: captured,
-   validated, published.
-6. ⭐ **`VALID-02`**, which needs no capture at all. `shared_handshakes` is
-   written and the three violations are located at file and line. It is the
-   project's first publishable result.
-7. **`PUB-01`, `PUB-02`, `PUB-03`, `PUB-07`**, before the corpus has more than
+1. ⭐ **The vendored TLS server.** ⛔ It is now the single blocker on the whole
+   browser half of the project: `--ca-out`, `HARNESS-05`, `HARNESS-10`,
+   `DRIVER-01` and every profile with a real `ClientHello` in it wait on it.
+   The operator ruled on 2026-09-01 that it is **vendored here and patched
+   here**, following `Azathothas/bit-cli`'s practice: a manifest naming what is
+   vendored and at which commit, a record of every local change, a derived
+   patch series regenerated from the tree, and a scan that reports when
+   upstream has moved. ⚠ **No entry exists for it yet**, so the first step is
+   authoring one from [`ENTRY.md`](ENTRY.md), per
+   [`../docs/methodology/authoring.md`](../docs/methodology/authoring.md).
+2. ⭐ **`VALID-02`**, which needs no capture and no TLS. `shared_handshakes` is
+   written, and the three violations were re-verified this session by opening
+   the files: five `impit` modules return `chrome_100`'s TLS and HTTP/2 beside
+   their own headers, one library serves a cipher table commented with a
+   version from years earlier, and its classifier returns three families where
+   its data carries four. ⛔ It is the project's first publishable result.
+3. **`HARNESS-05`**, the moment the handshake terminates. Its probe half is
+   done and its entry says exactly what is left.
+4. **`DRIVER-01`, `DRIVER-02`, `DRIVER-03`**, then one profile end to end.
+   ⚠ Chrome `151.0.7922.76` and Edge `152.0.4191.53` are on the capture host,
+   so the resolver has something real to find.
+5. **`HARNESS-09`**, which now has four parsers to fuzz rather than two: the
+   record layer, the `ClientHello`, the HTTP/2 frame reader and the HPACK
+   decoder. ⚠ `cargo fuzz` needs a nightly toolchain and this tree pins an
+   exact stable one; establish the route before planning the entry.
+6. **`PUB-01`, `PUB-02`, `PUB-03`, `PUB-07`**, before the corpus has more than
    one profile in it.
-8. **`CI-01` through `CI-04`**, after which the corpus maintains itself.
-9. **`CORPUS-02`**, the matrix.
-10. ⚠ **`LIB-02` earlier than its priority suggests.** It is the only entry that
-    proves the corpus is usable rather than merely accurate.
+7. **`CI-01` through `CI-04`**, after which the corpus maintains itself.
+8. **`CORPUS-02`**, the matrix.
+9. ⚠ **`LIB-02` earlier than its priority suggests.** It is the only entry that
+   proves the corpus is usable rather than merely accurate.
 
-⚠ **Two small entries are worth taking whenever a larger one is blocked**:
-`TOOL-06` (the route check, three lines, and it cannot run until `PUB-03`
-generates a tree) and `SCHEMA-11` (the multipart boundary).
+⚠ **Small entries worth taking whenever a larger one is blocked**: `TOOL-04`
+(the fetcher stops when one of its two routes is down), `SCHEMA-11` (the
+multipart boundary), `VALID-03` (a family the resolver cannot produce), and
+`TOOL-06` (three lines, and it cannot run until `PUB-03` generates a tree).
 
 ---
 
@@ -152,62 +186,76 @@ generates a tree) and `SCHEMA-11` (the multipart boundary).
 costs nothing and a session that does not get an answer proceeds on the
 recommendation and records that it did. [`RULES.md`](RULES.md) section 11.
 
-### 1. ⭐ Is the privacy default right, given that it blinds the validator?
+### 1. ⭐ NEW. What does a capture do with a credential that is in its raw bytes?
 
-**This is the one that surfaced from building both halves.** `SCHEMA-04` makes
-the default capture record header NAMES only. Four of the validator's eight
-checks read a header VALUE, so over an ordinary capture they report
-`NotCheckable` rather than passing or failing.
+**The door sweep found it this session and the loud failure is the only part
+that landed.** A cleartext capture drops `cookie` from its parsed fields and
+keeps it, hex-encoded, in the bytes beside them. Two of this project's rules
+collide there and neither is wrong.
+
+Four options, and none is free:
+
+| option | what it costs |
+| --- | --- |
+| ⭐ **refuse the profile, keep the capture** | what landed. The capture on disk still carries the credential; only publishing is stopped. |
+| redact the bytes | ⛔ destroys the artefact that survives every parser defect, and breaks the rebuild property `SCHEMA-06` just established |
+| never store cleartext connection bytes | loses the widest backstop on the one surface that has no TLS to hide behind |
+| capture cleartext only against a subject that sends no credential | a procedure rather than a guard, and procedures are what guards exist to replace |
+
+**Recommendation: keep the refusal, and add an entry for a capture-time
+refusal beside it**, so the harness declines to write a raw block it knows a
+profile cannot carry. ⚠ What should NOT happen is redaction: the moment this
+project edits captured bytes, the raw block stops being evidence.
+
+### 2. Is the privacy default right, given that it blinds the validator?
+
+`SCHEMA-04` makes the default capture record header NAMES only. Four of the
+validator's eight checks read a header VALUE, so over an ordinary capture they
+report `NotCheckable`.
 
 **Recommendation: keep the default and take the version coherence capture with
-`--header-values` deliberately.** The switch exists, it drops credentials even
-when on, and the alternative is a default that will one day publish one. ⚠ What
-should NOT happen is anybody weakening the default to make the validator look
-greener.
+`--header-values` deliberately.** ⚠ What should NOT happen is anybody weakening
+the default to make the validator look greener.
 
-### 2. Should `cookie` and `authorization` be dropped entirely, or kept as names?
+### 3. Should `cookie` and `authorization` be dropped entirely, or kept as names?
 
-`SCHEMA-04`'s acceptance says a capture contains neither, so that is what
-landed. ⚠ Dropping the name also drops the fact that the header was PRESENT,
-which is a fingerprint signal in its own right.
+⚠ Dropping the name also drops the fact that the header was PRESENT, which is a
+fingerprint signal in its own right.
 
-**Recommendation: a new entry that records presence without the value.** It is a
-schema change and a ruling rather than an implementation detail, and changing an
-approved acceptance while implementing it was not this session's to do.
+**Recommendation: a new entry that records presence without the value.**
 
-### 3. What does a client with no root store put in the trust-anchors extension?
+### 4. What does a client with no root store put in the trust-anchors extension?
 
-⛔ **Unchanged from last session, and it is the question that stopped the origin
-repository's version bump.** A Chrome 152 hello carries a 206-byte snapshot of
-the browser's own root store.
+⛔ Unchanged. A Chrome 152 hello carries a 206-byte snapshot of the browser's
+own root store.
 
-**Recommendation: publish, and do not choose.** `CORPUS-04` is per-build
-trust-anchor lists with their capture dates and the three options written down
-with their costs.
+**Recommendation: publish, and do not choose.** `CORPUS-04`.
 
-### 4. Does the first capture come before or after the schema is finished?
+### 5. ⚠ NEW. The published schema expresses no numeric bounds at all
 
-⭐ **Answered by this session: the schema is finished.** `SCHEMA-01` through
-`SCHEMA-05`, `SCHEMA-07` and `SCHEMA-09` are closed, and `SCHEMA-06` is the one
-that must land in the same change as the first capture rather than before it.
+`u8`, `u16` and `u32` are each a bare `{"type": "integer"}`, so the published
+schema accepts 999 for a field the Rust type holds to a byte. Found while
+extending the schema for `SCHEMA-06`; not fixed there, because one bounded
+field among dozens of unbounded ones is worse than none.
 
-### 5. Is there a second operator, and does the push policy need to change?
-
-**Recommendation: leave it.** Nothing here needs a wider policy until `PUB-01`
-cuts a release.
+**Recommendation: an entry that bounds all three at once**, with the checker
+gaining `minimum` and `maximum` in the same change. ⭐ The checker's guard
+already refuses a keyword nothing enforces, so the two cannot land apart.
 
 ---
 
 ## Settled, and not to be raised again
 
 Kept short on purpose. The list lives in [`RULES.md`](RULES.md); these are the
-rulings this session made that a later one should not re-open.
+rulings a later session should not re-open.
 
+- ⭐ **The TLS terminator is vendored here and patched here.** Ruled by the
+  operator 2026-09-01. Not a registry dependency, and not written from
+  scratch.
 - **The declared minimum Rust version is a verified upper bound, not the
-  floor.** The workspace compiles on 1.88.0 and nothing has shown it fails
-  below. `TOOL-01` names the three routes to the true minimum and why none is
-  taken yet.
-- **`Cargo.lock` is committed.** A measurement taken with an unrecorded
-  dependency set cannot be retaken.
-- **A path in a code span asserts that it resolves.** A path this tree
-  deliberately does not have is written as plain text instead.
+  floor.**
+- **`Cargo.lock` is committed.**
+- **A path in a code span asserts that it resolves.**
+- ⭐ **The reference corpus keeps whole trees**, and the HPACK vector corpus was
+  measured rather than trimmed by eye: 26.9 MiB packed across nineteen trees,
+  against a threshold of about 100 MiB.

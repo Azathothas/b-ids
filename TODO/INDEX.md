@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 82  open 59  blocked 0  done 22
+total 82  open 53  blocked 0  done 28
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 8 | 9 |
-| P1 | 23 | 0 | 11 | 34 |
+| P1 | 17 | 0 | 17 | 34 |
 | P2 | 32 | 0 | 2 | 34 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **59** | **0** | **22** | **82** |
+| **all** | **53** | **0** | **28** | **82** |
 
 ---
 
@@ -59,12 +59,12 @@ total 82  open 59  blocked 0  done 22
 | EMIT-04 | P3 | M | open | Emitters for the stacks a consumer already uses | [`emitters.md`](emitters.md) |
 | HARNESS-01 | P0 | L | done | The oracle is a server, not a client | [`harness.md`](harness.md) |
 | HARNESS-02 | P0 | M | partial | The switches, each of which exists because something went wrong without it | [`harness.md`](harness.md) |
-| HARNESS-03 | P1 | M | open | Read HTTP/2 settings, the window update and the priority block | [`harness.md`](harness.md) |
-| HARNESS-04 | P1 | M | open | Decode HPACK Huffman, because header order is behind it | [`harness.md`](harness.md) |
+| HARNESS-03 | P1 | M | done | Read HTTP/2 settings, the window update and the priority block | [`harness.md`](harness.md) |
+| HARNESS-04 | P1 | M | done | Decode HPACK Huffman, because header order is behind it | [`harness.md`](harness.md) |
 | HARNESS-05 | P1 | S | open | Settle the priority block, and do it first | [`harness.md`](harness.md) |
-| HARNESS-06 | P1 | S | open | Parse permissively, emit exactly | [`harness.md`](harness.md) |
-| HARNESS-07 | P1 | S | open | A browser opens sockets it abandons, and it resumes | [`harness.md`](harness.md) |
-| HARNESS-08 | P1 | S | open | One handshake is not a sample | [`harness.md`](harness.md) |
+| HARNESS-06 | P1 | S | done | Parse permissively, emit exactly | [`harness.md`](harness.md) |
+| HARNESS-07 | P1 | S | done | A browser opens sockets it abandons, and it resumes | [`harness.md`](harness.md) |
+| HARNESS-08 | P1 | S | done | One handshake is not a sample | [`harness.md`](harness.md) |
 | HARNESS-09 | P1 | M | open | Fuzz the parsers. A panic here is unacceptable | [`harness.md`](harness.md) |
 | HARNESS-10 | P2 | S | open | Check whether measuring changed what was measured | [`harness.md`](harness.md) |
 | HARNESS-11 | P2 | M | open | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
@@ -86,7 +86,7 @@ total 82  open 59  blocked 0  done 22
 | SCHEMA-03 | P0 | S | done | The HTTP/2 half, as an ordered frame sequence | [`schema.md`](schema.md) |
 | SCHEMA-04 | P0 | S | done | The HTTP half, its variants, and the one privacy rule | [`schema.md`](schema.md) |
 | SCHEMA-05 | P0 | S | done | Provenance is per field, with four kinds and no more | [`schema.md`](schema.md) |
-| SCHEMA-06 | P1 | M | open | Record everything the wire carried, from the first commit | [`schema.md`](schema.md) |
+| SCHEMA-06 | P1 | M | done | Record everything the wire carried, from the first commit | [`schema.md`](schema.md) |
 | SCHEMA-07 | P1 | S | done | What must never be in the model | [`schema.md`](schema.md) |
 | SCHEMA-08 | P1 | L | open | Every generated format, from one generator, round-tripped | [`schema.md`](schema.md) |
 | SCHEMA-09 | P1 | S | done | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
