@@ -86,7 +86,7 @@ finally { Pop-Location }
 # after every hit over the corpus was read once and recorded.
 # ⛔ Keep this identical to the sh twin.
 $all = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -cnotmatch '^references/' } | Sort-Object -Unique)
+    Where-Object { $_ -and $_ -cnotmatch '^(references|vendor/[^/]+)/' } | Sort-Object -Unique)
 $files = @($all | Where-Object { $_ -match '\.md$' })
 if ($Path) {
     $prefix = $Path.TrimEnd('/', '\').Replace('\', '/')

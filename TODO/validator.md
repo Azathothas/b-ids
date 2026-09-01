@@ -204,7 +204,7 @@ semicolon would break the split, and neither appears in any shipped brand list.
 ## VALID-02. Run it over the prior art, and publish what it finds
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** validator, **Priority** P1, **Effort** S, **Status** open
+**Category** validator, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -254,6 +254,114 @@ cargo run -p b-ids-validator -- import references --report
 Passing means: the report names at least the three violations above, each with
 its file, its line and the check it failed, and re-running against the same
 commits produces byte-identical output.
+
+
+### Closing
+
+**Closed 2026-09-01T06:05:00Z.** ⭐ **Ten exhibits, in two public repositories,
+each with a file, a line and the check it fails.** The reader agrees with the
+three the sweep located by eye and adds two more.
+
+```text
+$ cargo test -p b-ids-validator import
+running 7 tests
+test import_refuses_a_corpus_it_cannot_read ... ok
+test import_names_every_entry_that_returns_another_version_handshake ... ok
+test import_returns_its_exhibits_in_sorted_order ... ok
+test import_names_the_family_no_classifier_can_reach ... ok
+test import_names_the_cipher_table_served_to_every_version ... ok
+test import_report_carries_the_check_name_beside_every_exhibit ... ok
+test import_produces_byte_identical_output_across_runs ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+exit=0
+```
+
+And the report itself, which is the result:
+
+```text
+$ cargo run -p b-ids-validator -- import references --report
+b-ids-validator import report/1
+
+Kikobeats/https-tls
+  src/headers-order.json:119  unreachable-data
+    the header order for "edge" is data no caller can reach: the classifier returns "chrome", "firefox", "safari" and "edge" is not one of them
+  src/index.js:59  handshake
+    the chrome cipher list is commented "Chrome v92" and is the only one this library has for chrome, so every version of chrome is served it
+  src/index.js:78  handshake
+    the firefox cipher list is commented "Firefox v91" and is the only one this library has for firefox, so every version of firefox is served it
+  src/index.js:100  handshake
+    the safari cipher list is commented "Safari v14" and is the only one this library has for safari, so every version of safari is served it
+apify/impit
+  impit/src/fingerprint/database/chrome.rs:993  handshake
+    chrome_101 claims Chrome 101 and returns chrome_100's handshake, which 5 other entries in this file also return
+  impit/src/fingerprint/database/chrome.rs:1026  handshake
+    chrome_104 claims Chrome 104 and returns chrome_100's handshake, which 5 other entries in this file also return
+  impit/src/fingerprint/database/chrome.rs:1059  handshake
+    chrome_107 claims Chrome 107 and returns chrome_100's handshake, which 5 other entries in this file also return
+  impit/src/fingerprint/database/chrome.rs:1092  handshake
+    chrome_110 claims Chrome 110 and returns chrome_100's handshake, which 5 other entries in this file also return
+  impit/src/fingerprint/database/chrome.rs:1125  handshake
+    chrome_116 claims Chrome 116 and returns chrome_100's handshake, which 5 other entries in this file also return
+  impit/src/fingerprint/database/firefox.rs:444  handshake
+    firefox_144 claims Firefox 144 and returns firefox_135's handshake, which 1 other entry in this file also returns
+
+10 exhibit(s)
+exit=1
+```
+
+⚠ **Exit 1, because it found something.** A command that reported violations
+and exited 0 would be a command nothing downstream could act on. ⛔ Exit 2 is
+reserved for a reader that went blind, which is a different fact from a corpus
+with nothing wrong in it.
+
+### ⛔ The approach said to synthesise profiles, and that would have meant inventing wire data
+
+"Write an importer per reference database that produces profiles from their
+tables, run the validator over the result." ⚠ **A `TlsHalf` has sixteen fields
+of wire data and neither reference states them.** Building one would mean
+inventing the bytes this project exists to measure, and the report would then
+be a report about the invention rather than about the table.
+
+⭐ **What is shared instead is the vocabulary.** Every exhibit carries the
+`Check` it fails, so the report and the validator name the same thing, and
+`shared_handshakes` keeps its own job over real profiles. ⚠ The title stays and
+the premise stays; only the mechanism changed, and this is the correction.
+
+### ⭐ The reader found two the sweep had not, and corrected two line numbers
+
+| what | where |
+| --- | --- |
+| a sixth entry returning another version's handshake, in a second family | `references/apify__impit/tree/impit/src/fingerprint/database/firefox.rs:444` |
+| a third cipher table commented for one version and served to all of them | `references/Kikobeats__https-tls/tree/src/index.js:100` |
+| two cited line numbers that were two lines out | the sweep cited 57 and 80; the comments naming the versions are at 59 and 78 |
+
+⛔ **Every one of these was read by opening the file at the captured commit**,
+which the entry required in as many words. The reader is what re-opened them.
+
+### ⚠ What the readers are, and what they are not
+
+They know the SHAPE of four files: a Rust module and constructor, a JavaScript
+object of cipher lists, a classifier of string literals, and a JSON object of
+families. ⛔ **A reference edited into a shape they do not know makes them find
+nothing, and finding nothing is an error rather than a clean report.** Without
+that, a shipped violation could leave the report by being reformatted.
+
+⚠ **Only two of the nineteen reference trees are read.** A tree that is not
+listed is not examined, which is a different fact from a tree with nothing wrong
+in it, and the module says so where the list is.
+
+### Mutation-proved
+
+| what was planted | what happened |
+| --- | --- |
+| the module prefix the Rust reader matches, changed by one word | four tests FAILED, and the error named the reader as blind rather than reporting a clean corpus |
+| ⛔ the sort removed | **every test passed.** The walk underneath is already stable on this host, so equality between two runs cannot tell a sorted answer from an incidentally stable one. A second test now asserts sortedness directly, and the same mutation fails it. |
+
+⭐ **The second row is the one worth reading.** The acceptance asked for
+"byte-identical output across runs" and a test written to those words could
+never have failed. What the entry wanted was an order that does not depend on a
+directory walk, and only an assertion about the order can see that.
 
 ---
 

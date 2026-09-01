@@ -30,8 +30,10 @@ use b_ids_schema::tls::{Shuffle, is_grease_value};
 use b_ids_schema::{Os, Profile, ProvenanceKind};
 
 mod headers;
+pub mod import;
 
 pub use headers::{BrandEntry, parse_brand_list};
+pub use import::{Exhibit, read as import_references, render as render_report};
 
 /// One of the eight checks.
 ///

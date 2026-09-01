@@ -13,28 +13,29 @@ rather than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-01T00:50:02Z to its operator interrupt. |
-| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1: **author an entry for the vendored TLS server**, then implement it. It is the single blocker on the whole browser half of the project. |
-| in flight | ⛔ Nothing half-edited. `HARNESS-02` is `partial` by decision, with `--ca-out` absent rather than inert. `HARNESS-05`'s probe half is done and its entry names what is left. |
-| the state of the tree | Clean, committed and pushed. The gate passes all 19 checks, both halves of every pair. 166 tests in 16 files across 3 crates. ⛔ No capture has been taken and the corpus is empty. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-01T03:47:48Z to its operator interrupt, unattended, seven entries closed. |
+| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1: **`CORPUS-01`**, which turns a capture into a profile. ⛔ It is the single thing in the way: the harness takes captures from real browsers and nothing writes one down. |
+| in flight | ⛔ Nothing. Every entry touched is closed with its acceptance command run, the record moved in the same change, and the tree committed. |
+| the state of the tree | Clean, one squashed commit on `main`, pushed. The gate passes 20 checks, with `check-twins` run separately and agreeing on every pair. ⛔ The corpus is empty: captures exist, no profile does. |
 | the paste | below |
 
 ---
 
-## ⭐ The ruling this session was given, and it is now settled
+## ⭐ What changed about this project on 2026-09-01
 
-**The TLS terminator is VENDORED here and patched here**, rather than taken as
-a registry dependency or written from scratch. The operator ruled it on
-2026-09-01 and named the practice to follow: `Azathothas/bit-cli`'s, whose
-shape is a manifest naming what is vendored and at which commit, a record of
-every local change, a derived patch series regenerated from the tree, and a
-scan that reports when upstream has moved.
-[`../methodology/vendoring.md`](../methodology/vendoring.md) is this tree's own
-half of the rule, and [`../../TODO/RULES.md`](../../TODO/RULES.md) records the
-ruling.
+**It can reach a browser now.** rustls is vendored at `v/0.23.43` under
+[`../../vendor/`](../../vendor/), `--ca-out` mints an authority and terminates
+the handshake behind it, and Chrome `151.0.7922.76` and Edge `152.0.4191.53`
+both completed verified handshakes against it.
 
-⚠ **Nothing is vendored yet and no entry exists for it.** Authoring one is the
-first step, and ⛔ authoring does not implement.
+⚠ **The one measurement taken is in
+[`../inherited-claims.md`](../inherited-claims.md) section 5**, marked
+`measured-here` with its conditions, and it is not published because there is
+nowhere to publish it.
+
+⛔ **Every capture was taken through a per-launch key pin rather than a trust
+store**, which is a condition of the measurement rather than a detail.
+`HARNESS-10` is the entry that measures whether it changed the answer.
 
 ---
 

@@ -16,6 +16,10 @@ workspace = true
 b-ids-schema = { path = "../b-ids-schema" }
 serde.workspace = true
 serde_json.workspace = true
+# ⛔ The VENDORED tree, at vendor/rustls. TODO/vendor.md, VENDOR-01.
+rustls.workspace = true
+# The authority --ca-out mints per run. TODO/harness.md, HARNESS-13.
+rcgen.workspace = true
 
 [dev-dependencies]
 b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }

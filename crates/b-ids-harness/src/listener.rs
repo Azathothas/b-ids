@@ -4,10 +4,11 @@
 //! returns what it intended, which is a different thing and is the commonest
 //! way a whole set of numbers turns out to describe nothing.
 //!
-//! ⛔ **It does not complete a TLS handshake.** Completing one can change what a
-//! client offers, so a digest read through a terminated handshake is not the
-//! digest that client ships. Terminating one is what `--ca-out` needs and it is
-//! not here.
+//! ⛔ **It does not complete a TLS handshake by default**, and the default is the
+//! answer to the narrower question: completing one can change what a client
+//! offers, so a digest read through a terminated handshake is not the digest
+//! that client ships. `--ca-out` opts into termination, which is the only way to
+//! reach a browser's HTTP/2, and [`crate::tls`] is where it happens.
 //!
 //! ⭐ **Multi-protocol from the first commit, even with one protocol
 //! implemented.** [`Protocol`] is the seam: a TLS listener, a cleartext
@@ -19,9 +20,12 @@
 //! client with prior knowledge sends the HTTP/2 connection preface. The reader
 //! is chosen by the bytes that arrived, never by a flag the operator passed.
 
-use std::io::{ErrorKind, Read as _};
+use std::io::{ErrorKind, Read};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+use rustls::ServerConfig;
 
 use b_ids_schema::http::ValuePolicy;
 use serde::{Deserialize, Serialize};
@@ -33,8 +37,8 @@ use crate::note::Note;
 
 /// Which capture surface a listener presents.
 ///
-/// ⚠ Two variants today and the seam is here for more. A third is added as a
-/// variant and a match arm, not as a second listener.
+/// ⚠ Three variants today and the seam is here for more. A fourth, QUIC, is
+/// added as a variant and a match arm, not as a second listener.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Protocol {
@@ -46,6 +50,14 @@ pub enum Protocol {
     /// ⭐ The capture that works when a client cannot be told to trust
     /// anything.
     Cleartext,
+    /// Read the `ClientHello`, then complete the handshake and read whatever
+    /// the peer sends over it.
+    ///
+    /// ⭐ The only surface that reaches a browser's HTTP/2, because no browser
+    /// speaks cleartext HTTP/2. ⚠ It is opt-in for the reason the module
+    /// comment gives, and what it negotiated is recorded as a condition of the
+    /// capture rather than as a finding about the subject.
+    TlsTerminated,
 }
 
 impl Protocol {
@@ -53,10 +65,36 @@ impl Protocol {
     #[must_use]
     pub fn scheme(self) -> &'static str {
         match self {
-            Self::TlsRaw => "https",
+            Self::TlsRaw | Self::TlsTerminated => "https",
             Self::Cleartext => "http",
         }
     }
+}
+
+/// What one terminated handshake negotiated, and what came over it.
+///
+/// ⚠ **Every field here is a property of THIS SERVER**, not of the browser. A
+/// capture that reported the negotiated suite as a fact about the subject would
+/// be reporting the harness. `HARNESS-10` is where the difference is measured.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Termination {
+    /// The protocol the peer selected over ALPN, where it selected one.
+    ///
+    /// ⭐ This one IS a choice the peer made, and it is a fingerprint signal.
+    pub alpn: Option<String>,
+    /// The protocol version that was negotiated.
+    pub version: Option<String>,
+    /// The cipher suite that was negotiated.
+    pub cipher_suite: Option<String>,
+    /// How many plaintext bytes arrived before the read ended.
+    pub plaintext_bytes: usize,
+    /// The plaintext, hex-encoded.
+    ///
+    /// ⛔ Kept for the same reason `Capture::raw_hex` is: it is what the parsed
+    /// halves below were read from, and a capture is a moment that cannot be
+    /// retaken. ⚠ The wire carried ciphertext, so this is not the wire: it is
+    /// what the peer sent, recovered by holding the key.
+    pub plaintext_hex: String,
 }
 
 /// What one accepted connection produced.
@@ -81,11 +119,22 @@ pub struct Capture {
     /// ⛔ Kept whatever else happened. It is the one artefact that survives
     /// every hashing scheme and every parser defect, and a capture is a moment
     /// that cannot be retaken.
+    ///
+    /// ⚠ **On a terminated surface this is the first record and nothing more.**
+    /// The rest of the handshake and every application record after it are
+    /// ciphertext, and what the peer sent inside them is in
+    /// [`Termination::plaintext_hex`] instead.
     pub raw_hex: String,
     /// The TLS half, where a `ClientHello` was read.
     pub tls: Option<b_ids_schema::tls::TlsHalf>,
     /// The HTTP/2 half, where a connection preface and its frames were read.
     pub http2: Option<Http2Capture>,
+    /// What the handshake negotiated, where one was completed.
+    ///
+    /// ⛔ `None` on every surface that does not terminate, rather than a set of
+    /// empty strings. A field that cannot tell "not attempted" from "attempted
+    /// and negotiated nothing" is a field a reader has to guess at.
+    pub termination: Option<Termination>,
     /// The request line, where a cleartext HTTP/1.1 request was read.
     pub request_line: Option<String>,
     /// The header names in wire order, where a cleartext HTTP/1.1 request was
@@ -122,10 +171,10 @@ const ACCEPT_POLL: Duration = Duration::from_millis(10);
 
 /// The schema identifier a capture carries.
 ///
-/// ⚠ Version 2 adds the HTTP/2 half and renames the cleartext surface, which
-/// used to name HTTP/1.1 alone. A version is part of the data rather than
-/// implied by the reader.
-pub const CAPTURE_SCHEMA: &str = "harness-capture/2";
+/// ⚠ Version 3 adds what a terminated handshake negotiated. Version 2 added the
+/// HTTP/2 half and renamed the cleartext surface, which used to name HTTP/1.1
+/// alone. A version is part of the data rather than implied by the reader.
+pub const CAPTURE_SCHEMA: &str = "harness-capture/3";
 
 /// How a run is configured.
 #[derive(Debug, Clone)]
@@ -159,6 +208,12 @@ pub struct Config {
     pub header_values: bool,
     /// How long to wait for bytes on an accepted connection.
     pub read_timeout: Duration,
+    /// The server configuration a terminated surface serves.
+    ///
+    /// ⛔ Required by [`Protocol::TlsTerminated`] and refused by every other
+    /// surface, both at [`Oracle::bind`]. A protocol that says it terminates
+    /// beside a `None` here would be a mode that silently did nothing.
+    pub terminator: Option<Arc<ServerConfig>>,
 }
 
 impl Default for Config {
@@ -176,6 +231,7 @@ impl Default for Config {
             until_h2: false,
             header_values: false,
             read_timeout: Duration::from_secs(10),
+            terminator: None,
         }
     }
 }
@@ -240,6 +296,14 @@ impl Oracle {
     ///
     /// Whatever the operating system said about the bind.
     pub fn bind(config: Config) -> std::io::Result<Self> {
+        // ⛔ Refused before the bind, so the failure names the configuration
+        // rather than arriving as a connection that terminated nothing.
+        if config.protocol == Protocol::TlsTerminated && config.terminator.is_none() {
+            return Err(std::io::Error::new(
+                ErrorKind::InvalidInput,
+                "the terminated surface needs a server configuration, and none was given",
+            ));
+        }
         let listener = TcpListener::bind(SocketAddr::new(config.bind, config.port))?;
         Ok(Self { listener, config })
     }
@@ -345,6 +409,7 @@ impl Oracle {
             raw_hex: String::new(),
             tls: None,
             http2: None,
+            termination: None,
             request_line: None,
             header_names: Vec::new(),
             header_values: Vec::new(),
@@ -352,7 +417,8 @@ impl Oracle {
         };
 
         let _ = stream.set_read_timeout(Some(self.config.read_timeout));
-        let bytes = match read_first_message(stream, self.config.protocol) {
+        let mut source = stream;
+        let bytes = match read_first_message(&mut source, self.config.protocol) {
             Ok(bytes) => bytes,
             Err(err) => {
                 capture
@@ -373,16 +439,67 @@ impl Oracle {
         }
 
         match self.config.protocol {
-            Protocol::TlsRaw => match parse_record(&bytes) {
-                Ok(HelloCapture { tls, notes, .. }) => {
-                    capture.tls = Some(tls);
-                    capture.notes = notes;
-                }
-                Err(why) => capture.notes.push(Note::new("tls", why)),
-            },
+            Protocol::TlsRaw => self.read_hello(&bytes, &mut capture),
             Protocol::Cleartext => self.read_cleartext(&bytes, &mut capture),
+            // ⛔ The hello is parsed from the bytes the listener read, BEFORE the
+            // terminator sees them, and those same bytes are replayed into it.
+            // A hello reported by the library that consumed it is a hello
+            // filtered through somebody else's parser.
+            Protocol::TlsTerminated => {
+                self.read_hello(&bytes, &mut capture);
+                self.terminate(stream, &bytes, &mut capture);
+            }
         }
         capture
+    }
+
+    fn read_hello(&self, bytes: &[u8], capture: &mut Capture) {
+        match parse_record(bytes) {
+            Ok(HelloCapture { tls, notes, .. }) => {
+                capture.tls = Some(tls);
+                capture.notes = notes;
+            }
+            Err(why) => capture.notes.push(Note::new("tls", why)),
+        }
+    }
+
+    /// Complete the handshake and read what the peer sent over it.
+    ///
+    /// ⚠ A connection that never completes still produces a capture, with its
+    /// note and its recorded hello. A browser opens sockets it abandons, and
+    /// one of them abandoned mid-handshake is data rather than an error.
+    fn terminate(&self, stream: &TcpStream, already_read: &[u8], capture: &mut Capture) {
+        let Some(config) = self.config.terminator.as_ref() else {
+            capture.notes.push(Note::new(
+                "tls.terminate",
+                "the terminated surface was selected with no server configuration",
+            ));
+            return;
+        };
+        let terminated = match crate::tls::terminate(stream, already_read, config) {
+            Ok(terminated) => terminated,
+            Err(why) => {
+                capture.notes.push(Note::new("tls.terminate", why));
+                return;
+            }
+        };
+        capture.termination = Some(Termination {
+            alpn: terminated.alpn.clone(),
+            version: terminated.version.clone(),
+            cipher_suite: terminated.cipher_suite.clone(),
+            plaintext_bytes: terminated.plaintext.len(),
+            plaintext_hex: hex(&terminated.plaintext),
+        });
+        if terminated.plaintext.is_empty() {
+            capture.notes.push(Note::new(
+                "tls.terminate",
+                "the handshake completed and the peer sent nothing over it",
+            ));
+            return;
+        }
+        // ⛔ The SAME reader the cleartext surface uses, chosen by the bytes
+        // rather than by the flag that opened the connection. One read path.
+        self.read_cleartext(&terminated.plaintext, capture);
     }
 
     /// Read whichever cleartext protocol the peer actually spoke.
@@ -447,7 +564,10 @@ impl Oracle {
 /// header is what says when to stop rather than the first read returning. A
 /// parser fed one read's worth of a two-read hello reports a truncation that
 /// never happened.
-fn read_first_message(mut stream: &TcpStream, protocol: Protocol) -> std::io::Result<Vec<u8>> {
+pub(crate) fn read_first_message<R: Read + ?Sized>(
+    stream: &mut R,
+    protocol: Protocol,
+) -> std::io::Result<Vec<u8>> {
     let mut buffer = Vec::new();
     let mut chunk = [0_u8; 4096];
     loop {
@@ -473,7 +593,10 @@ fn read_first_message(mut stream: &TcpStream, protocol: Protocol) -> std::io::Re
 
 fn message_is_complete(buffer: &[u8], protocol: Protocol) -> bool {
     match protocol {
-        Protocol::TlsRaw => {
+        // ⚠ The TERMINATED surface uses the record rule here, not the cleartext
+        // one: this read is the first TLS record and the handshake has not
+        // happened yet. The read AFTER it passes Cleartext explicitly.
+        Protocol::TlsRaw | Protocol::TlsTerminated => {
             if buffer.len() < 5 {
                 return false;
             }

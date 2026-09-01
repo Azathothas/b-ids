@@ -14,6 +14,68 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-01T05:40:00Z - the first bytes a browser put on a wire
+
+**Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-13`, `HARNESS-02`
+and `HARNESS-05`, and [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet, and the corpus
+is still empty.
+
+What landed:
+
+- ⭐ **The handshake is terminated.** `--ca-out` mints a per-run authority,
+  writes it, and selects a surface that completes a verified handshake and
+  reads whatever the peer sends over it. Chrome `151.0.7922.76` and Edge
+  `152.0.4191.53` both completed one and both reached HTTP/2.
+- ⭐ **The priority block is measured**, on two browsers, on every terminated
+  connection: `80000000ff` on the wire, which is exclusive, dependency 0,
+  weight 255. It agrees exactly with the reading this project inherited, and
+  [`docs/inherited-claims.md`](docs/inherited-claims.md) section 5 now carries
+  both with the conditions of the measurement.
+- **`HARNESS-02` closed.** All nine switches are implemented; `--ca-out` was
+  the ninth and it had been absent rather than inert for a day.
+
+⚠ **The capture record moved to `harness-capture/3`**: a terminated connection
+records what the handshake negotiated, and a field added without a version bump
+is a positional format that mis-reads silently.
+
+⛔ **The authority was not installed into the machine trust store.** Each
+browser was launched with a per-launch flag naming that one key, which is a
+condition of every capture taken this way and is recorded as one. `HARNESS-10`
+is the entry that measures whether it changed the answer.
+
+⚠ **A test that asserted a refusal became a hang** when the refusal stopped
+refusing, and killing it left a test binary locked. Every test that drives the
+command now passes a deadline.
+### 2026-09-01T04:33:47Z - the TLS terminator is vendored, and the record that keeps it honest
+
+**Record:** [`TODO/vendor.md`](TODO/vendor.md), `VENDOR-01`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet, and no capture
+has been taken.
+
+What landed:
+
+- ⭐ **rustls, vendored at a named commit and compiled by this tree.** 210 files
+  under [`vendor/rustls/`](vendor/rustls/), 2.8 MiB, with fifteen of upstream's
+  seventeen workspace members excluded and every exclusion carrying its reason
+  in [`vendor/upstream.json`](vendor/upstream.json).
+- **The four artefacts the vendoring practice asks for**: the manifest, the
+  change record in [`patches/README.md`](patches/README.md), a derived series
+  regenerated from the tree, and a scan with an offline leg in the gate and a
+  network leg outside it.
+- **Three tools**: `scripts/common/check-vendor.sh` with its PowerShell twin, and
+  the two node helpers that fetch a pristine copy and regenerate the series.
+
+⚠ **Five checks failed the moment the tree landed**, which is the cost
+[`docs/methodology/vendoring.md`](docs/methodology/vendoring.md) names in
+advance. Each now exempts the vendored trees and the series derived from them,
+never the manifest beside them, and the secret scan carries the reading of all
+38 hits that was done before its exemption was taken.
+
+⭐ **The exemption boundary paid for itself in the same session**: the secret
+scan refused the patch record, because a pasted cargo failure carried the
+operator's home directory into a public repository.
 ### 2026-09-01T02:55:37Z - the half of the fingerprint above TLS
 
 **Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and `HARNESS-03`,

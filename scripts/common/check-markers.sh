@@ -160,7 +160,7 @@ FILES=$(
     git ls-files 2>/dev/null
     git ls-files --others --exclude-standard 2>/dev/null
   } | sort -u | grep -E "$TEXT_RE" \
-    | grep -v '^references/' || true
+    | grep -vE '^(references|vendor/[^/]+)/' || true
 )
 if [ -z "$FILES" ]; then
   printf 'check-markers: no text files in scope\n' >&2

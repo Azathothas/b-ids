@@ -325,6 +325,15 @@ compare_pair "check-no-secrets scoped" check-no-secrets.sh  "--public --json --s
 # check does not download one.
 compare_pair "check-msrv"           check-msrv.sh           "--json"          check-msrv.ps1           "-Json"
 
+# ⚠ THE OFFLINE LEG ONLY. The --upstream leg reaches a remote, so comparing it
+# here would make this comparison fail on a machine with no network and pass
+# on one with it, which is a comparison that reports the host rather than the
+# pair. ⭐ The divergence this pair has already produced was in the offline
+# leg anyway: ConvertFrom-Json turns an ISO 8601 stamp into a [datetime], so
+# the PowerShell half validated a local-format date string against a rule
+# about ISO text and reported a manifest that was correct.
+compare_pair "check-vendor"         check-vendor.sh         "--json"          check-vendor.ps1         "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

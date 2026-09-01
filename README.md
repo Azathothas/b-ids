@@ -3,17 +3,16 @@
 A dated, provenance-carrying corpus of what real browsers put on a wire: TLS
 `ClientHello` bytes, HTTP/2 settings and framing, and header sets in order.
 
-⛔ **Nothing has been captured yet, and the corpus is empty.** What is here is
-the profile schema, a validator that refuses a combination no browser could
-send, a capture oracle that reads a `ClientHello` and an HTTP/2 connection off
-a real socket, the methodology, the tooling and a reading of the prior art.
-⚠ It does not terminate a TLS handshake, so a browser's HTTP/2 is still out of
-reach.
+⛔ **The corpus is empty.** What is here is the profile schema, a validator that
+refuses a combination no browser could send, a capture oracle that terminates a
+TLS handshake and reads a real browser's HTTP/2 off the socket behind it, the
+methodology, the tooling and a reading of the prior art.
 
-⚠ **Every value in the tree today is a fixture or an inherited claim.** A
+⚠ **Almost every value in the tree today is a fixture or an inherited claim.** A
 fixture is shaped like a capture and is not one; an inherited value was measured
 somewhere else and is recorded with its source. Neither is data this project
-publishes.
+publishes. ⭐ One quantity has been measured here, off two browsers, and it is
+recorded with its conditions rather than published.
 
 ---
 
@@ -134,6 +133,9 @@ a notice file.
   eighteen other repositories' trees, kept as the evidence behind that document,
   each under its own licence. 0BSD covers what this project writes and
   generates, not what it quotes.
+- **The vendored source in [`vendor/`](vendor/) is not this project's either.**
+  It is compiled by this tree and patched here, under its own licence, at the
+  commit [`vendor/upstream.json`](vendor/upstream.json) records.
 
 ---
 
@@ -148,6 +150,8 @@ a notice file.
 | [`docs/inherited-claims.md`](docs/inherited-claims.md) | every value carried from somewhere else, with its source and status |
 | [`docs/glossary.md`](docs/glossary.md) | the terms, and the caveat attached to each |
 | [`docs/reference-sweeps/findings.md`](docs/reference-sweeps/findings.md) | what eighteen other repositories do, and get wrong |
+| [`vendor/upstream.json`](vendor/upstream.json) | what third-party source this tree compiles, and at which commit |
+| [`patches/README.md`](patches/README.md) | every local change to that source, and how to tell when a release retires one |
 | [`CHANGELOG.md`](CHANGELOG.md) | what shipped, when, and where the evidence is |
 | [`docs/HISTORY/README.md`](docs/HISTORY/README.md) | what was believed here and later withdrawn |
 

@@ -4,10 +4,14 @@ Every value this project carries that was measured somewhere else, with its
 source, its date, its status, and the entry that re-measures it.
 
 ⭐ **This file exists because the project's first rule is that a fingerprint is
-measured, never derived and never inherited.** Nothing below has been measured
-here. Each row is therefore `vendor` provenance by the definition in
-[`glossary.md`](glossary.md), which makes it a draft, a starting point and a
-test case, and never a corpus entry.
+measured, never derived and never inherited.** Every row here is `vendor`
+provenance by the definition in [`glossary.md`](glossary.md), which makes it a
+draft, a starting point and a test case, and never a corpus entry.
+
+⚠ **One row has been measured here, and section 12 says what happens to it.**
+Section 5 carries the first quantity this project read off a browser's own
+wire, on 2026-09-01, beside the reading it inherited. ⛔ It is still not in the
+corpus, because there is no corpus: `CORPUS-01` is the entry that builds one.
 
 ⛔ **Nothing here may be copied into a published profile.** A value nobody here
 can re-measure is a value nobody should trust, and copying one across would put
@@ -27,6 +31,7 @@ one is right and the other is the defect.
 | ⛔ `contested` | two or more sources disagree, or one source contradicts itself. The disagreement is recorded and neither reading is preferred. |
 | ⛔ `refuted` | a reading of a reference's own source or specification shows the claim is wrong. The original wording is kept and the correction is written underneath. |
 | `confirmed-by-reading` | checked against a reference's source at a named commit. ⚠ Still not a wire measurement **here**. |
+| ⭐ `measured-here` | read off a socket by this project's own harness, with the browser, the build, the date and the conditions recorded. The only status that can become a corpus entry. |
 
 ⚠ **`confirmed-by-reading` is the weakest kind of confirmation that gets a
 name.** It says a claim about somebody's code matches that code. It says nothing
@@ -243,10 +248,36 @@ so a tool taking `256` puts `255` on the wire. `ORIGIN`'s own type comment says
 so at `page.rs:293-299`. `curl-impersonate`'s `256` and this `255` are one
 quantity in two units.
 
-⛔ **It is still `vendor` provenance and still may not be published.** It was
-measured somewhere else. `HARNESS-05` re-measures it here, and it is now a
-confirmation with a predicted answer and a positive control rather than an open
-question.
+### ⭐ Measured here on 2026-09-01, and the two agree
+
+`HARNESS-05` took the capture. The harness terminated the handshake, read the
+HEADERS frame's flags byte for `0x20`, skipped no pad byte because none was
+set, and decoded the five bytes behind it.
+
+| browser | build | terminated connections | the five raw bytes | parsed |
+| --- | --- | --- | --- | --- |
+| Chrome | `151.0.7922.76` | 6 of 7 accepted | `80000000ff` on every one | exclusive, dependency 0, weight 255 on the wire |
+| Edge | `152.0.4191.53` | 7 of 8 accepted | `80000000ff` on every one | exclusive, dependency 0, weight 255 on the wire |
+
+⭐ **That is the reading in the first row of the table above, taken here.** The
+inherited value and the measured value agree exactly, and the two rows
+reporting `0` stay explained rather than contradicted: both read a rendered
+string, and one of them read a client that could not write the block.
+
+⚠ **The conditions, because a measurement carries them or it is not a
+measurement.** One Windows 11 host, 2026-09-01. Both browsers launched into a
+throwaway profile directory and pointed at a loopback address. ⛔ The run's own
+authority was NOT installed into the machine trust store: each browser was
+given `--ignore-certificate-errors-spki-list` carrying the base64 SHA-256 of
+that one key, so exactly one key was trusted for one launch.
+`HARNESS-10` is the entry that measures whether that changed what was measured.
+
+⚠ **The first connection of each run terminated nothing.** It is the preconnect
+a browser opens and abandons, and it carries no HTTP/2 at all.
+
+⛔ **It is `measured-here` and it is still not published**, because there is
+nowhere to publish it: no profile has been written and `CORPUS-01` is the entry
+that decides what one looks like on disk.
 
 ---
 

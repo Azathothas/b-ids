@@ -85,6 +85,26 @@ whether the language does.** Every check in `common/` passes that test, which is
 why every one of them has two halves.
 
 ---
+
+## ⚠ What a vendored tree costs the checks that read the whole tree
+
+Five of them failed the moment the first vendored tree landed: the four prose
+checks and the secret scan. ⭐ **That is the cost
+[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) names in
+advance**, where it says warnings become yours.
+
+The exemption covers each vendored tree and the patch series derived from it,
+and ⛔ it is never the whole vendor directory, because
+[`../vendor/upstream.json`](../vendor/upstream.json) and
+[`../patches/README.md`](../patches/README.md) are this project's own writing.
+Each half of each check carries its reason, and the secret scan carries the
+reading that was done before the exemption was taken.
+
+⭐ **Keeping the manifest in scope paid immediately.**
+[`../TODO/vendor.md`](../TODO/vendor.md) records what the boundary caught on the
+day it was drawn.
+
+---
 ## The check contract
 
 ⛔ **Every check in this repository, and every check a project inherits from it,
@@ -286,16 +306,50 @@ the check can fail.** Every member inherits the field from the workspace, so a
 floor taken over all packages would read back the value it is checking and
 agree with itself forever.
 
-⚠ **`--write` is the fix flag and it refuses when the graph imposes no floor**,
-which is this tree's state today. A version invented there would be the
-fabricated number the check exists to find. It patches through
-[`common/write-file.mjs`](common/) rather than with its own writer, so a
-substitution that matched the wrong number of times leaves the file untouched.
+⚠ **`--write` is the fix flag and it refuses when the graph imposes no floor.**
+A version invented there would be the fabricated number the check exists to
+find. It patches through [`common/write-file.mjs`](common/) rather than with
+its own writer, so a substitution that matched the wrong number of times leaves
+the file untouched.
+
+⭐ **The graph imposed no floor at all until 2026-09-01**, when the vendored TLS
+terminator brought a certificate minter with it. The check now reads a floor of
+1.88 from that crate, which is exactly the value this tree had already declared
+as an upper bound. ⚠ The two agreeing is a coincidence worth knowing about: the
+declared value stopped being unconstrained without anybody choosing a number.
 
 ⚠ **Exit 2 means cargo or jq is absent, and the gate reports that as a SKIP
 rather than a pass.** A host with no cargo has verified nothing about the
 manifest. ⛔ That is a different fact from `check-changelog`'s 2, which is a
 pass because a project with no changelog has satisfied its rules vacuously.
+
+### `common/check-vendor.sh`
+
+Does [`../vendor/upstream.json`](../vendor/upstream.json) still describe the
+vendored trees, and has upstream moved past what it records.
+
+⭐ **The defect it exists to catch is a vendored tree nobody can reconcile.** A
+tree with no recorded commit is a fork whose base is lost: the next release
+cannot be merged onto it, and no patch can be said to be a diff from anything.
+
+⚠ **Two legs, and only one is in the gate.** The default leg reads the manifest
+against the tree: directories exist, excluded paths are absent, every crate the
+manifest names declares that name, every tree under the vendor directory has an
+entry, and every patch names a file the tree still has and a section in
+[`../patches/README.md`](../patches/README.md). `--upstream` fetches the
+recorded ref from the remote and reports whether it still resolves to the
+recorded base and which newer release tags exist. ⛔ A gate that needs the
+network fails on a machine that has none, which is why only the first runs
+there.
+
+⚠ **Exit 2 is "could not run", and the gate reports it as a SKIP.** The sh half
+needs `jq`; both halves treat an absent manifest as 2, because a tree that
+vendors nothing has verified nothing.
+
+⛔ **A moved ref is reported, never followed.** Reconciling a release is a
+reading and
+[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) says what
+it owes.
 
 ### `common/check-gate.sh`
 
@@ -412,6 +466,30 @@ independently. It prints the command; `check-gate` runs it.
 ⚠ **It needs `node`, and has no PowerShell twin for the same reason
 `write-file.mjs` has none.** A second implementation of table arithmetic is a
 second place for that arithmetic to be wrong.
+
+### `common/vendor-sync.mjs`
+
+Fetch a pristine copy of a vendored upstream at the recorded commit, and
+materialise a tree from it the first time.
+
+⛔ **It refuses to overwrite a tree that already has content.** The tree carries
+local patches and a refresh that took upstream's copy would delete them with no
+diff to notice it by. `--force` is the deliberate spelling.
+
+⚠ **A ref that has MOVED is reported and not followed.** The recorded base is
+what the series was generated against, so following a moved tag silently
+changes what every patch is a diff from.
+
+### `common/vendor-diff.mjs`
+
+Regenerate the patch series from the vendored tree, or assert with `--check`
+that the series on disk still matches what the tree produces.
+
+⛔ **The patches are output, not input.** Nothing applies them, so editing one
+changes nothing about what is built.
+
+⚠ **It needs the pristine copy, so it needs the network, so it is not a gate
+check.** The offline half of the same question belongs to `common/check-vendor`.
 
 ### `common/git-sync.sh`
 

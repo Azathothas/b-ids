@@ -135,6 +135,48 @@ cd "$REPO_ROOT" || { printf '%s: cannot enter %s\n' "$SELF" "$REPO_ROOT" >&2; ex
 # `--scope references` and READ the hits before trusting this exemption again.
 # docs/reference-sweeps/findings.md records it.
 
+# -- ⛔ THE VENDORED TREES ARE EXEMPT, AND THIS ONE WAS DECIDED BY READING ---
+#
+# vendor/NAME/ holds third-party source this tree compiles, from a PUBLIC
+# repository at the commit vendor/upstream.json records, so nothing in it is
+# exposed here that its own author has not already published.
+#
+# ⭐ READ FIRST, EXEMPTED AFTER. Measured 2026-09-01, --public --scope vendor,
+# over rustls at v/0.23.43. 38 hits in three categories and every one read:
+#
+#   a private key block   4 hits: doc comments naming the two PEM headers as
+#                         TEXT, in the sign module of each crypto provider.
+#   an email address      4 hits: the upstream author's published address in
+#                         two licence files, and a mailing list in the README
+#                         and the code of conduct.
+#   a long hex identifier 30 hits: 10 are commit ids inside links to other
+#                         public repositories in doc comments, and the other
+#                         20 are literal test payloads, repeated-digit runs
+#                         and two hex-encoded handshake fixtures.
+#
+# ⚠ The counts above were WRONG on their first draft, written from a read
+# rather than from a count, and the claim audit caught them. They are the
+# output of this script with those flags.
+#
+# ⛔ Not one is a live credential.
+#
+# ⚠ The exemption is vendor/NAME/ and never vendor/. vendor/upstream.json is
+# this project's own record and stays in scope; its 40-hex base field is
+# narrowed below by name rather than by exempting the file.
+#
+#
+# ⭐ THE GENERATED SERIES UNDER patches/NAME/ IS EXEMPT FOR THE SAME REASON,
+# and it was read too. Every line of a patch body comes from the tree above, so
+# scanning the diff scans the exempt file twice. Measured 2026-09-01 over the
+# rustls series: one hit, the base commit in the header vendor-diff.mjs writes,
+# which is the same commit the manifest records and is public by construction.
+# ⚠ patches/README.md is NOT exempt: it is this project's own writing, and it
+# is where the absolute home paths in a pasted cargo failure were caught.
+#
+# ⚠ A later entry vendors a tree this reading did not cover, so re-run with
+# --scope vendor and --scope patches and READ the hits before trusting this
+# exemption again.
+
 list_files() {
   if [ -n "$SCOPE" ]; then
     # ⛔ Under --scope the corpus exemption does NOT apply, which is the whole
@@ -148,7 +190,7 @@ list_files() {
   {
     git ls-files -- "$@" 2>/dev/null
     git ls-files --others --exclude-standard -- "$@" 2>/dev/null
-  } | sort -u | grep -v '^references/'
+  } | sort -u | grep -vE '^(references|vendor/[^/]+|patches/[^/]+)/'
 }
 
 
@@ -230,6 +272,13 @@ if [ "$PUBLIC" = "1" ]; then
   # below are a markdown code span being MATCHED, not a substitution to run.
   # Double quotes here would hand the shell a command to execute.
   _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '`[0-9a-f]{40}`' || true)
+  # ⚠ THE FIFTH SHAPE: A GIT COMMIT ID IN THE VENDOR MANIFEST. Excluded by
+  # NAME, narrowly. vendor/upstream.json records the commit each vendored tree
+  # was taken at, which is the field that makes the record checkable at all,
+  # and a commit id is public by construction. ⛔ Only a value assigned to
+  # `base` is excluded, so any other 40-hex run in that file is still
+  # reported. ⛔ Keep this identical to the ps1 twin. TODO/vendor.md.
+  _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '"base":[[:space:]]*"[0-9a-f]{40}"' || true)
 
   # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT EXISTS TO PRODUCE ---
   #

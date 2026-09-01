@@ -4,11 +4,11 @@
 //! one below says which. A switch with no such sentence is a switch nobody
 //! needs.
 //!
-//! ⛔ **One of the switches `HARNESS-02` specifies is not here**, and it is
-//! absent rather than present-and-inert: `--ca-out` mints an authority so a
-//! client completes a VERIFIED handshake, which needs the handshake
-//! terminated. A flag that parsed and did nothing would be the "setting that
-//! no code reads" defect, and an absent flag fails loudly instead.
+//! ⭐ **`--ca-out` is the one switch that changes the surface**, because minting
+//! an authority is only useful once the handshake is terminated. It writes the
+//! authority a client is told to trust, and ⛔ nothing here tells a client to
+//! skip verification: a browser launched with certificate errors ignored is a
+//! browser in a different configuration from the one being measured.
 
 use std::io::Write as _;
 use std::process::ExitCode;
@@ -26,6 +26,12 @@ usage: b-ids-harness [SWITCHES]
                        preface and the frames behind it, decided by the bytes
                        that arrive. The capture that works when a client cannot
                        be told to trust anything.
+  --ca-out PATH        mint a certificate authority for this run and write it
+                       here, then TERMINATE the handshake, so a client that
+                       trusts it completes a verified one. The only surface
+                       that reaches a browser's HTTP/2. It prints the
+                       authority public key pin on stderr, which is what a
+                       driver passes to trust this one run.
   --bind ADDR          an address to reach a browser that is not on this
                        machine. Refuses a hostname and refuses the unspecified
                        address, by name.
@@ -58,6 +64,7 @@ exit 0 clean, 1 a comparison failed or a handshake did not complete,
 struct Args {
     config: Config,
     json: bool,
+    ca_out: Option<String>,
     hello_out: Option<String>,
     expect_file: Option<String>,
     write_golden: Option<String>,
@@ -74,6 +81,7 @@ fn parse_args() -> Result<Args, String> {
     let mut args = Args {
         config: Config::default(),
         json: false,
+        ca_out: None,
         hello_out: None,
         expect_file: None,
         write_golden: None,
@@ -127,14 +135,11 @@ fn parse_args() -> Result<Args, String> {
             "--write-golden" => {
                 args.write_golden = Some(argv.next().ok_or("--write-golden needs a path")?);
             }
-            // ⛔ Named, so the failure says WHICH entry implements it rather
-            // than "unknown argument".
+            // ⛔ It selects the surface as well as naming a path. Two switches
+            // for one capability would be two ways into one code path.
             "--ca-out" => {
-                return Err(format!(
-                    "{arg} needs the TLS handshake terminated, which needs a TLS server this \
-                     tree does not have yet. It is absent rather than inert, because a flag \
-                     that parsed and did nothing would be worse"
-                ));
+                args.ca_out = Some(argv.next().ok_or("--ca-out needs a path")?);
+                args.config.protocol = Protocol::TlsTerminated;
             }
             "-h" | "--help" => {
                 println!("{USAGE}");
@@ -147,7 +152,7 @@ fn parse_args() -> Result<Args, String> {
 }
 
 fn main() -> ExitCode {
-    let args = match parse_args() {
+    let mut args = match parse_args() {
         Ok(args) => args,
         Err(message) => return fail(&message),
     };
@@ -157,6 +162,30 @@ fn main() -> ExitCode {
     } else {
         format!(" (bound to {}, which is not loopback)", args.config.bind)
     };
+
+    // ⛔ Minted per run and written before the bind, so a caller that cannot
+    // write the authority finds out before a browser is pointed anywhere.
+    // ⚠ The PRIVATE key is never written: only the authority certificate is,
+    // which is the half a client needs to verify.
+    if let Some(path) = args.ca_out.clone() {
+        let authority = match b_ids_harness::mint(args.config.bind) {
+            Ok(authority) => authority,
+            Err(why) => return fail(&format!("could not mint an authority: {why}")),
+        };
+        if let Err(err) = std::fs::write(&path, &authority.ca_pem) {
+            return fail(&format!("could not write {path}: {err}"));
+        }
+        // ⭐ On STDERR, so the stdout contract is untouched: the base URL is
+        // still the first line there and every line after it is a capture.
+        // ⚠ It is not a failure line. A client that trusts this one key
+        // completes a verified handshake without any trust store being
+        // changed, and that is a condition of whatever is captured through it.
+        eprintln!("pin: {}", authority.spki_pin());
+        match authority.server_config() {
+            Ok(config) => args.config.terminator = Some(config),
+            Err(why) => return fail(&format!("could not build a server configuration: {why}")),
+        }
+    }
 
     let oracle = match Oracle::bind(args.config.clone()) {
         Ok(oracle) => oracle,
@@ -282,6 +311,18 @@ fn print_capture(capture: &Capture) {
             tls.cipher_suites.len(),
             tls.extensions.len(),
             tls.grease.values.len()
+        );
+    }
+    if let Some(termination) = &capture.termination {
+        // ⚠ Printed as CONDITIONS of the capture. Only the selected protocol is
+        // a choice the peer made; the version and the suite are this server
+        // and the browser agreeing, and a reader has to be able to tell.
+        println!(
+            "  terminated: alpn {:?}, version {:?}, suite {:?}, {} plaintext byte(s)",
+            termination.alpn,
+            termination.version,
+            termination.cipher_suite,
+            termination.plaintext_bytes
         );
     }
     if let Some(line) = &capture.request_line {

@@ -29,6 +29,11 @@ pub fn completed(capture: &Capture) -> bool {
     match capture.protocol {
         Protocol::TlsRaw => capture.tls.is_some(),
         Protocol::Cleartext => capture.http2.is_some() || capture.request_line.is_some(),
+        // ⛔ BOTH halves, and the hello alone is not enough. A terminated
+        // connection that recorded a hello and then failed the handshake drew
+        // nothing the run asked for, and counting it would report a sample the
+        // run does not have.
+        Protocol::TlsTerminated => capture.tls.is_some() && capture.termination.is_some(),
     }
 }
 

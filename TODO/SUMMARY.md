@@ -1,63 +1,47 @@
 # SUMMARY.md
 
-⚠ **The last session's table, and a snapshot rather than an authority.**
-[`PROGRESS.md`](PROGRESS.md) is the record and [`INDEX.md`](INDEX.md) is the
-list; where this file disagrees with either, this one is stale.
+The last session's table. ⚠ **A snapshot, never an authority.**
+[`PROGRESS.md`](PROGRESS.md) is the record and the work order;
+[`INDEX.md`](INDEX.md) is the list. When this file and either of those disagree,
+this one is stale.
 
-⛔ Overwritten every session. Every cell is grounded in something a reader can
-point at, including the cells that say nothing moved.
+⛔ Overwritten at the end of every session.
 
 ---
 
-## 2026-09-01
+## 2026-09-01, 03:47:48Z to 07:00Z
 
-Session ran 2026-09-01T00:50:02Z to its operator interrupt.
-
-| entry | eff | what closed | acceptance |
-| --- | --- | --- | --- |
-| `HARNESS-03` | M | the HTTP/2 frame reader: preface, SETTINGS in arrival order, the WINDOW_UPDATE increment, PRIORITY frames, and the priority block as BYTES | `cargo test -p b-ids-harness http2`, 15 passed |
-| `HARNESS-04` | M | HPACK, checked against a fetched corpus rather than against itself | `cargo test -p b-ids-harness hpack`, 15 passed over 47,142 cases |
-| `HARNESS-06` | S | two types, in two crates: the parser keeps what the emitter refuses | `cargo test -p b-ids-harness grease_bodies`, 5 passed |
-| `HARNESS-07` | S | the connection selection rule, over a thirteen-connection fixture | `cargo test -p b-ids-harness connection_selection`, 6 passed |
-| `HARNESS-08` | S | eight handshakes by default, and a short run reports six rather than success | `cargo test -p b-ids-harness sampling`, 6 passed |
-| `SCHEMA-06` | M | a raw block a profile can be rebuilt from, asserted rather than intended | `cargo test -p b-ids-schema raw_backstop`, 11 passed |
-| **total** | **9 points** | six entries closed, one moved from two blocked switches to one | |
-
-⚠ **Nine of the twenty points the quota asks for.** The session ended on an
-operator interrupt, which [`RULES.md`](RULES.md) section 10 names as the other
-way a session ends.
-
-### What moved that is not an entry
-
-| | |
+| row | measured |
 | --- | --- |
-| `HARNESS-02` | ⚠ still `partial`, and now eight of nine rather than seven. `--until-h2` is implemented; `--ca-out` is absent rather than inert. |
-| `HARNESS-05` | still open, with the probe half done and the browser half's blocker named at file and step |
-| `check-no-secrets` | gained `--scope`, which its own exemption had instructed sessions to use for one session before it existed. Both halves, with a `check-twins` row. |
-| `references/` | a nineteenth tree: the HPACK vector corpus, at a named commit, measured at 26.9 MiB packed against a 100 MiB threshold |
+| Elapsed | 3h12m, from the recorded start instant to the last commit |
+| Commits | 3 local, squashed to 1 and pushed, on `main`, from `bd02855` |
+| Work | **7 entries completed**, 15 effort points. 0 deferred, 0 failed. Operator interrupt ended the session before the twenty-point quota. |
+| Changes | 273 files changed, 73,058 insertions, 343 deletions. ⚠ 210 of those files are the vendored tree; 63 are this project's own. |
+| Size | 43,268 lines tracked outside `references/` and `vendor/` |
+| Checks | ⭐ green. 20 checks, 19 passed and `check-twins` skipped by `--fast`; run separately it agrees on every pair. At the start: 19 checks, same shape. |
+| Tests | 192 across 22 test files in 4 crates, up from 166 in 16 |
+| Cost | no money. Network: one shallow clone of rustls, two crates.io resolutions, one reference-corpus read. |
+| Health | ⛔ 1 fabricated number found in this session's own writing and corrected in three files. 3 traps paid for and written down. 1 stale document claim fixed. Tree clean, nothing deployed, nothing published. |
 
-### The three review lenses, and what each found that the others did not
+---
 
-| lens | swept | found |
+## What closed
+
+| entry | effort | what it now does |
 | --- | --- | --- |
-| ⭐ **door sweep** | every path into the credential rule, and every construction path that produces a recorded header | ⛔ **the fourth door, and it was open.** A capture drops `cookie` from its parsed fields and keeps it hex-encoded in the bytes beside them. `SCHEMA-06` had just routed those bytes into a published profile field. |
-| **guard mutation** | seventeen guards, planted one at a time, each exit code read unpiped | ⭐ **two mutations reported NOTHING**, and both produced better findings than the fifteen that failed: a transcribed table nothing read, and a comparison never seen to fire |
-| **claim audit** | every number in this table and in the record, re-derived from the tree | a test count written as 140 that measured 166, and ⚠ a probe process this session left running on the capture host |
+| `VENDOR-01` | L | rustls vendored at `v/0.23.43` and compiled here, with a manifest, a change record, a derived patch series and a two-legged scan |
+| `HARNESS-13` | L | `--ca-out` mints an authority, terminates the handshake, and the harness reads a browser's HTTP/2 through it |
+| `HARNESS-02` | M | all nine switches, after one day at `partial` |
+| `HARNESS-05` | S | the priority block measured on two browsers: `80000000ff` on all thirteen HEADERS frames |
+| `VALID-02` | S | ten exhibits in two public repositories, each with a file, a line and the check it fails |
+| `DRIVER-01` | M | resolve a browser with the source that answered, drive it into a profile nobody keeps |
+| `DRIVER-03` | S | the headless product token, measured rather than inherited, and the substitution recorded |
 
-⛔ **The door sweep is the one that mattered**, and it is the second session
-running that this lens has found a credential path nobody enumerated.
+---
 
-### What the passes would have had to see to fire differently
+## ⛔ What is still not true
 
-The guard mutation reported on every guard, so it owes no such sentence. The
-claim audit's two findings were both arithmetic against the tree; had the tree
-agreed with the record it would have said so and named what it re-derived.
-
-### The gate
-
-```text
-gate ok: 18 passed, but 1 SKIPPED on this host: check-twins
-```
-
-⚠ `check-twins` is skipped by `--fast` by definition and was run separately:
-every pair agrees, including the new scoped row.
+- **The corpus is empty.** Captures were taken and nothing writes a profile.
+  `CORPUS-01` is the top of the work order for that reason.
+- **Nothing is published.** No release, no data branch, no route.
+- **One quantity is `measured-here`** and it is not published either.

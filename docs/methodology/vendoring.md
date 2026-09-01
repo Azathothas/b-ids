@@ -143,6 +143,13 @@ way nothing detects.
 
 ## The tree is the truth
 
+⭐ **In this repository the four artefacts are** the manifest
+[`../../vendor/upstream.json`](../../vendor/upstream.json), the change record
+[`../../patches/README.md`](../../patches/README.md), the derived series beside
+it, and the scan `scripts/common/check-vendor.sh`, whose offline leg runs in the
+gate. [`../../TODO/vendor.md`](../../TODO/vendor.md) is the entry that built
+them.
+
 ⭐ **Edit the vendored source in place, like any other source here.** A derived
 patch series is regenerated from the tree; it is never applied to anything.
 

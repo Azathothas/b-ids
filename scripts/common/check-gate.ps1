@@ -298,6 +298,13 @@ Invoke-PsCheck -Name 'check-record'        -Script 'scripts/common/check-record.
 Invoke-PsCheck -Name 'check-no-secrets'    -Script 'scripts/common/check-no-secrets.ps1' -Arguments @('-Public')
 Invoke-PsCheck -Name 'check-changelog'     -Script 'scripts/common/check-changelog.ps1' -PassCodes @(0, 2)
 
+# -- the vendored trees, and the record that has to describe them ------------
+# ONLY THE OFFLINE LEG. -Upstream fetches the recorded ref from the remote and
+# a gate that needs the network fails on a machine that has none. 2 is "could
+# not run", which here means the tree vendors nothing, and that is a SKIP.
+Invoke-PsCheck -Name 'check-vendor' -Script 'scripts/common/check-vendor.ps1' `
+    -SkipCodes @(2) -SkipReason 'this tree vendors nothing'
+
 # -- the workspace, and the version floor it declares ------------------------
 Invoke-PsCheck -Name 'check-msrv' -Script 'scripts/common/check-msrv.ps1' `
     -SkipCodes @(2) -SkipReason 'cargo is not on this host'

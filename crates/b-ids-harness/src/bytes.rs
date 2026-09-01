@@ -68,6 +68,40 @@ impl<'a> Cursor<'a> {
     }
 }
 
+/// The base64 alphabet, as RFC 4648 section 4 defines it.
+const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/// Base64-encode bytes, padded.
+///
+/// ⚠ **Encode only, and that is the whole requirement.** The one caller is the
+/// certificate pin a client is given, which is produced here and consumed by
+/// another program. A decoder with no caller would be machinery nothing asks
+/// for.
+#[must_use]
+pub fn base64(bytes: &[u8]) -> String {
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let b0 = u32::from(chunk[0]);
+        let b1 = chunk.get(1).copied().map_or(0, u32::from);
+        let b2 = chunk.get(2).copied().map_or(0, u32::from);
+        let triple = (b0 << 16) | (b1 << 8) | b2;
+        for shift in [18_u32, 12, 6, 0] {
+            let index = ((triple >> shift) & 0x3f) as usize;
+            out.push(char::from(BASE64[index]));
+        }
+        // ⛔ Padding is written by TRUNCATING the four characters this chunk
+        // produced, never by skipping them. A short chunk still contributes
+        // its high bits to the character before the padding.
+        if chunk.len() < 3 {
+            out.truncate(out.len() - (3 - chunk.len()));
+            for _ in 0..(3 - chunk.len()) {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
 /// Hex-encode bytes, lower case, no separators.
 #[must_use]
 pub fn hex(bytes: &[u8]) -> String {

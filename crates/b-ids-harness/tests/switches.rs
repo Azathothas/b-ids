@@ -227,7 +227,7 @@ fn switches_json_prints_the_base_url_first_then_one_object_per_connection() {
     assert!(first.starts_with("https://127.0.0.1:"), "{first}");
     let object = lines.next().expect("one object");
     assert!(
-        object.starts_with('{') && object.contains("harness-capture/2"),
+        object.starts_with('{') && object.contains("harness-capture/3"),
         "{object}"
     );
 }
@@ -291,19 +291,55 @@ fn switches_expect_file_exits_one_on_a_difference() {
 }
 
 #[test]
-fn switches_ca_out_is_absent_rather_than_inert() {
-    // ⛔ It needs the TLS handshake terminated, which needs a TLS server this
-    // tree does not have. A flag that parsed and did nothing would be the
-    // "setting that no code reads" defect, so the command refuses and says what
-    // is missing.
+fn switches_ca_out_mints_an_authority_and_selects_the_terminated_surface() {
+    // ⭐ It used to be REFUSED, because minting an authority is only useful
+    // once the handshake is terminated and this tree had no TLS server.
+    // `HARNESS-13` vendored one, so the switch now writes the authority and
+    // selects the surface. `HARNESS-13` owns what happens over it.
+    //
+    // ⚠ THE DEADLINE IS LOAD-BEARING. Without it this test hangs rather than
+    // fails: the command binds and blocks on an accept nobody makes. That is
+    // exactly what happened when the refusal above stopped refusing, and a
+    // hang has no message and no exit code.
+    let dir = std::env::temp_dir().join(format!("b-ids-switches-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    let ca = dir.join("ca.pem");
+    let (out, err, code) = run_with(
+        &[
+            "--ca-out",
+            &ca.display().to_string(),
+            "--once",
+            "--run-timeout-ms",
+            "1500",
+        ],
+        Vec::new(),
+    );
+
+    // ⚠ 1, not 0: the run accepted nothing, so it reports a shortfall. What
+    // this test asserts is the SWITCH, and the surface it selected.
+    assert_eq!(code, 1, "{err}");
+    assert!(out.starts_with("https://"), "{out}");
+    let written = std::fs::read_to_string(&ca).expect("the run wrote its authority");
+    assert!(written.contains("BEGIN CERTIFICATE"), "{written}");
+    assert!(
+        !written.contains("PRIVATE KEY"),
+        "no private key is written"
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn switches_ca_out_with_no_path_is_refused() {
+    // ⛔ A switch that takes a path and was given none is refused before the
+    // bind, so the failure names the switch rather than arriving as a run that
+    // wrote its authority nowhere.
     let output = Command::new(harness_bin())
-        .args(["--ca-out", "unused"])
+        .args(["--ca-out"])
         .output()
         .expect("the harness command runs");
     assert_eq!(output.status.code(), Some(2));
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("TLS server"), "{stderr}");
-    assert!(stderr.contains("absent rather than inert"), "{stderr}");
+    assert!(stderr.contains("--ca-out needs a path"), "{stderr}");
 }
 
 #[test]

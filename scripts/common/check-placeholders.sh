@@ -73,11 +73,23 @@ cd "$REPO_ROOT" || { printf '%s: cannot enter %s\n' "$SELF" "$REPO_ROOT" >&2; ex
 # ⚠ A check whose findings cannot be acted on is a check that gets switched off,
 # and an exemption taken without reading first is one nobody can defend.
 
+# -- ⛔ THE VENDORED TREES ARE EXEMPT, AND THE MANIFEST BESIDE THEM IS NOT ---
+#
+# vendor/NAME/ holds third-party source this tree compiles and patches, at the
+# commit vendor/upstream.json records. It is somebody else's writing, so this
+# project's rules about how its own files are written do not apply to it, for
+# the same reason the reference corpus is exempt above.
+#
+# ⚠ The exemption is vendor/NAME/ and never vendor/, so vendor/upstream.json,
+# which this project wrote, is checked like any other file here. An exemption
+# on the whole directory would have covered our own record by accident.
+# TODO/vendor.md, VENDOR-01.
+
 list_files() {
   {
     git ls-files -- "$@" 2>/dev/null
     git ls-files --others --exclude-standard -- "$@" 2>/dev/null
-  } | sort -u | grep -v '^references/'
+  } | sort -u | grep -vE '^(references|vendor/[^/]+)/'
 }
 
 

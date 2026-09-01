@@ -5,9 +5,10 @@
 //! hide the difference between "this profile is wrong" and "this run verified
 //! nothing".
 //!
-//! ⚠ The `import` subcommand `VALID-02` names is not here yet. That entry is
-//! open, and a subcommand that printed an empty report would be worse than an
-//! absent one.
+//! ⭐ **`import` reads the prior art's own tables and reports what the checks
+//! say about them.** It is the one result this project can publish without a
+//! capture. ⛔ It reports a defect, a file, a line and the check it fails, and
+//! nothing about the project it read.
 
 use std::collections::BTreeSet;
 use std::process::ExitCode;
@@ -17,20 +18,62 @@ use b_ids_validator::{Options, Outcome, validate};
 
 fn usage() -> &'static str {
     "usage: b-ids-validator [--publishing] [--decodes LIST] PROFILE.json...\n\
+            b-ids-validator import DIR --report\n\
      \n\
        --publishing   refuse a vendor-provenance field, which a draft may carry\n\
        --decodes LIST comma-separated content encodings the consumer can decode\n\
+       import DIR     read the reference corpus at DIR and report what the\n\
+                      coherence checks say about the tables in it\n\
+       --report       print that report. Required by import, because a run\n\
+                      that read the corpus and printed nothing is not a result\n\
      \n\
      exit 0 clean, 1 a check refused, 2 nothing could be checked."
+}
+
+/// Read the reference corpus and print what the checks say about it.
+///
+/// ⛔ **Exit 1 when it finds something**, the same as a refused profile. A
+/// command that reported violations and exited 0 would be a command nothing
+/// downstream could act on.
+fn import(dir: &str, report: bool) -> ExitCode {
+    if !report {
+        eprintln!("b-ids-validator: import needs --report\n{}", usage());
+        return ExitCode::from(2);
+    }
+    let exhibits = match b_ids_validator::import_references(std::path::Path::new(dir)) {
+        Ok(exhibits) => exhibits,
+        Err(why) => {
+            // ⛔ 2, not 1. A reader that went blind verified nothing, which is a
+            // different fact from a corpus with nothing wrong in it.
+            eprintln!("b-ids-validator: {why}");
+            return ExitCode::from(2);
+        }
+    };
+    print!("{}", b_ids_validator::render_report(&exhibits));
+    if exhibits.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    }
 }
 
 fn main() -> ExitCode {
     let mut options = Options::default();
     let mut paths: Vec<String> = Vec::new();
+    let mut import_dir: Option<String> = None;
+    let mut report = false;
     let mut args = std::env::args().skip(1);
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "import" => {
+                let Some(dir) = args.next() else {
+                    eprintln!("b-ids-validator: import needs a directory\n{}", usage());
+                    return ExitCode::from(2);
+                };
+                import_dir = Some(dir);
+            }
+            "--report" => report = true,
             "--publishing" => options.publishing = true,
             "--decodes" => {
                 let Some(list) = args.next() else {
@@ -53,6 +96,10 @@ fn main() -> ExitCode {
             }
             other => paths.push(other.to_owned()),
         }
+    }
+
+    if let Some(dir) = import_dir {
+        return import(&dir, report);
     }
 
     if paths.is_empty() {

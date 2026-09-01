@@ -87,7 +87,7 @@ if ($Scope) {
 }
 else {
     $files = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
-        Where-Object { $_ -and $_ -cnotmatch '^references/' } | Sort-Object -Unique)
+        Where-Object { $_ -and $_ -cnotmatch '^(references|vendor/[^/]+|patches/[^/]+)/' } | Sort-Object -Unique)
 }
 
 $script:found = 0
@@ -199,6 +199,13 @@ if ($Public) {
         # lower-case hex inside a markdown code span.
         # ⛔ Keep this identical to the sh twin.
         Where-Object { $_ -cnotmatch '`[0-9a-f]{40}`' } |
+        # ⚠ THE FIFTH SHAPE: A GIT COMMIT ID IN THE VENDOR MANIFEST. Excluded
+        # by NAME, narrowly. vendor/upstream.json records the commit each
+        # vendored tree was taken at, and a commit id is public by
+        # construction. Only a value assigned to base is excluded, so any
+        # other 40-hex run in that file is still reported.
+        # ⛔ Keep this identical to the sh twin. TODO/vendor.md.
+        Where-Object { $_ -cnotmatch '"base":\s*"[0-9a-f]{40}"' } |
         # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT PRODUCES ------
         #
         # A raw ClientHello recorded as hex is hundreds of hex characters, and

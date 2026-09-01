@@ -16,15 +16,14 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session started 2026-09-01T00:50:02Z
-baseline        the gate passes, all 19 checks, both halves of every pair.
-                166 tests in 16 files across 3 crates. No capture has been taken.
-entries         total 82  open 53  blocked 0  done 28
+session started 2026-09-01T03:47:48Z
+baseline        the gate passes, all 20 checks, both halves of every pair.
+                192 tests in 22 files across 4 crates.
+entries         total 84  open 49  blocked 0  done 35
 ```
 
-⚠ **One of the 53 open is `partial` rather than untouched**: `HARNESS-02`, with
-eight of its nine switches done and `--ca-out` blocked on a TLS server this tree
-does not have.
+⚠ **Nothing is `partial` any more.** `HARNESS-02` was, for one day, and its
+ninth switch closed this session.
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
 `scripts/common/check-record.sh`, which runs as a gate. ⛔ Do not edit them by
@@ -35,168 +34,132 @@ hand to make a check pass; fix whichever file is wrong.
 
 ## What this session did
 
-**2026-09-01. The harness learned to read the half of the fingerprint that sits
-above TLS.** Six entries closed, and the biggest unlock in the tree turned out
-to be cheaper than it looked.
+**2026-09-01. The browser half opened.** Seven entries closed, and the thing
+every one of them was waiting on was a TLS server.
 
-### ⭐ HTTP/2 was reached WITHOUT terminating TLS, and that is the session's finding
+### ⭐ Two real browsers completed a handshake, and the harness read their HTTP/2
 
-`HARNESS-03` sat behind `--ca-out` because reaching HTTP/2 from a browser needs
-a terminated handshake. ⭐ **A client with prior knowledge needs no handshake at
-all**, and its frames carry the same fingerprint. The entry has the mechanism
-and the measurement: [`harness.md`](harness.md), `HARNESS-03`.
+⛔ **This is the first time anything in this repository has read a byte a
+browser put on a wire.** Chrome `151.0.7922.76` produced 7 connections with 6
+terminated; Edge `152.0.4191.53` produced 8 with 7. Every terminated one
+negotiated `h2` over TLS 1.3, and every one carried a SETTINGS frame, a
+connection WINDOW_UPDATE and a HEADERS frame with the priority bit set.
 
-So the cleartext surface now reads whichever protocol the peer actually spoke,
-⛔ **decided by the bytes rather than by a flag the operator passed.**
+⚠ **The corpus is still empty.** A capture is not a profile, and nothing yet
+writes one. `CORPUS-01` is the entry that decides what a profile looks like on
+disk, and it is now the top of the work order for that reason.
 
-⚠ **What it does NOT reach is a browser.** No browser speaks cleartext HTTP/2,
-so the browser half still needs termination. `HARNESS-05` says so in its own
-entry with what was tried and what would open it.
+### ⭐ The priority block is measured, and it agrees with what was inherited
+
+Thirteen HEADERS frames across three driven runs, on two browsers, and every
+one of them carries `80000000ff`: exclusive, dependency 0, weight 255 on the
+wire. [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5
+now carries the measurement beside the reading it inherited, with the browser,
+the build, the date and the conditions, and a new `measured-here` status.
+
+⛔ **It is still not published**, because there is nowhere to publish it.
 
 ### What exists now that did not
 
-- ⭐ **An HTTP/2 frame reader**: the preface, SETTINGS in arrival order, the
-  connection WINDOW_UPDATE increment, standalone PRIORITY frames, and the
-  HEADERS frame with its flags byte and its priority block read as BYTES.
-- ⭐ **An HPACK decoder**, checked against a fetched corpus of **47,142 cases
-  across 446 files** rather than against itself. Header order is readable.
-- ⭐ **The emitter's first real content**, in `b-ids-emit`: a type that cannot
-  represent a declared length disagreeing with its body, which is exactly what
-  the parser's type must represent.
-- **The connection selection rule** and **the sampling rule**, each with its
-  own module and its own committed fixture.
-- ⭐ **A raw block a profile can be rebuilt from**, asserted rather than
-  intended.
-- `--until-h2` moved from refused to implemented. `--run-timeout-ms` is new.
-
-### ⛔ What is still true, and matters more than the list above
-
-**No capture has been taken.** Every value in the tree is a fixture or an
-inherited claim, and neither is a measurement. ⛔ Nothing from either may be
-published as data.
-
-### ⭐ The door sweep found the credential rule's FOURTH door, and it was open
-
-⛔ **A capture drops `cookie` from its parsed fields and keeps it in the bytes
-beside them.** The existing test greps the output for the credential's
-plaintext, which is absent; the same credential is present hex-encoded in
-`raw_hex`, and `SCHEMA-06` had just routed those bytes into a published
-profile's raw block.
-
-Measured by driving the compiled command over loopback with a fixture
-credential in the request: the plaintext is absent from the capture and the
-same sixteen bytes, hex-encoded, are present in `raw_hex`.
-
-⚠ **The measurement is described rather than pasted**, because the paste is a
-long hex run and `check-no-secrets` refuses those in a tracked document. ⭐ The
-guard refused this very paragraph on its first draft, which is the check
-working rather than a nuisance.
-
-⭐ **Two of this project's own rules collide on the cleartext surface**, and
-neither is wrong: `SCHEMA-04` says a capture carries no credential, and
-`SCHEMA-07` says the raw bytes are never edited because a capture is a moment
-that cannot be retaken.
-
-**What landed is the loud failure, not a resolution.** `Raw::check` refuses a
-profile whose cleartext bytes spell out a credential header line, on both
-spellings, and `Profile::check` calls it. ⛔ The bytes are never edited: the
-profile is refused and the operator decides. The fork itself is an open
-question below.
-
-### ⚠ Two mutations reported NOTHING, and both produced better findings than the ones that failed
-
-| the mutation | what reporting nothing revealed |
+| | |
 | --- | --- |
-| ⛔ one wrong row in the HPACK Huffman table, and all 47,142 cases still passed | the canonical construction derived every code from the bit-length counts, so the transcribed code column was **decoration**. It is read from the table now, and `check_table_is_canonical` states the assumption the decoder rests on. |
-| ⛔ the rebuild's comparison removed, and all eight `raw_backstop` tests still passed | every test exercised the ABSENT branch. The comparison had never been seen to report a difference. A test now plants one. |
+| ⭐ a vendored TLS terminator | rustls at `v/0.23.43`, 210 files, compiled by this tree, with a manifest, a change record, a derived patch series and a two-legged scan |
+| ⭐ `--ca-out` | mints an authority per run, writes the certificate and never its key, prints the public key pin on stderr, and terminates |
+| a driver | resolves Chrome and Edge with the source that answered, launches into a profile nobody keeps, and records every switch it passed |
+| ⭐ the first publishable result | `b-ids-validator import references --report`: ten exhibits in two public repositories, each with a file, a line and the check it fails |
+| a headless normalisation | measured rather than inherited, and it records the substitution rather than hiding it |
 
-⚠ A third mutation did not apply at all because of a shell quoting difference,
-so the green result it produced was the unmutated tree. Applied properly it
-found a missing test rather than proving one, and `HARNESS-03`'s closing
-carries the reason.
+### ⛔ The claim audit found a fabricated number in this session's own writing
 
-### ⚠ A documented flag did not exist, and its own instruction named it
+**The secret-scan reading over the vendored tree was written as 41 hits with 33
+long hex runs, from a read of the output rather than a count of it.** Counted:
+38 hits, 4 and 4 and 30, of which ten are commit ids in links to other public
+repositories.
 
-`check-no-secrets`'s reference-corpus exemption says to re-run with
-`--scope references` when a tree is added. ⛔ **That flag did not exist.** It
-does now, on both halves, with a `check-twins` row and a measured cost of 70s
-for the sh half over nineteen trees. The exemption was then re-read over the new
-tree and every one of its 52,396 hits was categorised.
+⚠ **It had reached three places**, including the header of a security check,
+which is the file where a number nobody counted is least acceptable. All three
+are corrected and the correction says it happened.
 
-### One false doc claim, fixed
+### ⚠ Three traps were paid for, and each one is written where it bit
 
-`Http2Half::akamai_text`'s comment said an absent priority block and a block of
-zeroes both render as `0`. They do not: a block of zeroes renders `1:0:0:0`. The
-comment now states what the rendering actually loses.
+| the trap | what it cost |
+| --- | --- |
+| ⛔ cargo resolves a path dependency against the OUTERMOST workspace that does not exclude it | the build failed on a key this tree has never had. `vendor` is in `exclude` now with the measurement beside it. |
+| ⛔ `chrome.exe --version` on Windows LAUNCHES the browser into the operator's own profile | the resolver hung and a browser opened. That source is skipped by platform now, because a timeout would have fixed the hang and not the side effect. |
+| ⚠ a test that asserted a refusal became a HANG when the refusal stopped refusing | ten minutes, and a locked test binary afterwards. Every test that drives the command passes a deadline now. |
 
-### ⚠ The Windows CI job fails on a runner-side toolchain race, and it is not the tree
+### ⚠ A mutation reported nothing, and that was the finding
 
-⛔ **A future session will see this and think it broke something.** The first run
-of this session's commit failed on the Windows job at the step that installs the
-pinned toolchain, before anything in this repository was compiled:
+Removing the sort from the reference importer changed no test result: the walk
+underneath is already stable on this host, so equality between two runs cannot
+tell a sorted answer from an incidentally stable one. ⭐ **The acceptance asked
+for "byte-identical output across runs" and a test written to those words could
+never have failed.** A second test asserts sortedness directly, and the same
+mutation fails it.
 
-```text
-info: recovering from a partially installed toolchain
-error: failed to install component: 'rust-std-x86_64-pc-windows-msvc',
-       detected conflict: 'lib\rustlib\x86_64-pc-windows-msvc\lib\liballoc-...rlib'
-```
+### ⚠ What a vendored tree cost the checks
 
-Three things say it is the runner rather than the change: it failed **before**
-any project code was built, the Ubuntu job passed on the same tree, and a
-re-run with no edit at all passed both jobs.
+Five of the checks that read the whole tree failed the moment it landed. Each
+now exempts the vendored trees and the patch series derived from them, and
+⛔ **none of them exempts the manifest or the patch record beside those**, which
+this project wrote. That boundary fired the same day, over this project own patch record, and
+[`vendor.md`](vendor.md) has what it caught.
 
-⭐ **So the response is `gh run rerun ID --failed`, not a code change.** If it
-recurs often enough to be a cost, the entry to write is one that pins the
-toolchain install rather than one that touches this workspace.
+### ⚠ `check-twins` is slower than the measurement in `scripts/README.md`
+
+It was 171s on 2026-08-27. Measured again on 2026-09-01 with the vendored tree
+in scope, on the same machine: **1025s**, six times the earlier figure. ⚠ A first
+attempt wrapped it in a 590s timeout, and the kill showed up as a DRIFT on
+`check-gate` with exit 143, which is SIGTERM rather than a disagreement. ⭐ Run
+to completion, every pair agrees and both halves answer
+`{"schema":"check-gate/1","total":20,"passed":19,"failed":0,"skipped":1,"strict":0}`
+and exit 0. ⛔ A timeout around a comparison turns a slow half into a false
+finding, and that is worth knowing before somebody believes one.
 
 ## What is in progress
 
-⛔ **Nothing is half-edited.** `HARNESS-02` is `partial` by decision: eight of
-nine switches are done and `--ca-out` is absent rather than inert, refusing by
-name and saying what is missing.
+⛔ **Nothing is half-edited.** Every entry this session touched is closed with
+its acceptance command run and its real output pasted.
 
 ---
 
 ## ⭐ The work order
 
-⚠ **Take these in order and the reason is written down.**
+⚠ **Take these in order and the reason is written down.** Foundations first:
+the corpus has a capture path and no corpus, and everything below item 2 is
+worth less until that is true.
 
-1. ⭐ **The vendored TLS server.** ⛔ It is now the single blocker on the whole
-   browser half of the project: `--ca-out`, `HARNESS-05`, `HARNESS-10`,
-   `DRIVER-01` and every profile with a real `ClientHello` in it wait on it.
-   The operator ruled on 2026-09-01 that it is **vendored here and patched
-   here**, following `Azathothas/bit-cli`'s practice: a manifest naming what is
-   vendored and at which commit, a record of every local change, a derived
-   patch series regenerated from the tree, and a scan that reports when
-   upstream has moved. ⚠ **No entry exists for it yet**, so the first step is
-   authoring one from [`ENTRY.md`](ENTRY.md), per
-   [`../docs/methodology/authoring.md`](../docs/methodology/authoring.md).
-2. ⭐ **`VALID-02`**, which needs no capture and no TLS. `shared_handshakes` is
-   written, and the three violations were re-verified this session by opening
-   the files: five `impit` modules return `chrome_100`'s TLS and HTTP/2 beside
-   their own headers, one library serves a cipher table commented with a
-   version from years earlier, and its classifier returns three families where
-   its data carries four. ⛔ It is the project's first publishable result.
-3. **`HARNESS-05`**, the moment the handshake terminates. Its probe half is
-   done and its entry says exactly what is left.
-4. **`DRIVER-01`, `DRIVER-02`, `DRIVER-03`**, then one profile end to end.
-   ⚠ Chrome `151.0.7922.76` and Edge `152.0.4191.53` are on the capture host,
-   so the resolver has something real to find.
-5. **`HARNESS-09`**, which now has four parsers to fuzz rather than two: the
-   record layer, the `ClientHello`, the HTTP/2 frame reader and the HPACK
-   decoder. ⚠ `cargo fuzz` needs a nightly toolchain and this tree pins an
-   exact stable one; establish the route before planning the entry.
-6. **`PUB-01`, `PUB-02`, `PUB-03`, `PUB-07`**, before the corpus has more than
-   one profile in it.
-7. **`CI-01` through `CI-04`**, after which the corpus maintains itself.
-8. **`CORPUS-02`**, the matrix.
-9. ⚠ **`LIB-02` earlier than its priority suggests.** It is the only entry that
+1. ⭐ **`CORPUS-01`**, content-addressed, append-only, never edited in place.
+   ⛔ **It is now the single thing in the way.** The harness takes captures and
+   nothing turns one into a profile, so every measurement this session took
+   lives in a scratch log rather than in the thing this project exists to
+   publish. ⚠ It also owns the credential question in open question 1, because
+   a capture becomes publishable exactly there.
+2. **`HARNESS-10`**, whether measuring changed what was measured. It is
+   takeable now and it was not before: the captures were taken through a
+   per-launch key pin rather than a trust store, and that is a condition
+   nobody has measured the effect of.
+3. **`DRIVER-02`**, the version that is serving rather than the one published.
+   The resolver reads what is installed; this reads what is rolling out, and a
+   capture of a build almost nobody runs is a correct fingerprint of nothing.
+4. **`SCHEMA-08`**, every generated format from one generator, round-tripped.
+   ⚠ Before `PUB-*`, because a published route is a contract and a second
+   generator is a second answer.
+5. **`HARNESS-09`**, fuzz the four parsers. ⚠ `cargo fuzz` needs a nightly
+   toolchain and this tree pins an exact stable one; establish the route
+   before planning the entry.
+6. **`VALID-03`**, a family the resolver cannot produce. The reference
+   importer already reports one in somebody else's tree, so the check has a
+   worked example to be written against.
+7. **`PUB-01`, `PUB-02`, `PUB-03`, `PUB-07`**, once there is one profile.
+8. **`CI-01` through `CI-04`**, after which the corpus maintains itself.
+9. **`CORPUS-02`**, the matrix, and **`LIB-02`**, which is the only entry that
    proves the corpus is usable rather than merely accurate.
 
 ⚠ **Small entries worth taking whenever a larger one is blocked**: `TOOL-04`
 (the fetcher stops when one of its two routes is down), `SCHEMA-11` (the
-multipart boundary), `VALID-03` (a family the resolver cannot produce), and
-`TOOL-06` (three lines, and it cannot run until `PUB-03` generates a tree).
+multipart boundary), `CORPUS-05` (name the unidentified extension), `TOOL-06`
+(three lines, and it cannot run until `PUB-03` generates a tree).
 
 ---
 
@@ -206,28 +169,35 @@ multipart boundary), `VALID-03` (a family the resolver cannot produce), and
 costs nothing and a session that does not get an answer proceeds on the
 recommendation and records that it did. [`RULES.md`](RULES.md) section 11.
 
-### 1. ⭐ NEW. What does a capture do with a credential that is in its raw bytes?
+### 1. ⭐ The credential in the raw bytes now has a THIRD door, and it is the real one
 
-**The door sweep found it this session and the loud failure is the only part
-that landed.** A cleartext capture drops `cookie` from its parsed fields and
-keeps it, hex-encoded, in the bytes beside them. Two of this project's rules
-collide there and neither is wrong.
+**Unresolved, and more urgent than it was.** A terminated capture records the
+decrypted first message in `Termination::plaintext_hex`, beside parsed fields
+that drop `cookie` and `authorization`. ⚠ **That is the surface where a real
+browser's credentials will actually appear**, unlike the cleartext one.
 
-Four options, and none is free:
+⛔ Nothing can publish it today, because nothing writes a profile. `CORPUS-01`
+is exactly where that stops being true.
 
-| option | what it costs |
-| --- | --- |
-| ⭐ **refuse the profile, keep the capture** | what landed. The capture on disk still carries the credential; only publishing is stopped. |
-| redact the bytes | ⛔ destroys the artefact that survives every parser defect, and breaks the rebuild property `SCHEMA-06` just established |
-| never store cleartext connection bytes | loses the widest backstop on the one surface that has no TLS to hide behind |
-| capture cleartext only against a subject that sends no credential | a procedure rather than a guard, and procedures are what guards exist to replace |
+**Recommendation: unchanged, and now with a deadline.** Keep the refusal,
+never redact, and make `CORPUS-01` refuse at the moment a capture becomes a
+profile rather than at the moment a profile is published.
 
-**Recommendation: keep the refusal, and add an entry for a capture-time
-refusal beside it**, so the harness declines to write a raw block it knows a
-profile cannot carry. ⚠ What should NOT happen is redaction: the moment this
-project edits captured bytes, the raw block stops being evidence.
+### 2. ⚠ NEW. Is a per-launch key pin an acceptable standing capture method?
 
-### 2. Is the privacy default right, given that it blinds the validator?
+Every capture this session took was through
+`--ignore-certificate-errors-spki-list`, carrying the base64 SHA-256 of the
+run's own authority. ⛔ It is not `--ignore-certificate-errors`: verification
+still runs and any other key is still refused. But it is not a trusted root
+either, and installing one is a change to a machine's security configuration
+that belongs to the operator.
+
+**Recommendation: keep the pin as the default capture method, and let
+`HARNESS-10` measure the difference against a real trust anchor.** ⚠ What
+should NOT happen is a capture taken with verification switched off, which
+changes the subject rather than the condition.
+
+### 3. Is the privacy default right, given that it blinds the validator?
 
 `SCHEMA-04` makes the default capture record header NAMES only. Four of the
 validator's eight checks read a header VALUE, so over an ordinary capture they
@@ -237,30 +207,35 @@ report `NotCheckable`.
 `--header-values` deliberately.** ⚠ What should NOT happen is anybody weakening
 the default to make the validator look greener.
 
-### 3. Should `cookie` and `authorization` be dropped entirely, or kept as names?
+### 4. Should `cookie` and `authorization` be dropped entirely, or kept as names?
 
 ⚠ Dropping the name also drops the fact that the header was PRESENT, which is a
 fingerprint signal in its own right.
 
 **Recommendation: a new entry that records presence without the value.**
 
-### 4. What does a client with no root store put in the trust-anchors extension?
+### 5. What does a client with no root store put in the trust-anchors extension?
 
 ⛔ Unchanged. A Chrome 152 hello carries a 206-byte snapshot of the browser's
 own root store.
 
 **Recommendation: publish, and do not choose.** `CORPUS-04`.
 
-### 5. ⚠ NEW. The published schema expresses no numeric bounds at all
+### 6. The published schema expresses no numeric bounds at all
 
 `u8`, `u16` and `u32` are each a bare `{"type": "integer"}`, so the published
-schema accepts 999 for a field the Rust type holds to a byte. Found while
-extending the schema for `SCHEMA-06`; not fixed there, because one bounded
-field among dozens of unbounded ones is worse than none.
+schema accepts 999 for a field the Rust type holds to a byte.
 
 **Recommendation: an entry that bounds all three at once**, with the checker
 gaining `minimum` and `maximum` in the same change. ⭐ The checker's guard
 already refuses a keyword nothing enforces, so the two cannot land apart.
+
+### 7. ⚠ NEW. `check-twins` no longer finishes inside ten minutes
+
+**Recommendation: an entry that scopes the slow halves rather than the
+comparison.** ⛔ What must not happen is dropping a pair from the comparison to
+make it fit, which is how a comparison stops comparing. ⚠ And no wrapper
+timeout around it: a killed half reports as a drift.
 
 ---
 
@@ -270,12 +245,12 @@ Kept short on purpose. The list lives in [`RULES.md`](RULES.md); these are the
 rulings a later session should not re-open.
 
 - ⭐ **The TLS terminator is vendored here and patched here.** Ruled by the
-  operator 2026-09-01. Not a registry dependency, and not written from
-  scratch.
+  operator 2026-09-01, done the same day: rustls at `v/0.23.43` under
+  [`../vendor/`](../vendor/), with its manifest, its patch record and its scan.
 - **The declared minimum Rust version is a verified upper bound, not the
-  floor.**
+  floor.** ⚠ The graph now imposes one, 1.88 from the certificate minter, and
+  it happens to equal the declared value.
 - **`Cargo.lock` is committed.**
 - **A path in a code span asserts that it resolves.**
-- ⭐ **The reference corpus keeps whole trees**, and the HPACK vector corpus was
-  measured rather than trimmed by eye: 26.9 MiB packed across nineteen trees,
-  against a threshold of about 100 MiB.
+- ⭐ **The reference corpus keeps whole trees**, and it is exempt from the prose
+  checks and the secret scan by directory, never by file.

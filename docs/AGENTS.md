@@ -33,17 +33,18 @@ project says so.** A server deciding whether a caller is a real browser needs
 the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
-⛔ **Nothing has been captured yet, and the corpus is empty.** What exists is
-the schema, a validator, a capture oracle that reads a `ClientHello` and an
-HTTP/2 connection off a real socket, the methodology, the tooling and the
-reading. ⚠ It does not terminate a TLS handshake, so it does not yet reach a
-browser's HTTP/2.
-[`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next.
+⛔ **The corpus is empty.** The harness terminates a handshake and reads a real
+browser's HTTP/2 as of 2026-09-01, and one quantity has been measured off two
+browsers here. ⚠ **No profile has been written**, because nothing yet decides
+what one looks like on disk. [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says
+what is next.
 
-⚠ **So every value in this tree is a fixture or an inherited claim, and neither
-is a measurement.** A fixture is shaped like a capture and says so in its own
-header; an inherited value lives in [`inherited-claims.md`](inherited-claims.md)
-with its source. ⛔ Nothing from either may be published as data.
+⚠ **So almost every value in this tree is a fixture or an inherited claim, and
+neither is a measurement.** A fixture is shaped like a capture and says so in
+its own header; an inherited value lives in
+[`inherited-claims.md`](inherited-claims.md) with its source. ⛔ Nothing from
+either may be published as data. ⭐ The one exception is marked `measured-here`
+in that file, with its conditions, and it is not published either.
 
 ⚠ **One thing about this project is unlike an ordinary one, and it decides
 everything else.** The product is *measurements*, so a value that cannot be
@@ -219,6 +220,7 @@ done here.**
 | check that the record agrees with itself | `scripts/common/check-record.sh` | reading the tables |
 | commit and push | `git-sync.sh`, or its `.ps1` twin on Windows | `git commit` directly, which enforces none of the rules |
 | study another repository | ⭐ `scripts/common/mine-repo.sh` | a fetcher you write, which has been written and thrown away twice |
+| take, check or reconcile a vendored tree | `scripts/common/vendor-sync.mjs`, `vendor-diff.mjs` and `check-vendor.sh` | a hand copy, which loses the commit it came from and with it every later merge |
 | run any check on Windows | ⭐ the `.ps1` half of the pair | the `.sh` half. ⚠ Native PowerShell may have no `sed`, and its `sort` is an alias that answers differently. |
 | run something on Linux from a Windows host | ⭐ [`containers.md`](containers.md) | installing a distro by hand and leaving it registered |
 

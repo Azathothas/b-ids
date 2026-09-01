@@ -205,6 +205,14 @@ check_skippable() {
   esac
 }
 
+# -- the vendored trees, and the record that has to describe them ------------
+# ⚠ ONLY THE OFFLINE LEG. --upstream fetches the recorded ref from the remote
+# and a gate that needs the network fails on a machine that has none.
+# ⚠ 2 is "could not run": jq is absent, or the tree vendors nothing at all.
+# Neither has verified anything, so both are a SKIP rather than a pass.
+check_skippable 'check-vendor' 'jq is absent, or this tree vendors nothing' \
+  sh "$HERE/check-vendor.sh"
+
 # -- the workspace, and the version floor it declares ------------------------
 check_skippable 'check-msrv' 'cargo or jq is not on this host' \
   sh "$HERE/check-msrv.sh"

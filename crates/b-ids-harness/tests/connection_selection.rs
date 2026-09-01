@@ -130,6 +130,7 @@ fn connection_selection_classifies_a_connection_that_sent_nothing_as_abandoned()
         raw_hex: String::new(),
         tls: None,
         http2: None,
+        termination: None,
         request_line: None,
         header_names: Vec::new(),
         header_values: Vec::new(),

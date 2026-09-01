@@ -581,7 +581,7 @@ adds `StreamDependency::encode` and `Headers::set_stream_priority`, which sets
 the payload and the flag in one call because a head with the flag and no block
 is a frame a peer cannot parse. Its rationale, and what it unblocks, is under
 `## h2: a client cannot open a stream with the PRIORITY block a browser sends`
-in [`patches/UPSTREAM.md`](../../references/Azathothas__bit-cli/tree/patches/UPSTREAM.md).
+in [`references/Azathothas__bit-cli/tree/patches/UPSTREAM.md`](../../references/Azathothas__bit-cli/tree/patches/UPSTREAM.md).
 Two tests there assert the wire bytes directly: `80 00 00 00 ff` after a nine
 byte head with the PRIORITY flag set, and no flag and no block when no priority
 is given.

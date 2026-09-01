@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 82  open 53  blocked 0  done 28
+total 84  open 49  blocked 0  done 35
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
-| P0 | 0 | 0 | 8 | 9 |
-| P1 | 17 | 0 | 17 | 34 |
+| P0 | 0 | 0 | 9 | 9 |
+| P1 | 13 | 0 | 23 | 36 |
 | P2 | 32 | 0 | 2 | 34 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **53** | **0** | **28** | **82** |
+| **all** | **49** | **0** | **35** | **84** |
 
 ---
 
@@ -47,9 +47,9 @@ total 82  open 53  blocked 0  done 28
 | DOC-02 | P2 | S | open | The operator's side is unwritten because there is nothing to operate | [`docs.md`](docs.md) |
 | DOC-03 | P2 | S | open | There is no threat model, and publishing a corpus will need one | [`docs.md`](docs.md) |
 | DOC-04 | P2 | S | done | The founding brief is retired, and this entry records what replaced it | [`docs.md`](docs.md) |
-| DRIVER-01 | P1 | M | open | Resolve a browser, and drive it at a URL | [`driver.md`](driver.md) |
+| DRIVER-01 | P1 | M | done | Resolve a browser, and drive it at a URL | [`driver.md`](driver.md) |
 | DRIVER-02 | P1 | M | open | Read the version that is serving, not the one that is published | [`driver.md`](driver.md) |
-| DRIVER-03 | P1 | S | open | Headless changes the User-Agent, and normalising it is reported | [`driver.md`](driver.md) |
+| DRIVER-03 | P1 | S | done | Headless changes the User-Agent, and normalising it is reported | [`driver.md`](driver.md) |
 | DRIVER-04 | P2 | S | open | The root store a browser actually reads | [`driver.md`](driver.md) |
 | DRIVER-05 | P2 | M | open | Acquisition, with more than one way to get a build | [`driver.md`](driver.md) |
 | DRIVER-06 | P2 | M | open | Branded and unbranded builds are different products | [`driver.md`](driver.md) |
@@ -58,10 +58,10 @@ total 82  open 53  blocked 0  done 28
 | EMIT-03 | P2 | S | open | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
 | EMIT-04 | P3 | M | open | Emitters for the stacks a consumer already uses | [`emitters.md`](emitters.md) |
 | HARNESS-01 | P0 | L | done | The oracle is a server, not a client | [`harness.md`](harness.md) |
-| HARNESS-02 | P0 | M | partial | The switches, each of which exists because something went wrong without it | [`harness.md`](harness.md) |
+| HARNESS-02 | P0 | M | done | The switches, each of which exists because something went wrong without it | [`harness.md`](harness.md) |
 | HARNESS-03 | P1 | M | done | Read HTTP/2 settings, the window update and the priority block | [`harness.md`](harness.md) |
 | HARNESS-04 | P1 | M | done | Decode HPACK Huffman, because header order is behind it | [`harness.md`](harness.md) |
-| HARNESS-05 | P1 | S | open | Settle the priority block, and do it first | [`harness.md`](harness.md) |
+| HARNESS-05 | P1 | S | done | Settle the priority block, and do it first | [`harness.md`](harness.md) |
 | HARNESS-06 | P1 | S | done | Parse permissively, emit exactly | [`harness.md`](harness.md) |
 | HARNESS-07 | P1 | S | done | A browser opens sockets it abandons, and it resumes | [`harness.md`](harness.md) |
 | HARNESS-08 | P1 | S | done | One handshake is not a sample | [`harness.md`](harness.md) |
@@ -69,6 +69,7 @@ total 82  open 53  blocked 0  done 28
 | HARNESS-10 | P2 | S | open | Check whether measuring changed what was measured | [`harness.md`](harness.md) |
 | HARNESS-11 | P2 | M | open | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
 | HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
+| HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
 | LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
 | LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
@@ -107,11 +108,12 @@ total 82  open 53  blocked 0  done 28
 | TOOL-13 | P1 | S | done | The Windows job skipped a lint and the workflow counted it as allowed | [`tooling.md`](tooling.md) |
 | TOOL-14 | P1 | S | done | The changelog check read a heading level this repository does not use | [`tooling.md`](tooling.md) |
 | VALID-01 | P0 | M | done | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
-| VALID-02 | P1 | S | open | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
+| VALID-02 | P1 | S | done | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | open | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |
 | VALID-04 | P2 | M | open | Reference digest implementations, with published test vectors | [`validator.md`](validator.md) |
 | VALID-05 | P2 | L | open | A conformance suite for impersonating clients | [`validator.md`](validator.md) |
 | VALID-06 | P2 | S | open | Diffs between adjacent versions | [`validator.md`](validator.md) |
+| VENDOR-01 | P1 | L | done | The vendored tree, and the four things that keep it honest | [`vendor.md`](vendor.md) |
 
 ---
 

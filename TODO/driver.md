@@ -10,7 +10,7 @@ at the harness. Two jobs kept separate: **resolve** a browser, and **drive** it.
 ## DRIVER-01. Resolve a browser, and drive it at a URL
 
 **Source** the founding brief; the driver shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 15
-**Category** driver, **Priority** P1, **Effort** M, **Status** open
+**Category** driver, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -58,6 +58,102 @@ cargo test -p b-ids-driver resolve_and_drive -- --nocapture
 Passing means: on a host with a browser, the driver reports its exact build and
 completes a capture against the harness; on a host without one it exits 2 rather
 than 1, because "could not run" and "failed" are different facts.
+
+
+### Closing
+
+**Closed 2026-09-01T06:35:00Z.** ⭐ **The whole path runs from one command:**
+the driver resolves Chrome, launches it into a profile nobody keeps, and the
+harness captures a terminated handshake from it.
+
+```text
+$ cargo test -p b-ids-driver resolve_and_drive -- --nocapture
+running 2 tests
+resolve_and_drive: chrome 151.0.7922.76 from sibling-directory
+resolve_and_drive: edge 152.0.4191.53 from sibling-directory
+test resolve_and_drive_reports_a_build_from_a_source_it_names ... ok
+resolve_and_drive: chrome 151.0.7922.76 produced 2 connection(s), 1 terminated
+test resolve_and_drive_completes_a_capture_against_the_harness ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 30.24s
+exit=0
+```
+
+```text
+$ b-ids-driver resolve
+chrome 151.0.7922.76
+  sibling-directory: 151.0.7922.76
+edge 152.0.4191.53
+  sibling-directory: 152.0.4191.53
+exit=0
+```
+
+### ⛔ Reading the version by running the browser opened the operator browser
+
+The resolver asked two sources: a version-shaped directory beside the
+executable, and the executable own `--version`. ⛔ **On Windows the second one
+is not a query.** Measured 2026-09-01: `chrome.exe --version` launched Chrome
+into the person own profile and never returned, so the resolver hung and the
+browser was open.
+
+⚠ **A time limit would have fixed the hang and not the side effect**, which is
+the part that matters: a resolver must not touch the machine it is describing.
+That source is now skipped on Windows by platform rather than bounded by a
+timeout, and the sibling directory answers there anyway. ⭐ The rule the entry
+stated for the LAUNCH turned out to apply to the RESOLVE as well, and reading a
+version is exactly where nobody expects a launch.
+
+### ⭐ The certificate flag is narrower than the one this entry inherited
+
+The inherited flag set carried `--test-type --ignore-certificate-errors`, which
+switches verification off for everything. ⛔ **This driver passes
+`--ignore-certificate-errors-spki-list` instead**, carrying the base64 SHA-256
+of the one subject public key the harness minted for that run. Verification
+still runs, a certificate from any other key is still refused, and no trust
+store is touched.
+
+⚠ **It is still a condition of every capture taken through it**, and the switch
+list is recorded on the result for that reason. `HARNESS-10` measures whether
+the difference changes the answer and `DRIVER-04` is the platform detail.
+
+⭐ **The pin is produced by the harness rather than by the driver**, because the
+harness holds the key pair. `Authority::spki_pin` is the seam, and the base64
+under it is checked against the specification vectors rather than against
+itself.
+
+⚠ **The two commands could not compose until the pin was printed.** The library
+hands it over in one process, which is what the end-to-end test uses, and
+outside a test the driver had no way to get it: the usage text said the harness
+printed it and the harness did not. `--ca-out` now prints `pin: VALUE` on
+stderr, so the stdout contract is untouched, and the false line in the usage is
+gone.
+
+### What the tests cover, and the one they cannot
+
+| the test | what it would catch |
+| --- | --- |
+| a build is reported with the source that answered | a version nobody checked, and an executable no source could version being reported as a browser with an unknown build |
+| a capture completes against the harness | the whole path, in one process, with the pin and the served key minted together so they cannot drift |
+| the throwaway profile is removed | a capture that belongs to a profile history rather than to the build |
+| the URL is the last argument | the mode trap this entry inherited: a URL passed as a switch value makes the browser navigate and then sit |
+
+⛔ **On a host with no browser both tests print a SKIP and return.** A test that
+passed vacuously there would make the suite green on the one machine that could
+not have run it. ⚠ That is why the skip is printed rather than silent.
+
+### ⚠ What is NOT here
+
+- **No version is fetched from anywhere.** `DRIVER-02` reads what is serving
+  rather than what is installed, and it is a different question.
+- **Headless is a flag and nothing normalises its User-Agent.**
+  `DRIVER-03` is that entry, and the default is headful precisely so nothing
+  is normalised by accident.
+- **Two families are looked for and one install of each is taken.**
+  `DRIVER-06` is branded against unbranded builds and `DRIVER-05` is
+  acquisition.
+- ⚠ **The end-to-end test takes about thirty seconds**, because the browser
+  does not exit once the harness stops listening and the launch runs to its
+  ceiling before it is killed.
 
 ---
 
@@ -111,7 +207,7 @@ one source answered.
 ## DRIVER-03. Headless changes the User-Agent, and normalising it is reported
 
 **Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
-**Category** driver, **Priority** P1, **Effort** S, **Status** open
+**Category** driver, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -145,6 +241,69 @@ cargo test -p b-ids-driver headless_normalisation -- --nocapture
 Passing means: a headless capture fixture produces a profile whose User-Agent
 carries the normal product token and whose provenance map marks that field
 `substituted` with a reason naming headless mode.
+
+
+### Closing
+
+**Closed 2026-09-01T06:55:00Z.** ⭐ **The trap was measured here rather than
+inherited**, by driving Chrome `151.0.7922.76` at this project's own harness
+twice in one session, once with a window and once without, and reading the
+header off the decrypted HTTP/2 stream.
+
+| header | headful | headless |
+| --- | --- | --- |
+| `user-agent` | ends `Chrome/151.0.0.0 Safari/537.36` | ends `HeadlessChrome/151.0.0.0 Safari/537.36` |
+| `sec-ch-ua` | `"Not=A?Brand";v="99", "Google Chrome";v="151", "Chromium";v="151"` | ⭐ byte-identical |
+
+```text
+$ cargo test -p b-ids-driver headless_normalisation -- --nocapture
+running 5 tests
+test headless_normalisation_leaves_a_windowed_capture_alone ... ok
+test headless_normalisation_measured_that_the_brand_list_does_not_change ... ok
+test headless_normalisation_marks_the_field_substituted_with_a_reason ... ok
+test headless_normalisation_restores_the_product_token_and_nothing_else ... ok
+test headless_normalisation_records_an_unfamiliar_marker_rather_than_guessing ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+### ⛔ The premise about the brand list is refuted on the build measured here
+
+The problem statement says the substitution reaches the brand list on some
+builds. ⛔ **On Chrome `151.0.7922.76` on Windows it does not**: the two runs
+produced a byte-identical `sec-ch-ua`, and the only difference between them is
+the product token in the User-Agent.
+
+⚠ The title stays and the premise stays, because "some builds" is a claim
+about builds this session did not measure. What changed is that nothing is
+rewritten in a field nothing was seen to change, and the measurement is a test
+so it cannot be lost.
+
+⭐ **A field carrying a headless marker that this module does not normalise is
+recorded `unreproducible` with a reason rather than guessed at.** That is the
+entry's own rule, and it is what makes the next build's change visible instead
+of silently wrong.
+
+### What the five tests cover
+
+| the test | what it would catch |
+| --- | --- |
+| the product token is restored and nothing else is | a normalisation that rewrote the version, the platform block or any other token |
+| a windowed capture is left alone | a normalisation that fired where it was not needed, marking a MEASURED field as substituted |
+| the substitution is recorded with its reason | ⛔ the failure this whole project is about: a rewritten capture with nothing beside it saying so |
+| an unfamiliar marker is recorded rather than rewritten | a guess at a field nothing was seen to change |
+| the brand list does not change | the inherited claim, kept as a measurement so a future session does not re-derive it wrongly |
+
+### ⚠ What is NOT here
+
+- **Headless is not the default anywhere.** The driver runs with a window
+  unless asked, so nothing is normalised by accident.
+- **One build was measured.** `CORPUS-02` is the matrix, and a claim about
+  "some builds" needs more than one machine.
+- ⚠ **The normalisation is available and nothing calls it in a capture path**,
+  because no capture path writes a profile yet. `CORPUS-01` is where a capture
+  becomes a profile, and that is where this belongs.
 
 ---
 

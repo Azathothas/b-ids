@@ -45,12 +45,15 @@ judging the tree.
 | [`../scripts/common/check-changelog`](../scripts/common/) | the four changelog rules a machine can hold |
 | ⭐ [`../scripts/common/check-record`](../scripts/common/) | do the record's counts still agree with its rows |
 | [`../scripts/common/check-no-secrets`](../scripts/common/) | does anything in the tree carry something that must not be published |
+| ⭐ [`../scripts/common/check-vendor`](../scripts/common/) | does [`../vendor/upstream.json`](../vendor/upstream.json) still describe the vendored trees, and with `--upstream`, has upstream moved past what it records |
 | ⭐ [`../scripts/common/check-msrv`](../scripts/common/) | is the declared minimum Rust version derived from the dependency graph, or typed by somebody |
 | [`../scripts/common/check-remote-items`](../scripts/common/) | do the open items against this repository say anything that survives being checked |
 | [`../scripts/common/check-powershell`](../scripts/common/) | does every tracked PowerShell file parse, and is the analyzer clean |
 | [`../scripts/common/check-twins`](../scripts/common/) | do both halves of every pair still answer the same way |
 | ⭐ [`../scripts/common/set-record.mjs`](../scripts/common/) | move an entry's status and re-derive every count from the rows |
 | [`../scripts/common/write-file.mjs`](../scripts/common/) | write or patch a file without the shell touching the payload |
+| [`../scripts/common/vendor-sync.mjs`](../scripts/common/) | fetch a pristine copy of a vendored upstream at the recorded commit, and materialise a tree from it |
+| [`../scripts/common/vendor-diff.mjs`](../scripts/common/) | regenerate the patch series from the vendored tree, or check that it is still in sync |
 | [`../scripts/common/git-sync`](../scripts/common/) | commit and push with [`conventions/git.md`](conventions/git.md)'s rules enforced rather than remembered |
 | ⭐ [`../scripts/common/mine-repo`](../scripts/common/) | fetch everything a reference sweep needs, and keep it. [`methodology/references.md`](methodology/references.md) is the procedure. |
 

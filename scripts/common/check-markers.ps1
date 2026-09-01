@@ -132,7 +132,7 @@ finally { Pop-Location }
 # ⛔ Keep this identical to the sh twin.
 $files = @($tracked + $untracked |
     ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -match $textRe -and $_ -cnotmatch '^references/' } |
+    Where-Object { $_ -and $_ -match $textRe -and $_ -cnotmatch '^(references|vendor/[^/]+)/' } |
     Sort-Object -Unique)
 
 if ($files.Count -eq 0) {

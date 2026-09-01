@@ -167,7 +167,7 @@ It adds `StreamDependency::encode`, which is the half `load` never had, and
 call: ⛔ a head carrying the flag with no block is a frame a peer cannot parse,
 and a block with no flag is five bytes of header block. The rationale, the
 files it touches and the upstream verdict are under `## h2: a client cannot open
-a stream with the PRIORITY block a browser sends` in `patches/UPSTREAM.md`.
+a stream with the PRIORITY block a browser sends` in `references/Azathothas__bit-cli/tree/patches/UPSTREAM.md`.
 
 ⚠ **Read it, do not copy it.** That tree is MIT and this one's output is 0BSD.
 The mechanism is four sentences; the diff is somebody else's file.
@@ -251,7 +251,7 @@ corpus, which means the check can be proved rather than asserted.**
 | exhibit | what it is |
 | --- | --- |
 | `impit/src/fingerprint/database/chrome.rs:985-996` | `chrome_101` returns `chrome_100::tls_fingerprint()` and `chrome_100::http2_fingerprint()` beside a Chrome 101 User-Agent and a Chrome 101 `sec-ch-ua`. Four more modules do the same. |
-| `Kikobeats__https-tls/tree/src/index.js:57,80` | one cipher table per family, commented "Chrome v92" and "Firefox v91", served to any version's User-Agent |
+| `Kikobeats__https-tls/tree/src/index.js:59,78,100` | one cipher table per family, commented "Chrome v92", "Firefox v91" and "Safari v14", served to any version's User-Agent |
 | `Kikobeats__https-tls/tree/src/browser.js` | the classifier returns three families and `headers-order.json:119` carries a fourth, `edge`, that nothing can reach |
 
 ⭐ **Three checks fall straight out of those:**
@@ -264,6 +264,26 @@ corpus, which means the check can be proved rather than asserted.**
 
 ⚠ Check 3 is the one nobody writes. It catches dead data, which is data a reader
 will eventually believe.
+
+### ⭐ Read by a tool on 2026-09-01, and it found two the eye had not
+
+`VALID-02` implemented a reader for both trees. It agrees with the three rows
+above and adds two, which is the argument for reading a table with a tool
+rather than by eye:
+
+| what the reader added | where |
+| --- | --- |
+| a sixth entry returning another version's handshake, in a second family | `impit/src/fingerprint/database/firefox.rs:444`, where `firefox_144` returns `firefox_135`'s |
+| a third table commented for one version and served to all of them | `Kikobeats__https-tls/tree/src/index.js:100`, "Safari v14" |
+
+⚠ **Two line numbers in the row above were corrected in the same pass.** The
+cipher tables were cited at 57 and 80 and the comments naming their versions
+are at 59 and 78. ⭐ A citation nobody re-opened is exactly what this project's
+third rule is about, and here the tool re-opened it.
+
+```bash
+cargo run -p b-ids-validator -- import references --report
+```
 
 ⭐ **Check 1 has a working implementation to read**, in the origin tree's own
 test suite. `page.rs:1618-1632`, `the_header_list_and_the_user_agent_agree_

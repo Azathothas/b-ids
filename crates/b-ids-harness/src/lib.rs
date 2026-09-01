@@ -11,10 +11,12 @@
 //! - [`h2`] reads the HTTP/2 connection preface and the frames behind it.
 //! - [`bytes`] is the bounds-checked cursor both parsers read through, and the
 //!   hex both directions.
-//! - ⛔ **TLS is not terminated.** Completing a handshake can change what a
-//!   client offers, and reaching an HTTP/2 connection over TLS needs it. The
-//!   cleartext surface reaches HTTP/2 with prior knowledge and `--ca-out` is
-//!   the switch that would reach it over TLS.
+//! - [`tls`] mints the authority `--ca-out` writes and completes the handshake
+//!   behind it, over the vendored rustls at `vendor/rustls`.
+//! - ⛔ **TLS is not terminated by DEFAULT.** Completing a handshake can
+//!   change what a client offers, so the raw surface stays the default and
+//!   `--ca-out` is how a caller opts into the only surface that reaches a
+//!   browser's HTTP/2.
 //!
 //! # The rule this crate is built around
 //!
@@ -33,12 +35,16 @@ pub mod note;
 pub mod rebuild;
 pub mod sampling;
 pub mod select;
+pub mod tls;
 
 pub use bytes::{Cursor, hex, unhex};
 pub use h2::{Http2Capture, RawFrame};
 pub use hello::{HelloCapture, parse_record};
-pub use listener::{BindRefused, CAPTURE_SCHEMA, Capture, Config, Oracle, Protocol, parse_bind};
+pub use listener::{
+    BindRefused, CAPTURE_SCHEMA, Capture, Config, Oracle, Protocol, Termination, parse_bind,
+};
 pub use note::Note;
 pub use rebuild::{Rebuilt, differences, rebuild};
 pub use sampling::{Sampling, summarise};
 pub use select::{Kind, Selection, select};
+pub use tls::{Authority, Terminated, mint};

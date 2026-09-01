@@ -153,7 +153,7 @@ reassembly rather than the harness.
 ## HARNESS-02. The switches, each of which exists because something went wrong without it
 
 **Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 14
-**Category** harness, **Priority** P0, **Effort** M, **Status** partial
+**Category** harness, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
 
@@ -194,13 +194,15 @@ message naming the reason, and the default run's output contains no header value
 
 ### Closing
 
-⚠ **PARTIAL, and updated 2026-09-01.** Eight of the nine switches are
-implemented, exercised and mutation-proved. One is blocked and the entry stays
-open with the blocker named.
+**Closed 2026-09-01T05:25:00Z.** All nine switches are implemented, exercised
+and mutation-proved. ⚠ It was `partial` for one day with `--ca-out` blocked on
+a TLS server this tree did not have; `VENDOR-01` vendored one and `HARNESS-13`
+wired it, and the sixteenth test is the switch driving a real handshake.
 
 ```text
 $ cargo test -p b-ids-harness switches -- --nocapture
-test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+running 16 tests
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.62s
 exit=0
 ```
 
@@ -214,20 +216,18 @@ exit=0
 | `--json` | done, base URL first, then one object per connection |
 | `--handshakes N` | done, with `--once` beside it |
 | `--until-h2` | done 2026-09-01. `HARNESS-03` reached HTTP/2 over cleartext with prior knowledge, so there is one to stop at. |
-| ⛔ `--ca-out PATH` | **blocked on a TLS server this tree does not have**: minting an authority is only useful once the handshake is terminated, and terminating one needs a TLS implementation. The ruling is to vendor and patch one. |
+| ⭐ `--ca-out PATH` | done 2026-09-01 by `HARNESS-13`, over the rustls `VENDOR-01` vendored. It mints an authority, writes it, and selects the terminated surface, which is the only one that reaches a browser HTTP/2. |
 
-⭐ **The blocked switch is ABSENT, not present and inert**, and the command
-refuses it by name:
+⭐ **While it was blocked the switch was ABSENT rather than present and inert**,
+and the command refused it by name. That shape is worth keeping in the record
+because it is the one that cost nothing to be wrong about: a flag that parsed
+and did nothing would be the "setting or flag that no code reads" row in
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+and a session reading the usage would have believed the capability existed.
 
-```text
-$ b-ids-harness --ca-out unused
-b-ids-harness: --ca-out needs the TLS handshake terminated, which needs a TLS server this tree does not have yet. It is absent rather than inert, because a flag that parsed and did nothing would be worse
-```
-
-⚠ A flag that parsed and did nothing would be the "setting or flag that no code
-reads" row in
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
-An absent flag fails loudly and names what would implement it.
+⚠ **The refusal is what turned into a hang when it stopped refusing.** Its test
+asserted exit 2, and the working switch binds and waits instead.
+`HARNESS-13`'s closing has that measurement and what replaced the test.
 
 ### ⭐ The tests drive the COMMAND, not the library
 
@@ -280,13 +280,16 @@ same rule. Removing it from the listener alone was enough to leak a credential
 into the command's output, which is the "control gated on one of several paths"
 shape. Both doors are gated and both are tested.
 
-### What would close this entry
+### What closed this entry
 
-A TLS server that can terminate a handshake, at which point `--ca-out` mints
-the authority a client verifies against. Nothing else is outstanding.
+A TLS server that can terminate a handshake, which `VENDOR-01` vendored and
+`HARNESS-13` wired, at which point `--ca-out` mints the authority a client
+verifies against.
 
 ⚠ **`--until-h2` was closed by `HARNESS-03` rather than by a terminated
-handshake**, because reaching HTTP/2 at all did not need one.
+handshake**, because reaching HTTP/2 at all did not need one. ⭐ Two of the
+nine switches turned out not to need the thing they were thought to need, which
+is the argument for taking the cheap route first and finding out.
 
 ---
 
@@ -383,6 +386,10 @@ reader:
 - `plain_http1` became `cleartext`, because the surface is cleartext and the
   peer picks the protocol. A surface named for one protocol that can produce
   the other is a field that lies.
+
+⚠ **It is `harness-capture/3` now, and `HARNESS-13` moved it.** Terminating a
+handshake adds what that handshake negotiated, and a field added without a
+version bump is a positional format that mis-reads silently.
 
 ### ⚠ The pad length byte comes before the priority block
 
@@ -663,7 +670,7 @@ than a capture that is missing something.
 ## HARNESS-05. Settle the priority block, and do it first
 
 **Source** [`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md) finding 1
-**Category** harness, **Priority** P1, **Effort** S, **Status** open
+**Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -683,10 +690,11 @@ zero, weight 255 for both Chrome 151 and Chrome 152.
 bytes, and one of them is a tool that could not write the block at the time it
 recorded its own data. A zero in that field is what an unpatched stack emits.
 
-⛔ **That makes this a confirmation with a predicted answer, not an open
-question, and it does not make the value publishable.** It was measured
+⛔ **That made this a confirmation with a predicted answer, not an open
+question, and it did not make the value publishable.** It was measured
 somewhere else, which is `vendor` provenance, and the first rule is why the
-capture still has to be taken here.
+capture still had to be taken here. ⭐ It has been: the closing has the reading
+and the conditions.
 
 ### Approach
 
@@ -721,10 +729,83 @@ set and the five raw bytes when it was; the positive control shows the flag set;
 and the result is written into [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 with the browser, the build and
 the date, beside the inherited reading and saying whether the two agree.
 
-### ⚠ Still open on 2026-09-01, with what was tried and what would open it
+### Closing
 
-⛔ **The probe half is done and the browser half is not, and the two are worth
-separating** so a later session does not redo the first.
+**Closed 2026-09-01T05:35:00Z.** ⭐ **The block is there, on both browsers, on
+every terminated connection, and the raw five bytes are `80000000ff`.** That is
+the first quantity this project has read off a browser's own wire.
+
+```text
+$ ./target/debug/b-ids-harness --ca-out CA --handshakes 4 --run-timeout-ms 90000 --header-values
+connection 2 from 127.0.0.1:56470, 1803 byte(s), TlsTerminated
+  tls: 16 cipher suite(s), 17 extension(s), 2 GREASE slot(s)
+  terminated: alpn Some("h2"), version Some("TLSv1_3"), suite Some("TLS13_AES_128_GCM_SHA256"), 534 plaintext byte(s)
+  http2: 3 frame(s), settings [SettingEntry { id: 1, value: 65536 }, SettingEntry { id: 2, value: 0 }, SettingEntry { id: 4, value: 6291456 }, SettingEntry { id: 6, value: 262144 }], window increment Some(15663105)
+  http2 priority block: Some(StreamPriority { exclusive: true, stream_dependency: 0, weight_wire: 255 }), raw Some("80000000ff")
+sampling: 3 of 4 handshake(s) completed, 3 distinct GREASE draw(s), 3 distinct extension order(s)
+exit=1
+```
+
+⚠ **Exit 1 is correct and it is not a failure of the measurement.** Three of
+four handshakes completed, so the run reported a shortfall rather than success.
+The fourth connection is a preconnect the browser abandoned.
+
+### ⛔ The acceptance command in this entry was wrong, and the correction is here
+
+It says `--plain`. That was written before this tree could terminate a
+handshake, when the cleartext surface was the only one that reached HTTP/2 at
+all. ⛔ **No browser speaks cleartext HTTP/2**, so that command can never take
+this measurement from a browser. The command actually run is the one above,
+and `--ca-out` is what makes it possible.
+
+⚠ The title stays. The premise was right, the predicted answer was right, and
+only the route to it changed.
+
+### The two browsers, and they agree with each other and with the prediction
+
+| browser | build | terminated | the five raw bytes |
+| --- | --- | --- | --- |
+| Chrome | `151.0.7922.76` | 6 of 7 accepted | `80000000ff` on every one |
+| Edge | `152.0.4191.53` | 7 of 8 accepted | `80000000ff` on every one |
+
+⭐ **Two browsers and two versions, which is what the approach asked for**, so a
+disagreement would have been localisable to a version rather than to the probe.
+There was none. The reading is written into
+[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 with the
+browser, the build, the date and the conditions, beside the inherited reading,
+and it says the two agree.
+
+### ⭐ The positive control, which is why a negative result would have meant something
+
+The committed HTTP/2 fixture sets the flag and carries a block reading
+exclusive, dependency zero, weight 255 on the wire, and
+`http2_reads_the_priority_block_as_bytes_and_reports_the_raw_five` asserts it. A
+probe that reported nothing over that fixture would be a probe looking in the
+wrong place, and the suite refuses that.
+
+⚠ **The control was NOT skipped because the answer was predicted.** A probe that
+agrees with an expectation it was told is the one result that proves nothing,
+and the approach says so in as many words.
+
+### ⚠ What this does NOT settle
+
+- **Whether `EMIT-03` is work.** It is: a client that cannot write the block
+  cannot reproduce either browser measured here. That entry stays open with a
+  measurement behind it now instead of a prediction.
+- ⚠ **Whether the conditions changed the answer.** The authority was trusted
+  through a per-launch flag rather than a root store. `HARNESS-10` is the
+  entry that measures the difference, and it is now takeable.
+- **Anything about a browser this host does not have.** Two browsers on one
+  Windows 11 machine is what was measured, and `CORPUS-02` is the matrix.
+
+### What was tried before it worked, kept because it saves the next session the walk
+
+⛔ **The probe half was done a day before the browser half**, and separating
+them is what let this close in one command once termination existed. The reader
+takes the HEADERS flags byte, tests `0x20`, skips the pad length byte where
+`PADDED` is set, and decodes the five bytes behind it into an exclusive bit, a
+31-bit dependency and a wire weight. ⭐ It reports the parsed block AND the five
+raw bytes, so nothing rests on a rendered string.
 
 **Done, by `HARNESS-03`:** the reader takes the HEADERS flags byte, tests
 `0x20`, skips the pad length byte where `PADDED` is set, and decodes the five
@@ -738,22 +819,10 @@ flag and carries a block reading exclusive, dependency zero, weight 255 on the
 wire. A probe that reported nothing over it would be a probe looking in the
 wrong place, and the test refuses that.
 
-⛔ **What is missing is a BROWSER, and it is missing for one reason: no browser
-speaks cleartext HTTP/2.** The reader reaches HTTP/2 today only over a
-connection opened with prior knowledge, which is a client behaviour. Reaching a
-browser's HTTP/2 needs the TLS handshake terminated, which needs a TLS server
-this tree does not have.
-
-**What would open it**, in order:
-
-1. a vendored TLS server, per the ruling in [`RULES.md`](RULES.md), so
-   `--ca-out` can mint an authority and terminate;
-2. `DRIVER-01`, to launch a browser at the resulting URL;
-3. this entry's own command, over at least two browsers and two versions.
-
-⚠ **Nothing about the predicted answer has changed**, and it stays unpublishable
-until it is measured here: it was measured somewhere else, which is `vendor`
-provenance.
+**What opened it**, in the order it happened: `VENDOR-01` put a TLS server in
+the tree, `HARNESS-13` wired it so `--ca-out` mints an authority and
+terminates, and the browsers were launched by hand rather than by `DRIVER-01`,
+which is still open and is what makes this repeatable rather than driven once.
 
 ---
 
@@ -1318,3 +1387,224 @@ cargo run -p b-ids-harness -- --serve --no-retain
 Passing means: the endpoint returns a full profile to a browser pointed at it,
 nothing is written to disk, and a test asserts the no-retain default by checking
 that the process created no file.
+
+---
+
+## HARNESS-13. Terminate the handshake, and mint the authority that lets a browser complete it
+
+**Source** `HARNESS-02`, whose `--ca-out` switch is blocked, and the operator's vendoring ruling of 2026-09-01
+**Category** harness, **Priority** P1, **Effort** L, **Status** done
+
+### Problem
+
+`b-ids-harness --ca-out unused` exits 2 and says the switch needs a TLS server
+this tree does not have. Everything above TLS in a browser's fingerprint is
+therefore unreachable: the settings frame, the window update, the header block
+and the priority block are all behind an encrypted record layer, and no browser
+speaks cleartext HTTP/2.
+
+### Premise
+
+⭐ **Measured on 2026-09-01.** `crates/b-ids-harness/src/listener.rs` reads the
+first TLS record, records its bytes, parses the `ClientHello` and closes.
+`Protocol` has two variants and its own comment names itself as the seam a
+third goes through. `crates/b-ids-harness/src/h2.rs` already reads a connection
+preface and its frames from a byte slice, and `crates/b-ids-harness/src/main.rs`
+refuses `--ca-out` by name.
+
+⚠ **Read rather than measured:** that Chrome accepts a leaf certificate whose
+subject alternative name is an IP address, and that it skips certificate
+transparency enforcement for a chain ending at a locally installed root. Both
+are checked by the driven pass rather than assumed, and a failure of either is
+recorded as a finding under this entry rather than as a defect in the code.
+
+### Approach
+
+`VENDOR-01` puts `rustls` in the tree. This wires it to the listener.
+
+**The surface.** A third `Protocol` variant beside `TlsRaw` and `Cleartext`,
+selected by `--ca-out PATH` rather than by a mode flag of its own, because
+minting the authority and terminating the handshake are one capability and two
+switches for it would be two ways to reach one path.
+
+**The order of reads, and it is the part that matters.** The listener reads the
+first record and records its bytes exactly as it does today, and the existing
+`parse_record` stays the oracle for the hello. Only then are those bytes and
+the socket handed to the terminator, which replays what was already read and
+continues the handshake. ⛔ **The raw hello is never read back out of the TLS
+library.** A hello reported by the implementation that consumed it is a hello
+filtered through somebody else's parser, and this project's whole contribution
+is that the bytes are kept.
+
+**The authority.** One certificate authority minted per run, written to the
+path `--ca-out` names in PEM, and one leaf under it carrying the bound address
+as a subject alternative name. `parse_bind` already refuses a hostname and says
+in its own message that a leaf certificate needs a literal address, so the two
+halves already agree.
+
+**Above the handshake.** ALPN offers `h2` and `http/1.1`, in that order, and
+whichever the peer selected is recorded on the capture beside the negotiated
+protocol version and cipher suite. Those three are properties of this server
+rather than of the browser, so they are recorded as conditions of the capture,
+which is what `HARNESS-10` will compare against.
+
+The decrypted stream then feeds the reader that already exists: the same
+`read_cleartext` path, chosen by the bytes rather than by the flag, so one
+capture path serves both surfaces.
+
+⛔ **What it must not do.** It must not disable certificate verification in the
+browser, which changes the subject and is what the authority exists to avoid.
+It must not edit or re-encode the recorded bytes. It must not make termination
+the default, because completing a handshake can change what a client offers and
+the raw surface is the one that answers the narrower question. It must not
+build a second HTTP/2 reader.
+
+### Decision
+
+**Where the terminator lives.**
+
+⭐ **Recommendation: a module inside `b-ids-harness`, not a crate of its own.**
+There is one consumer, and `../docs/conventions/code.md` refuses an abstraction
+built beyond one real seam. The alternative, a `b-ids-tls` crate, was rejected
+because the argument for it is a consumer that does not exist: `HARNESS-12`
+runs the same binary as a service and needs no second crate to do it.
+
+### Prove
+
+⛔ **The acceptance, and it is a command.**
+
+```bash
+cargo test -p b-ids-harness termination -- --nocapture
+```
+
+Passing means: a client completes a verified handshake against a run started
+with `--ca-out`, trusting only the authority that run wrote; the capture
+records the raw `ClientHello` bytes for that connection and they are byte
+identical to what the client sent; the negotiated protocol is recorded; and a
+run started without `--ca-out` still terminates nothing.
+
+The driven pass is a real browser, and it is this entry's own obligation rather
+than the operator's:
+
+```bash
+cargo run -p b-ids-harness -- --ca-out .tmp/ca.pem --json --handshakes 8
+```
+
+Passing means a browser on this host, pointed at the printed base URL with that
+authority trusted, produces at least one capture whose HTTP/2 half carries a
+settings frame.
+
+### Closing
+
+**Closed 2026-09-01T05:20:00Z.** `--ca-out` mints an authority, writes it, and
+terminates the handshake behind it. ⭐ **Two real browsers completed verified
+handshakes against it and the harness read their HTTP/2**, which is the first
+time anything in this repository has read a byte a browser put on a wire.
+
+```text
+$ cargo test -p b-ids-harness termination -- --nocapture
+running 4 tests
+test termination_refuses_a_terminated_surface_with_no_server_configuration ... ok
+test termination_is_absent_on_the_surfaces_that_do_not_terminate ... ok
+test termination_records_the_authority_and_never_its_key ... ok
+test termination_completes_a_verified_handshake_and_reads_http2 ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+exit=0
+```
+
+### ⭐ The driven pass, which is this entry's own obligation
+
+Two browsers on this host, each pointed at the printed base URL, each in a
+throwaway profile directory. Chrome `151.0.7922.76` produced **7 connections, 6
+of them terminated**; Edge `152.0.4191.53` produced **8 connections, 7 of them
+terminated**. Every terminated one negotiated `h2` over TLS 1.3 with
+`TLS13_AES_128_GCM_SHA256`, and every one carried three frames: SETTINGS, a
+connection WINDOW_UPDATE, and a HEADERS frame with the priority bit set.
+
+One run of four, printed by the command itself rather than as JSON:
+
+```text
+connection 2 from 127.0.0.1:56470, 1803 byte(s), TlsTerminated
+  tls: 16 cipher suite(s), 17 extension(s), 2 GREASE slot(s)
+  terminated: alpn Some("h2"), version Some("TLSv1_3"), suite Some("TLS13_AES_128_GCM_SHA256"), 534 plaintext byte(s)
+  http2: 3 frame(s), settings [SettingEntry { id: 1, value: 65536 }, SettingEntry { id: 2, value: 0 }, SettingEntry { id: 4, value: 6291456 }, SettingEntry { id: 6, value: 262144 }], window increment Some(15663105)
+  http2 priority block: Some(StreamPriority { exclusive: true, stream_dependency: 0, weight_wire: 255 }), raw Some("80000000ff")
+sampling: 3 of 4 handshake(s) completed, 3 distinct GREASE draw(s), 3 distinct extension order(s)
+```
+
+⚠ **The first connection of each run terminated nothing**, and that is the
+browser rather than a defect: it is the preconnect `HARNESS-07` describes,
+opened and abandoned before a handshake completes. It is recorded with its note
+rather than dropped.
+
+### ⛔ The authority was not installed into the machine's trust store
+
+Installing a root certificate changes a machine's security configuration and it
+is the operator's to make. This session used the narrowest thing that avoids
+it: both browsers were launched with `--ignore-certificate-errors-spki-list`
+carrying the base64 SHA-256 of the run's own authority key, so exactly one key
+was trusted, for one launch, with no store touched.
+
+⚠ **That is a condition of every capture taken this way and it is not the same
+as a trusted root.** ⛔ It is also not `--ignore-certificate-errors`:
+verification still runs and a certificate from any other key is still refused.
+`HARNESS-10` is the entry that measures whether the difference changed what was
+measured, and `DRIVER-04` is where the root store a browser actually reads
+belongs.
+
+### ⚠ A test that had been a refusal became a HANG
+
+`switches_ca_out_is_absent_rather_than_inert` asserted that the command exits 2.
+Once `--ca-out` worked, the command bound a socket and blocked on an accept
+nobody was going to make, and the test waited on a process that was never going
+to exit. ⛔ **A hang has no message and no exit code**, and killing it left the
+test binary locked, so the next build failed on a file the linker could not
+open.
+
+⭐ **The same hazard is already recorded in `HARNESS-02`'s closing, from the
+other direction**: there, removing a guard made its test hang. The rule is now
+applied twice: a test that drives this command passes a deadline, so a change in
+behaviour reports rather than waits. The replacement asserts what the switch
+does now and exits on a 1500ms run timeout.
+
+### What the four tests cover
+
+| the test | what it would catch |
+| --- | --- |
+| a verified handshake completes and HTTP/2 is read | the whole path, driven through the COMPILED COMMAND rather than the library, with a client that trusts only the authority the run wrote |
+| ⭐ the raw block is the client's own first record, byte for byte | a hello re-encoded by the TLS library rather than kept. The client socket is wrapped in a recorder, so the assertion compares bytes rather than shapes. |
+| the authority is written and its key is not | a private key on disk, which `docs/security/secrets.md` refuses whatever it is for |
+| a terminated surface with no configuration is refused at the bind | a mode that parsed and silently did nothing |
+
+⚠ **The HTTP/2 payload the test sends is the committed cleartext fixture.** A
+second copy of a connection would let the two surfaces drift apart while both
+tests stayed green.
+
+### Mutation-proved
+
+⛔ **Each of these was planted, run, and read.**
+
+| what was planted | what happened |
+| --- | --- |
+| `raw_hex` set from the decrypted plaintext instead of the first record | `termination_completes_a_verified_handshake_and_reads_http2` FAILED on the byte comparison, printing the HTTP/2 preface where the record should be |
+| the bind-time refusal disabled | `termination_refuses_a_terminated_surface_with_no_server_configuration` FAILED, because the combination bound successfully |
+| the golden capture left at the old schema version | `listener_reads_the_committed_fixture_and_produces_the_committed_capture` FAILED and printed the whole diff, which is how the version bump was reviewed rather than assumed |
+
+### ⚠ What is NOT here, named rather than left to be discovered
+
+- **The handshake bytes after the first record are not recorded.** They are
+  ciphertext on the wire and the terminator consumes them. What the peer sent
+  inside them is in `Termination::plaintext_hex`, and ⚠ that is not the wire:
+  it is what the peer sent, recovered by holding the key.
+- **No profile is written.** This is a capture surface, not a corpus entry.
+  `CORPUS-01` is where a capture becomes something published.
+- ⚠ **The certificate's validity window is the minter's default**, which is
+  wide. Both browsers accepted it. Narrowing it needs another direct
+  dependency and buys nothing measurable, because the key is minted per run
+  and never written to disk.
+- **A hostname is still refused by `--bind`.** The leaf names a literal
+  address, and `parse_bind` and the minter are the two halves of one rule.
+- ⚠ **Three distinct extension orders arrived in three completed connections.**
+  The shuffle is real and it is visible now. `SCHEMA-10` is the entry that
+  records it as a property rather than as noise.

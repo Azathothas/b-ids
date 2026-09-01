@@ -231,6 +231,10 @@ pub fn thirteen_connection_navigation() -> Vec<Capture> {
                 // preconnect the browser abandoned, and a run that dropped it
                 // would under-report what a navigation does.
                 http2: (connection > 1).then(|| http2.clone()),
+                // ⚠ CONSTRUCTED from a raw surface, which terminates nothing. The
+                // shape this exercises is the SELECTION rule, and that reads the
+                // hello and the frames rather than what a handshake negotiated.
+                termination: None,
                 request_line: None,
                 header_names: Vec::new(),
                 header_values: Vec::new(),
