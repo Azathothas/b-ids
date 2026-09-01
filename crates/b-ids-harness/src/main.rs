@@ -287,14 +287,20 @@ fn main() -> ExitCode {
 
 /// Drop the fields that change between two correct runs.
 ///
-/// ⚠ The peer PORT is chosen by the operating system, so a golden that carried
-/// it would fail on every run. Comparing the answer rather than the transcript
-/// is the same rule the twin comparison already follows.
+/// ⚠ The peer PORT is chosen by the operating system and the instant is a
+/// clock, so a golden that carried either would fail on every run. Comparing
+/// the answer rather than the transcript is the same rule the twin comparison
+/// already follows.
+///
+/// ⛔ **Dropped from the COMPARISON, never from the capture.** The `--json` and
+/// the printed forms above carry both, because a capture with no instant cannot
+/// be ordered against the build it describes.
 fn normalise(captures: &[Capture]) -> Vec<Capture> {
     captures
         .iter()
         .map(|c| Capture {
             peer: "REDACTED".to_owned(),
+            at: "REDACTED".to_owned(),
             ..c.clone()
         })
         .collect()

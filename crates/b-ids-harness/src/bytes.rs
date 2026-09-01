@@ -102,6 +102,29 @@ pub fn base64(bytes: &[u8]) -> String {
     out
 }
 
+/// SHA-256, from the crypto provider this tree already links.
+///
+/// ⛔ **No second crypto library for one digest, and no second copy of this
+/// function.** It has two callers with unrelated jobs: the certificate pin in
+/// [`crate::tls`], and the content address `b-ids-corpus` writes beside every
+/// published file. A digest computed in two places is two places for it to be
+/// computed differently, in the one field whose whole purpose is that two
+/// parties agree on it.
+///
+/// ⚠ Reaching it through a cipher suite is a public path rather than a patch to
+/// the vendored tree.
+#[must_use]
+pub fn sha256(data: &[u8]) -> Vec<u8> {
+    let suite = rustls::crypto::ring::cipher_suite::TLS13_AES_128_GCM_SHA256;
+    let rustls::SupportedCipherSuite::Tls13(tls13) = suite else {
+        // ⛔ Unreachable by construction: the constant above IS a TLS 1.3
+        // suite. It returns an empty digest rather than panicking, and every
+        // caller is a comparison nobody could match against an empty one.
+        return Vec::new();
+    };
+    tls13.common.hash_provider.hash(data).as_ref().to_vec()
+}
+
 /// Hex-encode bytes, lower case, no separators.
 #[must_use]
 pub fn hex(bytes: &[u8]) -> String {

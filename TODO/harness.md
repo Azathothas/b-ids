@@ -1224,7 +1224,7 @@ test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; 
 ## HARNESS-09. Fuzz the parsers. A panic here is unacceptable
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** harness, **Priority** P1, **Effort** M, **Status** open
+**Category** harness, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -1258,12 +1258,118 @@ cargo fuzz run client_hello -- -runs=1000000
 Passing means: every target runs its budget with no crash and no timeout, and
 each corpus seed is committed so the run is reproducible.
 
+### Closing
+
+**Closed 2026-09-01.** ⭐ **One million runs, no crash and no timeout**, over
+every parser this crate exposes to the network.
+
+```text
+$ RUSTUP_TOOLCHAIN=nightly cargo fuzz run parsers -- -runs=1000000
+rustc 1.100.0-nightly (0dfb098f3 2026-08-31)
+###### Recommended dictionary. ######
+"PRI * HTTP/2.0\015\012\015\012S\000\000\000\000\000" # Uses: 108
+"\357\000\000c\026\001\000/\377\377\377\000\000\377\377\377\377\377\377\377\377\377\377\377" # Uses: 32
+"P\377\021\015\012\015\012SM0\012\004\000\034\000\004\015\012\012\000\000\006\000\001" # Uses: 35
+###### End of recommended dictionary. ######
+Done 1000000 runs in 295 second(s)
+```
+
+⭐ **The dictionary is the evidence that it was exploring rather than bouncing
+off a length check.** libFuzzer discovered the HTTP/2 connection preface on its
+own, which it can only do by reaching the frame reader behind it.
+
+```text
+$ cargo test -p b-ids-harness hostile
+running 6 tests
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+```
+
+#### ⭐ Two halves, because a fuzz target nobody can run is a target nobody runs
+
+| | |
+| --- | --- |
+| `fuzz/fuzz_targets/parsers.rs` | coverage-guided, one million runs, ⚠ needs a nightly toolchain and a platform that can link libFuzzer |
+| `crates/b-ids-harness/tests/hostile.rs` | a deterministic corpus of over five thousand mutations, ⭐ on every host and every push, in 0.44s |
+
+⛔ **Both call the same function.** `b_ids_harness::fuzz::drive_every_parser` is
+the list of parsers, and it lives in the library rather than in either caller. A
+target per parser would be four lists to keep in step with a crate that grows
+one, and the day a fifth parser lands the four would keep passing while covering
+less.
+
+⚠ **The corpus is mutations of the committed captures, not random bytes.**
+Random input almost never survives the first length check. Every prefix of every
+committed fixture is in it, which is the highest-value mutation available here:
+every parser in this crate reads a declared length and then takes bytes behind
+it, and a truncation is what puts those two in conflict.
+
+#### ⛔ Mutation-proved, and the exit code read unpiped
+
+A panic planted in the Huffman decoder, on an input length nothing should care
+about:
+
+```text
+$ cargo test -p b-ids-harness --test hostile
+thread 'hostile_no_parser_panics_on_any_mutation_of_a_real_capture' panicked at crates\b-ids-harness\src\hpack.rs:473:5:
+PLANTED: a length the parser should not care about
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+rc=101
+```
+
+⭐ **Five tests still passed and one refused**, which is what says the failure is
+the planted panic rather than the harness. Reverted, the suite is green again at
+6 passed.
+
+#### ⛔ Windows cannot run the coverage-guided half, and three routes were measured
+
+⚠ **Each failed differently, and the reasons are kept so the next session does
+not walk them again.** [`../fuzz/README.md`](../fuzz/README.md) carries the
+table; the short form:
+
+| route | what stopped it |
+| --- | --- |
+| MSVC, default sanitizer | `LNK1104: cannot open file 'clang_rt.asan_dynamic_runtime_thunk-x86_64.lib'`. ⭐ The one route with a named, operator-actionable fix: the AddressSanitizer runtime is an optional Visual Studio Build Tools component. |
+| MSVC, `-s none` | `LNK2001: unresolved external symbol __stop___sancov_pcs`. `link.exe` provides no section-boundary symbols for the sections libFuzzer reads its counters from. |
+| GNU nightly | libFuzzer's own `FuzzerExtFunctionsWindows.cpp` does not compile under mingw `g++`. Its Windows support is written for MSVC. |
+
+⭐ **The fourth route is a Linux container and it is what produced the run
+above.** [`../docs/containers.md`](../docs/containers.md) is the procedure, and
+it was followed: the platform was named on the pull, the image was removed
+afterwards, and the engine was left stopped exactly as it was found.
+
+#### ⚠ The trap that cost a whole run, and it will cost a CI job the same way
+
+[`../rust-toolchain.toml`](../rust-toolchain.toml) pins this tree to an exact
+stable compiler, and that file applies to every directory under the repository
+root. A nightly IMAGE is not enough: rustup reads the toolchain file, downloads
+the pinned stable, and then `-Z sanitizer` is refused as a nightly-only option.
+
+⛔ **Anything that runs this overrides the toolchain explicitly**, which is why
+the command above carries `RUSTUP_TOOLCHAIN=nightly`. `CI-03` is the entry that
+will hit this on a runner.
+
+#### The design, and the three refusals in it
+
+| | |
+| --- | --- |
+| ⛔ nothing is asserted about the result | The property is the absence of a panic. An assertion about the value would make this a test of the parse rather than of the process surviving what arrives on a socket. |
+| ⛔ a fresh decoder per input | The HPACK dynamic table is connection state. A decoder carried across inputs would make every case depend on the ones before it, so a crash would not be reproducible from its own input. |
+| ⛔ the corpus is not committed | One run produced 856 files, a different set on every host, regenerated in minutes. The SEEDS are committed and they are the harness's own captures. A crash input is a regression test rather than a file to keep in a fuzz directory, which is this entry's own "must not". |
+
+#### ⚠ What this does not cover
+
+| | |
+| --- | --- |
+| the certificate minter and the TLS terminator | They are `rcgen` and the vendored rustls, whose own suites cover them. This crate's parsers are what face an unknown client before any of that runs. |
+| a hang | libFuzzer's `-timeout` catches one and none fired, but a decoder walked into a slow loop by a padding run is a shape a crash-watcher can miss. `hostile_a_huffman_literal_of_all_ones_terminates` is the bounded test that would see it. |
+| a run in continuous integration | `CI-01` and `CI-03`. The command and the toolchain trap are written down for them. |
+
 ---
 
 ## HARNESS-10. Check whether measuring changed what was measured
 
 **Source** the founding brief; [`../docs/methodology/experiments.md`](../docs/methodology/experiments.md)
-**Category** harness, **Priority** P2, **Effort** S, **Status** open
+**Category** harness, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -1298,6 +1404,142 @@ sh experiments/20-compare-capture-modes.sh
 Passing means: the script captures the same browser in raw and terminating modes
 and prints a field-level diff, and every differing field is named in the profile
 schema's documentation with the mode that owns it.
+
+### Closing
+
+**Closed 2026-09-01.** ⭐ **Terminating the handshake did not change what the
+browser offered before it.** Seventeen of nineteen compared fields agree exactly
+across the two surfaces; none differ; two carry a per-connection draw and are
+reported as not comparable rather than as findings.
+
+```text
+$ sh experiments/20-compare-capture-modes.sh
+raw:        0 cold, 0 resumed, 18 abandoned
+terminated: 4 cold, 11 resumed, 3 abandoned
+⚠ the two surfaces produced different numbers of resumed connections, which is a mode effect on the RUN even where every field of the cold hello agrees
+
+comparing 18 raw hello(s) against 7 terminated, resumed connections excluded
+  agrees        tls.record_version  0x0301
+  agrees        tls.legacy_version  0x0303
+  agrees        tls.session_id_len  32
+  not comparable tls.cipher_suites
+      raw         13 distinct value(s) within the run
+      terminated  6 distinct value(s) within the run
+  agrees        tls.cipher_suites.no_grease  0x1301,0x1302,0x1303,0xc02b,0xc02f,0xc02c,0xc030,0xcca9,0xcca8,0xc013,0xc014,0x009c,0x009d,0x002f,0x0035
+  agrees        tls.compression_methods  0
+  not comparable tls.extensions.order
+      raw         18 distinct value(s) within the run
+      terminated  7 distinct value(s) within the run
+  agrees        tls.extensions.set.no_grease  0x0005,0x000a,0x000b,0x000d,0x0010,0x0012,0x0017,0x001b,0x0023,0x002b,0x002d,0x0033,0x44cd,0xfe0d,0xff01
+  agrees        tls.extensions.count  17
+  agrees        tls.key_exchange_groups.no_grease  0x11ec,0x001d,0x0017,0x0018
+  agrees        tls.key_shares.groups.no_grease  0x11ec,0x001d
+  agrees        tls.key_shares.lengths  1216,32
+  agrees        tls.signature_algorithms  0x0904,0x0905,0x0906,0x0403,0x0804,0x0401,0x0503,0x0805,0x0501,0x0806,0x0601
+  agrees        tls.signature_algorithms_cert  absent
+  agrees        tls.alpn  h2,http/1.1
+  agrees        tls.ech  0/0x0001
+  agrees        tls.padding_len  absent
+  agrees        tls.grease.count  2
+  agrees        tls.grease.positions  0,16
+
+only the terminating surface can see: http2, http, raw.http2_frames_hex, raw.connection_hex
+modes=agree differing:0 not_comparable:2 fields:19
+```
+
+```text
+$ cargo test -p b-ids-harness modes
+running 7 tests
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+⚠ **The conditions, because a measurement carries them or it is not a
+measurement.** One Windows 11 host (`10.0.26200.9168`, `x86_64`), Chrome
+`151.0.7922.76` headful, 2026-09-01, three rounds of one raw run and one
+terminating run each, six connections requested per run, every launch into a
+fresh throwaway profile. ⛔ One machine on one day, one browser, one build.
+
+#### ⛔ The two fields that do not differ and cannot be shown to agree either
+
+`tls.cipher_suites` and `tls.extensions.order` both carry a value the browser
+draws per connection: a GREASE codepoint at the head of the cipher list, and a
+shuffled extension order. Eighteen raw connections produced eighteen distinct
+orders.
+
+⭐ **A field with no single value per mode has nothing for a mode to have
+changed**, so more connections do not fix it. What does is comparing the same
+quantity with the drawn part removed, which is why `tls.cipher_suites.no_grease`
+and `tls.extensions.set.no_grease` are separate fields: both are stable in both
+modes and both agree.
+
+⚠ **So the honest scope of the result is: every TLS field that has a stable
+value at all is unchanged by terminating the handshake.** The two that do not
+have one are stated rather than counted as agreement.
+
+#### ⭐ The second finding, which is a mode effect and is not a field
+
+**Only a surface that completes a handshake can produce a resumption.** The raw
+run resumed nothing, of eighteen connections; the terminating run resumed eleven
+of eighteen. That is not a difference in what the browser offers on a cold
+hello, and it is not noise either: it changes the *mix* of connections a run
+produces, and a corpus built by averaging them would publish a handshake nothing
+sent.
+
+⛔ **It is why `b_ids_harness::comparable` exists.** The corpus already keeps the
+cold connection and records a resumed one separately; this comparison now
+follows the same rule, and the counts are printed above the field list rather
+than folded into it.
+
+#### ⚠ Two defects the driven pass found in the comparison itself
+
+⛔ **Neither would have been found by the suite**, and both were found by running
+the real thing, which is what gate part (b) is for.
+
+| what happened | the fix |
+| --- | --- |
+| The first run handed every connection of each side to the comparison and reported the extension SET as not comparable. That was resumption, not a mode effect: the terminating run held two different sets because some of its connections resumed. | The caller selects. `comparable` keeps the connections that offered no pre-shared key, and `resumption_split` reports the counts beside the comparison. |
+| A single terminating run produced **0 cold connections and 5 resumed**, so the comparison rested on one hello and said so through its own `thin` warning. More connections cannot fix that: the first connection of a navigation gets a ticket and every later one resumes. | The experiment runs several rounds, each with a fresh throwaway profile, because a cold hello is sampled per RUN rather than per connection. Three rounds produced seven comparable terminated hellos. |
+
+⚠ **And both helpers were reading the wrong thing at first.** They routed
+through `select`, which answers a question about ONE navigation, so across
+concatenated runs the repeating connection numbers would have excluded the wrong
+captures. They ask each capture directly now, through `select::kind` and
+`select::offers_pre_shared_key`, which have no navigation assumption.
+
+#### ⚠ What this did NOT measure, and the entry's own framing was wider than this
+
+⛔ **The record's work order said this entry would measure a per-launch key pin
+against a real trust anchor**, and the entry's own Approach and acceptance ask
+for something narrower: the raw mode against the terminating mode. This closed
+against the entry, which is the specification.
+
+The trust-store question is real and remains open, and it is a different
+measurement:
+
+- ⛔ **It needs a root certificate installed into the machine's trust store**,
+  which is a change to that machine's security configuration and is the
+  operator's action rather than an agent's.
+- ⭐ **What this result does establish about it:** the pin is not what makes the
+  terminating surface trustworthy or otherwise, because the surface itself
+  changes nothing the raw surface can see. The remaining question is narrower
+  than it was.
+- `DRIVER-04`, the root store a browser actually reads, is the entry that has to
+  land before a trust-store capture is even meaningful on Windows.
+
+⚠ It is written into `TODO/PROGRESS.md` as an open question with that
+recommendation rather than left as a sentence in a closed entry.
+
+#### What the suite proves that the driven run cannot
+
+⛔ **A driven run cannot show that its own comparison could have failed.** The
+seven tests plant each case: a field stable and equal, a field stable and
+different, a field drawn per connection, the same field with GREASE stripped, a
+one-connection run reported as thin, an empty side reported as not comparable
+rather than agreeing, and every named field rendering on a real hello.
+
+⭐ **The third of those is the mutation proof of the whole design.** Two runs
+whose GREASE differs on every connection produce `NotComparable` and zero
+differing fields, which is the result a naive diff would have got wrong.
 
 ---
 

@@ -1,0 +1,7 @@
+{
+  "schema": "corpus-latest/1",
+  "layout": "v1",
+  "latest": {
+    "chrome/stable/win64": "corpus/v1/chrome/stable/win64/151.0.7922.76.json"
+  }
+}

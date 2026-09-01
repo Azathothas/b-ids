@@ -14,6 +14,134 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-01T10:40:00Z - a million runs at the parsers, and no panic
+
+**Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-09`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **One million coverage-guided runs, no crash and no timeout**, over every
+  parser the harness exposes to the network. libFuzzer discovered the HTTP/2
+  connection preface on its own, which is what says it reached the frame reader
+  rather than bouncing off a length check.
+- ⭐ **A second half that runs everywhere.**
+  `cargo test -p b-ids-harness hostile` drives the same function over five
+  thousand mutations of the committed captures in under half a second, with no
+  nightly toolchain, so the property is held by the ordinary gate rather than by
+  a tool somebody has to remember.
+- **`fuzz/`**, a cargo-fuzz crate excluded from the workspace for the reason the
+  vendored tree already paid for.
+
+⛔ **Windows cannot run the coverage-guided half, and three routes were
+measured** rather than one being assumed. [`fuzz/README.md`](fuzz/README.md)
+carries what stopped each: a missing AddressSanitizer runtime, a linker with no
+section-boundary symbols, and libFuzzer's Windows shim not compiling under
+mingw. The run above is from a Linux container, and the engine was left exactly
+as it was found.
+
+⚠ **A trap worth knowing before a CI job hits it.** The pinned
+[`rust-toolchain.toml`](rust-toolchain.toml) applies to the fuzz crate too, so a
+nightly image is not enough: rustup reads the file, fetches the pinned stable,
+and `-Z sanitizer` is then refused. The toolchain is overridden explicitly.
+
+### 2026-09-01T09:50:00Z - the build that is serving, not the one that is published
+
+**Record:** [`TODO/driver.md`](TODO/driver.md), `DRIVER-02`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`b-ids-driver versions`**, which reads the rollout fraction rather than
+  the top of the list, cross-checks the automation-build index, and prints what
+  the naive answer would have been beside its own.
+- ⭐ **The inherited defect reproduced here, to the digit.** Highest known
+  `153.0.8010.12` at fraction `0.005`, the build at full rollout
+  `152.0.7977.65`, the automation index at `152.0.7977.64`, and the two
+  first-party sources still one patch component apart.
+  [`docs/inherited-claims.md`](docs/inherited-claims.md) section 7 carries the
+  confirmation beside the reading it inherited.
+- **Version ordering has one home**, `b_ids_schema::version_order`. The corpus
+  and the driver were about to hold two copies of a comparison where
+  `152.0.7977.9` sorts after `152.0.7977.64` if it is done as text.
+
+⚠ **It reveals a gap in this project's own corpus.** The one profile is Chrome
+`151.0.7922.76` and stable is serving `152.0.7977.65`, so the corpus is a major
+behind. Nothing said so before this command existed.
+
+⛔ **No HTTP client was added.** The command shells out to a fetcher the host
+already has, one process per request, because an HTTP client crate brings its
+own TLS stack into a workspace that vendors one.
+
+### 2026-09-01T09:30:00Z - measuring did not change what was measured
+
+**Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-10`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **The answer.** Chrome `151.0.7922.76` offers the same hello whether or not
+  the harness completes the handshake: seventeen of nineteen compared TLS fields
+  agree exactly, none differ, and the two that cannot be compared carry a value
+  the browser draws per connection. One browser, one build, one host, one day.
+- **`b_ids_harness::modes`**, which measures each field's stability inside a run
+  before comparing across runs, so a per-connection draw is reported as not
+  comparable rather than as a difference.
+- ⭐ **`experiments/20-compare-capture-modes.sh`**, which drives one resolved
+  browser at both surfaces over several rounds.
+
+⚠ **A second finding, which is a mode effect and is not a field.** Only a
+surface that completes a handshake can produce a resumption: the raw run resumed
+none of eighteen connections and the terminating run resumed eleven. That is
+why the comparison excludes resumed connections and prints the counts beside the
+field list.
+
+⛔ **The trust-store question is NOT what this answered.** The record's work
+order framed this entry as a pin against a real trust anchor; the entry itself
+asks for the raw surface against the terminating one, and that is what closed.
+Installing a root into a machine's trust store is the operator's action, and it
+stays an open question with that recommendation attached.
+
+### 2026-09-01T09:10:00Z - the corpus holds a profile
+
+**Record:** [`TODO/corpus.md`](TODO/corpus.md), `CORPUS-01`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet; the profile is
+committed on the default branch and no release and no data branch exist.
+
+What landed:
+
+- ⭐ **The first profile.** Chrome `151.0.7922.76` on Windows, captured by this
+  project's own harness, at `corpus/v1/chrome/stable/win64/151.0.7922.76.json`
+  with the `ClientHello` bytes it was read from beside it under `raw/v1/`.
+- **A store that refuses rather than repairs.** `b-ids-corpus` turns the cold
+  connection of a navigation into a profile, writes it once, and refuses a
+  route that already holds one. The index and the latest-per-key pointer are
+  derived from the tree rather than appended to.
+- **`check-corpus`, in both halves and in the gate.** Its git leg asks whether
+  a published file was ever modified, deleted or renamed after its first
+  commit, which is the one question the working tree cannot answer.
+- ⭐ **`experiments/`**, and the script that took the capture, so the run is
+  repeatable rather than a transcript.
+
+⚠ **The capture record moved to `harness-capture/4`**: a capture now carries the
+instant it was accepted, because a profile's capture instant is never optional
+and a reader that stamped one later would record when it read the file.
+
+⚠ **The profile model gained `captured.trust` and `captured.switches`.** Every
+capture this project has taken went through a per-launch key pin, and a corpus
+that cannot say which profile was taken under which configuration cannot answer
+whether the configuration changed the answer.
+
+⛔ **The secret scan went red on the first profile and the hex rule was not
+widened.** Two more narrow exclusions, both halves, and both mutation-proved: a
+value under a field named `sha256`, and a line under `corpus/` or `raw/` that is
+nothing but a quoted hex run. `TOOL-03` is the entry that predicted this shape
+would arrive.
+
 ### 2026-09-01T05:40:00Z - the first bytes a browser put on a wire
 
 **Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-13`, `HARNESS-02`

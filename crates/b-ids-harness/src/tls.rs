@@ -10,8 +10,9 @@
 //! ⚠ **What is negotiated here is a property of THIS SERVER, not of the
 //! browser.** The version, the cipher suite and the selected protocol are
 //! recorded on the capture as conditions of the measurement rather than as
-//! findings about the subject. `HARNESS-10` is where whether measuring changed
-//! what was measured gets checked.
+//! findings about the subject. [`crate::modes`] is what compares this surface
+//! against the raw one, and on 2026-09-01 it found no TLS field that both
+//! surfaces can see and that they disagree on.
 //!
 //! ⛔ **Nothing here tells a client to skip verification.** The authority is
 //! minted so a client can complete a VERIFIED handshake, which is the whole
@@ -107,26 +108,10 @@ pub fn mint(bind: IpAddr) -> Result<Authority, String> {
 
     Ok(Authority {
         ca_pem: ca_cert.pem(),
-        spki_sha256: sha256(&rcgen::PublicKeyData::subject_public_key_info(&ca_key)),
+        spki_sha256: crate::bytes::sha256(&rcgen::PublicKeyData::subject_public_key_info(&ca_key)),
         chain: vec![leaf_cert.der().clone(), ca_cert.der().clone()],
         key: PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(leaf_key.serialize_der())),
     })
-}
-
-/// SHA-256, from the crypto provider this tree already links.
-///
-/// ⛔ **No second crypto library for one digest.** The vendored TLS stack
-/// carries the hash its own suites use, and reaching it through a suite is a
-/// public path rather than a patch.
-fn sha256(data: &[u8]) -> Vec<u8> {
-    let suite = rustls::crypto::ring::cipher_suite::TLS13_AES_128_GCM_SHA256;
-    let rustls::SupportedCipherSuite::Tls13(tls13) = suite else {
-        // ⛔ Unreachable by construction: the constant above IS a TLS 1.3
-        // suite. It returns an empty digest rather than panicking, and the
-        // caller is a pin nobody could match against an empty one.
-        return Vec::new();
-    };
-    tls13.common.hash_provider.hash(data).as_ref().to_vec()
 }
 
 impl Authority {
@@ -137,8 +122,10 @@ impl Authority {
     /// security configuration; a pin names one key, for one launch.
     ///
     /// ⚠ It is a condition of any capture taken through it, and it is not the
-    /// same as a trusted root. `HARNESS-10` is where the difference is
-    /// measured and `DRIVER-04` is where the platform detail lives.
+    /// same as a trusted root. ⛔ **That difference is still unmeasured**:
+    /// `HARNESS-10` measured the capture SURFACE, which changes nothing, and
+    /// answering this one needs a root installed into a machine's trust store.
+    /// `DRIVER-04` is where the platform detail lives.
     #[must_use]
     pub fn spki_pin(&self) -> String {
         crate::bytes::base64(self.spki_sha256.as_ref())

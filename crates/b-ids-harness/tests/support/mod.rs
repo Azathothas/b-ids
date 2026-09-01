@@ -222,6 +222,7 @@ pub fn thirteen_connection_navigation() -> Vec<Capture> {
             Capture {
                 schema: b_ids_harness::CAPTURE_SCHEMA.to_owned(),
                 connection,
+                at: "2026-09-01T00:00:00Z".to_owned(),
                 peer: "REDACTED".to_owned(),
                 protocol: Protocol::TlsRaw,
                 bytes_read: parsed.raw_hex.len() / 2,

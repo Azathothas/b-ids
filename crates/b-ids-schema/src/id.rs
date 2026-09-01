@@ -104,6 +104,29 @@ impl fmt::Display for ProfileId {
     }
 }
 
+/// Order two build strings by their numeric components, highest last.
+///
+/// ⛔ **Component-wise numeric, never lexicographic.** `152.0.7977.9` sorts
+/// AFTER `152.0.7977.64` as text, so a latest pointer, a rollout choice or a
+/// release comparison built on string order hands a consumer an older build
+/// while looking correct.
+///
+/// ⭐ **One implementation, here, because three callers ask the same question**:
+/// the corpus's latest-per-key pointer, the driver's rollout choice, and any
+/// diff between adjacent versions. A comparison written twice is two orderings.
+///
+/// ⚠ A component that is not a number contributes zero, and the original text
+/// is carried as the tie-break, so two builds this cannot compare still order
+/// deterministically rather than arbitrarily.
+#[must_use]
+pub fn version_order(version: &str) -> (Vec<u64>, String) {
+    let parts = version
+        .split('.')
+        .map(|p| p.parse::<u64>().unwrap_or(0))
+        .collect();
+    (parts, version.to_owned())
+}
+
 /// Refuse a version string that names a major and nothing else.
 ///
 /// ⛔ The rule `TODO/schema.md` SCHEMA-01 states is that a version alone is not

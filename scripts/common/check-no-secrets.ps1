@@ -228,7 +228,31 @@ if ($Public) {
         # ⛔ Keep this identical to the sh twin. TOOL-03.
         Where-Object { $_ -cnotmatch '[A-Za-z0-9_]*_hex"?\s*[:=]' } |
         Where-Object { $_ -cnotmatch '^[^:]*\.hex:' } |
-        Where-Object { $_ -cnotmatch '^[^:]*(Cargo\.lock|\.lock):[0-9]+:\s*checksum\s*=' })
+        Where-Object { $_ -cnotmatch '^[^:]*(Cargo\.lock|\.lock):[0-9]+:\s*checksum\s*=' } |
+        # -- ⭐ THE SIXTH AND SEVENTH SHAPES, BOTH FROM THE PUBLISHED CORPUS ---
+        #
+        # CORPUS-01 wrote the first profile, and the rule refused two things in
+        # it that the four exclusions above do not cover. ⛔ THE HEX RULE IS
+        # STILL NOT WIDENED. Two more narrow exclusions:
+        #
+        #   6. a hex run assigned to an identifier named sha256, which is the
+        #      content address the corpus index carries beside every published
+        #      file. Same shape as the checksum exclusion above: a declared
+        #      digest of a published artefact, public by construction.
+        #   7. AN ELEMENT OF A HEX ARRAY, under corpus/ or raw/ only.
+        #      Pretty-printed JSON puts each entry of http2_frames_hex on its
+        #      own line, which leaves the field name on a line the value is not
+        #      on, so exclusion 1 cannot see it. ⛔ Narrowed by BOTH the path
+        #      and the shape: a line under those two directories that is
+        #      nothing but a quoted lower-case hex run and an optional comma.
+        #
+        # ⚠ AND THOSE BYTES HAVE A SECOND GATE: b_ids_schema::Raw::check
+        # decodes the recorded bytes and REFUSES the profile if they spell out
+        # a cookie or authorization header.
+        #
+        # ⛔ Keep this identical to the sh twin. TODO/corpus.md, CORPUS-01.
+        Where-Object { $_ -cnotmatch '"sha256"\s*:\s*"[0-9a-f]{64}"' } |
+        Where-Object { $_ -cnotmatch '^(corpus|raw)/[^:]*:[0-9]+:\s*"[0-9a-f]+",?$' })
     Add-Hit 'a long hex identifier' $hex
 
     # ⚠ Narrowed rather than switched off. These are well-known generic paths,

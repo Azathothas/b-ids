@@ -9,6 +9,12 @@
 //! resolver that downloaded one would change the machine it was asked to
 //! describe.
 //!
+//! ⚠ **[`versions`] answers a third question and it is not the resolver's.**
+//! The resolver reads what is INSTALLED on this machine; version discovery
+//! reads what the vendor is SERVING, which during a staged rollout is a
+//! different build. Capturing the one nobody has produces a correct fingerprint
+//! of a browser that does not exist. `DRIVER-02`.
+//!
 //! ⚠ **Every switch a launch passes is recorded on its result**, because each
 //! one is a condition of whatever was captured through it. The certificate pin
 //! is the one that matters most: it trusts one key for one launch rather than
@@ -19,7 +25,9 @@
 pub mod drive;
 pub mod headless;
 pub mod resolve;
+pub mod versions;
 
 pub use drive::{Driven, Launch, drive};
 pub use headless::{Normalisation, normalise, normalise_user_agent};
 pub use resolve::{Family, NotResolved, Resolved, Source, resolve};
+pub use versions::{Chosen, Release, Report, discover};

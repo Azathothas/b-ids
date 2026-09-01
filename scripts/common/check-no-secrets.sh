@@ -310,6 +310,39 @@ if [ "$PUBLIC" = "1" ]; then
     | grep -vE '^[^:]*\.hex:' \
     | grep -vE '^[^:]*(Cargo\.lock|\.lock):[0-9]+:[[:space:]]*checksum[[:space:]]*=' || true)
 
+  # -- ⭐ THE SIXTH AND SEVENTH SHAPES, BOTH FROM THE PUBLISHED CORPUS --------
+  #
+  # CORPUS-01 wrote the first profile, and the rule refused two things in it
+  # that the four exclusions above do not cover. ⛔ THE HEX RULE IS STILL NOT
+  # WIDENED. Two more narrow exclusions, each by NAME or by PATH-AND-SHAPE:
+  #
+  #   6. a hex run assigned to an identifier named `sha256`. That is the
+  #      content address the corpus index carries beside every published file,
+  #      and it is the same shape as the `checksum` exclusion above: a declared
+  #      digest of a published artefact, public by construction. ⚠ Only that
+  #      exact name, so a credential assigned to anything else is still
+  #      refused.
+  #   7. AN ELEMENT OF A HEX ARRAY, under corpus/ or raw/ only. Pretty-printed
+  #      JSON puts each entry of `http2_frames_hex` on its own line, which
+  #      leaves the field name on a line the value is not on, so exclusion 1
+  #      cannot see it. ⛔ Narrowed by BOTH the path and the shape: a line under
+  #      those two directories that is nothing but a quoted lower-case hex run
+  #      and an optional comma. A credential assigned to a field is still
+  #      refused there, and so is one on a line carrying anything else.
+  #
+  # ⚠ AND THOSE BYTES HAVE A SECOND GATE, which is why this exclusion is
+  # acceptable at all: b_ids_schema::Raw::check decodes the recorded bytes and
+  # REFUSES the profile if they spell out a cookie or authorization header. The
+  # one class of credential that could hide inside a frame array is the one
+  # thing already checked by the model itself.
+  #
+  # ⛔ Mutation-proved: a credential-shaped value planted inside a corpus
+  # profile under a different field name is still refused. TODO/corpus.md,
+  # CORPUS-01, carries the run.
+  _hex_out=$(printf '%s\n' "$_hex_out" \
+    | grep -vE '"sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' \
+    | grep -vE '^(corpus|raw)/[^:]*:[0-9]+:[[:space:]]*"[0-9a-f]+",?$' || true)
+
   [ -n "$_hex_out" ] && hit "a long hex identifier" "$_hex_out"
   # ⚠ Narrowed rather than switched off. `/home/linuxbrew/` and `/home/runner/`
   # are well-known generic paths, not a fingerprint of anybody's machine, and a

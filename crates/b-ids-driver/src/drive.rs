@@ -13,8 +13,12 @@
 //! capture.** `--ignore-certificate-errors-spki-list` trusts the SHA-256 of one
 //! subject public key for one launch. ⛔ It is not
 //! `--ignore-certificate-errors`, which switches verification off, and it is
-//! not a change to any trust store. `DRIVER-04` is the platform detail and
-//! `HARNESS-10` is where the difference gets measured.
+//! not a change to any trust store. `DRIVER-04` is the platform detail.
+//!
+//! ⚠ **`HARNESS-10` measured the capture SURFACE, not this flag.** Completing
+//! the handshake changes nothing the raw surface can see; whether trusting one
+//! key differs from trusting a root store is a separate question, and answering
+//! it needs a change to the machine's trust store.
 //!
 //! `TODO/driver.md`, `DRIVER-01`.
 

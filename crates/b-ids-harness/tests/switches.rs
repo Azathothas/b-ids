@@ -227,7 +227,7 @@ fn switches_json_prints_the_base_url_first_then_one_object_per_connection() {
     assert!(first.starts_with("https://127.0.0.1:"), "{first}");
     let object = lines.next().expect("one object");
     assert!(
-        object.starts_with('{') && object.contains("harness-capture/3"),
+        object.starts_with('{') && object.contains(b_ids_harness::CAPTURE_SCHEMA),
         "{object}"
     );
 }

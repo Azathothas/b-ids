@@ -5,37 +5,39 @@ session and refreshed whenever what is in flight changes, so a session that ends
 badly still hands something over. ⛔ It is not the record and it carries no work
 order: [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md) has both.
 
-⚠ **It is the one file in this directory that is read to do work**, and it lives
-here rather than at the repository root because it is a record of a session
-rather than a document about the project.
+It is the one file in this directory that is read to do work, and it lives here
+rather than at the repository root because it is a record of a session rather
+than a document about the project.
 
 ---
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-01T03:47:48Z to its operator interrupt, unattended, seven entries closed. |
-| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, item 1: **`CORPUS-01`**, which turns a capture into a profile. ⛔ It is the single thing in the way: the harness takes captures from real browsers and nothing writes one down. |
-| in flight | ⛔ Nothing. Every entry touched is closed with its acceptance command run, the record moved in the same change, and the tree committed. |
-| the state of the tree | Clean and pushed on `main`. The gate passes 20 checks locally, `check-twins` agrees on every pair, and the remote checks are green. ⛔ The corpus is empty: captures exist, no profile does. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order from item 1, closing entries in place with their acceptance commands run. Session started 2026-09-01T07:58:00Z, unattended, quota twenty effort points. |
+| the resume point | `DRIVER-02`, then `SCHEMA-08`, `HARNESS-09`, and the small entries the work order lists. `CORPUS-01` and `HARNESS-10` are closed. |
+| in flight | Nothing is half-edited. Both closed entries carry their acceptance output and the record moved in the same change. |
+| the state of the tree | ⛔ Dirty and uncommitted on `main` at `bd02224`. The new crate, the first profile, two experiments, `check-corpus` and every record edit are in the working tree and not committed. The gate was green at 20 passed before the last few edits. |
 | the paste | below |
 
 ---
 
-## ⭐ What changed about this project on 2026-09-01
+## What changed about this project in this session
 
-**It can reach a browser now.** rustls is vendored at `v/0.23.43` under
-[`../../vendor/`](../../vendor/), `--ca-out` mints an authority and terminates
-the handshake behind it, and Chrome `151.0.7922.76` and Edge `152.0.4191.53`
-both completed verified handshakes against it.
+**The corpus is not empty.** One measured profile, Chrome `151.0.7922.76` on
+Windows, at `corpus/v1/chrome/stable/win64/151.0.7922.76.json`, with the
+`ClientHello` it was read from under `raw/v1/`. `b-ids-corpus` wrote it and
+`scripts/common/check-corpus` is the pair that keeps it honest.
 
-⚠ **The one measurement taken is in
-[`../inherited-claims.md`](../inherited-claims.md) section 5**, marked
-`measured-here` with its conditions, and it is not published because there is
-nowhere to publish it.
+**Terminating the handshake changes nothing the raw surface can see.** Measured
+over three rounds of one browser: seventeen of nineteen TLS fields agree, none
+differ, and the two that cannot be compared carry a per-connection draw.
 
-⛔ **Every capture was taken through a per-launch key pin rather than a trust
-store**, which is a condition of the measurement rather than a detail.
-`HARNESS-10` is the entry that measures whether it changed the answer.
+⚠ **Two conditions still stand.** Every capture goes through a per-launch key
+pin rather than a trust store, which is recorded per profile in
+`captured.trust` and is still unmeasured against a real trust anchor. And the
+operator ruled at the start of the session that a measured profile goes into the
+committed corpus with its conditions recorded;
+[`../../TODO/RULES.md`](../../TODO/RULES.md) carries that ruling.
 
 ---
 

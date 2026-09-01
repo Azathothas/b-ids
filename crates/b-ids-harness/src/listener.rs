@@ -75,7 +75,13 @@ impl Protocol {
 ///
 /// ⚠ **Every field here is a property of THIS SERVER**, not of the browser. A
 /// capture that reported the negotiated suite as a fact about the subject would
-/// be reporting the harness. `HARNESS-10` is where the difference is measured.
+/// be reporting the harness.
+///
+/// ⭐ **Measured on 2026-09-01, and the surface changed nothing it could be
+/// compared on.** `HARNESS-10` drove Chrome `151.0.7922.76` at both surfaces
+/// over three rounds: seventeen of nineteen TLS fields agree exactly, none
+/// differ, and the two that cannot be compared carry a per-connection draw.
+/// ⚠ One browser, one build, one host, one day.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Termination {
     /// The protocol the peer selected over ALPN, where it selected one.
@@ -108,6 +114,17 @@ pub struct Capture {
     pub schema: String,
     /// Which connection of the run this was, from 1.
     pub connection: u32,
+    /// When the connection was accepted, ISO 8601 UTC.
+    ///
+    /// ⛔ **Recorded by the thing that took the capture.** A profile's
+    /// `captured.at` is never optional, so something has to produce it, and a
+    /// reader that stamped one later would be recording when it read the file
+    /// rather than when the bytes arrived.
+    ///
+    /// ⚠ It changes on every run, so the golden comparison drops it. See
+    /// `normalise` in this crate's command.
+    #[serde(default)]
+    pub at: String,
     /// The peer address.
     pub peer: String,
     /// Which surface accepted it.
@@ -171,10 +188,12 @@ const ACCEPT_POLL: Duration = Duration::from_millis(10);
 
 /// The schema identifier a capture carries.
 ///
-/// ⚠ Version 3 adds what a terminated handshake negotiated. Version 2 added the
-/// HTTP/2 half and renamed the cleartext surface, which used to name HTTP/1.1
-/// alone. A version is part of the data rather than implied by the reader.
-pub const CAPTURE_SCHEMA: &str = "harness-capture/3";
+/// ⚠ Version 4 adds the instant the connection was accepted, which is what
+/// `CORPUS-01` needs to fill a profile's `captured.at`. Version 3 added what a
+/// terminated handshake negotiated. Version 2 added the HTTP/2 half and renamed
+/// the cleartext surface, which used to name HTTP/1.1 alone. A version is part
+/// of the data rather than implied by the reader.
+pub const CAPTURE_SCHEMA: &str = "harness-capture/4";
 
 /// How a run is configured.
 #[derive(Debug, Clone)]
@@ -403,6 +422,11 @@ impl Oracle {
         let mut capture = Capture {
             schema: CAPTURE_SCHEMA.to_owned(),
             connection: index,
+            // ⛔ Stamped HERE, by the thing that took it, and never later by
+            // whatever reads the capture back. A capture is a moment, and an
+            // instant applied by a reader is the reader's clock rather than the
+            // capture's.
+            at: b_ids_schema::instant::now(),
             peer: peer.to_string(),
             protocol: self.config.protocol,
             bytes_read: 0,

@@ -309,6 +309,15 @@ Invoke-PsCheck -Name 'check-vendor' -Script 'scripts/common/check-vendor.ps1' `
 Invoke-PsCheck -Name 'check-msrv' -Script 'scripts/common/check-msrv.ps1' `
     -SkipCodes @(2) -SkipReason 'cargo is not on this host'
 
+# -- the published corpus, and whether it was ever edited in place -----------
+# 2 is "could not run" twice over: there is no corpus at all, or the
+# per-profile leg needed cargo and did not get it. Neither has verified
+# anything about a profile, so both are a SKIP rather than a pass. The git leg
+# still decides a FAILURE: a published file edited after its first commit is
+# exit 1 whether or not cargo was there.
+Invoke-PsCheck -Name 'check-corpus' -Script 'scripts/common/check-corpus.ps1' `
+    -SkipCodes @(2) -SkipReason 'the corpus is empty, or cargo could not verify a profile'
+
 # -- line endings, from git's own answer rather than a second table ----------
 # ⛔ IT USED TO LIVE INSIDE THE sh BRANCH AND NEEDS NO SHELL. On a host without
 # one it was neither run nor skipped, so it left the report entirely: the counts

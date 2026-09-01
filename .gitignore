@@ -151,6 +151,19 @@ $RECYCLE.BIN/
 # dotfiles/os-editor/gitignore.
 
 /target/
+
+# ⛔ THE FUZZ CRATE'S GENERATED STATE, and only the generated part.
+# `fuzz/corpus/` is what libFuzzer discovers: 856 files after one run here, and
+# a different set on every host and every run. Committing it would be a diff
+# nobody can review, growing without bound, of inputs that are regenerated in
+# minutes. ⭐ THE SEEDS ARE COMMITTED and they are the harness's own captures at
+# crates/b-ids-harness/fixtures/, which fuzz/README.md says how to seed from.
+# `fuzz/artifacts/` is where a crash input lands, and a crash is a REGRESSION
+# TEST rather than a file to keep here: TODO/harness.md HARNESS-09 says a crash
+# input is a test case and never a capture.
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
 **/*.rs.bk
 *.pdb
 

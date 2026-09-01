@@ -60,6 +60,16 @@ name = "b-ids-conformance"
 version = "0.0.0"
 
 [[package]]
+name = "b-ids-corpus"
+version = "0.0.0"
+dependencies = [
+ "b-ids-harness",
+ "b-ids-schema",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "b-ids-driver"
 version = "0.0.0"
 dependencies = [

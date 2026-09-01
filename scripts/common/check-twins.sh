@@ -334,6 +334,13 @@ compare_pair "check-msrv"           check-msrv.sh           "--json"          ch
 # about ISO text and reported a manifest that was correct.
 compare_pair "check-vendor"         check-vendor.sh         "--json"          check-vendor.ps1         "-Json"
 
+# ⚠ BOTH HALVES BUILD AND RUN THE SAME BINARY, so the numbers they report can
+# only differ if the two scripts read its fixed status line differently, which
+# is exactly the drift worth comparing: one half parses with sed and the other
+# with a regex. ⭐ The git leg is genuinely two implementations of one question
+# and it is the half that decides the exit code.
+compare_pair "check-corpus"         check-corpus.sh         "--json"          check-corpus.ps1         "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

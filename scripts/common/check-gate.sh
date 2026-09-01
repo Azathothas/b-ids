@@ -217,6 +217,15 @@ check_skippable 'check-vendor' 'jq is absent, or this tree vendors nothing' \
 check_skippable 'check-msrv' 'cargo or jq is not on this host' \
   sh "$HERE/check-msrv.sh"
 
+# -- the published corpus, and whether it was ever edited in place -----------
+# ⚠ 2 is "could not run" twice over: there is no corpus at all, or the
+# per-profile leg needed cargo and did not get it. Neither has verified
+# anything about a profile, so both are a SKIP rather than a pass. ⛔ The git
+# leg still decides a FAILURE: a published file edited after its first commit
+# is exit 1 whether or not cargo was there.
+check_skippable 'check-corpus' 'the corpus is empty, or cargo could not verify a profile' \
+  sh "$HERE/check-corpus.sh"
+
 # ⚠ 2 is "could not run", which is the honest answer in a project with no
 # CHANGELOG.md, and it is a pass here rather than a failure. ⛔ Collapsing 2 into
 # 0 with `|| true` would hide a genuine exit 1 as well.

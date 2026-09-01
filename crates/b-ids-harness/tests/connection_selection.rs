@@ -124,6 +124,7 @@ fn connection_selection_classifies_a_connection_that_sent_nothing_as_abandoned()
     let empty = Capture {
         schema: b_ids_harness::CAPTURE_SCHEMA.to_owned(),
         connection: 1,
+        at: "2026-09-01T00:00:00Z".to_owned(),
         peer: "REDACTED".to_owned(),
         protocol: Protocol::TlsRaw,
         bytes_read: 0,

@@ -19,7 +19,7 @@ the entries themselves. Do not add a "previous sessions" section.
 session started 2026-09-01T03:47:48Z
 baseline        the gate passes, all 20 checks, both halves of every pair.
                 192 tests in 22 files across 4 crates.
-entries         total 84  open 49  blocked 0  done 35
+entries         total 84  open 45  blocked 0  done 39
 ```
 
 ⚠ **Nothing is `partial` any more.** `HARNESS-02` was, for one day, and its

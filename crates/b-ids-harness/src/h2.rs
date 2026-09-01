@@ -85,6 +85,39 @@ pub struct RawFrame {
     pub payload_hex: String,
 }
 
+impl RawFrame {
+    /// This frame as it was on the wire: the nine-byte head, then the payload
+    /// that arrived.
+    ///
+    /// ⭐ **The one place the frame head layout is written in the emitting
+    /// direction**, and it is here rather than in the corpus writer because the
+    /// reading direction is here. Two modules that each know where the flags
+    /// byte sits is two places for that to be wrong.
+    ///
+    /// ⛔ **The DECLARED length is written and the ARRIVED payload follows,
+    /// even where they disagree.** A frame that declared more than it delivered
+    /// is what the wire carried, and re-encoding it with the arrived length
+    /// would produce bytes no client sent while looking tidier. The
+    /// disagreement is the measurement.
+    #[must_use]
+    pub fn wire_hex(&self) -> String {
+        let mut head = Vec::with_capacity(FRAME_HEAD_LEN);
+        let length = self.declared_length & 0x00ff_ffff;
+        head.push(u8::try_from((length >> 16) & 0xff).unwrap_or(0));
+        head.push(u8::try_from((length >> 8) & 0xff).unwrap_or(0));
+        head.push(u8::try_from(length & 0xff).unwrap_or(0));
+        head.push(self.frame_type);
+        head.push(self.flags);
+        // ⚠ The reserved bit goes back where it was read from. The
+        // specification says a receiver ignores it, so a sender that set it is
+        // a sender that stands out, and a re-encoding that dropped it would
+        // erase exactly that.
+        let stream = (self.stream_id & 0x7fff_ffff) | (u32::from(self.reserved_bit) << 31);
+        head.extend_from_slice(&stream.to_be_bytes());
+        format!("{}{}", hex(&head), self.payload_hex)
+    }
+}
+
 /// What one HTTP/2 connection produced.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Http2Capture {

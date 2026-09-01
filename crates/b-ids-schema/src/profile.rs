@@ -152,6 +152,82 @@ pub struct Platform {
     pub distribution: Option<String>,
 }
 
+/// How the subject came to trust the harness that measured it.
+///
+/// ⛔ **A condition of the measurement, not a detail of the run.** A capture
+/// taken through a handshake the subject completed only because it was told to
+/// trust one key is a capture taken under a configuration no ordinary browser
+/// is in, and a corpus that cannot say which profile was taken under which
+/// cannot answer whether the configuration changed the answer. `HARNESS-10` is
+/// the entry that measures the difference, and it has nothing to compare
+/// across unless every profile records this.
+///
+/// ⚠ **An enum rather than free text, and an unknown value is REFUSED rather
+/// than read.** This field exists to be compared across profiles, and a
+/// comparison over free text fails silently on a spelling. A profile written by
+/// a later version under a trust configuration this reader has no name for must
+/// fail loudly, because reading it as one of these would be reporting a
+/// condition that was not the condition.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Trust {
+    /// No handshake was completed, so nothing had to be trusted.
+    ///
+    /// ⚠ This is the raw and the cleartext surfaces, where the question does
+    /// not arise. It is not "the subject trusted nothing".
+    NotApplicable,
+    /// The subject was given the SHA-256 of one subject public key, for one
+    /// launch, and verified against it.
+    ///
+    /// ⛔ Not the same as verification being switched off, and not the same as
+    /// a trusted root. No trust store was changed.
+    SpkiPin,
+    /// The harness authority was installed in a trust store the subject reads.
+    TrustStore,
+    /// Verification was switched off in the subject.
+    ///
+    /// ⛔ This changes the SUBJECT rather than the condition, and no profile in
+    /// this corpus is taken this way. The variant exists so that a capture
+    /// taken that way can be labelled honestly rather than mislabelled as one
+    /// of the others.
+    VerificationDisabled,
+}
+
+impl Trust {
+    /// The value a profile written before the field existed reads back as.
+    fn not_applicable() -> Self {
+        Self::NotApplicable
+    }
+
+    /// Every trust configuration, in the order the vocabulary is written down.
+    #[must_use]
+    pub fn all() -> [Self; 4] {
+        [
+            Self::NotApplicable,
+            Self::SpkiPin,
+            Self::TrustStore,
+            Self::VerificationDisabled,
+        ]
+    }
+
+    /// The word as it is written in a profile.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotApplicable => "not-applicable",
+            Self::SpkiPin => "spki-pin",
+            Self::TrustStore => "trust-store",
+            Self::VerificationDisabled => "verification-disabled",
+        }
+    }
+}
+
+impl fmt::Display for Trust {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// When the capture was taken, by what, and how.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Captured {
@@ -164,6 +240,23 @@ pub struct Captured {
     pub harness: String,
     /// Who or what took it.
     pub operator: String,
+    /// How the subject came to trust the harness.
+    ///
+    /// ⚠ Defaulted on the way in so a profile written before this field existed
+    /// still reads, and then REFUSED by [`Profile::check`] unless the surface
+    /// says the question does not arise. A silent `not-applicable` on a
+    /// terminated capture would be a condition nobody recorded reading as a
+    /// condition somebody did.
+    #[serde(default = "Trust::not_applicable")]
+    pub trust: Trust,
+    /// The switches the subject was launched with, in order.
+    ///
+    /// ⛔ Every one of them is a condition of what was captured through it.
+    /// ⚠ Empty where the subject was not launched by this project's driver,
+    /// which is a different fact from a launch with no switches; the driver
+    /// always passes at least the throwaway profile directory.
+    #[serde(default)]
+    pub switches: Vec<String>,
 }
 
 /// The derived digests, siblings of the measured halves.
@@ -498,6 +591,27 @@ impl Profile {
         if self.captured.harness.trim().is_empty() {
             defects.push(Defect::FieldMissing {
                 field: "captured.harness".to_owned(),
+            });
+        }
+
+        // ⛔ A CONDITION NOBODY RECORDED MUST NOT READ AS A CONDITION SOMEBODY
+        // DID. `captured.trust` defaults on the way in so a profile written
+        // before the field existed still deserialises, and that default is
+        // exactly the value a terminated capture may not carry: HTTP/2 frames
+        // that arrived after a `ClientHello` arrived INSIDE the session that
+        // hello opened, so something had to have trusted the harness for them
+        // to exist at all. `HARNESS-10` compares profiles on this field, and a
+        // silent default here is what would make that comparison meaningless.
+        if !self.tls.cipher_suites.is_empty()
+            && !self.http2.frames.is_empty()
+            && self.captured.trust == Trust::NotApplicable
+        {
+            defects.push(Defect::FieldMalformed {
+                field: "captured.trust".to_owned(),
+                why: "is not-applicable on a profile carrying both a ClientHello and HTTP/2 \
+                      frames. Those frames arrived inside the session that hello opened, so the \
+                      handshake completed and something had to trust this harness"
+                    .to_owned(),
             });
         }
 

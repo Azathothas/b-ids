@@ -33,18 +33,18 @@ project says so.** A server deciding whether a caller is a real browser needs
 the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
-⛔ **The corpus is empty.** The harness terminates a handshake and reads a real
-browser's HTTP/2 as of 2026-09-01, and one quantity has been measured off two
-browsers here. ⚠ **No profile has been written**, because nothing yet decides
-what one looks like on disk. [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says
-what is next.
+⭐ **The corpus holds one profile**, written 2026-09-01: Chrome
+`151.0.7922.76` on Windows, measured on this project's own harness, with the
+`ClientHello` it was read from beside it. ⚠ One profile is not a matrix, and
+`CORPUS-02` is the entry that makes it one.
+[`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next.
 
-⚠ **So almost every value in this tree is a fixture or an inherited claim, and
+⚠ **Everything else in this tree is a fixture or an inherited claim, and
 neither is a measurement.** A fixture is shaped like a capture and says so in
 its own header; an inherited value lives in
 [`inherited-claims.md`](inherited-claims.md) with its source. ⛔ Nothing from
-either may be published as data. ⭐ The one exception is marked `measured-here`
-in that file, with its conditions, and it is not published either.
+either may be written into the corpus. ⭐ A value leaves that file only when this
+project measures the same thing itself.
 
 ⚠ **One thing about this project is unlike an ordinary one, and it decides
 everything else.** The product is *measurements*, so a value that cannot be

@@ -184,7 +184,7 @@ test`, and on the Linux runner it was 97s.
 ## DRIVER-02. Read the version that is serving, not the one that is published
 
 **Source** the founding brief; the measurement is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7
-**Category** driver, **Priority** P1, **Effort** M, **Status** open
+**Category** driver, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -225,6 +225,114 @@ cargo run -p b-ids-driver -- versions --channel stable --json
 Passing means: the output names every source it asked, what each answered, the
 chosen build with its fraction, and any disagreement, and exits 0 when at least
 one source answered.
+
+### Closing
+
+**Closed 2026-09-01.** ⭐ **The inherited defect reproduced here, to the digit,
+on a different day.**
+
+```text
+$ cargo run -p b-ids-driver -- versions --channel stable --json
+{"answers":[{"source":"releases","version":"152.0.7977.65","error":null},{"source":"chrome-for-testing","version":"152.0.7977.64","error":null}],"chosen":{"version":"152.0.7977.65","fraction":1.0,"highest_known":"153.0.8010.12","highest_fraction":0.005},"disagreement":true}
+rc=0
+```
+
+```text
+$ cargo run -p b-ids-driver -- versions --channel stable
+  releases: 152.0.7977.65
+  chrome-for-testing: 152.0.7977.64
+chosen 152.0.7977.65 fraction Some(1.0)
+highest known 153.0.8010.12 fraction Some(0.005)
+the sources disagree, and neither is preferred
+```
+
+```text
+$ cargo test -p b-ids-driver versions
+running 10 tests
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+#### ⭐ Every number the premise inherited came back the same
+
+| | inherited, 2026-08-29 | measured here, 2026-09-01 |
+| --- | --- | --- |
+| the highest build the endpoint knows | `153.0.8010.12` | `153.0.8010.12` |
+| its rollout fraction | `0.005` | `0.005` |
+| the build at fraction 1 | `152.0.7977.65` | `152.0.7977.65` |
+| the automation index's stable | `152.0.7977.64` | `152.0.7977.64` |
+| the two first-party sources | disagree by one patch component | disagree by one patch component |
+
+⛔ **A run that took the naive answer would be capturing `153.0.8010.12`, a
+build being served to one user in two hundred.** That is the entry's whole
+premise and it is now a measurement rather than an inherited claim.
+[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7 carries
+the confirmation beside the reading it inherited.
+
+#### ⭐ The control, and it is what makes the disagreement mean something
+
+```text
+$ cargo run -p b-ids-driver -- versions --channel beta
+  releases: 153.0.8010.12
+  chrome-for-testing: 153.0.8010.12
+chosen 153.0.8010.12 fraction Some(1.0)
+highest known 153.0.8010.12 fraction Some(1.0)
+```
+
+⚠ **Beta's two sources agree**, so the stable disagreement is not this command
+answering wrongly. ⭐ **And beta at full rollout is the same build stable lists
+at `0.005`**, which is the mechanism itself: what stable "knows about" during a
+staged rollout is the next channel's build arriving.
+
+#### ⚠ What it says about this project's own corpus
+
+The one profile in the corpus is Chrome `151.0.7922.76`, and stable is serving
+`152.0.7977.65`. ⛔ **The corpus is one major behind the browser most people
+run**, and nothing said so before this command existed. `DRIVER-05` is
+acquisition and `CORPUS-02` is the matrix; between them they are what closes the
+gap. This entry's contribution is that the gap is now visible.
+
+#### The design, and the three things it refuses
+
+| | |
+| --- | --- |
+| ⛔ never the highest build | The highest at full rollout wins, and only where no release states a fraction of 1 does the highest fraction win. |
+| ⛔ never a preferred source | Both answers are printed, `disagreement` is a field, and neither is dropped. One source silent is a DEGRADED run rather than a dispute, and the tests hold that apart. |
+| ⛔ never a fabricated fraction | A release with no stated fraction is `None` rather than zero. Absent and "served to nobody" are different facts, and a release the endpoint said nothing about can still be the answer through the fallback. |
+
+#### ⚠ Why it shells out to a fetcher, with the two routes that lost
+
+⛔ **The obvious route was refused for a reason worth keeping.**
+
+| route | why it lost |
+| --- | --- |
+| an HTTP client crate | It brings its own TLS stack into a workspace that vendors one. [`../Cargo.toml`](../Cargo.toml) already names two builds of the same primitives as a cost to refuse, and version discovery is not worth paying it. |
+| a client on the vendored rustls | It needs a root store, so a dependency arrives anyway, and an HTTP/1.1 client this project would then own. ⛔ This project has enough parsers to keep correct. |
+| ⭐ a fetcher the host already has | No new dependency, no second TLS stack, and trapping each fetch separately falls out of one process per request. |
+
+⚠ **Its cost is that a host with neither `curl` nor `wget` cannot run this**,
+which the command reports as a per-source error rather than as a wrong answer.
+`mine-repo` already fetches this way and `TOOL-04` is the open entry about that
+fetcher stopping when one of its two routes is down; the same shape applies
+here and is worth watching.
+
+#### ⛔ The suite touches no network, and that is the design
+
+A test that fetched would fail during somebody else's outage and pass whenever
+the live answer happened to match, which is the opposite of what a test is for.
+The whole decision is pure and the ten tests are over fixtures. ⭐ **And the
+fixture is the inherited measurement itself**, so a test written against
+invented numbers could not have covered the defect this entry is about.
+
+⚠ **The driven half is the command**, run above against the live endpoints,
+which is what proves the fetching and the parsing that the fixtures cannot.
+
+#### ⚠ What is not covered
+
+| | |
+| --- | --- |
+| the platform | The releases endpoint is asked about `win`, because a rollout fraction is per platform and reading one platform's while capturing on another compares two questions. `CORPUS-02` is where more arrive. |
+| Firefox and Edge | Their endpoints are in [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7 and neither is called. This entry is the Chrome family, which is what the corpus holds. |
+| a staleness schedule | `CI-02` is the entry that runs this on a cron and turns a moved answer into a red check. |
 
 ---
 

@@ -270,14 +270,26 @@ throwaway profile directory and pointed at a loopback address. ⛔ The run's own
 authority was NOT installed into the machine trust store: each browser was
 given `--ignore-certificate-errors-spki-list` carrying the base64 SHA-256 of
 that one key, so exactly one key was trusted for one launch.
-`HARNESS-10` is the entry that measures whether that changed what was measured.
+⭐ **`HARNESS-10` has since measured the surface**, though not the pin: the
+raw and terminating surfaces agree on every TLS field that has a stable value,
+so the reading above is not an artefact of the handshake having completed.
+What a trust store would do instead of a pin is still unmeasured.
 
 ⚠ **The first connection of each run terminated nothing.** It is the preconnect
 a browser opens and abandons, and it carries no HTTP/2 at all.
 
-⛔ **It is `measured-here` and it is still not published**, because there is
-nowhere to publish it: no profile has been written and `CORPUS-01` is the entry
-that decides what one looks like on disk.
+⭐ **It is `measured-here` and it is now PUBLISHED**, which is the first value
+in this document to leave it. `CORPUS-01` wrote the profile on 2026-09-01 and
+the block is in it, as `http2.stream_priority` beside the frame bytes it was
+read from in `raw.http2_frames_hex`:
+
+```bash
+node -e "const p=require('./corpus/v1/chrome/stable/win64/151.0.7922.76.json'); console.log(JSON.stringify(p.http2.stream_priority))"
+```
+
+⚠ **The published profile is the Chrome row above and not the Edge one.** One
+profile is one build on one platform, and the Edge reading stays here, measured
+and unpublished, until a capture of it is written too.
 
 ---
 
@@ -366,6 +378,26 @@ shape.
 ⚠ **Note that even the two "settled" answers disagree by one patch component**
 (`.65` against `.64`). Two first-party sources, two answers, and the difference
 is the finding.
+
+### ⭐ Measured here on 2026-09-01, and every number came back the same
+
+`DRIVER-02` asked both endpoints from this machine, three days after the reading
+above was taken elsewhere. The highest known build, its fraction, the build at
+full rollout and the automation index's answer are identical, and the two
+sources still disagree by one patch component.
+
+```bash
+cargo run -p b-ids-driver -- versions --channel stable
+```
+
+⭐ **And the control explains the mechanism rather than only confirming it.**
+Asked about beta, the two sources agree, and the build they name is
+`153.0.8010.12`: the same build stable lists at `0.005`. What a stable channel
+"knows about" during a staged rollout is the next channel's build arriving.
+
+⚠ **The status of this section is `measured-here` for the four numbers above and
+`inherited` for everything else in it.** The channel state below is stale by
+construction and was not re-taken.
 
 **Channel state on 2026-08-30**, from `ORIGIN`, `inherited` and ⚠ **stale by
 construction**: stable `152.0.7977.64`, beta `153.0.8010.12`, dev

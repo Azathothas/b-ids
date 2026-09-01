@@ -34,11 +34,14 @@ mod provenance;
 pub mod fixture;
 pub mod http;
 pub mod http2;
+pub mod instant;
 pub mod tls;
 
 pub use error::Defect;
-pub use id::{PlatformToken, ProfileId};
-pub use profile::{Browser, Captured, Channel, Digests, Os, Platform, Profile, Raw, RecordLayer};
+pub use id::{PlatformToken, ProfileId, version_order};
+pub use profile::{
+    Browser, Captured, Channel, Digests, Os, Platform, Profile, Raw, RecordLayer, Trust,
+};
 pub use provenance::{Provenance, ProvenanceEntry, ProvenanceKind};
 
 /// The schema identifier every profile carries, and the only value this version

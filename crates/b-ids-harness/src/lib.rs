@@ -16,7 +16,9 @@
 //! - ⛔ **TLS is not terminated by DEFAULT.** Completing a handshake can
 //!   change what a client offers, so the raw surface stays the default and
 //!   `--ca-out` is how a caller opts into the only surface that reaches a
-//!   browser's HTTP/2.
+//!   browser's HTTP/2. ⚠ **On one browser it changed nothing**, measured by
+//!   [`modes`] on 2026-09-01; the default stays, because the reason for it is
+//!   that the answer is a measurement per build rather than a property.
 //!
 //! # The rule this crate is built around
 //!
@@ -27,21 +29,27 @@
 //! an error that throws it away.
 
 pub mod bytes;
+pub mod fuzz;
 pub mod h2;
 pub mod hello;
 pub mod hpack;
 pub mod listener;
+pub mod modes;
 pub mod note;
 pub mod rebuild;
 pub mod sampling;
 pub mod select;
 pub mod tls;
 
-pub use bytes::{Cursor, hex, unhex};
+pub use bytes::{Cursor, hex, sha256, unhex};
+pub use fuzz::drive_every_parser;
 pub use h2::{Http2Capture, RawFrame};
 pub use hello::{HelloCapture, parse_record};
 pub use listener::{
     BindRefused, CAPTURE_SCHEMA, Capture, Config, Oracle, Protocol, Termination, parse_bind,
+};
+pub use modes::{
+    Comparison, FieldComparison, Split, Stability, Verdict, comparable, compare, resumption_split,
 };
 pub use note::Note;
 pub use rebuild::{Rebuilt, differences, rebuild};

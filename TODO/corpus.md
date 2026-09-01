@@ -13,7 +13,7 @@ browser. One browser is a weekend; the matrix is the thing anybody uses.
 ## CORPUS-01. Content-addressed, append-only, never edited in place
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** corpus, **Priority** P1, **Effort** M, **Status** open
+**Category** corpus, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -60,6 +60,186 @@ sh scripts/common/check-corpus.sh
 Passing means: every profile validates, every `supersedes` names a profile that
 exists, no committed profile has ever been modified after its first commit, and
 the check is run over the whole history rather than the working tree.
+
+### Closing
+
+**Closed 2026-09-01.** ⭐ **The corpus is not empty any more.** One profile,
+measured off Chrome `151.0.7922.76` on this machine, with the bytes it was read
+from beside it.
+
+```text
+$ sh scripts/common/check-corpus.sh
+corpus ok: 1 profile(s), nothing edited after publication, index and
+pointers agree with the tree.
+rc=0
+```
+
+```text
+$ cargo test -p b-ids-corpus corpus
+running 22 tests
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+```
+
+#### What was built, and where each of the three words in the title is enforced
+
+| the word | what enforces it |
+| --- | --- |
+| **content-addressed** | `corpus/v1/index.json` carries the SHA-256 and the byte count of every published file. `Store::verify` recomputes both. A version number that does not pin its bytes pins nothing. |
+| **append-only** | `Store::add` refuses a route that already holds a profile, and names `supersedes` as what to do instead. |
+| **never edited in place** | ⛔ **Not a question the working tree can answer**, because an edited file and a file that was always that way are identical on disk. `scripts/common/check-corpus` asks git, over the whole history, with `--diff-filter=MDR`. |
+
+The layout is the one the entry specified, and it is derived in one place,
+`b_ids_corpus::route`:
+
+```text
+corpus/v1/chrome/stable/win64/151.0.7922.76.json
+raw/v1/chrome/stable/win64/151.0.7922.76.hello.hex
+```
+
+#### ⭐ The first profile, and the conditions it was taken under
+
+[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh) is
+the script that took it, so the run is repeatable rather than a transcript.
+What it reported:
+
+```text
+chrome 151.0.7922.76 exited=false elapsed_ms=45048 profile_removed=true
+b-ids-harness: 6 of 8 handshake(s) completed, from 7 accepted connection(s)
+connections recorded: 7
+7 connection(s): 1 cold, 4 resumed, 1 further cold, 1 abandoned
+```
+
+⭐ **That split is the inherited trap reproducing exactly**, on a different
+browser build from the one it was measured on: the navigation opened seven
+sockets, one carried no HTTP/2 at all, and four resumed.
+[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 has the
+original reading. The profile is built from the cold one and nothing else is
+averaged into it.
+
+The conditions, which are part of the result:
+
+| | |
+| --- | --- |
+| host | Windows 11 `10.0.26200.9168`, `x86_64`, native |
+| browser | Chrome `151.0.7922.76`, stable, branded, headful |
+| trust | ⚠ `spki-pin`. One key, for one launch, no trust store changed. |
+| header values | recorded, deliberately. Below. |
+| taken | 2026-09-01T08:26:33Z, from the harness's own clock at the moment the connection was accepted |
+
+#### ⚠ Header values were recorded, and that is a decision rather than a default
+
+The default capture shape is names only, and open question 3 says to keep it and
+take a coherence capture with `--header-values` deliberately. A published
+profile is that case: **four of the validator's eight checks read a header
+value**, so a corpus profile taken under the default is one the validator cannot
+check. Taken with values, three of them run and pass:
+
+```text
+$ b-ids-validator corpus/v1/chrome/stable/win64/151.0.7922.76.json
+ok    version
+ok    platform
+ok    brand
+SKIP  handshake -- deciding whether this hello came from a 151 build needs a per-build corpus to compare against, and none exists yet
+ok    grease
+SKIP  encoding -- the caller did not say what the consuming client can decode
+SKIP  absence -- the caller named no target stack
+ok    provenance
+```
+
+⚠ **The three skips are structural rather than a gap in this profile.** Two want
+a caller to name a target stack, and one wants a second profile of the same
+build to compare against. `CORPUS-02` is what produces the second.
+
+#### ⭐ Open question 1 is answered, and it was answered by placement
+
+The credential rule's third door is the decrypted first message a terminated
+capture holds. The conversion writes it into `raw.connection_hex`, which is the
+field `b_ids_schema::Raw::check` already scans for a `cookie` or `authorization`
+header line, so **the refusal fires at the moment a capture becomes a profile**,
+which is what the recommendation asked for. No new rule was written: the
+existing one was routed through.
+
+⛔ **The bytes are never edited to make the refusal go away.** A profile that
+carries one is refused whole, and the operator decides what to do with the
+capture.
+
+#### What else this entry had to build, and why each was in the way
+
+| | why it could not be skipped |
+| --- | --- |
+| `captured.trust`, a four-value enum | ⛔ A measurement carries its conditions. Every capture goes through a per-launch key pin, `HARNESS-10` exists to measure whether that changed the answer, and it has nothing to compare across unless every profile records it. `Profile::check` refuses `not-applicable` on a profile carrying both a hello and HTTP/2 frames, because those frames arrived inside the session that hello opened. |
+| `captured.switches` | Every switch the browser was given is a condition of what was captured through it, and the driver already recorded them for nobody. |
+| `Capture::at`, and `harness-capture/4` | `captured.at` is never optional, so something has to produce it. ⛔ Stamped by the thing that took the capture: a reader that stamped one later would record when it read the file. |
+| `b_ids_schema::instant` | The formatter lives beside the checker that validates the shape. Two modules, one writing the format and one validating it, is two places for the format to be defined. |
+| `RawFrame::wire_hex` | `raw.http2_frames_hex` needs the frames back as bytes, and the frame head layout already lives in `h2.rs`. ⛔ It writes the DECLARED length and the ARRIVED payload even where they disagree, because that is what the wire carried. |
+| `sha256` moved to `bytes.rs` | It had two callers with unrelated jobs: the certificate pin and the content address. A digest computed in two places is two places for it to be computed differently, in the one field whose purpose is that two parties agree. |
+
+#### ⚠ Two things the secret scan refused, and the rule was not widened
+
+The first profile made `check-no-secrets --public` red, exactly as `TOOL-03`
+predicted it would for a different shape. Two more narrow exclusions, both
+halves, each by name or by path-and-shape:
+
+- a hex run assigned to an identifier named `sha256`, which is a declared
+  content address and the same shape as the `checksum` exclusion already there;
+- a line under `corpus/` or `raw/` that is **nothing but** a quoted lower-case
+  hex run and an optional comma, which is how pretty-printed JSON writes an
+  element of `http2_frames_hex` and is the one place the field name is on a
+  different line from the value.
+
+⛔ **Mutation-proved, both halves, exit codes read unpiped.** A 48-hex value
+planted inside the corpus profile under a field named `planted_token` is still
+refused by both:
+
+```text
+$ sh scripts/common/check-no-secrets.sh --public
+== a long hex identifier ==
+corpus/v1/chrome/stable/win64/151.0.7922.76.json:3:  "planted_token": "deadbeef...",
+⛔ 1 category/categories matched.
+rc=1
+```
+
+⚠ The value above is abbreviated at the ellipsis for the same reason `TOOL-03`'s
+block is: written out it is a credential-shaped string in a tracked file, which
+is what the check refuses.
+
+⭐ **And those bytes have a second gate**, which is what makes the array
+exclusion acceptable: `Raw::check` decodes the recorded bytes and refuses the
+profile if they spell out a credential header. The one class of credential that
+could hide inside a frame array is the one already checked by the model itself.
+
+#### ⚠ What is NOT in the first profile, and is not hidden
+
+| | |
+| --- | --- |
+| `digests` | empty. Nothing in this tree computes JA3 or JA4 yet; `VALID-04` is the entry that does, with published test vectors. A digest from an unverified implementation would be a fabricated field. |
+| `raw.record_layer` | `null`. The harness does not read the record layer as its own block, and deriving one here from bytes this crate happens to hold would be a derivation wearing a measurement's label. |
+| a second platform, a second browser, a second build | `CORPUS-02`. One profile is not a matrix and this entry never claimed to be one. |
+
+#### The gate
+
+```text
+$ pwsh -NoProfile -File scripts/common/check-gate.ps1 -Fast
+gate ok: 20 passed, but 1 SKIPPED on this host: check-twins
+```
+
+⚠ `check-twins` is skipped by `--fast`, and `check-corpus` is registered as a
+pair in it. Both halves were also run directly, which is where the figure below
+comes from rather than from the comparison:
+
+```text
+$ sh scripts/common/check-corpus.sh --json
+{"schema":"check-corpus/1","corpus":true,"profiles":1,"edits":0,"problems":0}
+sh exit=0
+$ pwsh -NoProfile -File scripts/common/check-corpus.ps1 -Json
+{"schema":"check-corpus/1","corpus":true,"profiles":1,"edits":0,"problems":0}
+ps exit=0
+```
+
+⛔ **The history leg was mutation-proved in a throwaway repository**, because
+this tree had nothing committed under `corpus/` to edit yet. A published profile
+edited and committed a second time is refused by both halves, with `edits:1` and
+exit 1.
 
 ---
 

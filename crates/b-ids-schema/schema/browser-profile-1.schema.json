@@ -148,7 +148,9 @@
         "at",
         "method",
         "harness",
-        "operator"
+        "operator",
+        "trust",
+        "switches"
       ],
       "properties": {
         "at": {
@@ -163,6 +165,22 @@
         },
         "operator": {
           "type": "string"
+        },
+        "trust": {
+          "enum": [
+            "not-applicable",
+            "spki-pin",
+            "trust-store",
+            "verification-disabled"
+          ],
+          "description": "How the subject came to trust the harness. A condition of the measurement: a profile carrying both a ClientHello and HTTP/2 frames may not be not-applicable."
+        },
+        "switches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The switches the subject was launched with, in order. Every one is a condition of what was captured through it."
         }
       }
     },

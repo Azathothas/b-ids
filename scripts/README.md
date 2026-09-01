@@ -351,6 +351,36 @@ reading and
 [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) says what
 it owes.
 
+### `common/check-corpus.sh`
+
+Is the published corpus still append-only, and does every profile in it still
+agree with itself?
+
+⭐ **Two legs, and only one of them is a question this tree can answer.** The
+working tree cannot say whether a file was edited after it was published,
+because an edited file and a file that was always that way are identical on
+disk. That leg asks git, over the whole history, with `--diff-filter=MDR`: a
+modification breaks immutability, a deletion breaks "never delete a superseded
+profile", and a rename is a published route changing under a consumer who
+pinned it.
+
+⛔ **The second leg is delegated, not re-implemented.** Every profile validating,
+sitting at the route its own keys derive, publishing the bytes it says it
+publishes, and being listed in an index the tree derives to is the question
+`b-ids-corpus verify` answers. A second implementation of the layout rule in
+shell would be a second answer to where a profile lives.
+
+⚠ **The numbers come from a fixed status line.** That command prints
+`corpus=profiles:N problems:N` as its last line and its usage says so, which is
+the same discipline [`common/check-powershell.ps1`](common/) already follows.
+Parsing the prose above it would make every wording change a silent behaviour
+change.
+
+⚠ **Exit 2 is "could not run", twice over**: there is no corpus at all, or the
+per-profile leg needed cargo and did not get it. The gate reports both as a
+SKIP. ⛔ The git leg still decides a failure: a published file edited after its
+first commit is exit 1 whether or not cargo was there.
+
 ### `common/check-gate.sh`
 
 ⭐ **Run every local gate this host can run, in one command.** Part (a) of

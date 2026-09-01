@@ -17,7 +17,11 @@ members = ["crates/*"]
 # without this line vendor/rustls/rustls inherits from THIS table and the build fails on the
 # first key it does not carry. Measured 2026-09-01: "dependency.aws-lc-rs was not found in
 # workspace.dependencies". TODO/vendor.md, VENDOR-01.
-exclude = ["vendor"]
+#
+# ⚠ `fuzz` is here for the same reason and it is the second crate to need it.
+# It is a cargo-fuzz crate with its own edition and its own dependency set, and
+# it builds only on a nightly toolchain. TODO/harness.md, HARNESS-09.
+exclude = ["vendor", "fuzz"]
 
 [workspace.package]
 edition = "2024"

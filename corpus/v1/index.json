@@ -1,0 +1,27 @@
+{
+  "schema": "corpus-index/1",
+  "layout": "v1",
+  "profiles": [
+    {
+      "id": "chrome-151.0.7922.76-win64-stable",
+      "browser": "Chrome",
+      "version": "151.0.7922.76",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-09-01T08:26:33Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/win64/151.0.7922.76.json",
+        "sha256": "95f35b978683bd251d3d3010a25cd8abc787645f442f7e7c23dd0d8ee0bb5216",
+        "bytes": 15625
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/win64/151.0.7922.76.hello.hex",
+        "sha256": "5b9f1e59306496cf737da03c4ca520d98a3177029637c0b484941d7ab72a1355",
+        "bytes": 3542
+      }
+    }
+  ]
+}

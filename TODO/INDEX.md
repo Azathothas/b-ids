@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 84  open 49  blocked 0  done 35
+total 84  open 45  blocked 0  done 39
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
-| P1 | 13 | 0 | 23 | 36 |
-| P2 | 32 | 0 | 2 | 34 |
+| P1 | 10 | 0 | 26 | 36 |
+| P2 | 31 | 0 | 3 | 34 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **49** | **0** | **35** | **84** |
+| **all** | **45** | **0** | **39** | **84** |
 
 ---
 
@@ -38,7 +38,7 @@ total 84  open 49  blocked 0  done 35
 | CI-06 | P2 | M | open | No single source of any fact | [`ci.md`](ci.md) |
 | CI-07 | P2 | S | open | Exit 2 means could not run, and it is not a failure | [`ci.md`](ci.md) |
 | CI-08 | P2 | S | open | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
-| CORPUS-01 | P1 | M | open | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
+| CORPUS-01 | P1 | M | done | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
 | CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
 | CORPUS-03 | P2 | S | open | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
 | CORPUS-04 | P2 | M | open | Per-build trust-anchor lists, and a recommendation | [`corpus.md`](corpus.md) |
@@ -48,7 +48,7 @@ total 84  open 49  blocked 0  done 35
 | DOC-03 | P2 | S | open | There is no threat model, and publishing a corpus will need one | [`docs.md`](docs.md) |
 | DOC-04 | P2 | S | done | The founding brief is retired, and this entry records what replaced it | [`docs.md`](docs.md) |
 | DRIVER-01 | P1 | M | done | Resolve a browser, and drive it at a URL | [`driver.md`](driver.md) |
-| DRIVER-02 | P1 | M | open | Read the version that is serving, not the one that is published | [`driver.md`](driver.md) |
+| DRIVER-02 | P1 | M | done | Read the version that is serving, not the one that is published | [`driver.md`](driver.md) |
 | DRIVER-03 | P1 | S | done | Headless changes the User-Agent, and normalising it is reported | [`driver.md`](driver.md) |
 | DRIVER-04 | P2 | S | open | The root store a browser actually reads | [`driver.md`](driver.md) |
 | DRIVER-05 | P2 | M | open | Acquisition, with more than one way to get a build | [`driver.md`](driver.md) |
@@ -65,8 +65,8 @@ total 84  open 49  blocked 0  done 35
 | HARNESS-06 | P1 | S | done | Parse permissively, emit exactly | [`harness.md`](harness.md) |
 | HARNESS-07 | P1 | S | done | A browser opens sockets it abandons, and it resumes | [`harness.md`](harness.md) |
 | HARNESS-08 | P1 | S | done | One handshake is not a sample | [`harness.md`](harness.md) |
-| HARNESS-09 | P1 | M | open | Fuzz the parsers. A panic here is unacceptable | [`harness.md`](harness.md) |
-| HARNESS-10 | P2 | S | open | Check whether measuring changed what was measured | [`harness.md`](harness.md) |
+| HARNESS-09 | P1 | M | done | Fuzz the parsers. A panic here is unacceptable | [`harness.md`](harness.md) |
+| HARNESS-10 | P2 | S | done | Check whether measuring changed what was measured | [`harness.md`](harness.md) |
 | HARNESS-11 | P2 | M | open | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
 | HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |

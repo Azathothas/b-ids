@@ -35,9 +35,16 @@ fn listener_reads_the_committed_fixture_and_produces_the_committed_capture() {
     assert_eq!(captures.len(), 1);
 
     let mut capture = captures.into_iter().next().expect("one capture");
-    // ⚠ The peer port is chosen by the operating system, so it is not part of
-    // what the golden can assert. Everything else is.
+    // ⚠ The peer port is chosen by the operating system and the instant is a
+    // clock, so neither is part of what the golden can assert. Everything else
+    // is.
+    //
+    // ⛔ REDACTED FROM THE COMPARISON, never from the capture. Both fields are
+    // still recorded and still printed; a golden that carried either would fail
+    // on every run, and a golden that fails always is a golden somebody
+    // regenerates without reading.
     capture.peer = "REDACTED".to_owned();
+    capture.at = "REDACTED".to_owned();
 
     let produced = serde_json::to_string_pretty(&capture).expect("serialises");
     let golden_path = fixtures().join("client-hello.capture.json");

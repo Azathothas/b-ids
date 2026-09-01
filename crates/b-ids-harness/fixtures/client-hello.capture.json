@@ -1,6 +1,7 @@
 {
-  "schema": "harness-capture/3",
+  "schema": "harness-capture/4",
   "connection": 1,
+  "at": "REDACTED",
   "peer": "REDACTED",
   "protocol": "tls_raw",
   "bytes_read": 317,

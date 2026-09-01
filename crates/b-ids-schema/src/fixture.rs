@@ -15,7 +15,7 @@ use crate::http2::{Frame, Http2Half, SettingEntry, StreamPriority};
 use crate::tls::{Ech, Extension, Grease, KeyShare, Shuffle, TlsHalf};
 use crate::{
     Browser, Captured, Channel, Digests, Os, Platform, PlatformToken, Profile, ProfileId,
-    Provenance, ProvenanceEntry, ProvenanceKind, Raw, SCHEMA_ID,
+    Provenance, ProvenanceEntry, ProvenanceKind, Raw, SCHEMA_ID, Trust,
 };
 
 /// A profile that is well formed and internally coherent.
@@ -66,6 +66,15 @@ pub fn profile() -> Profile {
             method: "container".to_owned(),
             harness: "b-ids-harness 0.0.0".to_owned(),
             operator: "ci".to_owned(),
+            // ⚠ Not `not-applicable`, and it cannot be: this fixture carries
+            // both a `ClientHello` and HTTP/2 frames, and `Profile::check`
+            // refuses that combination under a trust configuration that says no
+            // handshake completed.
+            trust: Trust::SpkiPin,
+            switches: vec![
+                "--user-data-dir=(throwaway)".to_owned(),
+                "--headless=new".to_owned(),
+            ],
         },
         tls: tls(),
         http2: http2(),
