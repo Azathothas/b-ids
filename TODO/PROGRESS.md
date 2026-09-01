@@ -105,6 +105,28 @@ now and the row costs 54 seconds. ⛔ No pair was dropped; the file compared 18
 at the start of this session and compares 22 now.
 
 
+### ⛔ The remote went red on the first push, and the finding is this session's own
+
+`validate` passed on both hosts. `ci` failed on both, for one reason: the gate
+transcript pasted into `CI-01`'s closing carries the absolute path of the
+repository root on its first line, and `check-no-secrets --public` refuses an
+absolute home path in a public repository.
+
+⛔ **The local gate would have caught it and was not re-run.** The block was
+filled in AFTER the run it pastes, and only the prose checks were run over the
+edit. ⚠ That is the discipline this repository already states: a unit of work
+whose content changed re-passes the gate against what it is NOW, not against
+what it was when the transcript was taken.
+
+⭐ **Fixed by eliding the path and marking the substitution**, the way the
+`TOOL-04` paste already elides its scratch directory. ⛔ The rule was not
+widened for a pasted transcript.
+
+⚠ **This session therefore has TWO commits rather than one.** Amending the
+first would need a force push, and "no force push, no history rewrite" is a
+standing ruling. Fixing forward is what
+[`RULES.md`](RULES.md) section 10 step 11 asks for.
+
 ## The three review passes, and what each one swept
 
 ⛔ **Three different questions, not one sweep written up three times.**
@@ -202,9 +224,10 @@ commit on the default branch.
 
 ⚠ **Take these in order.**
 
-1. ⭐ **`CORPUS-02`.** Run `capture.yml` on the default branch, take the
-   `linux64` artefact, add it to the corpus with `b-ids-corpus add`, and close
-   the entry. ⭐ **Two profiles of ONE build on TWO platforms is the single
+1. ⭐ **`CORPUS-02`.** Run `capture.yml` on the default branch with the
+   authenticated `gh`, download the `linux64` artefact, add it with
+   `b-ids-corpus add`, and close the entry. ⭐ The operator ruled this route
+   2026-09-01: `gh` is authenticated, and `CI-04` is not built first. ⭐ **Two profiles of ONE build on TWO platforms is the single
    highest-value capture available**: it decides whether the TLS half is
    platform-independent, and `VALID-01`'s handshake check reports
    `NotCheckable` until it exists. ⚠ The one profile there today came from a
@@ -218,8 +241,8 @@ commit on the default branch.
    contract: numeric bounds the schema does not express, and a credential's
    presence recorded without its value.
 4. **`CI-02`** and **`CI-04`**. Staleness on a schedule, and a run that finds a
-   change opening a pull request. ⚠ `CI-04` needs the write permission named in
-   the open question below.
+   change opening a pull request. ⭐ `CI-04`'s write is ruled: job-scoped, on the
+   collect job alone, with the run's own token. See the settled list.
 5. **`SCHEMA-08`**, then `PUB-03`, `PUB-01`, `PUB-02`, `PUB-07`.
 6. **`SCHEMA-12`**, the six formats that need a decoder, once `SCHEMA-08` has a
    generator to extend.
@@ -233,40 +256,44 @@ unbranded builds).
 
 ## Open questions for the operator
 
-⛔ **None of these blocks anything.** Each carries a recommendation, so agreeing
-costs nothing and a session that does not get an answer proceeds on the
-recommendation and records that it did. [`RULES.md`](RULES.md) section 10.
+⭐ **None.** All three were put to the operator interactively at the close of
+2026-09-01 and all three were answered; the rulings are in the section below.
 
-### 1. ⚠ A collect job that opens a pull request needs write permission
-
-Every workflow in this tree declares `permissions: contents: read`, which is
-right for an assertion and insufficient for `CI-04`. A run that captured thirty
-profiles and can only print them has not delivered anything.
-
-**Recommendation: grant it at the JOB rather than the workflow**, as
-`contents: write` and `pull-requests: write` on the collect job alone, using the
-run's own `GITHUB_TOKEN` and ⛔ never a personal access token. Every capture lane
-keeps `contents: read`, so a compromised browser download cannot reach the
-repository. ⚠ It also needs the repository setting that lets Actions open pull
-requests, which is the operator's to enable and cannot be done from the tree.
-
-### 2. ⚠ NEW. The first runner capture will be added by hand, and that is a gap
-
-`CI-04` is what makes a capture arrive as a reviewable pull request, and it is
-not built. Until it is, closing `CORPUS-02` means downloading an artefact and
-running `b-ids-corpus add` locally.
-
-**Recommendation: do it by hand once, and say so in the profile's own
-provenance.** ⭐ The alternative is building `CI-04` before there is a single
-capture to review, which is machinery ahead of its consumer. ⚠ The profile is a
-real measurement either way: it is taken on the runner by the same script, and
-only the transport is manual.
+⚠ **A later session that finds a fork writes it here with a recommendation
+attached and keeps working.** [`RULES.md`](RULES.md) section 10 names "this
+needs a decision from the operator" as one of the four sentences that is not a
+reason to stop. ⛔ Ask at the very START of a session if proceeding under any
+assumption would be unsafe; otherwise record it here and proceed on the
+recommendation.
 
 ---
 
 ## Settled, and not to be raised again
 
 **Ruled by the operator 2026-09-01.**
+
+- ⭐ **The write for `CI-04` is JOB-SCOPED.** `contents: write` and
+  `pull-requests: write` on the collect job alone, using the run's own
+  `GITHUB_TOKEN`. ⛔ Never a personal access token: a long-lived credential in a
+  public repository's automation outlives every run it was issued for. ⚠ Every
+  capture lane keeps `contents: read`, so a browser this project downloaded and
+  ran can never reach the repository. ⚠ It also needs the repository setting
+  that lets Actions create pull requests, which is the operator's to enable and
+  cannot be done from the tree.
+- ⭐ **The first runner capture is fetched with `gh` and added by hand.** The
+  authenticated CLI runs `capture.yml`, downloads the `linux64` artefact, and
+  `b-ids-corpus add` writes it. ⛔ Do not build `CI-04` first: that is machinery
+  ahead of the single capture it would review. ⚠ The profile is a real
+  measurement either way, taken on the runner by the same script; only the
+  transport is manual and the profile's own provenance says so.
+- ⭐ **The one laptop profile stays, unchanged.** ⚠ And the operator has ruled
+  something broader with it: **this project is in beta, nobody consumes its
+  data, and the commit history will be reset once the project satisfies the
+  operator.** ⛔ That is the OPERATOR'S action at a time of their choosing and
+  it licenses nothing for a session: no force push, no history rewrite, and the
+  corpus stays append-only in every change an agent makes. ⭐ What it does settle
+  is that a laptop capture sitting beside runner captures is not a problem to
+  engineer around today.
 
 - **`SCHEMA-08` is SPLIT.** It keeps the generator plus the five formats whose
   round trip this tree can prove: JSON, NDJSON, CSV, TSV and Markdown.

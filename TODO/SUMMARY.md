@@ -56,3 +56,5 @@ interrupt.**
 | entries | total 91, open 43, blocked 0, done 48 |
 | the corpus | one profile, unchanged. ⚠ One source, not two. |
 | published | nothing |
+| open questions | ⭐ none. All three were put to the operator at the close and answered; the rulings are in [`PROGRESS.md`](PROGRESS.md). |
+| commits | two. ⚠ The first pushed a gate transcript carrying an absolute home path, which the remote refused on both hosts; the second elides it. ⛔ Amending would need a force push, which is refused. |

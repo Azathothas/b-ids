@@ -69,7 +69,7 @@ written.
 
 ```text
 $ sh scripts/common/check-gate.sh --strict
-check-gate: C:/Users/AjamX/Downloads/b-ids
+check-gate: (the repository root)
 
   ok    check-docs
   ok    check-markers
@@ -99,6 +99,13 @@ check-gate: C:/Users/AjamX/Downloads/b-ids
 
 gate ok: all 25 checks passed
 exit=0
+
+⚠ **One substitution, and it is marked**: the first line prints the absolute
+path of the repository root, and `check-no-secrets --public` refuses an absolute
+home path in a public repository. ⛔ The rule was not widened for a pasted
+transcript. It was found by the remote gate rather than the local one, because
+this block was filled in AFTER the local run and only a subset of the checks was
+re-run over it.
 
 ⚠ **This is the run of 2026-09-01T15:34:31Z to 15:50:19Z**, on the tree as it
 is committed, with nothing else running. ⛔ An earlier attempt at this paste was

@@ -16,7 +16,7 @@ than a document about the project.
 | the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-01T12:32:05Z to 2026-09-01T15:20:00Z, unattended, ended by operator interrupt. |
 | the resume point | The work order's item 1, **`CORPUS-02`**. Run `capture.yml` on the default branch, take the `linux64` artefact, add it with `b-ids-corpus add`, and close the entry. |
 | in flight | ⛔ Nothing. Seven entries closed in place with their acceptance commands run; `CORPUS-02` left open with its blocker named and what landed recorded under it. |
-| the state of the tree | Clean and pushed on `main`. The gate passes 25 checks with `check-twins` alongside, both halves of all 22 pairs. |
+| the state of the tree | Clean and pushed on `main`, in two commits. The gate passes 25 checks with `check-twins` alongside, both halves of all 22 pairs. ⚠ The first push went red on both hosts over an absolute path in a pasted transcript; the second fixes it. |
 | the paste | below |
 
 ---
