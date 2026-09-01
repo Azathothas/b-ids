@@ -9,12 +9,12 @@ this one is stale.
 
 ---
 
-## 2026-09-01, 03:47:48Z to 07:00Z
+## 2026-09-01, 03:47:48Z to 07:45Z
 
 | row | measured |
 | --- | --- |
-| Elapsed | 3h12m, from the recorded start instant to the last commit |
-| Commits | the session work squashed to 1, then 3 more: the review record, a red-build fix, and this table. 4 pushed on `main` from `bd02855`. |
+| Elapsed | 3h41m from the recorded start instant to the last work commit `1e0d30a`, and 3h57m to the remote going green. |
+| Commits | the session work squashed to 1, then 3 more: the review record, a red-build fix, and this table. 4 pushed on `main` from `bd02855`, and one rerun of a Windows toolchain race that is a runner fault. |
 | Work | **7 entries completed**, 15 effort points. 0 deferred, 0 failed. Operator interrupt ended the session before the twenty-point quota. |
 | Changes | 273 files changed, 73,058 insertions, 343 deletions. ⚠ 210 of those files are the vendored tree; 63 are this project's own. |
 | Size | 43,268 lines tracked outside `references/` and `vendor/` |
