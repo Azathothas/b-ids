@@ -16,10 +16,11 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session started 2026-09-01T07:58:00Z
-baseline        the gate passes: 21 checks and check-twins, both halves of
-                every pair. 251 tests in 27 files across 5 crates.
-entries         total 84  open 43  blocked 0  done 41
+session ran      2026-09-01T12:32:05Z to 2026-09-01T15:20:00Z, unattended,
+                 ended by operator interrupt
+baseline         the gate passes: 25 checks and check-twins, both halves of
+                 every pair. 256 tests in 28 files across 5 crates.
+entries          total 91  open 43  blocked 0  done 48
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -29,74 +30,80 @@ hand to make a check pass; fix whichever file is wrong.
 
 ---
 
+## The correction that reordered everything
+
+**The operator ruled 2026-09-01 that this project is GitHub CI, 100%.** The
+previous session captured its one profile on a developer's Windows laptop and
+ordered continuous integration last. That was the wrong way round: a corpus of
+browser fingerprints whose captures depend on one person's machine cannot cover
+the matrix, cannot be reproduced by anybody else, and cannot be scheduled.
+**Captures belong on runners.**
+
+Three consequences, each of which moved an entry:
+
+- a runner is **disposable**, so installing a root certificate into its trust
+  store is free and undoes itself. `HARNESS-14` is that job.
+- a runner has **no browser** unless something fetches one, so `DRIVER-05` was
+  the blocker rather than a later nicety. ⚠ Except `ubuntu-latest`, which ships
+  Chrome preinstalled and is therefore the first lane in the matrix.
+- the capture path already works headless and the fuzz run already proved the
+  Linux-container route, so none of this was speculative.
+
+⛔ **The one profile in the corpus stays.** It is a real measurement with its
+conditions recorded and the corpus is append-only. It is simply not the model
+for how the next hundred arrive.
+
+---
+
 ## What this session did
 
-**2026-09-01. The corpus stopped being empty.** Six entries closed, and the
-first of them is the one every other was waiting on.
+**Seven entries closed, seven authored, and four checks that were reporting
+green over questions they had not asked.**
 
-### ⭐ There is a profile, and it is a measurement
-
-`corpus/v1/chrome/stable/win64/151.0.7922.76.json`, with the `ClientHello` it
-was read from at `raw/v1/chrome/stable/win64/151.0.7922.76.hello.hex`. Chrome
-`151.0.7922.76`, headful, on this Windows host, captured by this project's own
-harness on 2026-09-01T08:26:33Z.
-
-⭐ **Its raw block reproduces both measured halves exactly**, which is asserted
-rather than intended: `b-ids-corpus verify` re-parses the stored bytes and
-compares. Nothing in the TLS or HTTP/2 halves came from anywhere but the wire.
-
-⭐ **And the first inherited value has left
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md).** The priority
-block is published, in a profile, beside the frame bytes it was read from.
-
-### ⚠ Canonical on the default branch, published on a branch that does not exist yet
-
-⭐ **These are two different things and both are specified.** `CORPUS-01` puts
-the canonical corpus on the default branch as reviewable JSON, which is what
-makes an automated capture something a person can read as a diff. `PUB-02` is
-the orphan data branch that carries only generated artefacts, and `SCHEMA-08`,
-`PUB-03` and `PUB-04` are the formats, the routes and the pasteable snippets.
-
-⛔ **Nothing is published yet**, so what is on the default branch today is the
-whole of it. [`../README.md`](../README.md) states the split where a consumer
-will look for it.
-
-### What exists now that did not
+### The pipeline a push now runs
 
 | | |
 | --- | --- |
-| ⭐ `b-ids-corpus` | turns the cold connection of a navigation into a profile, writes it once, refuses a route that already holds one, and derives its index from the tree rather than appending to one |
-| ⭐ `check-corpus` | asks git, over the whole history, whether a published file was ever modified, deleted or renamed. The working tree cannot answer that. |
-| `check-routes` | no published single-value file ends with a newline, and `--assert-latest-is-stable` |
-| ⭐ `b-ids-driver versions` | the build that is SERVING, read from the rollout fraction, with what the naive query would have said printed beside it |
-| ⭐ `b_ids_harness::modes` | whether the capture surface changed what it measured, with per-connection draws told apart from mode effects |
-| `fuzz/` and `hostile` | one million coverage-guided runs, and 6767 mutations that run on every host |
-| `experiments/` | two measurements, each taken by a script anybody can re-run |
+| ⭐ `b-ids-corpus validate` | the coherence checks over what is PUBLISHED, plus the cross-profile `shared_handshakes` no per-profile invocation can reach |
+| ⭐ `check-validate` | that answer, plus a determinism leg: the generator runs twice over a throwaway copy and the bytes are compared |
+| ⭐ `check-line-endings` | extracted from inside both gate halves, reading the working-tree column as well as the index one |
+| ⭐ `check-workflows` | four structural rules over every workflow, with a fixture that breaks each one |
+| ⭐ `check-coverage` | every planned capture cell reported as captured, absent or not attempted |
+| ⭐ `validate.yml` | every push, two hosts, `CARGO_NET_OFFLINE` on every assertion, whole history fetched |
+| ⭐ `capture.yml` | the matrix, fanned out from a plan in the tree, every lane failing alone |
+| ⭐ `b-ids-driver::acquire` | routes tried in order, the one that answered recorded with the digest of what arrived |
 
-### ⭐ Three measurements, and every one of them has its conditions
+### ⛔ Four checks were green over questions they had not asked
 
-| what | answer |
+| the check | what it was not checking |
 | --- | --- |
-| does terminating the handshake change what the browser offers before it | ⭐ **No.** 17 of 19 TLS fields agree across three rounds, none differ, two carry a per-connection draw and cannot be compared. One browser, one build, one host. |
-| is the inherited version-discovery defect real | ⭐ **Yes, to the digit.** Highest known `153.0.8010.12` at fraction `0.005`; the build at full rollout `152.0.7977.65`; the automation index `152.0.7977.64`. The two first-party sources still disagree by one patch component, and beta's two sources agree, which is the control. |
-| can any parser be made to panic | ⭐ **Not in a million runs.** No crash, no timeout. libFuzzer discovered the HTTP/2 preface on its own. |
+| `check-corpus` | its history leg ran under `actions/checkout`'s default one-commit clone, so `git log --diff-filter=MDR` saw a single commit and answered "nothing was edited" on every CI run since it was written. Reproduced on a `--depth 1` clone. |
+| the gate's line-endings filter | it read git's INDEX column alone. It found `scripts/common/check-routes.ps1` LF on disk against its own `eol=crlf` on its first run, and fixing that produced no git diff at all. |
+| `check-twins` | it could not tell a real drift from a tree that moved under it. It proved itself twice this session, once by accident. |
+| `mine-repo` | it exited before the clone when its API route was down, so a host that could clone and not reach the API got nothing |
 
-### ⚠ What the version measurement says about this project's own corpus
+### ⭐ Three findings in this session's own new code
 
-⛔ **The one profile is a major behind what stable is serving.** Chrome
-`151.0.7922.76` is captured; `152.0.7977.65` is at full rollout. Nothing said so
-before `DRIVER-02` existed. `DRIVER-05` is acquisition and `CORPUS-02` is the
-matrix; between them they close it.
+- ⛔ **An uninitialised awk variable used as a SUBSCRIPT is the empty string, not
+  zero.** `check-workflows` reported a job that does not exist, once per file.
+  ⚠ Its PowerShell twin never had it, because it appends to a list.
+- ⛔ **jq on this Windows host writes CRLF.** `check-coverage`'s human report
+  dropped the word `required` from every required row while its JSON, which does
+  not carry that field, matched its twin exactly. ⚠ A divergence the comparison
+  structurally could not see.
+- ⛔ **The driver cannot link the harness.** Its manifest keeps `b-ids-harness`
+  as a dev dependency on purpose, so `acquire_with` takes the digest as a second
+  injected function rather than hashing the bytes itself.
 
-### ⚠ Traps paid for, each written where it bit
+### ⭐ `check-twins` costs 636 seconds now rather than 1056
 
-| the trap | what it cost |
-| --- | --- |
-| ⛔ a text writer that translates newlines for the platform | Eight files silently became CRLF in a tree that declares `eol=lf`. ⚠ And `check-gate`'s line-endings filter reads the INDEX column, so a modified-but-unstaged file passes it. `.gitattributes` normalises on commit, so nothing reached the history; the working tree was wrong and the gate could not see it. |
-| ⛔ `git ls-files` answers a path outside the repository with an EMPTY LIST | `check-routes` reported "ok, 0 files" over the fixture written to prove it could refuse. A route tree that yields no single-value file is exit 2 now. |
-| ⛔ a pinned `rust-toolchain.toml` applies to a fuzz crate under the repository root | A nightly IMAGE is not enough: rustup fetches the pinned stable and `-Z sanitizer` is then refused. `RUSTUP_TOOLCHAIN` has to be set explicitly, and `CI-03` will hit this. |
-| ⚠ a single terminating run produced 0 cold connections and 5 resumed | More connections do not buy more cold handshakes; more RUNS do. A cold hello is sampled per launch, not per connection. |
-| ⛔ `check-twins` runs the two halves of a pair at DIFFERENT INSTANTS | A tree that changes underneath it reports a drift that is not one. `repo.has_codegraph` came back `sh=false ps=true` because `.codegraph/` was created between the two probes; both halves use the identical rule and both answer `true` now. ⚠ A drift is re-checked by re-running the pair before it is believed, and a run whose tree moved is not evidence. |
+⛔ **Measured with `--timings` before and after rather than estimated.** 970
+seconds across twenty pairs, of which the `check-gate` row alone was 431: that
+row runs both gates in full, and each gate re-runs the fourteen checks that
+already have a row of their own. A gate running inside `check-twins` skips them
+now and the row costs 54 seconds. ⛔ No pair was dropped; the file compared 18
+at the start of this session and compares 22 now.
+
 
 ## The three review passes, and what each one swept
 
@@ -106,120 +113,121 @@ specification. ⭐ All three found something.
 
 ### 1. The door sweep: what other door reaches this code
 
-Swept: every caller of `profile_from` and `Store::add`, every construction of a
-`Profile` anywhere in the tree, every call site of `HeaderSet::record`, every
-writer under `corpus/` and `raw/`, every caller of `version_order` and of
-`sha256`, and every reader of `captured.trust`.
+Swept, by grep rather than from memory: every caller of `acquire_with` and
+`plan`, every reader and writer of `captured.acquisition`, every construction of
+`Captured` in the tree, every registration of the five new checks in both gate
+halves and in the twin comparison, and every place the `COMPARED_DIRECTLY` list
+is read.
 
-⭐ **Confirmed, by grep rather than from memory:** exactly one production
-construction of a `Profile`, one write path into the corpus, one `.hex` writer,
-one implementation of the version ordering and one of the digest. The credential
-filter has one construction path and the store calls `check` before it writes.
+⛔ **Finding: nothing validated `captured.acquisition`.** The published schema
+constrains its route to an enum and its object to four required fields;
+`Profile::check` did not, so a profile could claim a route no driver can produce
+and a digest that is not one, and every check in this tree would have passed it.
+⭐ Fixed: the route is checked against a named list and the digest against the
+same 64-lower-case-hex shape the corpus index uses for every published file.
 
-⛔ **Finding: `captured.trust` was TYPED, not read.** It is the field
-`HARNESS-10`'s future comparison across profiles depends on, and the identity
-file it comes from was written by hand, so a profile could have claimed a trust
-store while the run used a pin and nothing in the bytes could contradict it.
-⭐ Fixed: `experiments/10-first-profile.sh` writes the identity file now, taking
-the trust configuration from the switch list the driver actually passed.
+⭐ **Confirmed, by counting:** four constructions of `Captured` and every one
+now names the field; five new checks and every one appears in both gate halves,
+in the `COMPARED_DIRECTLY` list and in `check-twins`; two implementations of the
+acquisition route list, and the one that can be compared against the schema is.
 
 ⭐ **What the other passes did not look at:** the callers. Both of the others
 read what was written; this one grepped for what was not enumerated.
 
 ### 2. The guard mutation: can the new guards actually fail
 
-Swept, each planted and each exit code read unpiped: the corpus semantic leg, the
-corpus git leg in a throwaway repository, both new secret-scan exclusions in both
-halves, `check-routes` in four directions in both halves, the hostile-input
-suite, the `latest` pointer, and the frame re-encoder.
+Planted and read unpiped, each in both halves where a twin exists: the
+shallow-clone refusal, against a real `--depth 1` clone; the determinism leg,
+against an index writer made to append its process id; the tree-moved detection,
+by editing `TODO/` while the comparison ran; `check-workflows`, against a fixture
+that breaks each of its five rules exactly once; `check-coverage --require-rows`,
+against three browsers with no capture; `mine-repo` with one route down and with
+both; and the new `captured.acquisition` route check, disabled with `if false &&`
+and seen to take one test red.
 
-⛔ **Finding: two functions added this session had no test at all.** The ISO 8601
-formatter that fills `captured.at`, and the frame re-encoder that fills
-`raw.http2_frames_hex`. ⭐ Both now have one, and the formatter turned out to be
-correct including the 1900 and 2000 leap-century cases, which is the classic
-place to be wrong.
+⛔ **Finding: the determinism leg's message ran two findings onto one line.** A
+command substitution strips trailing newlines and the accumulator joined without
+one. Found by the mutation rather than by review, and fixed.
 
-⭐ **Finding, from the same mutation, and it is the more useful half:** dropping
-the reserved bit from the frame re-encoder made the new direct test fail and the
-**corpus suite still pass**, because the fixture's frames do not set that bit.
-The corpus rebuild is a real check that is blind to this class on this data,
-which is exactly why a direct test was needed rather than an indirect one.
+⛔ **Finding: `check-workflows` reported a job that does not exist**, once per
+file. `CI-03` carries the awk rule behind it. ⚠ Its PowerShell twin never had
+the defect, because it appends to a list rather than indexing an array.
 
-⚠ **Two guards were NOT mutated**, and saying so is the point: the reference
-importer's ordering, and the resolver refusing an executable no source could
-version. Neither was touched this session.
-
-⭐ **What the other passes did not look at:** whether a green result means
-anything.
+⚠ **Two guards were NOT mutated**, and saying so is the point: the `always()`
+rule fires on the fixture but has never been seen to pass over a `needs` on a
+job that does not fan out other than in this tree's own workflows, and
+`check-twins`'s human UNDECIDED banner is the same branch on the same two
+variables as its JSON and was proved only through the JSON.
 
 ### 3. The claim audit: which sentence is not backed by an artefact
 
-Swept: every number and every pasted block in the six closings, this file,
-[`SUMMARY.md`](SUMMARY.md), the changelog, and the documents the work made stale.
+Swept: every number and every pasted block in the seven closings, this file, the
+changelog, and the two documents the work made stale.
 
-⛔ **Three findings, all in this session's own writing.**
+⛔ **Finding: a fabricated block, caught before it was committed.** `CI-01`'s
+closing was written with a gate transcript assembled by hand from a run whose log
+two processes had written into. It was replaced with a marker and then with the
+real run below.
 
-- **A number quoted from an assertion's floor rather than measured.** The hostile
-  corpus was written up as "over five thousand mutations", which is what the
-  assertion refuses below. Counted: **6767**. It had reached two files.
-- **A pasted suite count that moved after it was pasted.** `CORPUS-01` closed on
-  `22 passed`; `CORPUS-03` later added two tests to the same file. The block is
-  left as it was measured with the reason written under it, rather than
-  re-pasted as though it had always said 24.
-- ⛔ **A fabricated baseline line, in this file.** The state block was written as
-  "241 tests in 26 files" before anything was counted. Measured: **251 tests in
-  27 files across 5 crates**.
+⛔ **Finding: a pair count that was right when written and wrong when read.**
+"one was ADDED" and "three were added" were both counted against the file at the
+moment of writing. Counted from the tree: 18 pairs at the session's first commit
+and 22 now, with the timing figures taken over 20.
 
-⭐ **Two claims were checked and stood.** "Seventeen of nineteen fields agree,
-none differ" was counted out of the comparison output: 17, 2, 0. And the fuzz
-corpus figure of 856 files was counted rather than estimated.
+⛔ **Finding: a section number that names nothing.** This file cited
+`RULES.md` section 11 for a whole session; that file has ten sections and a
+settled list.
 
-⭐ **What the other passes did not look at:** the prose. A guard can be correct
-and mutation-proved while the sentence describing it carries a number nobody
-counted.
+⭐ **Claims checked that stood:** 970 seconds against the sum of the twenty rows;
+431 and 54 against the `check-gate` row before and after; 1056 and 636 against
+the two wall clocks; 84 files CRLF on disk of which 66 are under `references/`;
+5388 tracked files; 256 tests in 28 files.
 
 ---
 
 ## What is in progress
 
-⛔ **Nothing is half-edited.** Every entry this session touched is closed with
-its acceptance command run and its real output pasted.
+⛔ **Nothing is half-edited.** Every entry this session touched is closed in
+place with its acceptance command run, or left open with its blocker named.
+
+⚠ **`CORPUS-02` is open and it is the next thing.** Its apparatus is built - the
+plan file, the coverage check in both halves, and the fan-out that reads the
+plan - and no lane has run. ⛔ Closing it needs one run of `capture.yml` on a
+hosted runner and the `linux64` profile committed, which needs this session's
+commit on the default branch.
 
 ---
 
 ## ⭐ The work order
 
-⚠ **Take these in order.** Foundations first: there is one profile and one
-platform, so the next thing worth more than anything below it is a second of
-each.
+⚠ **Take these in order.**
 
-1. ⭐ **`CORPUS-02`**, the matrix. ⛔ **It is now the single thing in the way.**
-   One profile is not a corpus: `VALID-01`'s handshake check reports
-   `NotCheckable` because it needs a second profile of the same build to
-   compare against, `HARNESS-10`'s answer rests on one browser, and the one
-   profile there is describes a build a major behind stable. Start with the
-   cheapest lane that is not this host: Edge is already resolved here and its
-   capture path is identical.
-2. **`DRIVER-05`**, acquisition. `DRIVER-02` can now say which build should be
-   captured and nothing can fetch it, so the corpus can only ever describe what
-   somebody happened to install.
-3. **`SCHEMA-08`**, every generated format from one generator. ⚠ Read open
-   question 1 first: its nine-format list needs six encoder-and-decoder pairs or
-   six dependencies, and that is a decision rather than a detail.
-4. **`PUB-03`**, then `PUB-01`, `PUB-02`, `PUB-07`. The corpus has routes and
-   an index and nothing serves them.
-5. **`CI-01` through `CI-04`**, after which the corpus maintains itself.
-   ⚠ `CI-03` needs `RUSTUP_TOOLCHAIN` set for the fuzz lane; `fuzz/README.md`
-   carries why.
-6. **`VALID-03`**, a family the resolver cannot produce. The reference importer
-   already reports one in somebody else's tree.
-7. **`LIB-01`** and **`LIB-02`**, the only entries that prove the corpus is
-   usable rather than merely accurate.
+1. ⭐ **`CORPUS-02`.** Run `capture.yml` on the default branch, take the
+   `linux64` artefact, add it to the corpus with `b-ids-corpus add`, and close
+   the entry. ⭐ **Two profiles of ONE build on TWO platforms is the single
+   highest-value capture available**: it decides whether the TLS half is
+   platform-independent, and `VALID-01`'s handshake check reports
+   `NotCheckable` until it exists. ⚠ The one profile there today came from a
+   laptop, so it is one source rather than two.
+2. **`DRIVER-04`**, then **`HARNESS-14`**. The root store a browser actually
+   reads, then the per-launch pin measured against a real trust anchor on a
+   disposable runner. ⚠ `DRIVER-04` lands first: on Windows the store a browser
+   reads is not obviously the one `certutil` writes to, and measuring against
+   the wrong store gives a confident wrong answer.
+3. **`SCHEMA-13`** and **`SCHEMA-14`**, both small and both about the published
+   contract: numeric bounds the schema does not express, and a credential's
+   presence recorded without its value.
+4. **`CI-02`** and **`CI-04`**. Staleness on a schedule, and a run that finds a
+   change opening a pull request. ⚠ `CI-04` needs the write permission named in
+   the open question below.
+5. **`SCHEMA-08`**, then `PUB-03`, `PUB-01`, `PUB-02`, `PUB-07`.
+6. **`SCHEMA-12`**, the six formats that need a decoder, once `SCHEMA-08` has a
+   generator to extend.
 
-⚠ **Small entries worth taking whenever a larger one is blocked**: `TOOL-04`
-(the fetcher stops when one of its two routes is down), `SCHEMA-11` (the
-multipart boundary), `CORPUS-05` (name the unidentified extension), `DRIVER-04`
-(the root store a browser actually reads).
+⚠ **Small entries worth taking whenever a larger one is blocked**: `SCHEMA-11`
+(the multipart boundary), `CORPUS-05` (name the unidentified extension),
+`VALID-03` (a family the resolver cannot produce), `DRIVER-06` (branded and
+unbranded builds).
 
 ---
 
@@ -227,111 +235,62 @@ multipart boundary), `CORPUS-05` (name the unidentified extension), `DRIVER-04`
 
 ⛔ **None of these blocks anything.** Each carries a recommendation, so agreeing
 costs nothing and a session that does not get an answer proceeds on the
-recommendation and records that it did. [`RULES.md`](RULES.md) section 11.
+recommendation and records that it did. [`RULES.md`](RULES.md) section 10.
 
-### 1. ⭐ NEW. `SCHEMA-08` lists nine formats and six of them need a dependency
+### 1. ⚠ A collect job that opens a pull request needs write permission
 
-Its acceptance is a round trip, and a round trip needs a READER as well as a
-writer. JSON, NDJSON, CSV, TSV and Markdown can be written and read back with
-what this tree already has. YAML, TOML, SQLite, CBOR, MessagePack and Protobuf
-each need an encoder **and** a decoder, so each is either a new dependency or a
-new parser this project owns and has to keep correct.
+Every workflow in this tree declares `permissions: contents: read`, which is
+right for an assertion and insufficient for `CI-04`. A run that captured thirty
+profiles and can only print them has not delivered anything.
 
-⚠ **Delivering five of nine would change the entry's acceptance**, which is a
-re-scope rather than a deviation, which is why this is a question rather than a
-decision already taken.
+**Recommendation: grant it at the JOB rather than the workflow**, as
+`contents: write` and `pull-requests: write` on the collect job alone, using the
+run's own `GITHUB_TOKEN` and ⛔ never a personal access token. Every capture lane
+keeps `contents: read`, so a compromised browser download cannot reach the
+repository. ⚠ It also needs the repository setting that lets Actions open pull
+requests, which is the operator's to enable and cannot be done from the tree.
 
-**Recommendation: split it.** Keep `SCHEMA-08` as the generator plus the five
-formats whose round trip this project can prove, and author a second entry for
-the dependency-bearing formats with the trade stated. ⛔ What should not happen
-is nine hand-written encoders in the crate that already owns four parsers.
+### 2. ⚠ NEW. The first runner capture will be added by hand, and that is a gap
 
-### 2. ⚠ Is a per-launch key pin an acceptable standing capture method?
+`CI-04` is what makes a capture arrive as a reviewable pull request, and it is
+not built. Until it is, closing `CORPUS-02` means downloading an artefact and
+running `b-ids-corpus add` locally.
 
-**Narrowed by measurement, not resolved.** `HARNESS-10` measured the capture
-SURFACE and it changes nothing: the raw and terminating surfaces agree on every
-TLS field that has a stable value. ⛔ What is still unmeasured is the pin against
-a real trust anchor, and answering it needs a root installed into the machine's
-trust store, which is a change to that machine's security configuration and is
-the operator's action rather than an agent's.
-
-**Recommendation: keep the pin as the default, and treat the trust-store
-comparison as an operator-run experiment.** ⚠ `DRIVER-04` should land first: on
-Windows the store a browser actually reads is not obviously the one `certutil`
-writes to.
-
-### 3. Is the privacy default right, given that it blinds the validator?
-
-**Partly answered by doing it.** The first profile was taken with
-`--header-values` deliberately, and three of the validator's checks ran and
-passed that could not have otherwise. The default is still names-only.
-
-**Recommendation: unchanged.** Keep the default and take a corpus capture with
-values deliberately, which is now what `experiments/10-first-profile.sh` does.
-
-### 4. Should `cookie` and `authorization` be dropped entirely, or kept as names?
-
-⚠ Dropping the name also drops the fact that the header was PRESENT, which is a
-fingerprint signal in its own right.
-
-**Recommendation: a new entry that records presence without the value.**
-
-### 5. What does a client with no root store put in the trust-anchors extension?
-
-⛔ Unchanged. A Chrome 152 hello carries a snapshot of the browser's own root
-store.
-
-**Recommendation: publish, and do not choose.** `CORPUS-04`.
-
-### 6. The published schema expresses no numeric bounds at all
-
-`u8`, `u16` and `u32` are each a bare `{"type": "integer"}`, so the published
-schema accepts 999 for a field the Rust type holds to a byte.
-
-**Recommendation: an entry that bounds all three at once**, with the checker
-gaining `minimum` and `maximum` in the same change.
-
-### 7. ⚠ `check-twins` no longer finishes inside ten minutes
-
-**Recommendation: an entry that scopes the slow halves rather than the
-comparison.** ⛔ What must not happen is dropping a pair to make it fit. ⚠ And no
-wrapper timeout around it: a killed half reports as a drift.
-
-### 8. ⚠ NEW. `check-twins` cannot tell a drift from a tree that moved under it
-
-It runs one half, then the other, and compares. A file created between the two
-is reported as a disagreement between the implementations. That happened here on
-`repo.has_codegraph`, and the only way to tell the two apart was to re-run both
-halves by hand and find they agreed.
-
-**Recommendation: have it record the tree's state before and after, and say so
-when they differ**, rather than trying to make the run atomic. ⛔ What must not
-happen is a session learning to discount a drift it has not re-checked.
-
-### 9. ⚠ NEW. The gate's line-endings filter cannot see an unstaged file
-
-It reads `git ls-files --eol`'s INDEX column, so a tracked file that is CRLF in
-the working tree and LF in the index passes. This session produced eight such
-files and the gate stayed green; `.gitattributes` normalised them on commit, so
-nothing reached the history.
-
-**Recommendation: a small entry that reads the working-tree column too**, with
-the `attr/-text` and `eol=crlf` declarations honoured, because the reference
-corpus and every `.ps1` are legitimately CRLF on disk.
+**Recommendation: do it by hand once, and say so in the profile's own
+provenance.** ⭐ The alternative is building `CI-04` before there is a single
+capture to review, which is machinery ahead of its consumer. ⚠ The profile is a
+real measurement either way: it is taken on the runner by the same script, and
+only the transport is manual.
 
 ---
 
 ## Settled, and not to be raised again
 
-Kept short on purpose. The list lives in [`RULES.md`](RULES.md); these are the
-rulings a later session should not re-open.
+**Ruled by the operator 2026-09-01.**
 
-- ⭐ **A measured profile goes into the committed corpus with its conditions
-  recorded.** Ruled by the operator 2026-09-01 and done the same day.
+- **`SCHEMA-08` is SPLIT.** It keeps the generator plus the five formats whose
+  round trip this tree can prove: JSON, NDJSON, CSV, TSV and Markdown.
+  `SCHEMA-12` carries YAML, TOML, SQLite, CBOR, MessagePack and Protobuf with
+  the trade stated. ⛔ Twelve hand-written implementations in the crate that
+  already owns four parsers is what must not happen.
+- **Credentials are recorded as PRESENT, never as a value.** `SCHEMA-14`. ⛔ The
+  value never appears on any surface, including the raw block.
+- **The trust anchor is a job, not a machine change.** `HARNESS-14`. Every
+  profile keeps recording `captured.trust`, because that is what makes the
+  comparison possible at all.
+- **Header values stay names-only by default.** Corpus captures turn them on
+  deliberately. ⛔ A model whose natural form carries them is the shape that one
+  day publishes a credential.
+- **`CORPUS-04` publishes the per-build trust-anchor list and states all three
+  options with their costs.** ⛔ It asserts no preference.
+- **The schema gains numeric bounds.** `SCHEMA-13`.
+- **Commit once at the close** unless the session is genuinely at risk of losing
+  work. No force push and no history rewrite.
+- **A measured profile goes into the committed corpus with its conditions
+  recorded.**
 - **The TLS terminator is vendored here and patched here.**
-- **The declared minimum Rust version is a verified upper bound**, and the graph
-  now imposes a floor of 1.88 that happens to equal it.
+- **The declared minimum Rust version is a verified upper bound.**
 - **`Cargo.lock` is committed.**
 - **A path in a code span asserts that it resolves.**
-- ⭐ **The reference corpus keeps whole trees**, exempt from the prose checks and
+- **The reference corpus keeps whole trees**, exempt from the prose checks and
   the secret scan by directory, never by file.

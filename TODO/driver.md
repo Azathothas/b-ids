@@ -485,7 +485,7 @@ each capture.
 ## DRIVER-05. Acquisition, with more than one way to get a build
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** driver, **Priority** P2, **Effort** M, **Status** open
+**Category** driver, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -521,6 +521,122 @@ cargo test -p b-ids-driver acquisition -- --nocapture
 Passing means: with the primary route made to fail, the resolver falls back,
 reports which route answered, and the resulting profile records the route and
 the digest of what it fetched.
+
+
+### Closing
+
+**Closed 2026-09-01T14:40:00Z.** A build has more than one way to be got, the
+routes are tried in order, and what answered is recorded on the profile with the
+digest of what arrived.
+
+```text
+$ cargo test -p b-ids-driver acquisition -- --nocapture
+     Running tests/acquisition.rs
+running 5 tests
+test acquisition_treats_an_empty_answer_as_a_refusal ... ok
+test acquisition_reports_every_refusal_when_no_route_answers ... ok
+test acquisition_leaves_out_the_exact_build_route_when_no_build_was_named ... ok
+test acquisition_falls_back_when_the_primary_route_is_down ... ok
+test acquisition_plans_the_installed_route_first_and_the_index_last ... ok
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+exit=0
+```
+
+### ⭐ The door sweep found nothing read `captured.acquisition`
+
+⛔ **The published schema constrained it and this side did not.** Its route is an
+enum and its object has four required fields in
+[`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json),
+so a consumer validating a profile would refuse a bad one. `Profile::check`
+would not: a profile could claim a route no driver can produce and a digest that
+is not one, and every check in this tree would have passed it.
+
+⭐ **Fixed in the same change, and mutation-proved.** The route is checked
+against `ACQUISITION_ROUTES` and the digest against the 64-lower-case-hex shape
+the corpus index already uses for every published file. Disabling the route
+check with `if false &&` takes exactly one test red:
+
+```text
+$ cargo test -p b-ids-schema --test acquisition
+thread 'acquisition_a_route_no_driver_can_produce_is_refused' panicked at crates\b-ids-schema\tests\acquisition.rs:46:5
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+```
+
+⚠ **Absent is correct and is not checked.** A build already installed on the
+machine was not obtained by this project and has no route.
+
+### ⛔ The design changed during implementation, and the boundary is why
+
+The module was written to hash the bytes itself with the harness's `sha256`. It
+does not, and cannot:
+[`../crates/b-ids-driver/Cargo.toml`](../crates/b-ids-driver/Cargo.toml) keeps
+`b-ids-harness` as a DEV dependency on purpose, because a driver that imported
+the harness would be one component with two jobs. The compiler said so on the
+first build.
+
+⭐ **So the digest is injected too**, beside the fetcher. The bytes are hashed by
+whoever asked for them, the driver stays free of the harness, and the test
+supplies the harness's own digest because a test may.
+
+⚠ **That is a larger change than the entry described** and the gate was
+re-passed against it, per
+[`../docs/methodology/gate.md`](../docs/methodology/gate.md).
+
+### ⭐ The fetcher is a parameter, and that is what makes this testable at all
+
+⛔ **The failure case is the whole point of the entry**, and it cannot be
+arranged against a live network: a pipeline with one route works right up until
+the day the URL 404s, so what has to be tested is the day it does.
+[`acquire_with`](../crates/b-ids-driver/src/acquire.rs) takes the fetch as a
+closure, and the suite hands it one that refuses.
+
+⚠ **A function that reached the network itself could only be tested on a day the
+network agreed**, which is a test that reports the weather.
+
+### The routes, and why the order is the design
+
+| route | when it answers | why it sits there |
+| --- | --- | --- |
+| `installed` | a build is already on this machine | ⭐ it cannot fail for a network reason. ⚠ And it is last in VALUE: it answers with whatever is installed rather than with what was asked for, so a caller wanting an exact build checks the version it gets. |
+| `cache` | this project already fetched that build | turns "upstream removed the artefact" from an outage into a note |
+| `chrome-for-testing` | the vendor's automation index has that exact build | the one first-party route keyed by BUILD rather than by "current" |
+
+⛔ **A route that cannot answer is left out of the plan rather than offered.**
+The automation index is keyed by build, so a plan with no version does not carry
+it: offering a URL that must 404 is a route that reports an outage where there
+was never an answer.
+
+⚠ **Edge and the rest are not here**, and that is stated rather than implied:
+they have their own indexes and `DRIVER-06` is the entry that adds them. The
+plan says so by returning two routes rather than three.
+
+### ⛔ What is recorded, and what is never redistributed
+
+The profile's `captured.acquisition` carries the route, the URL and the digest.
+⛔ **The artefact never appears anywhere**: this project publishes measurements,
+versions, digests and where a build was fetched from, and the binary is the
+vendor's to serve.
+
+⭐ **The digest is what makes an acquisition reproducible after the artefact
+stops being served.** Every download URL will one day 404, and a later reader
+still has to be able to say whether two captures used the same bytes.
+
+⚠ **The field is omitted from the serialised form when absent**, which nothing
+else in the model does. The reason is the corpus rather than taste: it is
+append-only, so a profile published before the field existed has to keep
+serialising exactly as it was published. The one profile in the corpus today
+carries no acquisition, because it was captured from a build that was already
+installed.
+
+### ⚠ What this entry does NOT do
+
+- **it does not fetch.** Every route above is a plan and a digest contract; the
+  fetch itself is the caller's, and `CI-03` is the caller that has a network.
+  ⛔ Building a downloader here with no lane to use it would be machinery with
+  one imagined consumer.
+- **it does not cache.** `Route::Cache` is in the plan and there is no cache
+  directory yet. ⚠ Saying so is the point: the route exists so that the day a
+  cache lands, nothing above it has to change.
 
 ---
 

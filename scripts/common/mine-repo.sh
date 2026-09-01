@@ -485,37 +485,55 @@ fi
 say "control: $CONTROL_OK"
 
 # -- the subject -------------------------------------------------------------
+#
+# ⛔ THE API ROUTE FAILING IS A GAP, NOT AN EXIT, and it used to be an exit.
+# The clone route and the API route are independent: a host that can reach
+# github.com over git and not the API got NOTHING at all, including the tree,
+# which is the more valuable half. ⭐ Measured on one host 2026-08-30 and again
+# when it recovered: with the proxy returning a connection failure this script
+# reported the control unreachable and stopped before the clone, while
+# `git clone` of the same repository succeeded in the same shell.
+# TODO/tooling.md, TOOL-04.
+#
+# ⛔ IT IS STILL RECORDED. The provenance file's whole job is naming what a
+# fetch could not get, and a run that silently proceeded without the metadata
+# would be worse than one that stopped.
+META_OK=1
 say "fetching $TARGET"
 if [ "$ROUTE" = "gh" ]; then
-  gh api "repos/$TARGET" > "$DEST/api/repo.json" 2>/dev/null || {
-    printf 'mine-repo: could not fetch repos/%s\n' "$TARGET" >&2
-    printf 'mine-repo: control says: %s\n' "$CONTROL_OK" >&2
-    exit 1
-  }
+  gh api "repos/$TARGET" > "$DEST/api/repo.json" 2>/dev/null || META_OK=0
 else
   _c=$(fetch_proxy "/repos/$TARGET" "$DEST/api/repo.json")
-  [ "$_c" = "200" ] || {
-    printf 'mine-repo: proxy returned %s for repos/%s\n' "$_c" "$TARGET" >&2
-    printf 'mine-repo: control says: %s\n' "$CONTROL_OK" >&2
-    exit 1
-  }
+  [ "$_c" = "200" ] || META_OK=0
+fi
+if [ "$META_OK" = 0 ]; then
+  rm -f "$DEST/api/repo.json"
+  gap "metadata: repos/$TARGET could not be fetched over the $ROUTE route, so NO API-derived source was fetched: no metadata, no issues, no comments, no releases, no tags, no discussions. Control says: $CONTROL_OK"
+  say "  metadata: FAILED. Continuing to the clone; the tree is the half that can still be got."
 fi
 
 # ⛔ BOTH STATES, AND THE ISSUES ENDPOINT RETURNS PULL REQUESTS TOO. The
 # open-issue count in the metadata counts both, so a sweep that does not
 # discriminate on the pull_request field reports a dependency bump as an issue.
-fetch_list "/repos/$TARGET/issues?state=all" "$DEST/api/issues.json"                 "issues and pull requests"
-fetch_list "/repos/$TARGET/issues/comments"  "$DEST/api/comments.json"               "comments"
-fetch_list "/repos/$TARGET/pulls/comments"   "$DEST/api/review-comments.json"        "review comments"
-fetch_list "/repos/$TARGET/releases"         "$DEST/api/releases.json"               "releases"
-fetch_list "/repos/$TARGET/tags"             "$DEST/api/tags.json"                   "tags"
+# ⚠ SKIPPED WHOLESALE WHEN THE METADATA CALL FAILED, rather than attempted
+# five times over. The gap above already names every one of them, and five
+# more failures would be five more lines saying what one already said.
+if [ "$META_OK" = 1 ]; then
+  fetch_list "/repos/$TARGET/issues?state=all" "$DEST/api/issues.json"                 "issues and pull requests"
+  fetch_list "/repos/$TARGET/issues/comments"  "$DEST/api/comments.json"               "comments"
+  fetch_list "/repos/$TARGET/pulls/comments"   "$DEST/api/review-comments.json"        "review comments"
+  fetch_list "/repos/$TARGET/releases"         "$DEST/api/releases.json"               "releases"
+  fetch_list "/repos/$TARGET/tags"             "$DEST/api/tags.json"                   "tags"
+fi
 
 # ⚠ DISCUSSIONS ARE GRAPHQL ONLY. The proxy is a REST route, so this is the one
 # source it cannot reach. ⛔ Recorded as a gap rather than skipped in silence:
 # a sweep that quietly omits a source is exactly the failure the write-up rules
 # exist to prevent, and discussions are where several projects keep the
 # argument that never made it into an issue.
-if [ "$ROUTE" = "gh" ]; then
+if [ "$META_OK" = 0 ]; then
+  say "  discussions: skipped (the API route is down)"
+elif [ "$ROUTE" = "gh" ]; then
   # shellcheck disable=SC2016  # $o and $n are GRAPHQL variables. Expanding
   # them in the shell would send their values as literal text and the query
   # would be rejected. Single quotes are the correct choice here.
@@ -622,14 +640,39 @@ if [ "${IGNORED_COUNT:-0}" -gt 0 ]; then
 fi
 
 NGAPS=$(printf '%s' "$GAPS" | grep -c '^  - ' || true)
+
+# ⛔ NEITHER ROUTE PRODUCING ANYTHING IS THE ONLY FAILURE. One route down is a
+# degraded run with the gap recorded; both down is a run that fetched nothing,
+# and reporting that as success would be the "step that exits 0 having done
+# nothing it was asked to do" row in docs/conventions/forbidden-patterns.md.
+FETCH_FAILED=0
+if [ "$META_OK" = 0 ] && [ "$COMMIT" = "-" ]; then
+  FETCH_FAILED=1
+fi
+
 if [ "$JSON" = "1" ]; then
-  printf '{"schema":"mine-repo/1","target":"%s","route":"%s","commit":"%s","gaps":%s,"uncommittable":%s,"dest":"%s"}\n' \
-    "$TARGET" "$ROUTE" "$COMMIT" "${NGAPS:-0}" "${IGNORED_COUNT:-0}" "$DEST"
+  meta=true
+  [ "$META_OK" = 0 ] && meta=false
+  printf '{"schema":"mine-repo/2","target":"%s","route":"%s","metadata":%s,"commit":"%s","gaps":%s,"uncommittable":%s,"dest":"%s"}\n' \
+    "$TARGET" "$ROUTE" "$meta" "$COMMIT" "${NGAPS:-0}" "${IGNORED_COUNT:-0}" "$DEST"
+  [ "$FETCH_FAILED" = 1 ] && exit 1
   exit 0
+fi
+
+if [ "$FETCH_FAILED" = 1 ]; then
+  printf 'mine-repo: NEITHER route produced anything for %s.\n' "$TARGET" >&2
+  printf 'The API route failed and the clone failed, so there is no tree and no\n' >&2
+  printf 'metadata. Control says: %s\n' "$CONTROL_OK" >&2
+  printf 'Read %s/PROVENANCE.md, which names both.\n' "$DEST" >&2
+  exit 1
 fi
 
 printf '\nmined %s into %s\n' "$TARGET" "$DEST"
 printf 'commit %s, route %s, %s gap(s). Read %s/PROVENANCE.md.\n' \
   "$COMMIT" "$ROUTE" "${NGAPS:-0}" "$DEST"
 printf -- '⭐ Keep the tree. A conclusion nobody can re-check is an opinion.\n'
+if [ "$META_OK" = 0 ]; then
+  printf -- '⚠ The API route was down, so this fetch has the TREE and no metadata.\n'
+  printf 'Re-run it when the route is back; the gap is named in PROVENANCE.md.\n'
+fi
 exit 0

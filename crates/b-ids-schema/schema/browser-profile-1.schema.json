@@ -181,6 +181,38 @@
             "type": "string"
           },
           "description": "The switches the subject was launched with, in order. Every one is a condition of what was captured through it."
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "route",
+            "url",
+            "sha256",
+            "bytes"
+          ],
+          "description": "Where the build came from, when this project fetched it. Absent where nothing was fetched, which is a different fact from an acquisition that failed. The URL is recorded and the artefact never is.",
+          "properties": {
+            "route": {
+              "enum": [
+                "installed",
+                "cache",
+                "chrome-for-testing"
+              ]
+            },
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "sha256": {
+              "type": "string"
+            },
+            "bytes": {
+              "type": "integer"
+            }
+          }
         }
       }
     },

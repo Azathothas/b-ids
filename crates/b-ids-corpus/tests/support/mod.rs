@@ -100,6 +100,8 @@ pub fn identity() -> Identity {
             "--user-data-dir=/home/user/throwaway-1234".to_owned(),
             "--no-first-run".to_owned(),
         ],
+        // ⚠ None: this identity describes a browser nothing fetched.
+        acquisition: None,
     }
 }
 

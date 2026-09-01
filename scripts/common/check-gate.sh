@@ -171,19 +171,52 @@ check_simple() {
 
 [ "$JSON" = 1 ] || printf 'check-gate: %s\n\n' "$REPO_ROOT"
 
+# -- ⭐ WHAT THIS GATE SKIPS WHEN check-twins IS RUNNING IT -------------------
+#
+# ⛔ MEASURED, NOT GUESSED. `check-twins --timings`, 2026-09-01, on one Windows
+# 11 host: 970 seconds across twenty pairs, of which the `check-gate` row alone
+# is 431. That row runs BOTH gates in full, and each gate re-runs the fourteen
+# checks that ALREADY HAVE A ROW OF THEIR OWN. Fourteen rules were compared
+# three times each, and the two extra times cost more than everything else in
+# that file put together. TODO/tooling.md, TOOL-15.
+#
+# ⭐ So a gate running inside check-twins skips them. What that pair uniquely
+# proves is untouched: the LIST each half runs, and the checks with no row of
+# their own - the two lints, the analyzer, the three suite entries and the probe.
+#
+# ⛔ THE LIST GOING STALE IS COVERED, and for free. The pair compares `skipped`
+# as well as `passed`, so a list that grows in one half and not the other fails
+# that row. ⚠ Keep it identical to the PowerShell twin's, and to the
+# `compare_pair` rows in check-twins.sh.
+#
+# ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
+# recursion guard further down, and nothing else reads it. A gate run by hand
+# runs everything.
+COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage"
+compared_directly() {
+  [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
+  case " $COMPARED_DIRECTLY " in
+    *" $1 "*)
+      record_skip "$1" 'compared directly by check-twins; running it here compares one answer a third time'
+      return 0
+      ;;
+    *) return 1 ;;
+  esac
+}
+
 # -- the checks that are pure sh and always available ------------------------
-check_simple 'check-docs'            sh "$HERE/check-docs.sh"
+compared_directly 'check-docs'          || check_simple 'check-docs'          sh "$HERE/check-docs.sh"
 # ⛔ BOTH OF THESE, NOT ONE. check-docs reads markdown; check-markers reads
 # every tracked text file and owns the character rule; check-one-home reads the
 # documents against each other. In the two trees these checks were written in,
 # the first reported clean while the other two had findings in the hundreds,
 # which is what "run both" costs when it is advice rather than a line here.
-check_simple 'check-markers'         sh "$HERE/check-markers.sh"
-check_simple 'check-one-home'        sh "$HERE/check-one-home.sh"
-check_simple 'check-placeholders'    sh "$HERE/check-placeholders.sh"
-check_simple 'check-control-bytes'   sh "$HERE/check-control-bytes.sh"
-check_simple 'check-record'          sh "$HERE/check-record.sh"
-check_simple 'check-no-secrets'      sh "$HERE/check-no-secrets.sh" --public
+compared_directly 'check-markers'       || check_simple 'check-markers'       sh "$HERE/check-markers.sh"
+compared_directly 'check-one-home'      || check_simple 'check-one-home'      sh "$HERE/check-one-home.sh"
+compared_directly 'check-placeholders'  || check_simple 'check-placeholders'  sh "$HERE/check-placeholders.sh"
+compared_directly 'check-control-bytes' || check_simple 'check-control-bytes' sh "$HERE/check-control-bytes.sh"
+compared_directly 'check-record'        || check_simple 'check-record'        sh "$HERE/check-record.sh"
+compared_directly 'check-no-secrets'    || check_simple 'check-no-secrets'    sh "$HERE/check-no-secrets.sh" --public
 
 # Run one check whose 2 means "could not run", and report that as a SKIP.
 # ⛔ NOT AS A PASS. check-changelog's 2 is a pass because a project with no
@@ -210,11 +243,11 @@ check_skippable() {
 # and a gate that needs the network fails on a machine that has none.
 # ⚠ 2 is "could not run": jq is absent, or the tree vendors nothing at all.
 # Neither has verified anything, so both are a SKIP rather than a pass.
-check_skippable 'check-vendor' 'jq is absent, or this tree vendors nothing' \
+compared_directly 'check-vendor' || check_skippable 'check-vendor' 'jq is absent, or this tree vendors nothing' \
   sh "$HERE/check-vendor.sh"
 
 # -- the workspace, and the version floor it declares ------------------------
-check_skippable 'check-msrv' 'cargo or jq is not on this host' \
+compared_directly 'check-msrv' || check_skippable 'check-msrv' 'cargo or jq is not on this host' \
   sh "$HERE/check-msrv.sh"
 
 # -- the published corpus, and whether it was ever edited in place -----------
@@ -223,57 +256,65 @@ check_skippable 'check-msrv' 'cargo or jq is not on this host' \
 # anything about a profile, so both are a SKIP rather than a pass. ⛔ The git
 # leg still decides a FAILURE: a published file edited after its first commit
 # is exit 1 whether or not cargo was there.
-check_skippable 'check-corpus' 'the corpus is empty, or cargo could not verify a profile' \
+compared_directly 'check-corpus' || check_skippable 'check-corpus' 'the corpus is empty, or cargo could not verify a profile' \
   sh "$HERE/check-corpus.sh"
+
+# -- every published profile, coherent, and the derived files reproducible ---
+# ⚠ 2 is "could not run" three ways over: there is no corpus, it holds no
+# profile, or cargo is absent. None has validated anything, so all three are a
+# SKIP rather than a pass. ⛔ A finding or a non-deterministic generator is
+# exit 1 and fails the gate.
+compared_directly 'check-validate' || check_skippable 'check-validate' \
+  'the corpus is empty, or cargo could not validate a profile' \
+  sh "$HERE/check-validate.sh"
+
+# -- every workflow declares the four things that decide a run's output ------
+# ⚠ 2 is "could not run": there is no .github/workflows directory, or it holds
+# no .yml file. Neither has verified anything, so both are a SKIP.
+compared_directly 'check-workflows' || check_skippable 'check-workflows' \
+  'there is no workflow directory, or it holds no workflow' \
+  sh "$HERE/check-workflows.sh" --assert-fail-fast-false
+
+# -- which cells of the planned capture matrix have a profile ----------------
+# ⚠ 2 is "could not run": there is no plan, or jq is absent. ⛔ It is not asked
+# to REQUIRE any row here: what a run cares about is the run's business, and
+# the capture workflow is where --require-rows is passed.
+compared_directly 'check-coverage' || check_skippable 'check-coverage' \
+  'there is no capture matrix, or jq is absent' \
+  sh "$HERE/check-coverage.sh"
 
 # -- the published route files, and the one byte a consumer should not have to
 # strip. ⚠ 2 is "there is no route tree yet, or it holds no single-value file",
 # which has verified nothing and is a SKIP rather than a pass.
-check_skippable 'check-routes' 'no published route tree, or it holds no single-value file' \
+compared_directly 'check-routes' || check_skippable 'check-routes' 'no published route tree, or it holds no single-value file' \
   sh "$HERE/check-routes.sh"
 
 # ⚠ 2 is "could not run", which is the honest answer in a project with no
 # CHANGELOG.md, and it is a pass here rather than a failure. ⛔ Collapsing 2 into
 # 0 with `|| true` would hide a genuine exit 1 as well.
-cl_out=$(sh "$HERE/check-changelog.sh" 2>&1)
-rc=$?
-if [ "$rc" = 0 ] || [ "$rc" = 2 ]; then
-  record_pass 'check-changelog'
-else
-  record_fail 'check-changelog' "$rc"
-  [ "$JSON" = 1 ] || printf '%s\n' "$cl_out" | sed 's/^/  | /'
+if ! compared_directly 'check-changelog'; then
+  cl_out=$(sh "$HERE/check-changelog.sh" 2>&1)
+  rc=$?
+  if [ "$rc" = 0 ] || [ "$rc" = 2 ]; then
+    record_pass 'check-changelog'
+  else
+    record_fail 'check-changelog' "$rc"
+    [ "$JSON" = 1 ] || printf '%s\n' "$cl_out" | sed 's/^/  | /'
+  fi
 fi
 
-# -- line endings, against git's own answer rather than a second table -------
+# -- line endings, in the index AND in the working tree ----------------------
 #
-# ⛔ THE FILTER READS THE INDEX COLUMN AND THE ATTRIBUTE COLUMN, NOT THE INDEX
-# COLUMN ALONE, and reading it alone was a defect this tree found by running it.
-# `git ls-files --eol` reports four index states that are not `lf` and are not
-# wrong:
+# ⛔ IT USED TO BE INLINE HERE, IN BOTH HALVES, AND THAT WAS THE DEFECT. Two
+# copies of one rule computed in two languages, compared by nothing: the twin
+# comparison covers a PAIR OF SCRIPTS, and a rule with no script of its own had
+# no row. ⭐ It is a check now, with both halves and a row, like every other
+# rule in this repository. TODO/tooling.md, TOOL-17.
 #
-#   i/none    the file contains no line ending at all: an empty file, or a
-#             single value with no trailing newline. ⭐ That second shape is one
-#             this project will PUBLISH deliberately, per PUB-03: a route file
-#             carrying one value and nothing else, so a consumer never has to
-#             strip anything. A filter on the index column alone refuses exactly
-#             the shape the requirement asks for.
-#   i/        the file is empty.
-#   i/-text   git decided the content is binary.
-#   i/mixed   mixed endings, which is correct where the attribute says `-text`,
-#             because that declares the bytes are the content.
-#
-# ⚠ So a finding is: an index state of `crlf` or `mixed` on a file that is NOT
-# declared `-text`. Everything else is either conforming or declared out of
-# scope, and the declaration is what `.gitattributes` is for.
-bad=$(git ls-files --eol | awk '
-  $3 != "attr/-text" && $1 != "i/lf" && $1 != "i/none" && $1 != "i/" && $1 != "i/-text"
-')
-if [ -z "$bad" ]; then
-  record_pass 'line-endings'
-else
-  record_fail 'line-endings' 1
-  [ "$JSON" = 1 ] || printf '%s\n' "$bad" | sed 's/^/  | /'
-fi
+# ⚠ 2 is "could not run": git tracks no file here. That has verified nothing, so
+# it is a SKIP rather than a pass.
+compared_directly 'check-line-endings' || check_skippable 'check-line-endings' 'git tracks no file in this repository' \
+  sh "$HERE/check-line-endings.sh"
 
 # ⛔ THE REFERENCE CORPUS IS OUT OF SCOPE FOR THE LINTERS, for the same reason
 # the prose checks exempt it: `references/` is other projects' source, kept as

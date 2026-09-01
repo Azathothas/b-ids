@@ -257,6 +257,51 @@ pub struct Captured {
     /// always passes at least the throwaway profile directory.
     #[serde(default)]
     pub switches: Vec<String>,
+    /// Where the build came from, when this project fetched it.
+    ///
+    /// ⭐ **The digest is what makes an acquisition reproducible after the
+    /// artefact stops being served.** Every download URL will one day 404, and
+    /// a later reader still needs to be able to say whether two captures used
+    /// the same bytes. `TODO/driver.md`, `DRIVER-05`.
+    ///
+    /// ⚠ **Absent where nothing was fetched**, which is a different fact from
+    /// an acquisition that failed: a build already installed on the machine was
+    /// not obtained by this project and has no route or digest to record.
+    ///
+    /// ⛔ **This one field is omitted from the serialised form when absent**,
+    /// which nothing else here does, and the reason is the corpus rather than
+    /// taste: it is append-only, so a profile published before this field
+    /// existed has to keep serialising exactly as it was published.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub acquisition: Option<Acquisition>,
+}
+
+/// The routes a build can come from, as [`Profile::check`] accepts them.
+///
+/// ⛔ **Kept identical to the published schema's enum and to
+/// `b_ids_driver::acquire::Route`.** Three copies of one list is two chances
+/// for it to drift, and the two that can be compared are compared: a profile
+/// carrying a route outside this list is refused here, and the schema refuses
+/// it to a consumer.
+pub const ACQUISITION_ROUTES: [&str; 3] = ["installed", "cache", "chrome-for-testing"];
+
+/// Where a build came from, and the digest of what arrived.
+///
+/// ⛔ **The URL is recorded and the artefact never is.** This project publishes
+/// measurements, versions, digests and where a build was fetched from; the
+/// binary is the vendor's to serve. `TODO/driver.md`, `DRIVER-05`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Acquisition {
+    /// Which route answered: `installed`, `cache` or `chrome-for-testing`.
+    pub route: String,
+    /// The URL it answered from, where there was one.
+    ///
+    /// ⚠ `None` for a route that asks the machine rather than a URL.
+    pub url: Option<String>,
+    /// The digest of what arrived, lowercase hex.
+    pub sha256: String,
+    /// How many bytes arrived.
+    pub bytes: usize,
 }
 
 /// The derived digests, siblings of the measured halves.
@@ -592,6 +637,45 @@ impl Profile {
             defects.push(Defect::FieldMissing {
                 field: "captured.harness".to_owned(),
             });
+        }
+
+        // ⛔ AN ACQUISITION IS CHECKED WHERE IT IS PRESENT, and it was not until
+        // the door sweep asked who reads this field. The published schema
+        // constrains the route to an enum and the object to four fields;
+        // nothing on this side did, so a profile could claim a route no driver
+        // can produce and a digest that is not one, and every check in the tree
+        // would have passed it. `TODO/driver.md`, `DRIVER-05`.
+        //
+        // ⚠ ABSENT IS CORRECT AND IS NOT CHECKED. A build already installed on
+        // the machine was not obtained by this project and has no route.
+        if let Some(acquisition) = &self.captured.acquisition {
+            if !ACQUISITION_ROUTES.contains(&acquisition.route.as_str()) {
+                defects.push(Defect::FieldMalformed {
+                    field: "captured.acquisition.route".to_owned(),
+                    why: format!(
+                        "is {}, and the routes a build can come from are {}",
+                        acquisition.route,
+                        ACQUISITION_ROUTES.join(", ")
+                    ),
+                });
+            }
+            // ⛔ The same shape the corpus index uses for every published file:
+            // 64 lower-case hex. A digest that is not one is a value nobody can
+            // compare against anything.
+            if acquisition.sha256.len() != 64
+                || !acquisition
+                    .sha256
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            {
+                defects.push(Defect::FieldMalformed {
+                    field: "captured.acquisition.sha256".to_owned(),
+                    why: format!(
+                        "is {:?}, and a digest is 64 lower-case hex characters",
+                        acquisition.sha256
+                    ),
+                });
+            }
         }
 
         // ⛔ A CONDITION NOBODY RECORDED MUST NOT READ AS A CONDITION SOMEBODY

@@ -75,6 +75,10 @@ pub fn profile() -> Profile {
                 "--user-data-dir=(throwaway)".to_owned(),
                 "--headless=new".to_owned(),
             ],
+            // ⚠ None, because nothing fetched anything. A fixture that claimed
+            // an acquisition would be claiming a route and a digest nobody
+            // produced, which is the one thing this file must never do.
+            acquisition: None,
         },
         tls: tls(),
         http2: http2(),

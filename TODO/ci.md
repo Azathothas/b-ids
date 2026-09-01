@@ -15,7 +15,7 @@ has failed at the thing it exists to do.
 ## CI-01. Every push: validate, with no network and no browser
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** ci, **Priority** P1, **Effort** M, **Status** open
+**Category** ci, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -58,6 +58,195 @@ sh scripts/common/check-gate.sh --strict
 Passing means: the workflow runs the gate strictly on two hosts, every golden
 vector reparses to its committed profile, and a deliberately altered profile
 fails with a message naming the field.
+
+### Closing
+
+**Closed 2026-09-01T13:10:00Z.** Every push now settles what is published, on
+two hosts, with the network off for every assertion and no browser anywhere in
+the workflow. ⛔ **Two of the assertions were not being made at all**, and one of
+them had been reporting green over an empty question since the day it was
+written.
+
+```text
+$ sh scripts/common/check-gate.sh --strict
+check-gate: C:/Users/AjamX/Downloads/b-ids
+
+  ok    check-docs
+  ok    check-markers
+  ok    check-one-home
+  ok    check-placeholders
+  ok    check-control-bytes
+  ok    check-record
+  ok    check-no-secrets
+  ok    check-vendor
+  ok    check-msrv
+  ok    check-corpus
+  ok    check-validate
+  ok    check-workflows
+  ok    check-coverage
+  ok    check-routes
+  ok    check-changelog
+  ok    check-line-endings
+  ok    sh -n
+  ok    shellcheck
+  ok    powershell parse
+  ok    PSScriptAnalyzer
+  ok    cargo fmt
+  ok    cargo clippy
+  ok    cargo test
+  ok    doctor probe
+  ok    check-twins
+
+gate ok: all 25 checks passed
+exit=0
+
+⚠ **This is the run of 2026-09-01T15:34:31Z to 15:50:19Z**, on the tree as it
+is committed, with nothing else running. ⛔ An earlier attempt at this paste was
+assembled by hand from a log two processes had written into, and was replaced
+with a marker rather than shipped: the claim audit at the end of the session
+caught it.
+```
+
+### ⛔ The defect this entry found: the history leg verified nothing in CI
+
+`check-corpus`'s first leg asks git whether a published file was ever modified,
+deleted or renamed, and it is the one question the working tree cannot answer.
+⚠ `actions/checkout` fetches **one commit** by default, so `git log
+--diff-filter=MDR` over the corpus paths saw a single commit and found nothing.
+
+Reproduced on a `--depth 1` clone of this tree, with the check exactly as it
+stood this morning:
+
+```text
+$ git rev-parse --is-shallow-repository
+true
+$ git log --oneline | wc -l
+1
+$ git log --diff-filter=MDR --name-status --format='commit %h' -- corpus raw \
+    ':(exclude)corpus/*/index.json' ':(exclude)corpus/*/latest.json' | wc -l
+0
+$ sh scripts/common/check-corpus.sh
+corpus ok: 1 profile(s), nothing edited after publication, index and
+pointers agree with the tree.
+exit=0
+```
+
+⛔ **The append-only rule is the corpus's central promise and continuous
+integration had never once checked it.** Which row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+this is, and what it means for the check, is written where the check is:
+[`../scripts/README.md`](../scripts/README.md).
+
+⭐ **Both halves refuse a shallow clone now**, and both workflows carry
+`fetch-depth: 0`, so losing that line fails a job rather than emptying it. The
+same clone, with the guard:
+
+```text
+$ sh scripts/common/check-corpus.sh
+check-corpus: this is a SHALLOW clone, so the history leg cannot run and
+nothing was verified about whether a published file was ever edited.
+Fetch the whole history: git fetch --unshallow, or fetch-depth: 0 on the
+checkout step of the workflow that produced this tree.
+exit=2
+$ sh scripts/common/check-corpus.sh --json
+{"schema":"check-corpus/2","corpus":true,"shallow":true,"profiles":0,"edits":0,"problems":0}
+exit=2
+$ pwsh -NoProfile -File scripts/common/check-corpus.ps1 -Json
+{"schema":"check-corpus/2","corpus":true,"shallow":true,"profiles":0,"edits":0,"problems":0}
+exit=2
+```
+
+⚠ **The JSON schema went to `check-corpus/2`** because the shape gained a field.
+`CORPUS-01`'s closing block above pastes the `/1` form; it is left as it was
+measured rather than re-pasted, which is the rule the previous session already
+applied to a suite count that moved.
+
+### ⭐ The coherence checks had never run over what is published
+
+`b-ids-validator` takes the paths a caller names, so it answered about whatever
+somebody remembered to list, and nothing in the gate listed anything.
+⭐ **`b-ids-corpus validate` is the corpus-scale form**, and it is answerable in
+that crate because that crate owns the layout:
+
+```text
+$ cargo run -q -p b-ids-corpus -- validate --root .
+corpus/v1/chrome/stable/win64/151.0.7922.76.json: SKIP  handshake -- deciding whether this hello came from a 151 build needs a per-build corpus to compare against, and none exists yet. b-ids-validator::shared_handshakes is the form that runs across a set of profiles today
+corpus/v1/chrome/stable/win64/151.0.7922.76.json: SKIP  encoding -- the caller did not say what the consuming client can decode
+corpus/v1/chrome/stable/win64/151.0.7922.76.json: SKIP  absence -- the caller named no target stack
+corpus=validate profiles:1 findings:0 notcheckable:3
+exit=0
+```
+
+⚠ **Three of eight checks report they had nothing to read, and that is counted
+rather than folded into the pass.** Two of the three need a caller's intent; the
+third needs a second profile of the same build, which is `CORPUS-02`.
+
+⭐ **It also runs the CROSS-profile form of check 4**, `shared_handshakes`, which
+no per-profile invocation can reach at all.
+[`../scripts/README.md`](../scripts/README.md) says what that check compares.
+⚠ It is structurally silent on a corpus of one, and saying so is the point:
+`CORPUS-02` is what ends that.
+
+### The acceptance's third leg: a deliberately altered profile
+
+⛔ **Run against a scratch copy and against a working tree that was restored in
+the same command**, never against the published file. `browser.major` moved from
+151 to 152 and nothing else:
+
+```text
+$ sh scripts/common/check-validate.sh
+validate check failed: 3 finding(s) over 1 published profile(s).
+
+corpus/v1/chrome/stable/win64/151.0.7922.76.json: FAIL  version: http.headers.user-agent: carries major 151, and browser.major is 152
+corpus/v1/chrome/stable/win64/151.0.7922.76.json: FAIL  version: http.headers.sec-ch-ua: no brand claims major 152; it claims Not=A?Brand=99, Google Chrome=151, Chromium=151
+corpus/v1/chrome/stable/win64/151.0.7922.76.json: FAIL  version: browser.version: 151.0.7922.76 does not begin with the claimed major 152
+exit=1
+```
+
+⭐ **Three messages, each naming its field**, which is what the acceptance asked
+for. ⚠ One altered field produced three findings because three places in the
+profile encode the major, and that is the coherence the check exists to hold.
+
+### ⭐ The determinism leg, and why `verify` cannot see it
+
+`b-ids-corpus verify` compares the committed index against ONE derivation, so a
+generator that answered differently on alternate runs would fail it
+intermittently and read as a flake. The new leg runs the generator twice over a
+throwaway copy and compares the bytes. Planted by making the index writer append
+its process id:
+
+```text
+$ sh scripts/common/check-validate.sh
+validate check failed: the generator is not deterministic.
+
+  index.json: two runs of the generator over one corpus wrote different bytes
+  latest.json: two runs of the generator over one corpus wrote different bytes
+
+A release nobody can reproduce is a release whose every run looks like a
+change. Fix the generator, never this check.
+exit=1
+$ pwsh -NoProfile -File scripts/common/check-validate.ps1 -Json
+{"schema":"check-validate/1","corpus":true,"profiles":1,"findings":0,"notcheckable":3,"deterministic":false,"problems":1}
+```
+
+⚠ **The mutation found a defect in the check's own message**, which is the
+second thing a guard mutation is for: the two findings arrived on one line
+because the accumulator joined them without a separator. A command substitution
+strips trailing newlines, so the separator is a literal one now.
+
+### ⚠ What this entry does NOT assert, said rather than implied
+
+- **the generated formats' round trip.** There is one generator in this tree and
+  it writes the index and the pointer file. `SCHEMA-08` is what adds the rest,
+  and it adds them to the determinism leg in the same change.
+- **the emitters' recorded fingerprints.** `EMIT-01` has not been built, so
+  there is nothing to assert and asserting an absence would be theatre.
+- ⚠ **the workflows running on a real runner.** ⛔ This is the part of gate (b)
+  this host structurally cannot do: a workflow's real behaviour is only
+  observable on the provider. Both files parse with `yq` here and the checkouts
+  were read back from the parsed document, which is what a local host can prove.
+  The remote run is confirmed at the session's close, per
+  [`RULES.md`](RULES.md) section 10 step 11.
 
 ---
 
@@ -109,7 +298,7 @@ that answered, and the replacement values.
 ## CI-03. The capture matrix, fanned out, with every lane allowed to fail alone
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** ci, **Priority** P1, **Effort** L, **Status** open
+**Category** ci, **Priority** P1, **Effort** L, **Status** done
 
 ### Problem
 
@@ -160,6 +349,104 @@ sh scripts/common/check-workflows.sh --assert-fail-fast-false
 Passing means: the workflow parses, every matrix job declares fail-fast off and
 a time limit, the collect job declares that it runs regardless, and a fixture
 workflow missing any of those fails the check.
+
+
+### Closing
+
+**Closed 2026-09-01T15:05:00Z.** The matrix fans out from a plan that lives in
+the tree, every lane is allowed to fail alone, and the collect job runs
+regardless.
+
+```text
+$ sh scripts/common/check-workflows.sh --assert-fail-fast-false
+workflows ok: 3 file(s), 7 job(s), every matrix declares fail-fast: false
+exit=0
+$ sh scripts/common/check-workflows.sh --json --assert-fail-fast-false
+{"schema":"check-workflows/1","workflows":3,"jobs":7,"problems":0}
+exit=0
+$ pwsh -NoProfile -File scripts/common/check-workflows.ps1 -Json -AssertFailFastFalse
+{"schema":"check-workflows/1","workflows":3,"jobs":7,"problems":0}
+exit=0
+```
+
+### ⭐ The fixture, and every rule seen to fire
+
+⛔ **A guard whose test has never been seen to fail is theatre.** A fixture
+workflow breaks each rule exactly once, so a run over it reporting fewer than
+five problems is a run whose checker has stopped holding one of them.
+
+```text
+$ sh scripts/common/check-workflows.sh --assert-fail-fast-false --fixtures FIXTURE
+workflow check failed, 5 problem(s) over 1 workflow(s) and 2 job(s):
+
+  bad.yml: uses actions/checkout@v4, which is not a 40-character commit. A moved tag runs code nobody reviewed.
+  bad.yml: job lane: no timeout-minutes. A hung step holds a runner for the platform default.
+  bad.yml: job lane: declares a matrix and does not declare fail-fast: false. One lane failing cancels its siblings.
+  bad.yml: job collect: needs the fan-out job lane and does not run regardless. A collect job that only runs when every lane passed publishes nothing on the nights it matters.
+  bad.yml: declares no top-level permissions. The default is whatever the repository grants.
+exit=1
+$ sh scripts/common/check-workflows.sh --json --assert-fail-fast-false --fixtures FIXTURE
+{"schema":"check-workflows/1","workflows":1,"jobs":2,"problems":5}
+exit=1
+$ pwsh -NoProfile -File scripts/common/check-workflows.ps1 -Json -AssertFailFastFalse -Fixtures FIXTURE
+{"schema":"check-workflows/1","workflows":1,"jobs":2,"problems":5}
+exit=1
+```
+
+⚠ **`FIXTURE` is a directory outside the repository**, and the paths in the
+messages are elided to the filename. The fixture is walked with `find` rather
+than with `git ls-files`, which answers a path outside the repository with an
+empty list: `check-routes` reported "ok, 0 files" over exactly such a fixture in
+both halves, and this check was written knowing it.
+
+### ⛔ The parser bug the fixture found, in the checker itself
+
+An uninitialised awk variable used as a SUBSCRIPT is the empty string, not zero.
+`names[njobs]` on the first job of every file wrote `names[""]` and left
+`names[0]` unset, so the end-of-file loop read an empty name and reported a job
+that does not exist:
+
+```text
+  .github/workflows/capture.yml: job : no timeout-minutes.
+  .github/workflows/ci.yml: job : no timeout-minutes.
+  .github/workflows/validate.yml: job : no timeout-minutes.
+```
+
+⚠ **The PowerShell half never had it**, because it appends to a list rather than
+indexing an array. ⭐ A difference the twin comparison would have reported as a
+drift, found first by reading the output.
+
+### ⭐ The `always()` rule is about collecting, not about needing
+
+The rule as first written fired on any job with `needs:`, which would have
+refused the `plan` job's own dependent. That is wrong: a lane that runs after a
+failed plan step is a lane with no plan. ⭐ It fires only where a job depends on
+one that **fans out**, which is exactly the collect job whose whole value is
+publishing what the lanes managed.
+
+### What the matrix does, and what it deliberately does not
+
+| | |
+| --- | --- |
+| ⭐ the plan lives in the tree | [`../.github/capture-matrix.json`](../.github/capture-matrix.json). The `plan` job reads it and the lanes fan out from `fromJSON`, and `check-coverage` reads the same file to say what landed. ⛔ A matrix written into the workflow and a report written from somewhere else is a value in two places with no check that they agree. |
+| ⭐ a lane with no browser is exit 2 | "this runner has no browser" and "the capture failed" are different facts. The lane records the resolver's code and skips the capture on 2 rather than failing. `CI-07`. |
+| ⭐ the capture path is the one a person runs | the lane runs `experiments/10-first-profile.sh`, which is also `CI-08`'s manual equivalent. Two pipelines is two things to keep correct and one of them stops being run. |
+| ⛔ no lane writes to the repository | every job keeps `contents: read`. A lane runs a browser it downloaded, and that is the last thing that should hold a write token. `CI-04` is where a write belongs, on the collect job alone. |
+| ⛔ the fuzz lane overrides the toolchain | `RUSTUP_TOOLCHAIN: nightly`, explicitly. `rust-toolchain.toml` pins an exact stable and applies to `fuzz/` too, so a nightly image is not enough. [`../fuzz/README.md`](../fuzz/README.md) carries the measurement that cost a run. |
+
+⚠ **The action pins were RESOLVED rather than recalled**, and their declared
+runtimes were read at the pinned commit. The v4 artefact actions still declare
+`node20`, which the platform is deprecating, so this workflow pins
+`upload-artifact` v7.0.1 and `download-artifact` v8.0.1, both `node24`.
+⛔ `ci.yml` and `validate.yml` are unchanged on that point and still use only
+`checkout`, which is already `node24`.
+
+### ⚠ What is NOT proved here
+
+⛔ **No lane has run on a runner.** This host can parse the workflow, hold every
+structural rule and see the checker refuse a fixture; it cannot observe a hosted
+runner. `CORPUS-02` is the entry that runs the matrix and is open with that
+named as its blocker.
 
 ---
 

@@ -1,63 +1,58 @@
 # SUMMARY.md
 
-⛔ **The last session's table, and a snapshot rather than an authority.**
-[`PROGRESS.md`](PROGRESS.md) is the record and is what a session reads first.
-Overwritten every session.
+⚠ **The last session's table, and a snapshot rather than an authority.**
+[`PROGRESS.md`](PROGRESS.md) is the record and the work order;
+[`INDEX.md`](INDEX.md) is the entry list. ⛔ Overwritten every session.
+
+**2026-09-01T12:32:05Z to 2026-09-01T15:20:00Z, unattended, ended by operator
+interrupt.**
 
 ---
 
-## 2026-09-01, second session
+## What closed
 
-| row | measured |
+| entry | eff | what it delivered |
+| --- | --- | --- |
+| `CI-01` | M | every push settles what is published, on two hosts, network off for every assertion. ⛔ Found `check-corpus`'s history leg verifying nothing in CI since the day it was written. |
+| `TOOL-17` | S | the line-endings rule extracted to its own pair, reading the working tree as well as the index. ⛔ Found `check-routes.ps1` LF on disk against its own `eol=crlf`. |
+| `TOOL-16` | S | a drift alongside a moved tree is UNDECIDED at exit 2. ⭐ Reproduced twice, once by accident. |
+| `TOOL-15` | M | `--timings`, then the scope it named. 1056s to 636s wall, and the `check-gate` row 431s to 54s. |
+| `TOOL-04` | S | the reference fetcher degrades instead of stopping; only both routes down is exit 1 |
+| `DRIVER-05` | M | acquisition: routes tried in order, the one that answered recorded with the digest of what arrived |
+| `CI-03` | L | the capture matrix, fanning out from a plan in the tree, every lane failing alone, with a fixture that breaks each rule once |
+
+**13 effort points closed.** Seven entries authored and filed: `SCHEMA-12`,
+`SCHEMA-13`, `SCHEMA-14`, `TOOL-15`, `TOOL-16`, `TOOL-17`, `HARNESS-14`.
+
+## What did not close, and why
+
+| entry | eff | the blocker |
+| --- | --- | --- |
+| `CORPUS-02` | L | ⛔ **Its apparatus is built and no lane has run.** The plan file, the coverage check in both halves and the fan-out that reads the plan are all here; closing it needs one run of `capture.yml` on a hosted runner and the `linux64` profile committed, which needs this session's commit on the default branch. |
+
+## The four checks that were green over nothing
+
+| the check | what it was not checking |
 | --- | --- |
-| Elapsed | 2026-09-01T07:58:00Z to 2026-09-01T10:43:02Z, **2h 45m**, ended by operator interrupt |
-| Commits | **3**, all pushed and all green on both CI jobs: `0df1fd7` mid-session, `af11973` at the close, `2a15aa0` for two corrections the close itself found. ⚠ Three, not one. See the note below. |
-| Work | **6 completed, 0 deferred, 0 failed.** `CORPUS-01` (M), `HARNESS-10` (S), `DRIVER-02` (M), `HARNESS-09` (M), `TOOL-06` (S), `CORPUS-03` (S) = **9 effort points** |
-| Changes | 70 files changed, 7,684 insertions, 332 deletions, plus 3 new files at the close |
-| Size | 43,389 lines to **50,740**, excluding the reference corpus and the vendored tree. +7,351 |
-| Checks | started at 19 passed 1 skipped of 20; ends at **21 passed 1 skipped of 22**, and `check-twins` green over all 17 pairs. Two new checks, `check-corpus` and `check-routes`, both halves, both compared |
-| Cost | one image pulled and removed (918 MB), one container run, ~300s of processor on the fuzz run. No money. |
-| Health | ⭐ the corpus holds its first measured profile. 2 new crates-worth of surface, 0 debts introduced, 0 entries left partial, tree clean. ⛔ Nothing deployed; nothing is published from this repository yet. |
+| `check-corpus` | its history leg under `actions/checkout`'s default one-commit clone, on every CI run since it was written |
+| the gate's line-endings filter | git's working-tree column. Eight files went CRLF last session and it stayed green. |
+| `check-twins` | whether a reported drift was a drift or a tree that moved |
+| `mine-repo` | anything at all, on a host that could clone and not reach the API |
 
----
+## Three defects in this session's own new code
 
-## What moved, in one line each
+| what | how it was found |
+| --- | --- |
+| an uninitialised awk variable used as a subscript is the empty string, not zero | `check-workflows` reported a job that does not exist, once per file |
+| jq on this Windows host writes CRLF | `check-coverage`'s human report disagreed with its twin while the JSON matched |
+| the driver cannot link the harness | the compiler, on the first build. The digest is injected now. |
+
+## The state the tree is left in
 
 | | |
 | --- | --- |
-| ⭐ `CORPUS-01` | the corpus is not empty: Chrome `151.0.7922.76`, measured here, with the `ClientHello` it was read from beside it |
-| ⭐ `HARNESS-10` | terminating the handshake changes nothing the raw surface can see: 17 of 19 TLS fields agree, none differ |
-| ⭐ `DRIVER-02` | the inherited version-discovery defect reproduced here to the digit, and it shows the corpus is a major behind stable |
-| `HARNESS-09` | one million coverage-guided runs at the parsers, no crash; 6,767 mutations run on every host in 0.47s |
-| `TOOL-06` | no published single-value file ends with a newline, in both halves and in the gate |
-| `CORPUS-03` | `latest` means stable, and it cannot mean anything else because of how it is built |
-
----
-
-## ⚠ The three things a reader should not have to find out later
-
-⛔ **There are three commits, not one.** The first was pushed mid-session as a
-crash checkpoint, because four entries of uncommitted work is more than a
-session should risk; the third fixed two defects the close itself surfaced.
-Squashing them now would rewrite published history and need a force push, which
-[`../docs/conventions/git.md`](../docs/conventions/git.md) section 5 and
-[`../docs/security/remote-ops.md`](../docs/security/remote-ops.md) both refuse
-without the operator's explicit instruction for that specific commit.
-
-⚠ **Three claims in this session's own writing were wrong and were corrected.**
-A corpus size quoted from an assertion's floor rather than measured (6,767, not
-"over five thousand"); a pasted suite count that moved after it was pasted; and
-a baseline line in `PROGRESS.md` itself. All three were found by the claim
-audit, and the last one was in the file the claim audit is written into.
-
-⛔ **`check-corpus` refused its own derived index**, on the first commit after
-the corpus had a profile in it. `index.json` and `latest.json` are regenerated
-whenever a profile is added, so the immutability rule could never have applied to
-them; it belongs to a published profile and its raw sidecar. Found by the check
-running, not by reading it, and mutation-proved in three directions afterwards.
-
-⛔ **`check-twins` reported a drift that was not one.** `.codegraph/` was created
-between its two halves, so the two probes disagreed about a directory that
-appeared mid-run. Both use the identical rule and both agree now. A run whose
-tree moved underneath it is not evidence, and that is written into the record as
-a trap and an open question.
+| the gate | 25 checks and `check-twins` over 22 pairs, both halves, green |
+| the suite | 256 tests in 28 files across 5 crates |
+| entries | total 91, open 43, blocked 0, done 48 |
+| the corpus | one profile, unchanged. ⚠ One source, not two. |
+| published | nothing |

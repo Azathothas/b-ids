@@ -5,9 +5,11 @@
 //! "launch it at this URL and do not leave anything behind". A component that
 //! did both would have two reasons to fail and one message for them.
 //!
-//! ⛔ **Nothing here acquires a browser.** `DRIVER-05` is acquisition, and a
-//! resolver that downloaded one would change the machine it was asked to
-//! describe.
+//! ⭐ **[`acquire`] is the third job and it is deliberately not the
+//! resolver's.** The resolver reads what is on this machine; acquisition says
+//! where a build can be got and records which route answered and the digest of
+//! what arrived. ⛔ A resolver that downloaded a browser would change the
+//! machine it was asked to describe, so the two stay apart.
 //!
 //! ⚠ **[`versions`] answers a third question and it is not the resolver's.**
 //! The resolver reads what is INSTALLED on this machine; version discovery
@@ -22,11 +24,13 @@
 //!
 //! `TODO/driver.md`, `DRIVER-01`.
 
+pub mod acquire;
 pub mod drive;
 pub mod headless;
 pub mod resolve;
 pub mod versions;
 
+pub use acquire::{Acquired, Candidate, Refusal, Route, acquire_with, plan};
 pub use drive::{Driven, Launch, drive};
 pub use headless::{Normalisation, normalise, normalise_user_agent};
 pub use resolve::{Family, NotResolved, Resolved, Source, resolve};

@@ -54,6 +54,7 @@
 #   sh scripts/common/check-twins.sh
 #   sh scripts/common/check-twins.sh --json
 #   sh scripts/common/check-twins.sh --verbose      also list per-tool differences
+#   sh scripts/common/check-twins.sh --timings      print the seconds each pair cost
 #
 # Exit codes: 0 they agree, 1 they have drifted, 2 could not run.
 #
@@ -71,11 +72,16 @@ export CHECK_GATE_INNER
 
 JSON=0
 VERBOSE=0
+# ⭐ MEASURE BEFORE SCOPING. This file is the slowest thing in the repository and
+# nothing said WHICH row cost what, so any scoping would have been a guess.
+# TODO/tooling.md, TOOL-15.
+TIMINGS=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --json) JSON=1 ;;
     --verbose) VERBOSE=1 ;;
+    --timings) TIMINGS=1 ;;
     -h|--help) awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print } else exit }' "$0"; exit 0 ;;
     *) printf 'check-twins: unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -107,6 +113,31 @@ TMP="${TMPDIR:-/tmp}/.checktwins.$$"
 mkdir -p "$TMP" || { printf 'check-twins: cannot write to %s\n' "$TMP" >&2; exit 2; }
 trap 'rm -rf "$TMP"' EXIT INT TERM
 
+# -- ⛔ THE TREE'S STATE, READ BEFORE ANY HALF RUNS AND AGAIN AFTER THE LAST --
+#
+# A file created or removed between one half of a pair and the other is a
+# disagreement between two implementations that agree. That is not a
+# hypothetical: `repo.has_codegraph` came back `sh=false ps=true` here on
+# 2026-09-01 because `.codegraph/` was created between the two probes, and the
+# only way to tell it from a real drift was to re-run the pair by hand.
+# TODO/tooling.md, TOOL-16.
+#
+# ⚠ THREE READINGS, AND EACH CATCHES SOMETHING THE OTHERS DO NOT. The index
+# catches a staged change, the porcelain status catches an edit and an untracked
+# file, and the root listing catches a new top-level directory that .gitignore
+# hides from both - which is exactly what `.codegraph/` was.
+#
+# ⛔ It is a digest rather than a list. What changed is not the question; whether
+# anything changed is.
+tree_state() {
+  {
+    git -C "$REPO_ROOT" ls-files -s
+    git -C "$REPO_ROOT" status --porcelain
+    ls -A "$REPO_ROOT"
+  } 2>/dev/null | cksum
+}
+STATE_BEFORE=$(tree_state)
+
 # ⚠ Run both from the repo root, so `repo.*` describes the same tree.
 ( cd "$REPO_ROOT" && sh "$SH_PROBE" --json > "$TMP/sh.json" 2> "$TMP/sh.err" ) || {
   printf 'check-twins: doctor.sh failed\n' >&2; cat "$TMP/sh.err" >&2; exit 2; }
@@ -117,6 +148,11 @@ jq -e . "$TMP/sh.json" >/dev/null 2>&1 || { printf 'check-twins: doctor.sh emitt
 jq -e . "$TMP/ps.json" >/dev/null 2>&1 || { printf 'check-twins: doctor.ps1 emitted invalid json\n' >&2; exit 2; }
 
 DRIFT=0
+# ⚠ A literal newline: a command substitution strips trailing ones, so an
+# accumulator joined without it runs its rows together.
+NL="
+"
+TIMINGS_REPORT=""
 note() { printf '  DRIFT  %s\n' "$1"; DRIFT=$((DRIFT + 1)); }
 ok()   { [ "$JSON" = "1" ] || printf '  ok     %s\n' "$1"; }
 
@@ -281,9 +317,19 @@ compare_pair() {
   # timestamped progress, and two runs a second apart are never byte-identical,
   # which reported a disagreement on a pair that agreed exactly. Comparing the
   # JSON compares the ANSWER; comparing the transcript compares the clock.
+  _p_t0=$(date +%s)
+  # shellcheck disable=SC2086
   _a_raw=$( cd "$REPO_ROOT" && sh "$REPO_ROOT/scripts/common/$_p_sh" $_p_shargs 2>/dev/null ); ra=$?
+  _p_t1=$(date +%s)
   # shellcheck disable=SC2086
   _b_raw=$( cd "$REPO_ROOT" && "$PWSH" -NoProfile -File "$REPO_ROOT/scripts/common/$_p_ps" $_p_psargs 2>/dev/null ); rb=$?
+  _p_t2=$(date +%s)
+  # ⭐ PER HALF, NOT PER PAIR. A row where one implementation is slow and the
+  # other is not is a different finding from a row where both are, and the sum
+  # would hide it. Whole seconds: the rows that matter here are tens of them,
+  # and a portable sub-second clock is not worth the dependency.
+  TIMINGS_REPORT="$TIMINGS_REPORT$(printf '%6s %6s  %s' \
+    "$((_p_t1 - _p_t0))" "$((_p_t2 - _p_t1))" "$_p_name")$NL"
   a=$(printf '%s\n' "$_a_raw" | grep '^{' || true)
   b=$(printf '%s\n' "$_b_raw" | grep '^{' || true)
 
@@ -341,6 +387,29 @@ compare_pair "check-vendor"         check-vendor.sh         "--json"          ch
 # and it is the half that decides the exit code.
 compare_pair "check-corpus"         check-corpus.sh         "--json"          check-corpus.ps1         "-Json"
 
+# ⭐ THE RULE THAT HAD NO ROW UNTIL IT HAD A SCRIPT. It was computed inline in
+# both halves of check-gate, in two languages, and compared by nothing: this
+# file compares PAIRS OF SCRIPTS. Extracting it is what gave it a comparison.
+compare_pair "check-line-endings"   check-line-endings.sh   "--json"          check-line-endings.ps1   "-Json"
+
+# ⚠ THE COHERENCE LEG IS ONE BINARY READ BY TWO PARSERS, and the DETERMINISM
+# leg is two independent implementations: the sh half copies with cp and
+# compares with cmp, the PowerShell half copies with Copy-Item and compares
+# byte arrays it read itself. ⭐ The second leg is the genuine two-implementation
+# comparison here, and it is the one that would catch a half comparing lines
+# where the other compares bytes.
+compare_pair "check-validate"       check-validate.sh       "--json"          check-validate.ps1       "-Json"
+
+# ⚠ BOTH HALVES PARSE THE SAME BLOCK STRUCTURE with no shared program between
+# them: one is an awk pass and the other a PowerShell loop. ⭐ A genuine
+# two-implementation comparison, and the one place a parser difference would
+# show as a different job count.
+compare_pair "check-workflows"      check-workflows.sh      "--assert-fail-fast-false --json" check-workflows.ps1 "-AssertFailFastFalse -Json"
+
+# ⚠ BOTH HALVES JOIN THE SAME TWO JSON FILES, one with jq and one with
+# ConvertFrom-Json, so the comparison is of two readers rather than of one.
+compare_pair "check-coverage"       check-coverage.sh       "--json"          check-coverage.ps1       "-Json"
+
 # ⚠ BOTH HALVES ENUMERATE AND READ THE LAST BYTE THEMSELVES, with no shared
 # binary between them, so this pair is a genuine two-implementation comparison
 # rather than two wrappers over one answer.
@@ -374,6 +443,32 @@ compare_pair "git-sync --check"     git-sync.sh             "--check --json"  gi
 # comparison skipped for convenience is a comparison that stops happening.
 compare_pair "check-remote-items"   check-remote-items.sh   "--json"          check-remote-items.ps1   "-Json"
 
+# --- 7a. what each pair cost, on request -------------------------------------
+if [ "$TIMINGS" = "1" ]; then
+  printf '\n  seconds per half, sh then ps:\n'
+  printf '%s' "$TIMINGS_REPORT" | sed 's/^/  /'
+fi
+
+# --- 7b. did the tree move under the comparison ------------------------------
+#
+# ⛔ THE SECOND READING, AND IT IS THE HALF THAT MAKES A DRIFT BELIEVABLE.
+# This file runs one half of a pair, then the other, then compares. A file
+# created or removed between the two is a disagreement between two
+# implementations that agree, and telling those apart has so far needed a human
+# re-running the pair by hand.
+#
+# ⚠ MEASURED HERE, 2026-09-01: `repo.has_codegraph` came back `sh=false
+# ps=true` because `.codegraph/` was created between the two probes. Both
+# halves use the identical rule and both answer `true` now.
+#
+# ⛔ THE RUN IS NOT MADE ATOMIC, and that is the ruling rather than a shortcut.
+# Copying the tree per pair would cost more than the comparison, and a lock
+# would not stop an editor outside this process. Recording what changed is
+# cheap and it answers the question that was actually being asked.
+STATE_AFTER=$(tree_state)
+MOVED=0
+[ "$STATE_BEFORE" = "$STATE_AFTER" ] || MOVED=1
+
 # --- 8. per-tool verdicts, on request ----------------------------------------
 if [ "$VERBOSE" = "1" ]; then
   printf '\n  per-tool differences (informational, not drift):\n'
@@ -384,13 +479,29 @@ if [ "$VERBOSE" = "1" ]; then
 fi
 
 # --- report -------------------------------------------------------------------
+#
+# ⛔ A DRIFT REPORTED ALONGSIDE A MOVED TREE IS UNDECIDED, not a pass and not a
+# failure. Reporting it clean would hide a real drift that happened to coincide
+# with a write; reporting it as drift is the false alarm this exists to remove.
+# Exit 2 is "could not run", which is what actually happened.
 if [ "$JSON" = "1" ]; then
-  printf '{"schema":"check-twins/1","drift":%s}\n' "$DRIFT"
+  moved=false
+  [ "$MOVED" = 1 ] && moved=true
+  printf '{"schema":"check-twins/2","drift":%s,"tree_moved":%s}\n' "$DRIFT" "$moved"
+  [ "$DRIFT" -gt 0 ] && [ "$MOVED" = 1 ] && exit 2
   [ "$DRIFT" -gt 0 ] && exit 1
   exit 0
 fi
 
 printf '\n'
+if [ "$DRIFT" -gt 0 ] && [ "$MOVED" = 1 ]; then
+  printf '⚠ UNDECIDED: %s pair(s) disagreed AND the tree changed underneath the run.\n\n' "$DRIFT"
+  printf 'A file created or removed between one half and the other reads exactly like\n'
+  printf 'a drift, so this run cannot tell the two apart and does not guess.\n'
+  printf '⛔ Re-run it on a tree nobody is writing to. A drift that reproduces on a\n'
+  printf 'still tree is a real one.\n'
+  exit 2
+fi
 if [ "$DRIFT" -gt 0 ]; then
   printf '⛔ the twins have drifted in %s place(s).\n\n' "$DRIFT"
   printf 'A field, a flag or a fact in one and not the other. Fix BOTH, or, if the\n'
@@ -398,6 +509,11 @@ if [ "$DRIFT" -gt 0 ]; then
   printf 'reason. ⛔ Do not widen the comparison to make a failure go away: that is\n'
   printf 'how the check stops checking.\n'
   exit 1
+fi
+if [ "$MOVED" = 1 ]; then
+  printf '⚠ the tree changed underneath this run, and no pair disagreed anyway.\n'
+  printf 'Nothing here is in doubt; it is reported because a moved tree is the one\n'
+  printf 'thing that makes a future drift unbelievable.\n'
 fi
 printf '✅ every twin pair agrees on this tree.\n'
 exit 0

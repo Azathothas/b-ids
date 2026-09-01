@@ -20,6 +20,7 @@ use b_ids_harness::Capture;
 const USAGE: &str = "\
 usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
        b-ids-corpus verify [--root DIR]
+       b-ids-corpus validate [--root DIR]
        b-ids-corpus latest --assert-stable [--root DIR]
        b-ids-corpus index --write [--root DIR]
 
@@ -27,6 +28,11 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    publish it, with its ClientHello beside it and the index
                    rewritten. Refuses a path that already holds a profile: a
                    correction is a NEW profile naming the one it replaces.
+  validate         run the coherence checks over every PUBLISHED profile and
+                   across the whole set, which is the question a push has to
+                   settle and the one the validator's own command cannot ask:
+                   it takes the paths a caller names. Its LAST line is a fixed
+                   `corpus=validate profiles:N findings:N notcheckable:N`.
   verify           every profile validates, sits at the route its own keys
                    derive, publishes the bytes it says it does, and the index
                    is what the tree derives to. Its LAST line is a fixed
@@ -230,6 +236,100 @@ fn latest(root: &str) -> ExitCode {
     }
 }
 
+/// Run the coherence checks over every published profile, and across the set.
+///
+/// ⭐ **The corpus-scale form, which is the one nothing had.** The validator's
+/// own command takes paths a caller names, so it answers about whatever
+/// somebody remembered to list. This answers about what is PUBLISHED, which is
+/// the question a push has to settle, and it is answerable here because this
+/// crate owns the layout. `TODO/ci.md`, `CI-01`.
+///
+/// ⛔ **`publishing` is on, and it is not a caller's choice.** Every profile
+/// this reads is already published, so a `vendor`-provenance field in one of
+/// them is a defect rather than a draft.
+///
+/// ⚠ **`NotCheckable` is counted and reported, never folded into the pass.** A
+/// corpus of one profile cannot answer the handshake check at all, and a run
+/// that printed nothing about that would say the corpus is coherent when what
+/// it means is that three of eight checks had nothing to read.
+///
+/// ⭐ **The cross-profile leg is why this reads the whole corpus at once.**
+/// [`b_ids_validator::shared_handshakes`] is the form of check 4 that runs
+/// across a set: two profiles claiming different majors and carrying a
+/// byte-identical TLS half, of which at most one was measured. ⚠ It is
+/// structurally silent on a corpus of one, and `CORPUS-02` is what ends that.
+fn validate_corpus(root: &str) -> ExitCode {
+    let store = Store::at(root);
+    if !store.exists() {
+        eprintln!(
+            "b-ids-corpus: there is no corpus at {}/{}. Nothing was validated",
+            root,
+            b_ids_corpus::CORPUS_DIR
+        );
+        println!("{STATUS}absent");
+        return ExitCode::from(2);
+    }
+    let entries = match store.profiles() {
+        Ok(entries) => entries,
+        Err(why) => return fail(&why),
+    };
+    // ⛔ 2, not 0. A corpus directory holding no profile has validated nothing,
+    // which is the "step that exits 0 having done nothing it was asked to do"
+    // row in docs/conventions/forbidden-patterns.md.
+    if entries.is_empty() {
+        eprintln!("b-ids-corpus: the corpus holds no profile, so nothing was validated");
+        println!("{STATUS}absent");
+        return ExitCode::from(2);
+    }
+
+    let options = b_ids_validator::Options {
+        publishing: true,
+        ..b_ids_validator::Options::default()
+    };
+    let mut findings = 0_usize;
+    let mut notcheckable = 0_usize;
+    for (path, profile) in &entries {
+        // ⚠ The route, never the absolute path, for the reason Store::verify
+        // gives: a message naming a path on the machine that ran the check is a
+        // message nobody else can act on.
+        let at = b_ids_corpus::route::as_route(path.strip_prefix(store.root()).unwrap_or(path));
+        let report = b_ids_validator::validate(profile, &options);
+        for (check, outcome) in &report.results {
+            match outcome {
+                b_ids_validator::Outcome::Passed => {}
+                b_ids_validator::Outcome::Failed(found) => {
+                    for finding in found {
+                        println!("{at}: FAIL  {finding}");
+                        findings += 1;
+                    }
+                }
+                b_ids_validator::Outcome::NotCheckable(why) => {
+                    println!("{at}: SKIP  {check} -- {why}");
+                    notcheckable += 1;
+                }
+            }
+        }
+    }
+
+    let profiles: Vec<b_ids_schema::Profile> =
+        entries.iter().map(|(_, profile)| profile.clone()).collect();
+    for finding in b_ids_validator::shared_handshakes(&profiles) {
+        println!("across the corpus: FAIL  {finding}");
+        findings += 1;
+    }
+
+    // ⛔ Last, after everything a person reads, and always printed.
+    println!(
+        "{STATUS}validate profiles:{} findings:{findings} notcheckable:{notcheckable}",
+        entries.len()
+    );
+    if findings == 0 {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    }
+}
+
 fn index(root: &str) -> ExitCode {
     let store = Store::at(root);
     if !store.exists() {
@@ -296,6 +396,7 @@ fn main() -> ExitCode {
             add(&root, &captures, &identity)
         }
         "verify" => verify(&root),
+        "validate" => validate_corpus(&root),
         // ⛔ The flag is required for the same reason `index` requires
         // --write and the validator's `import` requires --report.
         "latest" if assert_stable => latest(&root),

@@ -14,6 +14,77 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-01T15:10:00Z - acquisition, the capture matrix, and a coverage report
+
+**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-05`,
+[`TODO/ci.md`](TODO/ci.md) `CI-03`, [`TODO/corpus.md`](TODO/corpus.md)
+`CORPUS-02`, and [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`b-ids-driver::acquire`.** A build has more than one route, they are tried
+  in order, and what answered is recorded on the profile with the digest of what
+  arrived. ⛔ The artefact is never redistributed: the URL and the digest are.
+- ⭐ **`.github/workflows/capture.yml`**, the fan-out, with every lane allowed to
+  fail alone, a collect job that runs regardless, and a fuzz lane that overrides
+  the pinned toolchain explicitly.
+- ⭐ **`.github/capture-matrix.json`**, the plan, in one place. The workflow
+  builds its matrix from it and `check-coverage` reads the same file to say what
+  landed.
+- **`check-workflows` and `check-coverage`**, both halves, both in the gate and
+  both with a row in the twin comparison.
+- **`captured.acquisition`** in the schema and in the published contract,
+  omitted when absent so a profile written before it still serialises as it was.
+
+⛔ **Three defects in this session's own new code**, each found by running it
+rather than by reading it: an uninitialised awk variable used as a subscript is
+the empty string and not zero; jq on Windows writes CRLF, which made one half's
+human report disagree with its twin while the JSON matched; and the driver
+cannot link the harness, so the digest is injected rather than computed.
+
+⚠ **`CORPUS-02` is open with its blocker named.** The apparatus is built and no
+lane has run: closing it needs one run of the matrix on a hosted runner and the
+`linux64` profile committed.
+
+### 2026-09-01T14:10:00Z - the assertions a push makes, and three checks that were not checking
+
+**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-01`,
+[`TODO/tooling.md`](TODO/tooling.md) `TOOL-04`, `TOOL-15`, `TOOL-16`, `TOOL-17`,
+and [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`b-ids-corpus validate`, and `check-validate` in both halves.** The
+  coherence checks now run over what is PUBLISHED rather than over whatever a
+  caller listed, and the cross-profile `shared_handshakes` runs with them. A
+  second leg asserts the generator answers the same way twice, which
+  `b-ids-corpus verify` structurally cannot see.
+- ⭐ **`.github/workflows/validate.yml`**, on every push, on two hosts, with
+  `CARGO_NET_OFFLINE` set for every assertion step and the whole history
+  fetched.
+- ⭐ **`check-line-endings`**, extracted from inside both gate halves, reading
+  the working-tree column as well as the index one.
+- **`check-twins --timings`**, and a scope taken from what it measured.
+
+⛔ **Three checks were reporting green over questions they had not asked.**
+
+| the check | what it was not checking |
+| --- | --- |
+| `check-corpus` | its history leg ran under `actions/checkout`'s default one-commit clone, so `git log --diff-filter=MDR` saw a single commit and answered "nothing was edited" on every CI run since it was written |
+| the gate's line-endings filter | it read git's INDEX column alone, so a file that is CRLF on disk in a tree declaring `eol=lf` passed. It found `scripts/common/check-routes.ps1` LF on disk against its own `eol=crlf` on its first run. |
+| `mine-repo` | it exited before the clone when its API route was down, so a host that could clone and not reach the API got nothing at all |
+
+⭐ **`check-twins` costs 636 seconds now rather than 1056**, and the row that
+caused it went from 431 to 54. ⛔ Measured with `--timings` before and after on
+one host rather than estimated, and no pair was dropped: one was added.
+
+⚠ **A drift reported alongside a moved tree is UNDECIDED now**, not a failure.
+It reproduced itself while the entry was being worked: a stopped run's children
+outlived the stop, and `check-docs` reported 774 links against 781 for two
+implementations that agree exactly on a still tree.
+
 ### 2026-09-01T10:17:42Z - latest means stable, and a route check that can refuse
 
 **Record:** [`TODO/tooling.md`](TODO/tooling.md) `TOOL-06`,

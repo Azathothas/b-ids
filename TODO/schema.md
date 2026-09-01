@@ -882,16 +882,29 @@ and asserts the documented subset where it is not.
 | --- | --- |
 | JSON | canonical. Every other format is generated from it. |
 | NDJSON | streaming, line-oriented tools |
-| YAML | reading and hand-editing one profile |
-| TOML | consumers that already parse it |
 | CSV and TSV | spreadsheets and shell pipelines, one row per profile, key fields flattened |
 | Markdown | browsing on the web with no tooling |
-| SQLite | one queryable file. A query beats a walker, and it is nearly free to produce. |
-| CBOR and MessagePack | compact binary, for embedded and mobile consumers |
-| Protobuf | a published definition plus binaries, for a typed decoder |
 
 CSV and Markdown are lossy. Each says so in its own header, and the round-trip
 test asserts the documented subset rather than equality.
+
+### ⭐ Re-scoped 2026-09-01, by the operator, and the other six moved
+
+⛔ **This entry carried nine formats and six of them needed a dependency.** Its
+acceptance is a round trip, and a round trip needs a READER as well as a writer.
+The five above can be written and read back with what this tree already has;
+YAML, TOML, SQLite, CBOR, MessagePack and Protobuf each need an encoder **and**
+a decoder, so each is either a new dependency or a new parser this project owns
+and has to keep correct.
+
+⭐ **They moved to `SCHEMA-12`, with the trade stated there rather than left
+implicit here.** ⛔ What the ruling refused is twelve hand-written
+implementations in the crate that already owns four parsers.
+
+⚠ **The premise and the title above are unchanged**, per
+[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md): a
+re-scope is written underneath rather than edited over the top of what was
+believed.
 
 Must not: hand-edit a generated format. If one is ever edited directly, the
 generator has lost and the round-trip test is what says so.
@@ -1112,3 +1125,160 @@ cargo test -p b-ids-schema multipart -- --nocapture
 
 Passing means: a fixture of sixteen boundaries from one browser all match the
 recorded pattern, and a boundary from another browser does not.
+
+---
+
+## SCHEMA-12. The six formats that need a decoder as well as an encoder
+
+**Source** ruled by the operator 2026-09-01, splitting `SCHEMA-08`
+**Category** schema, **Priority** P2, **Effort** L, **Status** open
+
+### Problem
+
+`SCHEMA-08` publishes five formats this tree can round-trip with what it already
+has. The six below are the ones a consumer is as likely to ask for, and not one
+of them can be delivered without adding a dependency or writing a parser this
+project then owns forever.
+
+⛔ **The cost is the entry.** A format written and never read back is a format
+nobody has checked, and `SCHEMA-08`'s acceptance is a round trip precisely
+because a generator with no reader drifts silently.
+
+### Premise
+
+⭐ **Counted against the tree rather than believed.** Of the nine formats
+`SCHEMA-08` named, five are writable and readable with the standard library plus
+`serde_json`, which this workspace already depends on. The other six have no
+reader here at all.
+
+⚠ **What is NOT measured** is what each dependency costs in build time, in
+supply chain, or in the minimum supported Rust version, and filling that in is
+part of this entry rather than a preface to it.
+
+### Approach
+
+⭐ **State the trade per format, with its cost, and let the operator rule on one
+table rather than on six questions.** ⛔ Do not pick a set and start writing.
+
+| format | what a writer needs | what a reader needs | the cheaper alternative |
+| --- | --- | --- | --- |
+| YAML | a serialiser | a parser | publish YAML as a lossy view with no round trip, and say so in the support matrix |
+| TOML | a serialiser | a parser | the same |
+| SQLite | a library, or generated SQL text | a library | ⭐ generate a `.sql` DUMP rather than a binary database. Text round-trips through the `sqlite3` any host already has, and this project ships no library. |
+| CBOR | a codec | the same codec | drop it. MessagePack serves the same consumer. |
+| MessagePack | a codec | the same codec | drop it |
+| Protobuf | a definition and a code generator | the generated decoder | ⭐ publish the definition with no binaries. A typed consumer generates its own decoder and the corpus owes nothing. |
+
+⚠ **Two of those alternatives cost nothing and deliver most of the value**, and
+this entry exists to make that comparison visible rather than to assume it.
+
+⛔ **Whatever is chosen extends `SCHEMA-08`'s one generator.** A second
+generator is a second answer to what a profile is.
+
+Must not: add a dependency without recording what it costs, and must not write a
+parser this project cannot keep correct.
+
+### Prove
+
+```bash
+sh scripts/common/check-formats.sh --require-rows yaml,toml,sqlite,protobuf
+```
+
+Passing means: every format the ruling accepted is generated from the canonical
+corpus and read back, each lossless one to byte-identical canonical JSON; every
+format the ruling declined is absent from the generator AND named in the support
+matrix as declined, with its reason; and the check exits non-zero when a required
+row produced no output at all.
+
+---
+
+## SCHEMA-13. The published schema accepts 999 for a byte
+
+**Source** found while reading the published schema, 2026-09-01; ruled the same day
+**Category** schema, **Priority** P1, **Effort** S, **Status** open
+
+### Problem
+
+`u8`, `u16` and `u32` are each a bare `{"type": "integer"}` in
+[`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json),
+so a consumer validating a profile against the PUBLISHED schema accepts a value
+the Rust type cannot hold. A profile claiming 999 in a byte-wide field satisfies
+the contract this project publishes and fails the one it implements.
+
+### Premise
+
+⭐ **Read from the schema file rather than believed.** Every integer field in it
+is unbounded today.
+
+### Approach
+
+⭐ **The schema and its checker gain `minimum` and `maximum` in ONE change**, and
+that is not a convenience: the checker already refuses a keyword nothing
+enforces, so the two cannot land apart.
+
+Bound all three widths at once, derived from the Rust types rather than typed by
+hand, so the bound and the type cannot drift.
+
+Must not: bound one field and leave its siblings, which produces a schema that
+looks checked and is not.
+
+### Prove
+
+```bash
+cargo test -p b-ids-schema bounds -- --nocapture
+```
+
+Passing means: every integer field in the published schema carries a `minimum`
+and a `maximum` that match its Rust width; a profile with 999 in a byte-wide
+field is refused by the published schema as well as by the type; and a field
+added without a bound fails the test.
+
+---
+
+## SCHEMA-14. A credential's presence is a fingerprint, and it is currently a hole
+
+**Source** ruled by the operator 2026-09-01, from open question 4 of the previous session
+**Category** schema, **Priority** P1, **Effort** M, **Status** open
+
+### Problem
+
+`cookie` and `authorization` are dropped entirely today, name and all. ⛔ That
+leaves a hole in a recorded header ORDER and nothing marks it as a hole, so a
+consumer reading the order believes it has the whole sequence and does not.
+
+⭐ **Whether the header was sent, and where in the order, is a fingerprint signal
+in its own right**, and it carries no secret.
+
+### Premise
+
+⭐ **Read from the code**: the credential filter removes the entry, so the
+recorded order closes over the gap and nothing downstream can tell.
+
+### Approach
+
+Record the header as **present, in its wire position, with the value absent by
+construction**. A schema field says so explicitly rather than leaving a reader to
+infer it from a missing value.
+
+⛔ **The value never appears, on any surface, including the raw block.**
+`Raw::check` already refuses that and stays exactly as it is. This entry adds a
+way to say "a header was here"; it adds no way to say what was in it.
+
+⚠ The change reaches three places and they land together: the model, the capture
+path that builds the header set, and the validator check that reads header order.
+
+Must not: introduce any mode, flag or option under which the value is retained.
+⛔ A model whose natural form can carry a credential is the shape that one day
+publishes one.
+
+### Prove
+
+```bash
+cargo test -p b-ids-schema credentials -- --nocapture
+```
+
+Passing means: a capture carrying `cookie` produces a profile whose header list
+holds an entry at that position marked as a withheld credential with no value
+field at all; the serialised profile contains none of the credential's bytes,
+asserted by searching the serialised text; and a profile hand-built with a value
+on such an entry is refused.

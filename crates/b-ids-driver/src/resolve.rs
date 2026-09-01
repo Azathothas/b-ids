@@ -9,9 +9,11 @@
 //! `DRIVER-02` is the entry that says why: a first-party endpoint answered with
 //! a build almost nobody was running.
 //!
-//! ⚠ **It finds what is installed. It does not acquire anything.** `DRIVER-05`
-//! is acquisition, and a resolver that downloaded a browser would change the
-//! machine it was asked to describe.
+//! ⚠ **It finds what is installed. It does not acquire anything.**
+//! [`crate::acquire`] is where a build is obtained, and a resolver that
+//! downloaded one would change the machine it was asked to describe.
+//! ⭐ The two meet at [`crate::acquire::Route::Installed`], which is this
+//! module's answer offered as an acquisition route.
 //!
 //! `TODO/driver.md`, `DRIVER-01`.
 

@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 84  open 43  blocked 0  done 41
+total 91  open 43  blocked 0  done 48
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
-| P1 | 10 | 0 | 26 | 36 |
-| P2 | 29 | 0 | 5 | 34 |
+| P1 | 10 | 0 | 30 | 40 |
+| P2 | 29 | 0 | 8 | 37 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **43** | **0** | **41** | **84** |
+| **all** | **43** | **0** | **48** | **91** |
 
 ---
 
@@ -30,9 +30,9 @@ total 84  open 43  blocked 0  done 41
 
 | id | pri | eff | status | title | file |
 | --- | --- | --- | --- | --- | --- |
-| CI-01 | P1 | M | open | Every push: validate, with no network and no browser | [`ci.md`](ci.md) |
+| CI-01 | P1 | M | done | Every push: validate, with no network and no browser | [`ci.md`](ci.md) |
 | CI-02 | P1 | M | open | Staleness is a schedule, not a push trigger | [`ci.md`](ci.md) |
-| CI-03 | P1 | L | open | The capture matrix, fanned out, with every lane allowed to fail alone | [`ci.md`](ci.md) |
+| CI-03 | P1 | L | done | The capture matrix, fanned out, with every lane allowed to fail alone | [`ci.md`](ci.md) |
 | CI-04 | P1 | M | open | A scheduled run that finds a change opens a pull request, not an issue | [`ci.md`](ci.md) |
 | CI-05 | P2 | M | open | The cold-start job, which is the only thing that catches rot | [`ci.md`](ci.md) |
 | CI-06 | P2 | M | open | No single source of any fact | [`ci.md`](ci.md) |
@@ -51,7 +51,7 @@ total 84  open 43  blocked 0  done 41
 | DRIVER-02 | P1 | M | done | Read the version that is serving, not the one that is published | [`driver.md`](driver.md) |
 | DRIVER-03 | P1 | S | done | Headless changes the User-Agent, and normalising it is reported | [`driver.md`](driver.md) |
 | DRIVER-04 | P2 | S | open | The root store a browser actually reads | [`driver.md`](driver.md) |
-| DRIVER-05 | P2 | M | open | Acquisition, with more than one way to get a build | [`driver.md`](driver.md) |
+| DRIVER-05 | P2 | M | done | Acquisition, with more than one way to get a build | [`driver.md`](driver.md) |
 | DRIVER-06 | P2 | M | open | Branded and unbranded builds are different products | [`driver.md`](driver.md) |
 | EMIT-01 | P2 | L | open | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
 | EMIT-02 | P2 | L | open | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
@@ -70,6 +70,7 @@ total 84  open 43  blocked 0  done 41
 | HARNESS-11 | P2 | M | open | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
 | HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
+| HARNESS-14 | P2 | M | open | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
 | LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
 | LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
@@ -93,10 +94,13 @@ total 84  open 43  blocked 0  done 41
 | SCHEMA-09 | P1 | S | done | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
 | SCHEMA-10 | P2 | M | open | Record the shuffle as a property, and consider recording its seed | [`schema.md`](schema.md) |
 | SCHEMA-11 | P2 | S | open | The multipart boundary, which is a per-browser surface nobody listed | [`schema.md`](schema.md) |
+| SCHEMA-12 | P2 | L | open | The six formats that need a decoder as well as an encoder | [`schema.md`](schema.md) |
+| SCHEMA-13 | P1 | S | open | The published schema accepts 999 for a byte | [`schema.md`](schema.md) |
+| SCHEMA-14 | P1 | M | open | A credential's presence is a fingerprint, and it is currently a hole | [`schema.md`](schema.md) |
 | TOOL-01 | P1 | S | done | There is no toolchain, and the minimum version is measured rather than chosen | [`tooling.md`](tooling.md) |
 | TOOL-02 | P1 | S | done | The gate has no suite in it, and says so in a comment | [`tooling.md`](tooling.md) |
 | TOOL-03 | P1 | S | done | The secret check will refuse the raw captures | [`tooling.md`](tooling.md) |
-| TOOL-04 | P2 | S | open | The reference fetcher stops when one of its two routes is down | [`tooling.md`](tooling.md) |
+| TOOL-04 | P2 | S | done | The reference fetcher stops when one of its two routes is down | [`tooling.md`](tooling.md) |
 | TOOL-05 | P2 | S | done | One twin pair has no comparison at all | [`tooling.md`](tooling.md) |
 | TOOL-06 | P2 | S | done | The route check does not exist and it is three lines | [`tooling.md`](tooling.md) |
 | TOOL-07 | P3 | S | done | The gate's cost on a real host has never been measured | [`tooling.md`](tooling.md) |
@@ -107,6 +111,9 @@ total 84  open 43  blocked 0  done 41
 | TOOL-12 | P0 | S | done | A mined tree brings its own ignore rules, and 92 files of the corpus were never committed | [`tooling.md`](tooling.md) |
 | TOOL-13 | P1 | S | done | The Windows job skipped a lint and the workflow counted it as allowed | [`tooling.md`](tooling.md) |
 | TOOL-14 | P1 | S | done | The changelog check read a heading level this repository does not use | [`tooling.md`](tooling.md) |
+| TOOL-15 | P2 | M | done | The twin comparison costs a thousand seconds, and half of it is one row | [`tooling.md`](tooling.md) |
+| TOOL-16 | P1 | S | done | A tree that moved under the comparison reads as a drift | [`tooling.md`](tooling.md) |
+| TOOL-17 | P1 | S | done | The gate's line-endings filter cannot see the working tree | [`tooling.md`](tooling.md) |
 | VALID-01 | P0 | M | done | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
 | VALID-02 | P1 | S | done | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | open | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |

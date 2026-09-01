@@ -376,10 +376,23 @@ the same discipline [`common/check-powershell.ps1`](common/) already follows.
 Parsing the prose above it would make every wording change a silent behaviour
 change.
 
-⚠ **Exit 2 is "could not run", twice over**: there is no corpus at all, or the
-per-profile leg needed cargo and did not get it. The gate reports both as a
-SKIP. ⛔ The git leg still decides a failure: a published file edited after its
-first commit is exit 1 whether or not cargo was there.
+⚠ **Exit 2 is "could not run", three ways over**: there is no corpus at all,
+the per-profile leg needed cargo and did not get it, or ⛔ **the clone is
+SHALLOW.** The gate reports all three as a SKIP. ⛔ The git leg still decides a
+failure: a published file edited after its first commit is exit 1 whether or not
+cargo was there.
+
+⛔ **The shallow-clone refusal was a measured defect, not a precaution.**
+`actions/checkout` fetches one commit by default, so `git log` over the corpus
+paths saw a single commit and `--diff-filter=MDR` found nothing. This check ran
+inside the gate on both CI jobs from the day it was written and its history leg
+verified nothing on either, while reporting `corpus ok: 1 profile(s), nothing
+edited after publication`. That is the "step that exits 0 having done nothing it
+was asked to do" row in
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+in the check whose whole job is reading the history. ⭐ Both workflows carry
+`fetch-depth: 0` now, and the refusal is what makes losing that line fail rather
+than go quiet. `TODO/ci.md`, `CI-01`.
 
 ⛔ **The derived `index.json` and `latest.json` are excluded from the history
 leg**, and that was a defect rather than a design: they are regenerated whenever
@@ -387,6 +400,48 @@ a profile is added, so a rule refusing their modification would refuse the secon
 profile the corpus ever gets. ⚠ Nothing goes unchecked, because their content is
 asserted by the other leg against what the tree derives to. It fired on exactly
 that, on the first commit after the corpus had one.
+
+### `common/check-validate.sh`
+
+Is every PUBLISHED profile coherent, and does the generator answer the same way
+twice?
+
+⭐ **The defect it exists to catch is a corpus that is structurally intact and
+incoherent.** [`common/check-corpus.sh`](common/) asks whether every profile
+sits at the route its keys derive, publishes the bytes it claims and was never
+edited after publication. Every one of those can be true of a profile whose
+User-Agent says 151 and whose brand list says 152. ⚠ Nothing in this tree ran
+the coherence checks over what is published until this did: `b-ids-validator`
+takes the paths a caller names, so it answered about whatever somebody
+remembered to list.
+
+⛔ **Leg one is delegated to `b-ids-corpus validate`**, which is the one place
+that knows both the layout and the checks, and it reads that command's fixed
+`corpus=validate profiles:N findings:N notcheckable:N` line rather than the
+prose above it. ⭐ That command also runs the CROSS-profile form of check 4,
+`shared_handshakes`, which no per-profile invocation can reach: two profiles
+claiming different majors and carrying a byte-identical TLS half, of which at
+most one was measured. ⚠ It is structurally silent on a corpus of one, and
+`CORPUS-02` is what ends that.
+
+⭐ **Leg two is a class `b-ids-corpus verify` cannot see.** Verify compares the
+committed index against ONE derivation, so a generator that answered differently
+on alternate runs would fail it intermittently and read as a flake. This runs
+the generator twice over a throwaway copy and compares the bytes. ⚠ A release
+nobody can reproduce is a release whose every run looks like a change.
+
+⚠ **The copy is outside the repository** and the generator writes only into it,
+so the check stays read-only over the tree it measures.
+
+⚠ **What it does not assert yet, said rather than implied**: the round trip of
+the generated formats. There is one generator in this tree today and it writes
+the index and the pointer file; `SCHEMA-08` is what adds the rest, and it adds
+them to leg two in the same change.
+
+⛔ **Nothing here reaches the network or resolves a browser.** That is the
+requirement in `CI-01` rather than a property it happens to have, and
+[`../.github/workflows/validate.yml`](../.github/workflows/validate.yml) is
+where it is enforced with `CARGO_NET_OFFLINE`.
 
 ### `common/check-routes.sh`
 

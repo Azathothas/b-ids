@@ -490,7 +490,7 @@ by exempting the file.
 ## TOOL-04. The reference fetcher stops when one of its two routes is down
 
 **Source** found while running the reference sweep, 2026-08-30
-**Category** tooling, **Priority** P2, **Effort** S, **Status** open
+**Category** tooling, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -537,6 +537,102 @@ sh scripts/common/mine-repo.sh OWNER/NAME --out references --json
 Passing means: with the API route unreachable, the run clones the tree, writes a
 provenance file naming the API gap, and exits 0; with both routes unreachable it
 exits 1.
+
+### Closing
+
+**Closed 2026-09-01T13:55:00Z.** The API route failing is a gap now, recorded in
+the provenance file, and the run continues to the clone. ⛔ Only a run in which
+NEITHER route produced anything exits non-zero.
+
+⚠ **Two substitutions in the blocks below, and both are marked.** The
+scratch directory the trees were written to reads `SCRATCH`, and the commit
+`7fd1a60b01f91b314f59955a4e4d4e80d8edf11d` is abbreviated: this repository
+writes a commit id in a code span, and `check-no-secrets` refuses a bare
+forty-character hex run inside a fenced block. ⛔ The rule was not widened for
+a documentation convenience.
+
+⭐ **The outage was arranged rather than waited for**, by pointing the proxy at
+an unresolvable host in the working tree and restoring it afterwards. A defect
+that only reproduces on a bad network day is a defect nobody can close.
+
+```text
+$ sh scripts/common/mine-repo.sh octocat/Hello-World --route proxy --out SCRATCH
+route: proxy
+control: ⛔ UNREACHABLE (pkgforge-dev/reverse-proxies answered 000). A 404 below means nothing.
+fetching octocat/Hello-World
+  metadata: FAILED. Continuing to the clone; the tree is the half that can still be got.
+  discussions: skipped (the API route is down)
+  tree: 7fd1a60…
+
+mined octocat/Hello-World into SCRATCH/octocat__Hello-World
+commit 7fd1a60…, route proxy, 1 gap(s).
+⭐ Keep the tree. A conclusion nobody can re-check is an opinion.
+⚠ The API route was down, so this fetch has the TREE and no metadata.
+Re-run it when the route is back; the gap is named in PROVENANCE.md.
+exit=0
+```
+
+⭐ **And the gap is written where the procedure looks for it**, rather than only
+printed:
+
+```text
+## ⛔ What this fetch did NOT get
+
+  - metadata: repos/octocat/Hello-World could not be fetched over the proxy route, so NO API-derived source was fetched: no metadata, no issues, no comments, no releases, no tags, no discussions. Control says: ⛔ UNREACHABLE (pkgforge-dev/reverse-proxies answered 000). A 404 below means nothing.
+```
+
+### Both directions, and both halves
+
+```text
+$ sh scripts/common/mine-repo.sh octocat/Hello-World --route proxy --out SCRATCH --json
+{"schema":"mine-repo/2","target":"octocat/Hello-World","route":"proxy","metadata":false,"commit":"7fd1a60…","gaps":1,"uncommittable":0,"dest":"SCRATCH/octocat__Hello-World"}
+exit=0
+
+$ sh scripts/common/mine-repo.sh octocat/this-repository-does-not-exist-b-ids --route proxy --out SCRATCH --json
+{"schema":"mine-repo/2","target":"octocat/this-repository-does-not-exist-b-ids","route":"proxy","metadata":false,"commit":"-","gaps":2,"uncommittable":0,"dest":"SCRATCH/octocat__this-repository-does-not-exist-b-ids"}
+exit=1
+
+$ pwsh -NoProfile -File scripts/common/mine-repo.ps1 octocat/Hello-World -Route proxy -Out SCRATCH -Json
+{"schema":"mine-repo/2","target":"octocat/Hello-World","route":"proxy","metadata":false,"commit":"7fd1a60…","gaps":1,"uncommittable":0,"dest":"SCRATCH/octocat__Hello-World"}
+exit=0
+
+$ pwsh -NoProfile -File scripts/common/mine-repo.ps1 octocat/this-repository-does-not-exist-b-ids -Route proxy -Out SCRATCH -Json
+{"schema":"mine-repo/2","target":"octocat/this-repository-does-not-exist-b-ids","route":"proxy","metadata":false,"commit":"-","gaps":2,"uncommittable":0,"dest":"SCRATCH/octocat__this-repository-does-not-exist-b-ids"}
+exit=1
+```
+
+⚠ **The two answered identically on every run**, including the digit the sh half
+reports as `000` and the PowerShell half as `0` for an unreachable host, which is
+`curl`'s own output in one and a numeric status in the other and does not reach
+the machine-readable line.
+
+### ⚠ What the JSON schema move costs, said rather than left to be noticed
+
+The reporting shape gained `metadata`, so it is `mine-repo/2`. ⛔ Adding a field
+without moving the version is the "positional or implicit format with no
+version" row in
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+and this project's own gate reads these lines.
+
+⚠ **The pair's `check-twins` row is unaffected**, and that is not luck: it
+compares `--selftest`, which has its own schema and runs before any fetch. ⛔ The
+fetching path still has no comparison, because comparing it needs the network,
+which is the standing exemption `TOOL-05` recorded and this entry does not
+change.
+
+```text
+$ sh scripts/common/mine-repo.sh --selftest --json
+{"schema":"mine-repo-selftest/1","cases":4,"failed":0}
+sh exit=0
+$ pwsh -NoProfile -File scripts/common/mine-repo.ps1 -Selftest -Json
+{"schema":"mine-repo-selftest/1","cases":4,"failed":0}
+ps exit=0
+```
+
+⚠ **The fetched trees were written outside the repository and removed.** The
+tree's own guard refuses an output directory git would ignore, which is what
+sent them there: `.tmp/` is ignored, and a corpus nobody can commit is a corpus
+lost on the next machine.
 
 ---
 
@@ -1564,3 +1660,453 @@ that reports green over nothing sitting in the gate for a session, which is the
 more expensive of the two. ⚠ The tension is real and it is written into
 [`PROGRESS.md`](PROGRESS.md) as a question for the operator, with this as the
 recommendation.
+
+---
+
+## TOOL-15. The twin comparison costs a thousand seconds, and half of it is one row
+
+**Source** ruled by the operator 2026-09-01, from open question 7 of the previous session
+**Category** tooling, **Priority** P2, **Effort** M, **Status** done
+
+### Problem
+
+`check-twins.sh` runs both halves of every pair and compares their answers. It
+is the slowest thing in this repository by a wide margin, and a gate too slow to
+run is a gate that gets run once at the end.
+
+### Premise
+
+⚠ **Measured, and the figures are in `check-gate.sh`'s own header** rather than
+recalled: 403s for a full run against 106s for `--fast`, on one Windows 11
+machine over 13 pairs, then 171s for `--fast` after the workspace landed and the
+pair count reached 15. ⭐ The `check-no-secrets scoped` row alone took 70s in its
+sh half on the machine that added it, because it greps every file of every
+reference tree.
+
+### Approach
+
+⭐ **Scope the slow halves, never the comparison.** The cost is concentrated in
+rows that walk `references/`, which holds nineteen other projects' trees; the
+comparison itself is cheap.
+
+Three routes, and the entry measures before it chooses:
+
+| route | what it costs |
+| --- | --- |
+| run the expensive rows against a narrowed scope, with a fixture proving the scope rule | ⚠ a scope difference with nothing in the tree to exercise it is invisible to the comparison, which `scripts/README.md` already records |
+| run the two halves of a pair concurrently | ⛔ refused on its own: it makes the tree-moved problem in `TOOL-16` worse rather than better |
+| cache a half's answer against the tree's digest | a second thing to invalidate correctly |
+
+⛔ **Never drop a pair to make it fit.** A twin that is written and not compared
+is two behaviours, which is the rule in [`RULES.md`](RULES.md) section 4.
+
+⛔ **And never wrap it in a timeout.** A killed half reports as a drift that is
+not one, which is the same false positive `TOOL-16` is about.
+
+Must not: change what is compared in order to change how long it takes.
+
+### Prove
+
+```bash
+sh scripts/common/check-twins.sh --json
+```
+
+Passing means: every pair the file listed before this entry is still listed
+after it; the run reports the same drift count it reported before; and a
+timing taken on one host, with its conditions recorded, is materially under the
+figure in the premise.
+
+### Closing
+
+**Closed 2026-09-01T14:05:00Z.** ⭐ **The measurement came first and it named
+the row.** `--timings` prints the wall seconds each pair cost, and one row was
+44 per cent of the file.
+
+⚠ **Measured on one Windows 11 Pro 26200 host, 2026-09-01, twenty pairs, Git
+Bash 5.3 and PowerShell 7.6.5, on a machine doing other things.** Seconds per
+half, sh then ps:
+
+```text
+     122     36  check-docs
+      20     13  check-markers
+       3      2  check-one-home
+       2      1  check-placeholders
+      88     21  check-control-bytes
+       0      1  check-changelog
+      28      0  check-record
+       4      1  check-no-secrets
+       5      2  check-no-secrets pub
+     107     56  check-no-secrets scoped
+       1      1  check-msrv
+       2      1  check-vendor
+       2      1  check-corpus
+       2      2  check-line-endings
+       2      2  check-validate
+       1      1  check-routes
+       1      1  mine-repo selftest
+     317    114  check-gate
+       1      1  git-sync --check
+       3      2  check-remote-items
+```
+
+⭐ **970 seconds across the pairs, and `check-gate` alone is 431 of them.** The
+premise said "about a thousand seconds" and the wall clock for that run was
+1056. ⚠ The two figures are different quantities: 970 is the sum of the pairs
+and 1056 is the whole run, and the difference is the two probes and the setup.
+
+### ⛔ The reason that row was expensive, and it was not the gate being slow
+
+That row runs BOTH gates in full, and **each gate re-runs the fourteen checks
+that already have a row of their own.** So fourteen rules were compared three
+times each: once directly, once inside the sh gate, once inside the ps gate. The
+two extra times cost more than everything else in the file put together.
+
+⭐ **So a gate running inside `check-twins` now skips them.** What the pair
+uniquely proves is untouched: the LIST each half runs, and the checks with no row
+of their own, which are the two lints, the analyzer, the three suite entries and
+the probe.
+
+```text
+$ CHECK_GATE_INNER=1 sh scripts/common/check-gate.sh --json
+{"schema":"check-gate/1","total":23,"passed":8,"failed":0,"skipped":15,"strict":0}
+inner exit=0
+$ CHECK_GATE_INNER=1 pwsh -NoProfile -File scripts\common\check-gate.ps1 -Json
+{"schema":"check-gate/1","total":23,"passed":8,"failed":0,"skipped":15,"strict":0}
+inner exit=0
+```
+
+⛔ **The list going stale is covered, and for free.** The pair compares `skipped`
+as well as `passed`, so a list that grows in one half and not the other fails
+that row. ⚠ That is why the two lines above are quoted together: they are the
+check on the change as well as the effect of it.
+
+### The same measurement afterwards, same host, same day
+
+```text
+     120     50  check-docs
+      20     24  check-markers
+       3      2  check-one-home
+       1      2  check-placeholders
+      87     30  check-control-bytes
+       1      0  check-changelog
+      25      0  check-record
+       3      1  check-no-secrets
+       6      1  check-no-secrets pub
+      89     32  check-no-secrets scoped
+       1      1  check-msrv
+       1      1  check-vendor
+       3      1  check-corpus
+       2      2  check-line-endings
+       2      1  check-validate
+       0      1  check-routes
+       1      1  mine-repo selftest
+      29     25  check-gate
+       1      0  git-sync --check
+       3      2  check-remote-items
+```
+
+| | before | after |
+| --- | --- | --- |
+| the `check-gate` row | 431s | ⭐ **54s** |
+| every pair, summed | 970s | **575s** |
+| the whole run, wall clock | 1056s | **636s** |
+
+⭐ **A 40 per cent reduction in wall time, and the row that caused it is down by
+seven eighths.** ⚠ Every figure is one run on a machine doing other things, and
+the per-row numbers move by tens of per cent between runs: `check-docs` reads 122
+then 120 in the sh half and 36 then 50 in the ps half, with nothing changed in
+either. ⛔ The row that moved from 431 to 54 is outside that noise; the others
+are inside it.
+
+### ⛔ What was NOT done, and why each was refused
+
+| considered | why it was not taken |
+| --- | --- |
+| scope `check-no-secrets scoped`, the second-largest row at 163s | ⛔ its whole subject is `references/`. Scoping it is deleting it, and it is the one row that turns the reference-corpus exemption OFF. |
+| make `check-docs` and `check-control-bytes` cheaper | ⚠ a different entry. Those rows cost what the CHECKS cost, and making a check faster is not scoping a comparison. This entry's subject is the comparison. |
+| run the two halves of a pair concurrently | ⛔ it makes `TOOL-16` worse: a tree moving under a run is already hard to tell from a drift, and overlapping the halves widens the window. |
+| drop a pair | ⛔ refused by [`RULES.md`](RULES.md) section 4. A twin that is written and not compared is two behaviours. **Every pair the file listed before this entry is still listed after it.** ⚠ The measurement above was taken over twenty, of which `check-line-endings` and `check-validate` were added earlier the same session; `check-workflows` and `check-coverage` landed after it, so the file compares 22 and the two figures are over 20. |
+| wrap it in a timeout | ⛔ a killed half reports as a drift that is not one. |
+
+---
+
+## TOOL-16. A tree that moved under the comparison reads as a drift
+
+**Source** ruled by the operator 2026-09-01, from open question 8 of the previous session
+**Category** tooling, **Priority** P1, **Effort** S, **Status** done
+
+### Problem
+
+`check-twins.sh` runs one half of a pair, then the other, then compares. A file
+created or removed between the two is reported as a disagreement between two
+implementations that agree.
+
+⛔ **The failure mode is worse than a false alarm.** A session that learns to
+discount a drift it has not re-checked will one day discount a real one.
+
+### Premise
+
+⭐ **Measured here, on this tree, 2026-09-01.** `repo.has_codegraph` came back
+`sh=false ps=true` because `.codegraph/` was created between the two probes.
+Both halves use the identical rule and both answer `true` now. ⚠ The only way to
+tell that apart from a real drift was to re-run the pair by hand.
+
+### Approach
+
+⭐ **Record the tree's state before and after the run, and say so when they
+differ.** A digest of the tracked-plus-untracked file list is enough: it is
+cheap, it is what actually changed, and it does not need the run to be atomic.
+
+⛔ **Do not try to make the run atomic.** Copying the tree per pair would cost
+more than the comparison, and a lock would not stop an editor outside the
+process.
+
+⚠ **A drift reported alongside a moved tree is reported as UNDECIDED**, not as a
+pass and not as a failure. Reporting it clean would hide a real drift that
+happened to coincide with a write; reporting it failed is the false alarm this
+entry exists to remove.
+
+Must not: suppress a drift because the tree moved. The two facts are printed
+together and the exit code says the run could not decide.
+
+### Prove
+
+```bash
+sh scripts/common/check-twins.sh --json
+```
+
+Passing means: with a file deliberately created between two halves of one pair,
+the run reports the tree digest changed, names that pair as undecided rather
+than drifted, and exits 2; with the tree held still, the same pair is compared
+and reported as it was before.
+
+### Closing
+
+**Closed 2026-09-01T13:40:00Z.** `check-twins` reads the tree's state before its
+first pair and again after its last, and a drift reported alongside a moved tree
+is now UNDECIDED rather than a failure.
+
+⭐ **The failure mode reproduced itself while this entry was being worked, by
+accident, and that is the best evidence it could have had.** A run of the gate
+was stopped and its child processes outlived the stop; a second run started; and
+the two wrote into one log. The second run's `check-twins` reported:
+
+```text
+  DRIFT  check-docs: the twins disagree
+           sh: exit 0  {"schema":"check-docs/1","problems":0,"files":52,"links":774,"cited_paths":70,"shell_blocks":155}
+           ps: exit 0  {"schema":"check-docs/1","problems":0,"files":52,"links":781,"cited_paths":70,"shell_blocks":155}
+```
+
+⚠ **774 against 781 links, and neither half is wrong.** Documents were being
+edited between the sh half and the ps half. Re-run on a still tree, minutes
+later, with nothing changed in either implementation:
+
+```text
+$ sh scripts/common/check-docs.sh --json
+{"schema":"check-docs/1","problems":0,"files":52,"links":781,"cited_paths":70,"shell_blocks":155}
+sh exit=0
+$ pwsh -NoProfile -File scripts/common/check-docs.ps1 -Json
+{"schema":"check-docs/1","problems":0,"files":52,"links":781,"cited_paths":70,"shell_blocks":155}
+ps exit=0
+```
+
+⭐ **That is the second independent instance**, after `repo.has_codegraph` last
+session, and the two failed on different pairs for the same reason. ⛔ A session
+that had not re-run this by hand would have gone looking for a difference
+between two files that are identical.
+
+### ⭐ The guard, planted and seen to fire
+
+⛔ **A guard whose test has never been seen to fail is theatre.** So it was
+arranged: `check-twins --json` was started, and the closings for this session's
+entries were written into `TODO/*.md` while it ran.
+
+```text
+$ sh scripts/common/check-twins.sh --json
+  twin pairs, same tree:
+  DRIFT  check-docs: the twins disagree
+           sh: exit 0  {"schema":"check-docs/1","problems":0,"files":52,"links":787,"cited_paths":70,"shell_blocks":155}
+           ps: exit 0  {"schema":"check-docs/1","problems":0,"files":52,"links":790,"cited_paths":72,"shell_blocks":155}
+{"schema":"check-twins/2","drift":1,"tree_moved":true}
+exit=2
+```
+
+⭐ **787 links against 790, and 70 cited paths against 72**, because three more
+links and two more code-span paths were written between the sh half and the ps
+half. ⛔ Before this entry that was `drift:1` and exit 1, and a session reading
+it would have gone looking for a difference between two implementations that are
+identical.
+
+⚠ **The JSON and the exit code are what a caller reads and both are proved
+here.** The prose banner is the same branch on the same two variables and is not
+reached under `--json`; it is not separately demonstrated, and saying so is
+cheaper than pretending it was.
+
+⚠ **The schema moved to `check-twins/2`** because the shape gained
+`tree_moved`. Nothing in this tree parsed `check-twins/1`: the gate reads its
+exit code.
+
+### What it does now, and what it refuses to do
+
+⭐ **Three readings, and each catches something the others do not.** The digest
+covers `git ls-files -s`, which catches a staged change; `git status
+--porcelain`, which catches an edit and an untracked file; and a listing of the
+repository root, which catches a new top-level directory that `.gitignore` hides
+from both. ⚠ That third one is not padding: `.codegraph/` is exactly such a
+directory, and it is what produced last session's phantom drift.
+
+⛔ **The run is not made atomic, and that is the ruling rather than a shortcut.**
+Copying the tree per pair would cost more than the comparison, and a lock would
+not stop an editor outside the process. Recording what changed is cheap and it
+answers the question that was actually being asked.
+
+⛔ **Undecided is exit 2, which is "could not run".** Reporting a coincident
+drift as clean would hide a real one that happened to land during a write;
+reporting it as drift is the false alarm this entry removes. ⚠ Under
+`check-gate --strict` a skip is a failure, so continuous integration still goes
+red on an undecided run rather than passing over it.
+
+⚠ **A moved tree with NO disagreement is reported and passes.** Nothing is in
+doubt there; it is printed because a moved tree is the one thing that makes a
+future drift unbelievable.
+
+---
+
+## TOOL-17. The gate's line-endings filter cannot see the working tree
+
+**Source** ruled by the operator 2026-09-01, from open question 9 of the previous session
+**Category** tooling, **Priority** P1, **Effort** S, **Status** done
+
+### Problem
+
+Both halves of `check-gate` filter `git ls-files --eol` on the INDEX column, so
+a tracked file that is CRLF in the working tree and LF in the index passes.
+
+⚠ **Eight files became CRLF in a session that declares `eol=lf`, and the gate
+stayed green throughout.** `.gitattributes` normalised them on commit, so
+nothing reached the history and nothing said anything was wrong. The defect the
+check exists to catch was present in the tree and invisible to the check.
+
+### Premise
+
+⭐ **Measured on this tree.** `git ls-files --eol` reports 4428 files at
+`i/lf w/lf`, 82 at `i/lf w/crlf`, 93 at `i/none w/none`, 783 at
+`i/-text w/-text` and 2 at `i/mixed w/mixed`. ⚠ Every one of the 82 is a `.ps1`
+declaring `eol=crlf`, so on the tree as it stands today the working-tree column
+is already correct and this check would pass. The defect is that it would also
+have passed on the tree that carried the eight.
+
+### Approach
+
+Read the WORKING-TREE column as well, and compare it against what the attributes
+declare rather than against a fixed value.
+
+| declared | the working tree may be |
+| --- | --- |
+| `eol=lf` | `w/lf`, or `w/none` for a file with no line ending at all |
+| `eol=crlf` | `w/crlf`, or `w/none`. ⭐ `references/` and every `.ps1` are legitimately CRLF on disk, and `docs/conventions/shell.md` section 8 says why. |
+| `-text` | anything. The bytes are the content. |
+
+⛔ **Honour the attribute rather than the extension.** The reference corpus
+carries its own `.gitattributes` files, so a `.ps1` under `references/` resolves
+through the nested one; a rule that matched on `*.ps1` here would be a second
+answer to a question git already answers.
+
+⚠ **Both halves, and the filter stays identical between them.** The PowerShell
+half splits the same output on whitespace and must reach the same verdict.
+
+Must not: report a working-tree difference as a failure of the index, which is a
+different fact and a different fix.
+
+### Prove
+
+```bash
+sh scripts/common/check-gate.sh --json
+```
+
+Passing means: with a tracked `eol=lf` file rewritten with CRLF in the working
+tree and not staged, both halves fail the `line-endings` check and name the file;
+with the tree as it stands, both pass over the 82 files that are CRLF on purpose;
+and a file declared `-text` is not reported either way.
+
+### Closing
+
+**Closed 2026-09-01T13:30:00Z.** The rule reads both columns now, and it is a
+check with two halves and a row in the twin comparison rather than eight lines
+computed inline in each half of the gate.
+
+⭐ **It found a live defect in this tree on its first run**, which the filter it
+replaces could not see:
+
+```text
+$ sh scripts/common/check-line-endings.sh
+line-ending check failed, 1 file(s) over 5388 tracked:
+
+  worktree i/lf    w/lf    attr/text eol=crlf    	scripts/common/check-routes.ps1
+
+An "index" finding is what a commit would contain and is fixed by
+renormalising. A "worktree" finding is what is on disk and reaches no
+commit, which is exactly why nothing else notices it.
+exit=1
+$ pwsh -NoProfile -File scripts/common/check-line-endings.ps1 -Json
+{"schema":"check-line-endings/1","files":5388,"index":0,"worktree":1,"problems":1}
+exit=1
+```
+
+⚠ **`check-routes.ps1` was LF on disk and `eol=crlf` in its attributes.** It was
+written last session by a tool that writes LF, the attributes normalised it into
+the index, and every check in this tree reported green over it. ⛔ The
+declaration is not decoration: Windows PowerShell 5.1 mis-parses a here-string
+whose terminator arrives with a bare LF, and
+[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 8 is why
+the exception exists at all.
+
+⭐ **Fixing it produced no git diff**, which is the whole shape of the defect:
+
+```text
+$ node -e '... rewrite the file with CRLF ...'
+before: 0 CRLF of 203 line endings
+after:  203 CRLF of 203
+$ git diff --stat -- scripts/common/check-routes.ps1
+$ sh scripts/common/check-line-endings.sh
+line endings ok: 5388 tracked file(s), index and working tree both agree
+with what .gitattributes declares.
+exit=0
+```
+
+### ⭐ The scope grew during implementation, and here is what changed
+
+The entry as authored said "read the working-tree column too" in both halves of
+`check-gate`. Implementing it that way would have left the rule where it was:
+**two copies computed in two languages and compared by nothing.**
+`check-twins` compares PAIRS OF SCRIPTS, so a rule with no script of its own has
+no row, which is exactly how it went eight files wrong without anybody noticing.
+
+⭐ So the rule was extracted into `scripts/common/check-line-endings.{sh,ps1}`
+and given a row. That is a larger change than the entry asked for and the gate
+was re-passed against it, per
+[`../docs/methodology/gate.md`](../docs/methodology/gate.md).
+
+⚠ **The Prove command below is the entry's own and still exercises it**, through
+the gate, under the name `check-line-endings` rather than `line-endings`.
+
+### What the rule is now, and what it deliberately does not judge
+
+| the column | what it decides |
+| --- | --- |
+| index | what a commit will contain. Unchanged in substance: `i/lf`, `i/none` and an empty entry pass. |
+| working tree | what is on disk, compared against **what the attributes declare** rather than against a fixed value |
+
+⛔ **Out of scope, each for a stated reason**: `attr/-text`, because the bytes
+are the content; `i/-text` and `w/-text`, because git detected binary content
+whatever the attributes say; `i/none w/none`, because a file with no line ending
+at all is a shape `PUB-03` publishes deliberately; and any file whose attributes
+declare no `eol` at all, because there is nothing to compare a working tree
+against.
+
+⚠ **Measured on this tree**: 5388 tracked files, of which 83 are CRLF on disk on
+purpose. Every one is a `.ps1` declaring `eol=crlf`, and 66 of those are inside
+`references/`, where the declaration comes from a nested `.gitattributes` the
+mined tree brought with it. ⛔ A rule matching `*.ps1` would have been a second
+answer to a question git already answers, and it would have got those 66 from
+the wrong file.

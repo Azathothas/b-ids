@@ -1850,3 +1850,68 @@ tests stayed green.
 - ⚠ **Three distinct extension orders arrived in three completed connections.**
   The shuffle is real and it is visible now. `SCHEMA-10` is the entry that
   records it as a property rather than as noise.
+
+---
+
+## HARNESS-14. The pin against a real trust anchor, on a machine that is thrown away
+
+**Source** ruled by the operator 2026-09-01. It is the half `HARNESS-10` measured around.
+**Category** harness, **Priority** P2, **Effort** M, **Status** open
+
+### Problem
+
+Every capture this project has taken went through a **per-launch key pin**
+rather than a root in the browser's trust store, and `captured.trust` records
+which. ⛔ Nothing has ever measured whether that choice changes what the browser
+puts on the wire.
+
+⚠ **`HARNESS-10` measured the adjacent question and it is not this one.** It
+compared the raw surface against the terminating surface and found the two agree
+on every TLS field with a stable value. That says the act of terminating changes
+nothing; it says nothing about the pin.
+
+### Premise
+
+⭐ **Measured, and the measurement is what narrowed this entry to its remaining
+half.** `HARNESS-10`'s comparison ran three rounds and reported 17 of 19 TLS
+fields agreeing, none differing, and two carrying a per-connection draw. One
+browser, one build, one host.
+
+⚠ **The reason this stayed unmeasured until now was a machine**, not a
+difficulty: installing a root into a trust store is a change to that machine's
+security configuration. ⭐ The operator's 2026-09-01 ruling removes it: a runner
+is disposable, so the install is free and undoes itself when the job ends.
+
+### Approach
+
+⭐ **A job, on a runner, that captures the same build twice**: once through the
+standing per-launch pin, and once with this project's own root installed into
+the store the browser actually reads. Compare the two profiles field by field
+with the comparison `b_ids_harness::modes` already owns.
+
+⚠ **`DRIVER-04` lands first, and that ordering is not a preference.** On Windows
+the store a browser reads is not obviously the one `certutil` writes to, and a
+comparison run against the wrong store produces a confident wrong answer that
+looks exactly like a real result.
+
+⛔ **The root is generated for the run and never committed.** It is a capture
+tool. Nothing about it may resemble something to ship in a client, and
+[`../docs/security/secrets.md`](../docs/security/secrets.md) is the rule.
+
+⛔ **Both profiles record their own `captured.trust`**, so the comparison is
+readable from the corpus afterwards rather than only from a job log.
+
+Must not: change the standing capture method on the strength of one host. ⚠ If
+the two disagree, that is a finding about a platform and it needs the matrix,
+not a switch flip.
+
+### Prove
+
+```bash
+sh experiments/30-trust-anchor.sh --json
+```
+
+Passing means: the script reports which trust route each capture used, the count
+of TLS fields that agree, differ and could not be compared, and refuses to
+report a comparison at all when only one of the two routes completed a
+handshake.

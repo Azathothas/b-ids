@@ -1,0 +1,158 @@
+# Every push: is what is PUBLISHED still true, with no network and no browser.
+# TODO/ci.md, CI-01.
+#
+# ⭐ WHAT THIS ADDS THAT ci.yml DOES NOT, because two workflows running one list
+# is how one of them stops being maintained:
+#
+#   1. ⛔ THE NETWORK IS OFF FOR THE ASSERTIONS. The toolchain step and the
+#      dependency fetch are prerequisites and each is named; every step after
+#      them runs with CARGO_NET_OFFLINE=true, so an assertion that quietly
+#      grew a fetch fails here rather than passing everywhere and failing on
+#      the day the upstream is down. ⚠ THIS WORKFLOW IS NOT AIRGAPPED and does
+#      not claim to be: checkout, rustup and `cargo fetch` reach the network on
+#      purpose, in three steps that do nothing else.
+#
+#   2. ⛔ THE WHOLE HISTORY IS FETCHED. check-corpus asks git whether a published
+#      file was ever modified, deleted or renamed, and `actions/checkout`
+#      fetches ONE COMMIT by default. Under that default the question is asked
+#      of a single commit and answered "nothing was edited" every time. The
+#      check refuses a shallow clone now, so this line going missing fails the
+#      job instead of turning it green.
+#
+#   3. ⛔ NO BROWSER, EVER. A capture needs one; an assertion never does. CI-03 is
+#      where browsers are fetched, and its lanes are allowed to fail alone
+#      precisely so that their absence cannot reach this workflow. Nothing here
+#      may gain a browser install, and nothing here may depend on a capture job.
+#
+# ⛔ THE TOOLCHAIN IS PINNED BY THE TREE, NOT BY THIS FILE. rust-toolchain.toml
+# names the exact version; `rustup show active-toolchain` is what reads it and
+# installs it, so this file cannot disagree with the pin.
+#
+# ⛔ THIRD-PARTY ACTIONS ARE PINNED TO A COMMIT, NOT A TAG, and the pin is the
+# same one ci.yml carries, resolved rather than copied:
+#
+#   gh api repos/actions/checkout/git/ref/tags/v7.0.1 --jq .object.sha
+#
+# ⚠ NOTHING HERE NAMES AN OWNER OR A REPOSITORY, so the workflow keeps working if
+# this tree moves.
+
+name: validate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege. Nothing here needs more than reading the tree.
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  corpus:
+    name: corpus (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      # ⛔ FAIL-FAST OFF. One host answering differently from the other is the
+      # finding, and cancelling the sibling that would have shown it is how
+      # that finding is lost. The twin comparison in the gate says the two
+      # halves agree on ONE tree; this says they agree on two HOSTS.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      # ⛔ fetch-depth: 0 IS LOAD-BEARING. See point 2 in the header.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # ⭐ THE CLONE IS ASSERTED NOT TO BE SHALLOW, before anything reads it. The
+      # check refuses a shallow tree on its own, and this step says so in one
+      # line at the top of the log rather than fifty lines down inside a gate.
+      - name: the whole history is here
+        shell: bash
+        run: |
+          shallow=$(git rev-parse --is-shallow-repository)
+          echo "shallow=$shallow, $(git rev-list --count HEAD) commit(s)"
+          [ "$shallow" = false ]
+
+      - name: the pinned Rust toolchain
+        shell: bash
+        run: |
+          rustup show active-toolchain
+          cargo --version
+
+      # ⚠ THE ONE STEP THAT MAY FETCH A DEPENDENCY. --locked refuses to change
+      # Cargo.lock, so this cannot resolve to something the tree did not commit.
+      - name: dependencies, fetched once
+        shell: bash
+        run: cargo fetch --locked
+
+      # ⛔ EVERY STEP FROM HERE RUNS WITH THE NETWORK OFF. --offline makes cargo
+      # refuse rather than reach out, so an assertion that grew a dependency
+      # fails here.
+      - name: build, offline
+        shell: bash
+        env:
+          CARGO_NET_OFFLINE: 'true'
+        run: cargo build --locked --offline -p b-ids-corpus -p b-ids-validator
+
+      # ⚠ THE POSIX HALF, on ubuntu. The exit code is read from the process that
+      # produced it: a `run:` step is a shell with errexit on.
+      - name: the corpus is append-only and agrees with itself
+        if: runner.os != 'Windows'
+        env:
+          CARGO_NET_OFFLINE: 'true'
+        run: sh scripts/common/check-corpus.sh
+
+      - name: every published profile is coherent, and the generator is deterministic
+        if: runner.os != 'Windows'
+        env:
+          CARGO_NET_OFFLINE: 'true'
+        run: sh scripts/common/check-validate.sh
+
+      # ⛔ THE POWERSHELL HALF, on windows, natively. Running the twins on ubuntu
+      # under pwsh would prove nothing about the host they exist for.
+      - name: the corpus is append-only and agrees with itself
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          CARGO_NET_OFFLINE: 'true'
+        run: |
+          pwsh -NoProfile -File scripts\common\check-corpus.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: every published profile is coherent, and the generator is deterministic
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          CARGO_NET_OFFLINE: 'true'
+        run: |
+          pwsh -NoProfile -File scripts\common\check-validate.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      # ⭐ THE GOLDEN VECTORS, ASSERTED BY NAME AND COUNTED. `b-ids-corpus verify`
+      # re-parses every stored ClientHello and every stored frame block and
+      # compares the result against the committed profile, which is the test
+      # that protects this project's own parser from rotting. It runs inside
+      # check-corpus above; this step asserts the COUNT, because a corpus that
+      # became empty would pass every check above it having read no bytes.
+      - name: the golden vectors, and there is at least one
+        shell: bash
+        env:
+          CARGO_NET_OFFLINE: 'true'
+        run: |
+          set +e
+          out=$(cargo run -q --offline -p b-ids-corpus -- verify --root .)
+          rc=$?
+          set -e
+          echo "$out"
+          [ "$rc" = 0 ]
+          line=$(echo "$out" | grep '^corpus=profiles:' | tail -1)
+          profiles=$(echo "$line" | sed 's/.*profiles:\([0-9]*\).*/\1/')
+          echo "golden vectors re-parsed: $profiles"
+          [ "$profiles" -ge 1 ]

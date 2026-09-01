@@ -96,6 +96,15 @@ pub struct Identity {
     pub trust: Trust,
     /// The switches the subject was launched with, in order.
     pub switches: Vec<String>,
+    /// Where the build came from, when this project fetched it.
+    ///
+    /// ⚠ **Absent where nothing was fetched**, which is a different fact from
+    /// an acquisition that failed. A build already installed on the machine
+    /// was not obtained by this project and has no route or digest.
+    /// ⭐ Defaulted on the way in so an identity file written before this
+    /// field existed still reads. `TODO/driver.md`, `DRIVER-05`.
+    #[serde(default)]
+    pub acquisition: Option<b_ids_schema::Acquisition>,
 }
 
 /// The major component of a build string.
@@ -287,6 +296,10 @@ pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, V
             operator: identity.operator.clone(),
             trust: identity.trust,
             switches,
+            // ⛔ Carried from the identity file rather than derived here. The
+            // route that answered and the digest of what arrived are facts
+            // about a FETCH, and nothing in this crate does one.
+            acquisition: identity.acquisition.clone(),
         },
         tls,
         http2: http2.half,

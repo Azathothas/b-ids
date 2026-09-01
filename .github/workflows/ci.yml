@@ -52,7 +52,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # ⛔ THE WHOLE HISTORY, NOT THE DEFAULT ONE COMMIT. check-corpus runs
+      # inside the gate below and its only irreplaceable leg asks git whether a
+      # published file was ever modified, deleted or renamed. Under a shallow
+      # clone that question is asked of one commit and answered "nothing" every
+      # time: the leg ran on both jobs from the day it was written and verified
+      # nothing on either. The check refuses a shallow clone now, so losing this
+      # line fails the job rather than quietly emptying it. TODO/ci.md, CI-01.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       # ⚠ THE EXIT CODE IS CAPTURED, NOT ECHOED AFTER THE FACT. A `run:` step is
       # a shell with errexit on, so a non-zero probe aborts the step before any
@@ -139,7 +148,16 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
+      # ⛔ THE WHOLE HISTORY, NOT THE DEFAULT ONE COMMIT. check-corpus runs
+      # inside the gate below and its only irreplaceable leg asks git whether a
+      # published file was ever modified, deleted or renamed. Under a shallow
+      # clone that question is asked of one commit and answered "nothing" every
+      # time: the leg ran on both jobs from the day it was written and verified
+      # nothing on either. The check refuses a shallow clone now, so losing this
+      # line fails the job rather than quietly emptying it. TODO/ci.md, CI-01.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: the probe runs and emits valid json
         shell: pwsh

@@ -180,6 +180,15 @@ impl Store {
         Self { root: root.into() }
     }
 
+    /// The directory this store is rooted at.
+    ///
+    /// ⚠ **For turning an absolute path back into a route**, which is what a
+    /// message a person on another machine can act on needs.
+    #[must_use]
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
     /// The directory the profiles live under.
     #[must_use]
     pub fn corpus_dir(&self) -> PathBuf {

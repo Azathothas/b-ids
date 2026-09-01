@@ -1,0 +1,78 @@
+{
+  "comment": [
+    "The capture matrix, in ONE place. .github/workflows/capture.yml reads this",
+    "to build its job matrix and scripts/common/check-coverage reads it to say",
+    "which cells have a profile, so the plan and the report cannot disagree.",
+    "A matrix written into the workflow and a coverage report written from",
+    "somewhere else is a value in two places with no check that they agree.",
+    "",
+    "enabled false is a cell that is PLANNED and not attempted. It is reported",
+    "as such rather than dropped, because a coverage report that lists only what",
+    "was tried cannot show what is missing. TODO/corpus.md, CORPUS-02.",
+    "",
+    "required true means check-coverage --require-rows can be asked to fail on",
+    "it. Nothing is required by default: the flag names what a caller cares",
+    "about.",
+    "",
+    "os is the runner label and it is the only field the workflow needs that the",
+    "corpus does not have. browser, channel and platform are the three keys a",
+    "profile's route is derived from, spelled exactly as the corpus spells them."
+  ],
+  "schema_version": 1,
+  "cells": [
+    {
+      "browser": "chrome",
+      "channel": "stable",
+      "platform": "linux64",
+      "os": "ubuntu-latest",
+      "enabled": true,
+      "required": true,
+      "why": "The cheapest lane there is: the runner image ships Chrome, so this needs no acquisition at all."
+    },
+    {
+      "browser": "chrome",
+      "channel": "stable",
+      "platform": "win64",
+      "os": "windows-latest",
+      "enabled": true,
+      "required": true,
+      "why": "The one platform the corpus already has, captured again on a runner rather than on a laptop. Two profiles of one build on two platforms is what decides whether the TLS half is platform-independent."
+    },
+    {
+      "browser": "edge",
+      "channel": "stable",
+      "platform": "linux64",
+      "os": "ubuntu-latest",
+      "enabled": false,
+      "required": false,
+      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. Waiting on the driver resolving Edge on a runner image."
+    },
+    {
+      "browser": "chrome",
+      "channel": "stable",
+      "platform": "macos-arm64",
+      "os": "macos-latest",
+      "enabled": false,
+      "required": false,
+      "why": "A third platform and a second architecture. Waiting on DRIVER-05 having a route that serves a macOS build, and on the identity writer taking its platform from the run rather than from a two-way branch."
+    },
+    {
+      "browser": "chrome",
+      "channel": "beta",
+      "platform": "linux64",
+      "os": "ubuntu-latest",
+      "enabled": false,
+      "required": false,
+      "why": "How the project gets ahead of a release rather than behind it. Waiting on acquisition: no runner image ships a beta channel."
+    },
+    {
+      "browser": "firefox",
+      "channel": "stable",
+      "platform": "linux64",
+      "os": "ubuntu-latest",
+      "enabled": false,
+      "required": false,
+      "why": "A genuinely different TLS stack and the highest-value non-Chrome lane. Waiting on the resolver knowing the family at all."
+    }
+  ]
+}

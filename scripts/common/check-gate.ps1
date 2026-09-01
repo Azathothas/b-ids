@@ -189,6 +189,46 @@ function Invoke-Check {
     }
 }
 
+# -- ⭐ WHAT THIS GATE SKIPS WHEN check-twins IS RUNNING IT -------------------
+#
+# ⛔ MEASURED, NOT GUESSED. `check-twins --timings`, 2026-09-01, on one Windows
+# 11 host: 970 seconds across twenty pairs, of which the `check-gate` row alone
+# is 431. That row runs BOTH gates in full, and each gate re-runs the fourteen
+# checks that ALREADY HAVE A ROW OF THEIR OWN. TODO/tooling.md, TOOL-15.
+#
+# ⭐ So a gate running inside check-twins skips them. What that pair uniquely
+# proves is untouched: the LIST each half runs, and the checks with no row of
+# their own.
+#
+# ⛔ THE LIST GOING STALE IS COVERED, and for free: the pair compares `skipped`
+# as well as `passed`. ⚠ Keep it identical to the sh twin's.
+$ComparedDirectly = @(
+    'check-docs',
+    'check-markers',
+    'check-one-home',
+    'check-placeholders',
+    'check-control-bytes',
+    'check-record',
+    'check-no-secrets',
+    'check-vendor',
+    'check-msrv',
+    'check-corpus',
+    'check-validate',
+    'check-line-endings',
+    'check-routes',
+    'check-changelog',
+    'check-workflows',
+    'check-coverage'
+)
+
+function Test-ComparedDirectly {
+    param([string]$Name)
+    if ($env:CHECK_GATE_INNER -ne '1') { return $false }
+    if ($ComparedDirectly -notcontains $Name) { return $false }
+    Add-Skip $Name 'compared directly by check-twins; running it here compares one answer a third time'
+    return $true
+}
+
 function Invoke-PsCheck {
     <#
       Run a check's POWERSHELL TWIN, through this same host.
@@ -213,6 +253,10 @@ function Invoke-PsCheck {
         [int[]]$SkipCodes = @(),
         [string]$SkipReason = 'the check reported it could not run'
     )
+    # ⭐ THE ONE PLACE THE SKIP LIVES. Every check compared directly by
+    # check-twins goes through this function, so the guard is here rather than
+    # repeated at fourteen call sites.
+    if (Test-ComparedDirectly $Name) { return }
     $full = Join-Path $root $Script
     if (-not (Test-Path -LiteralPath $full)) {
         # ⛔ Named, not dropped. A check whose file is gone is a finding.
@@ -318,33 +362,42 @@ Invoke-PsCheck -Name 'check-msrv' -Script 'scripts/common/check-msrv.ps1' `
 Invoke-PsCheck -Name 'check-corpus' -Script 'scripts/common/check-corpus.ps1' `
     -SkipCodes @(2) -SkipReason 'the corpus is empty, or cargo could not verify a profile'
 
+# -- every published profile, coherent, and the derived files reproducible ---
+# ⚠ 2 is "could not run" three ways over: there is no corpus, it holds no
+# profile, or cargo is absent. None has validated anything, so all three are a
+# SKIP rather than a pass. ⛔ A finding or a non-deterministic generator is exit
+# 1 and fails the gate.
+Invoke-PsCheck -Name 'check-validate' -Script 'scripts/common/check-validate.ps1' `
+    -SkipCodes @(2) -SkipReason 'the corpus is empty, or cargo could not validate a profile'
+
+# -- every workflow declares the four things that decide a run's output ------
+# ⚠ 2 is "could not run": there is no .github/workflows directory, or it holds
+# no .yml file.
+Invoke-PsCheck -Name 'check-workflows' -Script 'scripts/common/check-workflows.ps1' `
+    -Arguments @('-AssertFailFastFalse') -SkipCodes @(2) `
+    -SkipReason 'there is no workflow directory, or it holds no workflow'
+
+# -- which cells of the planned capture matrix have a profile ----------------
+# ⚠ 2 is "could not run": there is no plan. ⛔ No row is REQUIRED here; the
+# capture workflow is where --require-rows is passed.
+Invoke-PsCheck -Name 'check-coverage' -Script 'scripts/common/check-coverage.ps1' `
+    -SkipCodes @(2) -SkipReason 'there is no capture matrix'
+
 # -- the published route files, and the one byte a consumer should not have to
 # strip. 2 is "there is no route tree yet, or it holds no single-value file",
 # which has verified nothing and is a SKIP rather than a pass.
 Invoke-PsCheck -Name 'check-routes' -Script 'scripts/common/check-routes.ps1' `
     -SkipCodes @(2) -SkipReason 'no published route tree, or it holds no single-value file'
 
-# -- line endings, from git's own answer rather than a second table ----------
-# ⛔ IT USED TO LIVE INSIDE THE sh BRANCH AND NEEDS NO SHELL. On a host without
-# one it was neither run nor skipped, so it left the report entirely: the counts
-# still added up, the name was simply absent, and nothing said so. That is the
-# quietest way a gate loses a check.
-# ⛔ THE FILTER READS THE INDEX COLUMN AND THE ATTRIBUTE COLUMN, NOT THE INDEX
-# COLUMN ALONE. `i/none` is a file with no line ending at all, which is a shape
-# this project publishes deliberately per PUB-03; `i/-text` and `i/mixed` under
-# `attr/-text` are files whose bytes are the content. A finding is `crlf` or
-# `mixed` on a file NOT declared `-text`.
-# ⛔ Keep this identical to the sh twin.
-$eol = @(& git ls-files --eol | Where-Object {
-    $cols = $_ -split '\s+'
-    $cols.Count -ge 3 -and $cols[2] -ne 'attr/-text' -and
-    $cols[0] -notin 'i/lf', 'i/none', 'i/', 'i/-text'
-})
-if ($eol.Count -eq 0) { Add-Pass 'line-endings' }
-else {
-    Add-Fail 'line-endings' 1
-    if (-not $Json) { foreach ($l in $eol) { Write-Output "  | $l" } }
-}
+# -- line endings, in the index AND in the working tree ----------------------
+#
+# ⛔ IT USED TO BE INLINE HERE, IN BOTH HALVES, AND THAT WAS THE DEFECT. Two
+# copies of one rule computed in two languages, compared by nothing: the twin
+# comparison covers a PAIR OF SCRIPTS, and a rule with no script of its own had
+# no row. ⭐ It is a check now, with both halves and a row. TODO/tooling.md,
+# TOOL-17.
+Invoke-PsCheck -Name 'check-line-endings' -Script 'scripts/common/check-line-endings.ps1' `
+    -SkipCodes @(2) -SkipReason 'git tracks no file in this repository'
 
 # -- the probe, through its own twin -----------------------------------------
 Invoke-PsCheck -Name 'doctor probe' -Script 'scripts/doctor/doctor.ps1' -Arguments @('-Fast')

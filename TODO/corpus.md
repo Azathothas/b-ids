@@ -344,6 +344,68 @@ Passing means: the coverage report lists every planned cell, marks each as
 captured, failed or not attempted, and exits non-zero when a required row has no
 capture at all.
 
+
+### ⚠ Open, with the blocker named. What landed 2026-09-01
+
+⛔ **Half of this entry is built and the other half needs a runner.** The
+apparatus is here and no lane has run, so the entry stays open rather than
+closing on machinery.
+
+| what exists now | |
+| --- | --- |
+| ⭐ [`../.github/capture-matrix.json`](../.github/capture-matrix.json) | six planned cells, two enabled, each with the reason it is or is not attempted yet. It is the ONE place the plan lives. |
+| ⭐ `check-coverage`, both halves | every planned cell reported as `captured`, `absent` or `not-attempted`, with `--require-rows` for the caller's own assertion |
+| ⭐ [`../.github/workflows/capture.yml`](../.github/workflows/capture.yml) | the fan-out, from `CI-03`, reading the plan above through `fromJSON` |
+
+```text
+$ sh scripts/common/check-coverage.sh
+coverage over 6 planned cell(s):
+
+  absent         chrome/stable/linux64              0 profile(s) required
+  captured       chrome/stable/win64                1 profile(s) required
+  not-attempted  edge/stable/linux64                0 profile(s)
+  not-attempted  chrome/stable/macos-arm64          0 profile(s)
+  not-attempted  chrome/beta/linux64                0 profile(s)
+  not-attempted  firefox/stable/linux64             0 profile(s)
+
+1 captured, 1 absent, 4 not attempted.
+exit=0
+
+$ sh scripts/common/check-coverage.sh --require-rows chrome,edge,chromium,firefox
+coverage check failed, 3 required row(s) with no capture:
+
+  edge: no capture at all, on any channel or platform
+  chromium: no capture at all, on any channel or platform
+  firefox: no capture at all, on any channel or platform
+exit=1
+```
+
+⭐ **The acceptance command already refuses**, which is the half of this entry a
+host with no runner can prove.
+
+### ⛔ What would close it
+
+**One run of `capture.yml` on a hosted runner, and the `linux64` profile
+committed.** That needs the workflow on the default branch, which needs this
+session's commit pushed, which is why it is the first thing the next session
+does rather than something waiting on a decision.
+
+⚠ **The `win64` cell already reads `captured`, and that profile came from a
+laptop rather than a runner.** ⛔ It is not a second source: `CI-04`'s
+merge condition wants agreement across two INDEPENDENT sources, and one laptop
+capture is one source. ⭐ The single highest-value capture available is still
+two profiles of ONE build on TWO platforms, and `VALID-01`'s handshake check
+reports `NotCheckable` until it exists.
+
+### ⚠ A defect this found in its own tooling, on this host
+
+⛔ **jq on Windows writes CRLF**, so the plan's third field arrived as `true`
+followed by a carriage return, which is not `true`. The sh half's human report
+dropped the word `required` from every required row while its JSON, which does
+not carry that field, matched its PowerShell twin exactly. ⚠ A divergence the
+twin comparison structurally could not see, found by reading the two human
+outputs side by side. Both jq reads strip the carriage return now.
+
 ---
 
 ## CORPUS-03. `latest` means stable, and beta is how the project gets ahead

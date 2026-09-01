@@ -67,11 +67,37 @@ try {
 
     if (-not (Test-Path -LiteralPath $corpusDir -PathType Container)) {
         if ($Json) {
-            Write-Output '{"schema":"check-corpus/1","corpus":false,"profiles":0,"edits":0,"problems":0}'
+            Write-Output '{"schema":"check-corpus/2","corpus":false,"shallow":false,"profiles":0,"edits":0,"problems":0}'
         }
         else {
             [Console]::Error.WriteLine("check-corpus: there is no $corpusDir/ directory, so nothing was verified.")
             [Console]::Error.WriteLine('The corpus is empty. TODO/corpus.md, CORPUS-01.')
+        }
+        exit 2
+    }
+
+    # -- ⛔ A SHALLOW CLONE CANNOT ANSWER THE ONE QUESTION THIS CHECK OWNS ---
+    #
+    # `actions/checkout` fetches ONE COMMIT by default, so `git log` over the
+    # corpus paths sees a single commit and `--diff-filter=MDR` finds nothing.
+    # The append-only leg then reports clean having examined no history at all.
+    #
+    # ⚠ It is not hypothetical: this check ran inside the gate on both CI jobs
+    # from the day it was written, under the default checkout depth, and its git
+    # leg verified nothing on either. TODO/ci.md, CI-01.
+    #
+    # ⛔ EXIT 2, NOT 0. The corpus may be fine and this run cannot say so. ⛔ Keep
+    # this identical to the sh twin.
+    $shallow = (& git rev-parse --is-shallow-repository 2>$null)
+    if ("$shallow".Trim() -eq 'true') {
+        if ($Json) {
+            Write-Output '{"schema":"check-corpus/2","corpus":true,"shallow":true,"profiles":0,"edits":0,"problems":0}'
+        }
+        else {
+            [Console]::Error.WriteLine('check-corpus: this is a SHALLOW clone, so the history leg cannot run and')
+            [Console]::Error.WriteLine('nothing was verified about whether a published file was ever edited.')
+            [Console]::Error.WriteLine('Fetch the whole history: git fetch --unshallow, or fetch-depth: 0 on the')
+            [Console]::Error.WriteLine('checkout step of the workflow that produced this tree.')
         }
         exit 2
     }
@@ -122,7 +148,7 @@ try {
 
     # -- report --------------------------------------------------------------
     if ($Json) {
-        Write-Output ('{"schema":"check-corpus/1","corpus":true,"profiles":' + $profiles +
+        Write-Output ('{"schema":"check-corpus/2","corpus":true,"shallow":false,"profiles":' + $profiles +
                       ',"edits":' + $editCount + ',"problems":' + $problems + '}')
         if ($editCount -gt 0) { exit 1 }
         if ($problems -gt 0) { exit 1 }

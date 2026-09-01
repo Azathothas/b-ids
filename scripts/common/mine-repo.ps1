@@ -392,33 +392,44 @@ else {
 Say ("control: " + $controlOk)
 
 # -- the subject -------------------------------------------------------------
+#
+# ⛔ THE API ROUTE FAILING IS A GAP, NOT AN EXIT, and it used to be an exit. The
+# clone route and the API route are independent: a host that can reach
+# github.com over git and not the API got NOTHING at all, including the tree,
+# which is the more valuable half. ⭐ Measured on one host 2026-08-30 and again
+# when it recovered. TODO/tooling.md, TOOL-04.
+#
+# ⛔ IT IS STILL RECORDED. The provenance file's whole job is naming what a
+# fetch could not get. ⛔ Keep this identical to the sh twin.
+$metaOk = $true
 Say ("fetching " + $Target)
 $repoFile = Join-Path $apiDir 'repo.json'
 if ($route -eq 'gh') {
     & gh api ('repos/' + $Target) > $repoFile 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        [Console]::Error.WriteLine("mine-repo: could not fetch repos/$Target")
-        [Console]::Error.WriteLine("mine-repo: control says: $controlOk")
-        exit 1
-    }
+    if ($LASTEXITCODE -ne 0) { $metaOk = $false }
 }
 else {
     $c = Invoke-Proxy ('/repos/' + $Target) $repoFile
-    if ($c -ne 200) {
-        [Console]::Error.WriteLine("mine-repo: proxy returned $c for repos/$Target")
-        [Console]::Error.WriteLine("mine-repo: control says: $controlOk")
-        exit 1
-    }
+    if ($c -ne 200) { $metaOk = $false }
+}
+if (-not $metaOk) {
+    if (Test-Path -LiteralPath $repoFile) { Remove-Item -LiteralPath $repoFile -Force -Confirm:$false }
+    Add-Gap "metadata: repos/$Target could not be fetched over the $route route, so NO API-derived source was fetched: no metadata, no issues, no comments, no releases, no tags, no discussions. Control says: $controlOk"
+    Say '  metadata: FAILED. Continuing to the clone; the tree is the half that can still be got.'
 }
 
 # ⛔ BOTH STATES, AND THE ISSUES ENDPOINT RETURNS PULL REQUESTS TOO. The
 # open-issue count in the metadata counts both, so a sweep that does not
 # discriminate on the pull_request field reports a dependency bump as an issue.
-Get-List ('/repos/' + $Target + '/issues?state=all') (Join-Path $apiDir 'issues.json')          'issues and pull requests'
-Get-List ('/repos/' + $Target + '/issues/comments') (Join-Path $apiDir 'comments.json')         'comments'
-Get-List ('/repos/' + $Target + '/pulls/comments')  (Join-Path $apiDir 'review-comments.json')  'review comments'
-Get-List ('/repos/' + $Target + '/releases')        (Join-Path $apiDir 'releases.json')         'releases'
-Get-List ('/repos/' + $Target + '/tags')            (Join-Path $apiDir 'tags.json')             'tags'
+# ⚠ SKIPPED WHOLESALE WHEN THE METADATA CALL FAILED, rather than attempted five
+# times over. The gap above already names every one of them.
+if ($metaOk) {
+    Get-List ('/repos/' + $Target + '/issues?state=all') (Join-Path $apiDir 'issues.json')          'issues and pull requests'
+    Get-List ('/repos/' + $Target + '/issues/comments') (Join-Path $apiDir 'comments.json')         'comments'
+    Get-List ('/repos/' + $Target + '/pulls/comments')  (Join-Path $apiDir 'review-comments.json')  'review comments'
+    Get-List ('/repos/' + $Target + '/releases')        (Join-Path $apiDir 'releases.json')         'releases'
+    Get-List ('/repos/' + $Target + '/tags')            (Join-Path $apiDir 'tags.json')             'tags'
+}
 
 # ⚠ DISCUSSIONS ARE GRAPHQL ONLY, so the proxy is the one source that cannot
 # reach them. ⛔ Recorded as a gap rather than skipped in silence: a sweep that
@@ -426,7 +437,10 @@ Get-List ('/repos/' + $Target + '/tags')            (Join-Path $apiDir 'tags.jso
 # and discussions are where several projects keep the argument that never made
 # it into an issue.
 $discFile = Join-Path $apiDir 'discussions.json'
-if ($route -eq 'gh') {
+if (-not $metaOk) {
+    Say '  discussions: skipped (the API route is down)'
+}
+elseif ($route -eq 'gh') {
     $q = 'query($o:String!,$n:String!){ repository(owner:$o,name:$n){ discussions(first:100){ nodes{ number title body createdAt author{login} comments(first:50){ nodes{ body author{login} } } } } } }'
     & gh api graphql -f query=$q -f o=$owner -f n=$name > $discFile 2>$null
     if ($LASTEXITCODE -eq 0) { Say '  discussions: ok' }
@@ -540,8 +554,16 @@ if ($ignoredCount -gt 0) {
     [Console]::Error.Write("  git add -f $dest`n`n")
 }
 
+# ⛔ NEITHER ROUTE PRODUCING ANYTHING IS THE ONLY FAILURE. One route down is a
+# degraded run with the gap recorded; both down is a run that fetched nothing,
+# and reporting that as success would be the "step that exits 0 having done
+# nothing it was asked to do" row in docs/conventions/forbidden-patterns.md.
+$fetchFailed = ((-not $metaOk) -and ($commit -eq '-'))
+
 if ($Json) {
-    Write-Output ('{"schema":"mine-repo/1","target":"' + $Target + '","route":"' + $route + '","commit":"' + $commit + '","gaps":' + $gaps.Count + ',"uncommittable":' + $ignoredCount + ',"dest":"' + ($dest -replace '\\', '/') + '"}')
+    $meta = if ($metaOk) { 'true' } else { 'false' }
+    Write-Output ('{"schema":"mine-repo/2","target":"' + $Target + '","route":"' + $route + '","metadata":' + $meta + ',"commit":"' + $commit + '","gaps":' + $gaps.Count + ',"uncommittable":' + $ignoredCount + ',"dest":"' + ($dest -replace '\\', '/') + '"}')
+    if ($fetchFailed) { exit 1 }
     exit 0
 }
 
@@ -549,4 +571,8 @@ Write-Output ''
 Write-Output ('mined ' + $Target + ' into ' + $dest)
 Write-Output ('commit ' + $commit + ', route ' + $route + ', ' + $gaps.Count + ' gap(s). Read ' + (Join-Path $dest 'PROVENANCE.md') + '.')
 Write-Output '⭐ Keep the tree. A conclusion nobody can re-check is an opinion.'
+if (-not $metaOk) {
+    Write-Output '⚠ The API route was down, so this fetch has the TREE and no metadata.'
+    Write-Output 'Re-run it when the route is back; the gap is named in PROVENANCE.md.'
+}
 exit 0

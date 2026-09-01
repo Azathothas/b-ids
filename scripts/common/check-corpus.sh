@@ -66,10 +66,39 @@ RAW_DIR="raw"
 
 if [ ! -d "$CORPUS_DIR" ]; then
   if [ "$JSON" = 1 ]; then
-    printf '{"schema":"check-corpus/1","corpus":false,"profiles":0,"edits":0,"problems":0}\n'
+    printf '{"schema":"check-corpus/2","corpus":false,"shallow":false,"profiles":0,"edits":0,"problems":0}\n'
   else
     printf 'check-corpus: there is no %s/ directory, so nothing was verified.\n' "$CORPUS_DIR" >&2
     printf 'The corpus is empty. TODO/corpus.md, CORPUS-01.\n' >&2
+  fi
+  exit 2
+fi
+
+# -- ⛔ A SHALLOW CLONE CANNOT ANSWER THE ONE QUESTION THIS CHECK OWNS -------
+#
+# `actions/checkout` fetches ONE COMMIT by default, so `git log` over the corpus
+# paths sees a single commit and `--diff-filter=MDR` finds nothing. The
+# append-only leg then reports clean having examined no history at all, which is
+# the "step that exits 0 having done nothing it was asked to do" row in
+# docs/conventions/forbidden-patterns.md, in the check whose whole job is
+# reading the history.
+#
+# ⚠ It is not hypothetical here: this check ran inside the gate on both CI jobs
+# from the day it was written, under the default checkout depth, and its git leg
+# verified nothing on either. TODO/ci.md, CI-01.
+#
+# ⛔ EXIT 2, NOT 0. The corpus may be fine and this run cannot say so. The fix is
+# `fetch-depth: 0` on the checkout step, and --strict turns this skip into a
+# failure so a workflow that loses that line fails rather than going quiet.
+SHALLOW=$(git rev-parse --is-shallow-repository 2>/dev/null)
+if [ "$SHALLOW" = "true" ]; then
+  if [ "$JSON" = 1 ]; then
+    printf '{"schema":"check-corpus/2","corpus":true,"shallow":true,"profiles":0,"edits":0,"problems":0}\n'
+  else
+    printf 'check-corpus: this is a SHALLOW clone, so the history leg cannot run and\n' >&2
+    printf 'nothing was verified about whether a published file was ever edited.\n' >&2
+    printf 'Fetch the whole history: git fetch --unshallow, or fetch-depth: 0 on the\n' >&2
+    printf 'checkout step of the workflow that produced this tree.\n' >&2
   fi
   exit 2
 fi
@@ -138,7 +167,7 @@ fi
 
 # -- report ------------------------------------------------------------------
 if [ "$JSON" = 1 ]; then
-  printf '{"schema":"check-corpus/1","corpus":true,"profiles":%s,"edits":%s,"problems":%s}\n' \
+  printf '{"schema":"check-corpus/2","corpus":true,"shallow":false,"profiles":%s,"edits":%s,"problems":%s}\n' \
     "$PROFILES" "$EDIT_COUNT" "$PROBLEMS"
   [ "$EDIT_COUNT" -gt 0 ] && exit 1
   [ "$PROBLEMS" -gt 0 ] && exit 1
