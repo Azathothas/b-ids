@@ -318,6 +318,12 @@ Invoke-PsCheck -Name 'check-msrv' -Script 'scripts/common/check-msrv.ps1' `
 Invoke-PsCheck -Name 'check-corpus' -Script 'scripts/common/check-corpus.ps1' `
     -SkipCodes @(2) -SkipReason 'the corpus is empty, or cargo could not verify a profile'
 
+# -- the published route files, and the one byte a consumer should not have to
+# strip. 2 is "there is no route tree yet, or it holds no single-value file",
+# which has verified nothing and is a SKIP rather than a pass.
+Invoke-PsCheck -Name 'check-routes' -Script 'scripts/common/check-routes.ps1' `
+    -SkipCodes @(2) -SkipReason 'no published route tree, or it holds no single-value file'
+
 # -- line endings, from git's own answer rather than a second table ----------
 # ⛔ IT USED TO LIVE INSIDE THE sh BRANCH AND NEEDS NO SHELL. On a host without
 # one it was neither run nor skipped, so it left the report entirely: the counts

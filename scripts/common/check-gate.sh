@@ -226,6 +226,12 @@ check_skippable 'check-msrv' 'cargo or jq is not on this host' \
 check_skippable 'check-corpus' 'the corpus is empty, or cargo could not verify a profile' \
   sh "$HERE/check-corpus.sh"
 
+# -- the published route files, and the one byte a consumer should not have to
+# strip. ⚠ 2 is "there is no route tree yet, or it holds no single-value file",
+# which has verified nothing and is a SKIP rather than a pass.
+check_skippable 'check-routes' 'no published route tree, or it holds no single-value file' \
+  sh "$HERE/check-routes.sh"
+
 # ⚠ 2 is "could not run", which is the honest answer in a project with no
 # CHANGELOG.md, and it is a pass here rather than a failure. ⛔ Collapsing 2 into
 # 0 with `|| true` would hide a genuine exit 1 as well.

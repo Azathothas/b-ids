@@ -326,10 +326,7 @@ fn corpus_the_latest_pointer_orders_builds_numerically_rather_than_as_text() {
     }
     let pointers = store.pointers().expect("the pointers derive");
     assert_eq!(
-        pointers
-            .latest
-            .get("chrome/stable/win64")
-            .map(String::as_str),
+        pointers.latest.get("chrome/win64").map(String::as_str),
         Some("corpus/v1/chrome/stable/win64/152.0.7977.64.json")
     );
 }
@@ -379,6 +376,108 @@ fn corpus_verify_asserts_every_half_is_reproducible_from_the_bytes_beside_it() {
             .iter()
             .any(|p| p.starts_with("corpus/v1/chrome/stable/win64/999.0.0.1.json:")),
         "{problems:?}"
+    );
+}
+
+#[test]
+fn corpus_latest_names_the_newest_stable_and_never_a_pre_release() {
+    // ⛔ CORPUS-03. A consumer following a pointer called `latest` must never be
+    // handed a pre-release build, and the beta here is a HIGHER build than the
+    // stable, so a pointer that took the newest of everything would take it.
+    let throwaway = Throwaway::new("latest-stable");
+    let store = Store::at(&throwaway.root);
+    for (version, channel) in [
+        ("152.0.7977.64", b_ids_schema::Channel::Stable),
+        ("153.0.8010.12", b_ids_schema::Channel::Beta),
+    ] {
+        let mut identity = identity();
+        identity.version = version.to_owned();
+        identity.channel = channel;
+        let profile = profile_from(&cold_capture(), &identity).expect("it converts");
+        store.add(&profile).expect("the write lands");
+    }
+    store.write_index().expect("the index is written");
+
+    let pointers = store.pointers().expect("the pointers derive");
+    assert_eq!(
+        pointers.latest.get("chrome/win64").map(String::as_str),
+        Some("corpus/v1/chrome/stable/win64/152.0.7977.64.json"),
+        "latest is the newest STABLE, not the newest build"
+    );
+    // ⭐ And the pre-release is published beside it, clearly labelled, because
+    // capturing beta is how this project gets ahead of a release.
+    assert_eq!(
+        pointers
+            .per_channel
+            .get("chrome/beta/win64")
+            .map(String::as_str),
+        Some("corpus/v1/chrome/beta/win64/153.0.8010.12.json")
+    );
+    assert!(store.verify().expect("readable").is_empty());
+    assert!(
+        store
+            .latest_that_is_not_stable()
+            .expect("readable")
+            .is_empty()
+    );
+}
+
+#[test]
+fn corpus_a_hand_edited_latest_pointing_at_a_pre_release_is_refused_by_name() {
+    // ⛔ THE MUTATION. The derivation cannot produce this entry, so the only way
+    // it exists is somebody editing the published file. That is exactly what a
+    // consumer would then follow.
+    let throwaway = Throwaway::new("latest-edited");
+    let store = Store::at(&throwaway.root);
+    for (version, channel) in [
+        ("152.0.7977.64", b_ids_schema::Channel::Stable),
+        ("153.0.8010.12", b_ids_schema::Channel::Beta),
+    ] {
+        let mut identity = identity();
+        identity.version = version.to_owned();
+        identity.channel = channel;
+        let profile = profile_from(&cold_capture(), &identity).expect("it converts");
+        store.add(&profile).expect("the write lands");
+    }
+    store.write_index().expect("the index is written");
+
+    // ⚠ Edited through the type rather than by string replacement, so the test
+    // does not silently stop editing anything the day the serialisation changes
+    // its whitespace.
+    let path = store.corpus_dir().join(b_ids_corpus::store::POINTER_FILE);
+    let text = std::fs::read_to_string(&path).expect("readable");
+    let mut pointers: b_ids_corpus::Pointers = serde_json::from_str(&text).expect("it parses");
+    let previous = pointers.latest.insert(
+        "chrome/win64".to_owned(),
+        "corpus/v1/chrome/beta/win64/153.0.8010.12.json".to_owned(),
+    );
+    assert_eq!(
+        previous.as_deref(),
+        Some("corpus/v1/chrome/stable/win64/152.0.7977.64.json"),
+        "the edit landed on the entry the derivation produced"
+    );
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(&pointers).expect("serialises"),
+    )
+    .expect("writable");
+
+    let problems = store.latest_that_is_not_stable().expect("readable");
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    assert!(
+        problems[0].contains("chrome/win64") && problems[0].contains("beta"),
+        "the message names the route and the channel: {}",
+        problems[0]
+    );
+    // ⛔ And the ordinary corpus check refuses it too, because the written file
+    // no longer matches what the tree derives to.
+    assert!(
+        store
+            .verify()
+            .expect("readable")
+            .iter()
+            .any(|p| p.contains("latest.json")),
+        "a hand-edited pointer file is refused by the derivation comparison as well"
     );
 }
 

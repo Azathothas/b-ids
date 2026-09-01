@@ -20,6 +20,7 @@ use b_ids_harness::Capture;
 const USAGE: &str = "\
 usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
        b-ids-corpus verify [--root DIR]
+       b-ids-corpus latest --assert-stable [--root DIR]
        b-ids-corpus index --write [--root DIR]
 
   add              turn the cold connection of a navigation into a profile and
@@ -32,8 +33,13 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    `corpus=profiles:N problems:N`, which is what
                    scripts/common/check-corpus reads. Parse that, never the
                    prose above it.
-  index --write    rewrite the index and the latest-per-key pointer from the
-                   tree. The only writer of either.
+  latest           every `latest` pointer resolves to a STABLE profile. A
+                   consumer following one must never be handed a pre-release
+                   build. --assert-stable is required, because a command that
+                   read the pointer file and asserted nothing looks like it
+                   did the job.
+  index --write    rewrite the index and the pointer file from the tree. The
+                   only writer of either.
   --captures FILE  what `b-ids-harness --json` printed. Its first line is the
                    base URL and is not a capture; every other line is one.
   --identity FILE  what the subject was and under what conditions it was
@@ -192,6 +198,38 @@ fn verify(root: &str) -> ExitCode {
     }
 }
 
+/// Assert that every `latest` pointer resolves to a stable profile.
+///
+/// ⛔ **It reads the pointer file on disk rather than the derivation.** A
+/// consumer follows the file, so the file is what has to be right; the
+/// derivation cannot produce a bad entry and this is what catches a hand-edited
+/// one. `CORPUS-03`.
+fn latest(root: &str) -> ExitCode {
+    let store = Store::at(root);
+    if !store.exists() {
+        eprintln!(
+            "b-ids-corpus: there is no corpus at {}/{}. Nothing was checked",
+            root,
+            b_ids_corpus::CORPUS_DIR
+        );
+        println!("{STATUS}absent");
+        return ExitCode::from(2);
+    }
+    let problems = match store.latest_that_is_not_stable() {
+        Ok(problems) => problems,
+        Err(why) => return fail(&why),
+    };
+    for problem in &problems {
+        println!("{problem}");
+    }
+    println!("{STATUS}latest problems:{}", problems.len());
+    if problems.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    }
+}
+
 fn index(root: &str) -> ExitCode {
     let store = Store::at(root);
     if !store.exists() {
@@ -225,9 +263,11 @@ fn main() -> ExitCode {
     let mut captures = None;
     let mut identity = None;
     let mut write = false;
+    let mut assert_stable = false;
     while let Some(arg) = argv.next() {
         match arg.as_str() {
             "--write" => write = true,
+            "--assert-stable" => assert_stable = true,
             "--root" => match argv.next() {
                 Some(value) => root = value,
                 None => return fail("--root needs a directory"),
@@ -256,6 +296,10 @@ fn main() -> ExitCode {
             add(&root, &captures, &identity)
         }
         "verify" => verify(&root),
+        // ⛔ The flag is required for the same reason `index` requires
+        // --write and the validator's `import` requires --report.
+        "latest" if assert_stable => latest(&root),
+        "latest" => fail("latest needs --assert-stable"),
         // ⛔ --write is required rather than defaulted, for the reason the
         // validator's `import` requires --report: a command that read the tree
         // and wrote nothing looks like it did the job.

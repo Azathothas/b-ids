@@ -212,6 +212,7 @@ done here.**
 
 | you want to | use | not |
 | --- | --- | --- |
+| ⭐ **find or understand code in this tree** | `codegraph explore "<symbols or question>"`, or the `codegraph_explore` tool where the harness has it | grep, find, or opening files to look around. It answers with the verbatim source AND the call paths, including dispatch hops grep cannot follow. |
 | know what host this is and what is installed | `scripts/doctor/` | assuming |
 | run every local gate in one command | ⭐ `scripts/common/check-gate.sh --fast`, or its `.ps1` twin | remembering the list. ⚠ The one you forget is the one added last. |
 | write a file whose content has quotes, backticks or a dollar sign | `scripts/common/write-file.mjs` | a heredoc. ⚠ It is not reliably literal. |
@@ -223,6 +224,11 @@ done here.**
 | take, check or reconcile a vendored tree | `scripts/common/vendor-sync.mjs`, `vendor-diff.mjs` and `check-vendor.sh` | a hand copy, which loses the commit it came from and with it every later merge |
 | run any check on Windows | ⭐ the `.ps1` half of the pair | the `.sh` half. ⚠ Native PowerShell may have no `sed`, and its `sort` is an alias that answers differently. |
 | run something on Linux from a Windows host | ⭐ [`containers.md`](containers.md) | installing a distro by hand and leaving it registered |
+
+⚠ **The index is a snapshot and this tree moves.** A query answering about a
+symbol you just added is answering from whenever the index was built, so confirm
+against the file before acting on it. Re-indexing is the operator's decision,
+not a session's.
 
 ⛔ **A tool being absent is a measurement, not a verdict.** A missing tool closes
 one route, not the question, and three routes considered is the standard before

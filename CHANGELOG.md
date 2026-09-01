@@ -14,7 +14,36 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
-### 2026-09-01T10:40:00Z - a million runs at the parsers, and no panic
+### 2026-09-01T10:17:42Z - latest means stable, and a route check that can refuse
+
+**Record:** [`TODO/tooling.md`](TODO/tooling.md) `TOOL-06`,
+[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-03`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- **`check-routes`, in both halves and in the gate.** No published file that
+  carries exactly one value may end with a newline, because a consumer of one
+  should never have to strip anything. The requirement came from `od -c` over
+  somebody else's published dataset, not from taste.
+- ⭐ **`latest` means stable and it cannot mean anything else.** The pointer
+  file splits `latest`, built from stable profiles alone, from `per_channel`,
+  which carries every channel under its own name. The rule is enforced by
+  construction and the written file is compared against the derivation, so a
+  hand-edited pointer is refused twice.
+
+⛔ **The fixture written to prove `check-routes` could refuse found that it
+could not.** `git ls-files` answers a path outside the repository with an empty
+list, so both halves reported "ok, 0 files" over the file meant to make them go
+red. A route tree that yields no single-value file is exit 2 now, because a
+check that reports clean over nothing quietly stops applying.
+
+⚠ **`CORPUS-03`'s own Approach asked for its three rules in two documents**, and
+`check-one-home` refused the tree for it. The README owns the wording, the entry
+points at it, and the amendment is recorded rather than made silently.
+
+### 2026-09-01T09:48:20Z - a million runs at the parsers, and no panic
 
 **Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-09`, and
 [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
@@ -27,10 +56,10 @@ What landed:
   connection preface on its own, which is what says it reached the frame reader
   rather than bouncing off a length check.
 - ⭐ **A second half that runs everywhere.**
-  `cargo test -p b-ids-harness hostile` drives the same function over five
-  thousand mutations of the committed captures in under half a second, with no
-  nightly toolchain, so the property is held by the ordinary gate rather than by
-  a tool somebody has to remember.
+  `cargo test -p b-ids-harness hostile` drives the same function over 6767
+  mutations of the committed captures in under half a second, with no nightly
+  toolchain, so the property is held by the ordinary gate rather than by a tool
+  somebody has to remember.
 - **`fuzz/`**, a cargo-fuzz crate excluded from the workspace for the reason the
   vendored tree already paid for.
 
@@ -46,7 +75,7 @@ as it was found.
 nightly image is not enough: rustup reads the file, fetches the pinned stable,
 and `-Z sanitizer` is then refused. The toolchain is overridden explicitly.
 
-### 2026-09-01T09:50:00Z - the build that is serving, not the one that is published
+### 2026-09-01T09:27:16Z - the build that is serving, not the one that is published
 
 **Record:** [`TODO/driver.md`](TODO/driver.md), `DRIVER-02`, and
 [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
@@ -75,7 +104,7 @@ behind. Nothing said so before this command existed.
 already has, one process per request, because an HTTP client crate brings its
 own TLS stack into a workspace that vendors one.
 
-### 2026-09-01T09:30:00Z - measuring did not change what was measured
+### 2026-09-01T09:13:54Z - measuring did not change what was measured
 
 **Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-10`, and
 [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
@@ -105,7 +134,7 @@ asks for the raw surface against the terminating one, and that is what closed.
 Installing a root into a machine's trust store is the operator's action, and it
 stays an open question with that recommendation attached.
 
-### 2026-09-01T09:10:00Z - the corpus holds a profile
+### 2026-09-01T08:27:32Z - the corpus holds a profile
 
 **Record:** [`TODO/corpus.md`](TODO/corpus.md), `CORPUS-01`, and
 [`TODO/PROGRESS.md`](TODO/PROGRESS.md).

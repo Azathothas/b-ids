@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 84  open 45  blocked 0  done 39
+total 84  open 43  blocked 0  done 41
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
 | P1 | 10 | 0 | 26 | 36 |
-| P2 | 31 | 0 | 3 | 34 |
+| P2 | 29 | 0 | 5 | 34 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **45** | **0** | **39** | **84** |
+| **all** | **43** | **0** | **41** | **84** |
 
 ---
 
@@ -40,7 +40,7 @@ total 84  open 45  blocked 0  done 39
 | CI-08 | P2 | S | open | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
 | CORPUS-01 | P1 | M | done | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
 | CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
-| CORPUS-03 | P2 | S | open | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
+| CORPUS-03 | P2 | S | done | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
 | CORPUS-04 | P2 | M | open | Per-build trust-anchor lists, and a recommendation | [`corpus.md`](corpus.md) |
 | CORPUS-05 | P3 | S | open | Name the unidentified extension | [`corpus.md`](corpus.md) |
 | DOC-01 | P2 | S | open | There is no technical reference, and one document is pretending not to notice | [`docs.md`](docs.md) |
@@ -98,7 +98,7 @@ total 84  open 45  blocked 0  done 39
 | TOOL-03 | P1 | S | done | The secret check will refuse the raw captures | [`tooling.md`](tooling.md) |
 | TOOL-04 | P2 | S | open | The reference fetcher stops when one of its two routes is down | [`tooling.md`](tooling.md) |
 | TOOL-05 | P2 | S | done | One twin pair has no comparison at all | [`tooling.md`](tooling.md) |
-| TOOL-06 | P2 | S | open | The route check does not exist and it is three lines | [`tooling.md`](tooling.md) |
+| TOOL-06 | P2 | S | done | The route check does not exist and it is three lines | [`tooling.md`](tooling.md) |
 | TOOL-07 | P3 | S | done | The gate's cost on a real host has never been measured | [`tooling.md`](tooling.md) |
 | TOOL-08 | P1 | S | done | The gate's strict mode was documented and did not exist | [`tooling.md`](tooling.md) |
 | TOOL-09 | P1 | S | done | The licence filler was documented and absent, and the documentation was the defect | [`tooling.md`](tooling.md) |

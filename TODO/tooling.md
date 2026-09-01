@@ -625,7 +625,7 @@ compared, not the script covered.
 ## TOOL-06. The route check does not exist and it is three lines
 
 **Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 9
-**Category** tooling, **Priority** P2, **Effort** S, **Status** open
+**Category** tooling, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -661,6 +661,83 @@ sh scripts/common/check-routes.sh
 
 Passing means: the fixture with a trailing newline fails with a message naming
 the file, and the correct fixture passes.
+
+### Closing
+
+**Closed 2026-09-01.** ⭐ **The entry said it could not run until `PUB-03`
+generates a tree, and that stopped being true when `CORPUS-01` landed.** The
+corpus publishes a single-value route file already: `raw/v1/.../*.hello.hex`,
+one hex line and nothing else.
+
+```text
+$ sh scripts/common/check-routes.sh
+routes ok: 1 single-value file(s), none ends with a line ending
+rc=0
+```
+
+#### ⛔ Mutation-proved in all four directions, both halves, exit codes unpiped
+
+| the case | sh | pwsh |
+| --- | --- | --- |
+| a correct single-value file | 0 | 0 |
+| the same file with a trailing newline | ⭐ **1**, naming the file | ⭐ **1**, naming the file |
+| a directory holding no single-value file | 2 | 2 |
+| the real published tree | 0 | 0 |
+
+```text
+$ sh scripts/common/check-routes.sh --fixtures FIX/bad
+route check failed, 1 file(s):
+
+  .../routefix/bad/trailing.hex: ends with a line ending, and it carries exactly one value
+
+A consumer of a single-value route should never have to strip anything.
+Fix the generator that wrote it, not the file.
+```
+
+#### ⛔ The fixture found a defect in the check it was written to prove
+
+⭐ **This is the whole argument for writing the refusing fixture rather than
+trusting the passing one.** The first version enumerated with `git ls-files`,
+which answers a path outside the repository with a fatal on stderr and an EMPTY
+LIST on stdout. Both halves then reported:
+
+```text
+routes ok: 0 single-value file(s), none ends with a line ending
+rc=0
+```
+
+⛔ **Green, over nothing, on the file written to make it go red.** That is the
+"step that exits 0 having done nothing it was asked to do" row in
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+in a check whose entire job is refusing.
+
+Two changes, and the second matters more than the first:
+
+- `--fixtures` walks the filesystem rather than git, because a fixture
+  directory is deliberately not tracked;
+- ⭐ **a route tree that yields no single-value file at all is exit 2**, not
+  exit 0. A check that reports clean over nothing is a check that quietly stops
+  applying the day a route type is renamed, and nothing would say so.
+
+#### ⚠ One rule, one enforcer, and a duplicate was removed to keep it that way
+
+`Store::verify` had grown the same assertion while `CORPUS-01` was being built.
+Two checks holding one rule is two places for it to be wrong, so the newline
+rule now lives here alone, over every published route file rather than only over
+a sidecar that happens to have a profile beside it.
+
+⛔ **What `Store::verify` keeps is the question that needs the profile**:
+whether the sidecar holds what `raw.client_hello_hex` says it holds. ⚠ And the
+corpus writer's own test still asserts it writes no newline, because the
+generator's contract and the check's rule are different things: the check exists
+precisely for the day a generator breaks its contract.
+
+#### What is not covered
+
+| | |
+| --- | --- |
+| a route type that is not `.hex` | The extension list is one entry long because one route type exists. `PUB-03` extends it in the same change that generates the tree, in both halves, and the lists are beside each other for that reason. |
+| whether the VALUE in a route file is right | This checks one byte at the end. What the file should contain is the generator's, and `check-corpus` is what compares a sidecar against the profile it came from. |
 
 ---
 

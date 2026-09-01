@@ -80,6 +80,11 @@ running 22 tests
 test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
 ```
 
+⚠ **That block is the run this entry closed on, and the count has since moved to
+24**: `CORPUS-03` added two tests to the same file later the same day. The
+figure is left as it was measured rather than re-pasted, and the reason it no
+longer matches is written here. Re-running it today reports 24 passed.
+
 #### What was built, and where each of the three words in the title is enforced
 
 | the word | what enforces it |
@@ -312,7 +317,7 @@ capture at all.
 ## CORPUS-03. `latest` means stable, and beta is how the project gets ahead
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** corpus, **Priority** P2, **Effort** S, **Status** open
+**Category** corpus, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -328,19 +333,20 @@ ahead rather than perpetually behind.
 
 ### Approach
 
-Three rules, and they go in the README as well as here because a consumer will
-not read this file:
+Three rules, and ⛔ **they live in [`../README.md`](../README.md)**, because a
+consumer will not read this file and that is where they are aimed:
 
-- ⛔ **`latest` means stable and nothing else.** Beta, canary and nightly are
-  published beside it, in their own paths, clearly labelled.
-- ⭐ **Capturing beta and canary is the mechanism.** The profile for the next
-  stable is ready the day it ships, because it was captured weeks earlier under
-  another name.
-- ⛔ **Historical versions are out of scope.** The corpus accretes going
-  forward, which is what a dated append-only corpus is. There is no backfill.
-  A historical profile contributed from outside is accepted with `vendor`
-  provenance and stays a draft unless somebody can capture the build, because a
-  value nobody can re-measure is a value nobody should trust.
+- `latest` means stable and nothing else, with the pre-release channels
+  published beside it under their own names;
+- capturing beta and canary is the mechanism that gets this project ahead of a
+  release rather than perpetually behind it;
+- historical versions are out of scope, because the corpus accretes forward.
+
+⚠ **This paragraph used to restate all three here as well, and the tree's own
+check refused it.** `scripts/common/check-one-home.sh` found two sentences in
+both documents, which is the rule that one fact lives in one place. The
+restatement is a pointer now and the README carries the wording. ⭐ The
+correction is recorded rather than made silently; the closing has it.
 
 Must not: promote a beta profile into the stable path when it ships. It is a
 different capture of a different build; capture the stable build.
@@ -354,6 +360,85 @@ sh scripts/common/check-routes.sh --assert-latest-is-stable
 Passing means: every `latest` route resolves to a profile whose channel is
 stable, and a fixture corpus in which one does not fails with a message naming
 the route.
+
+### Closing
+
+**Closed 2026-09-01.** ⭐ **`latest` cannot name a pre-release build, and it
+cannot because of how it is built rather than because something checks it
+afterwards.**
+
+```text
+$ sh scripts/common/check-routes.sh --assert-latest-is-stable
+routes ok: 1 single-value file(s), none ends with a line ending, and every latest pointer names a stable profile
+rc=0
+```
+
+```text
+$ cargo test -p b-ids-corpus corpus
+running 24 tests
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+```
+
+#### ⭐ The rule is unrepresentable rather than tested for
+
+The pointer file carries two maps now, and the split is the whole design:
+
+```json
+{
+  "schema": "corpus-latest/2",
+  "latest": { "chrome/win64": "corpus/v1/chrome/stable/win64/151.0.7922.76.json" },
+  "per_channel": { "chrome/stable/win64": "corpus/v1/chrome/stable/win64/151.0.7922.76.json" }
+}
+```
+
+`Store::pointers` builds `latest` from stable profiles alone, so the derivation
+has no way to put a beta build in it. `Store::verify` then compares the written
+file against the derivation, so a hand-edited pointer file is refused as well.
+⭐ **A class of defect that cannot be represented is stronger than one that is
+tested for**, and the test below covers the one path that remains: somebody
+editing the published file.
+
+⚠ **The schema is `corpus-latest/2`.** Version 1 had one map keyed by channel
+and left what `latest` means undecided. A field added or repurposed without a
+version bump is a positional format that mis-reads silently.
+
+#### ⛔ Mutation-proved, and the fixture is a corpus where the beta is NEWER
+
+The test corpus holds stable `152.0.7977.64` and beta `153.0.8010.12`, so a
+pointer that took the newest of everything would take the beta. It does not.
+
+Editing the published file to point `latest` at the beta is refused twice, by
+two different questions:
+
+```text
+latest/chrome/win64 resolves to corpus/v1/chrome/beta/win64/153.0.8010.12.json, whose channel is beta. A pointer called latest means stable and nothing else
+```
+
+⭐ **And `check-corpus` refuses it too**, because the written file no longer
+matches what the tree derives to. Two independent refusals of one edit is what
+the construction-plus-comparison design buys.
+
+#### ⚠ The entry asked for the rules in two places, and this tree refuses that
+
+⛔ **A finding against this entry's own Approach.** It said the three rules "go
+in the README as well as here because a consumer will not read this file". Doing
+that put two twelve-word sentences in both documents, and
+`scripts/common/check-one-home.sh` refused the tree: one fact lives in one
+document.
+
+⭐ **The README owns the wording**, because that is where a consumer is; the
+Approach above is a pointer now, and the amendment is recorded there rather than
+made silently. ⚠ The instinct behind the original wording was right and the
+mechanism was wrong: a fact that two audiences need is pointed at twice, not
+written twice.
+
+#### What is not covered
+
+| | |
+| --- | --- |
+| a beta or canary profile in the real corpus | There is one profile and it is stable. `CORPUS-02` is the matrix, and the beta lane is what makes the second map carry anything. |
+| a `latest` that resolves over HTTP | These are routes inside the tree. `PUB-03` is the entry that serves them, and it generates from the same pointer file rather than from a second answer. |
+| nightly | Named in the rule and absent from the vocabulary's use here, because no browser this project captures publishes one under that name yet. `Channel` carries it. |
 
 ---
 

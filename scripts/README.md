@@ -381,6 +381,35 @@ per-profile leg needed cargo and did not get it. The gate reports both as a
 SKIP. ⛔ The git leg still decides a failure: a published file edited after its
 first commit is exit 1 whether or not cargo was there.
 
+### `common/check-routes.sh`
+
+Does any published route file that carries exactly one value end with a
+newline?
+
+⭐ **The requirement came from a measurement in somebody else's dataset**, not
+from taste: `od -c` over two single-value files published by
+`pkgforge-security/Wordlists` shows a trailing newline on each, so every
+consumer of one has to strip something and the ones that forget compare a value
+against a value-plus-newline.
+[`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md)
+section 9.
+
+⛔ **What counts as single-valued is decided by extension**, because a file
+carries one value when this project says its type does. `.hex` is defined here
+as one raw capture on one line and nothing else, which is the same definition
+[`common/check-no-secrets.sh`](common/) uses to exempt one from the credential
+rule. A check that guessed from content would call a one-line JSON file
+single-valued.
+
+⚠ **A route tree that yielded no single-value file is exit 2, not exit 0.** A
+check reporting clean over nothing is how it would quietly stop applying the day
+a route type is renamed, and that shape was found here by the fixture written to
+prove the check could refuse: `git ls-files` answers a path outside the
+repository with an empty list, so both halves reported ok over zero files.
+⭐ `--fixtures` walks the filesystem for that reason.
+
+⛔ **It reports, it does not strip.** The generator is what gets fixed.
+
 ### `common/check-gate.sh`
 
 ⭐ **Run every local gate this host can run, in one command.** Part (a) of

@@ -164,6 +164,14 @@ $RECYCLE.BIN/
 /fuzz/target/
 /fuzz/corpus/
 /fuzz/artifacts/
+
+# ⛔ THE CODEGRAPH INDEX, which is generated state and not source. It is a
+# SQLite database rebuilt from the tree, it is machine-specific, and it goes
+# stale the moment a symbol moves; a tracked copy would be a second answer to
+# what the code says, and the tree is the first. ⚠ Whether this repository is
+# indexed at all is the operator's decision, and docs/AGENTS.md section 5 says
+# to reach for it before grep wherever it is.
+/.codegraph/
 **/*.rs.bk
 *.pdb
 

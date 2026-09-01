@@ -82,6 +82,58 @@ passed check. On Windows, run the `.ps1` twin of either command.
 
 ---
 
+## Where the data lives, and where it will be published
+
+⭐ **The canonical corpus is committed on the default branch**, as JSON, one file
+per profile, with the raw bytes beside it. That is deliberate and it is what
+makes an automated capture reviewable: a change to a profile shows up as a diff
+a person reads, rather than as an opaque artefact somebody has to fetch and
+compare.
+
+⛔ **The default branch is not the publishing surface.** Nothing is published
+from this repository yet. When it is, it goes to an orphan **data branch**
+carrying only generated artefacts, with dated snapshots, a `latest` pointer, an
+index and a checksums file, append-only and never force-pushed. The generated
+formats, the flat fetchable routes and the ready-to-paste client snippets are
+generated from the canonical corpus rather than maintained beside it.
+
+⚠ **None of that exists today**, and the entries that build it are named so the
+gap is visible rather than implied: `SCHEMA-08` is the generator and its
+formats, `PUB-01` the releases, `PUB-02` the data branch, `PUB-03` the routes,
+and `PUB-04` the artefacts that are not data files.
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md) carries the order.
+
+---
+
+## What `latest` means, and what it never means
+
+⛔ **`latest` means stable and nothing else.** A consumer following it is never
+handed a pre-release build, because that is the same failure as shipping a
+version nobody runs yet. The pointer file at `corpus/v1/latest.json` keeps two
+maps for that reason: `latest`, keyed by browser and platform, which is built
+from stable profiles alone, and `per_channel`, which carries every channel under
+its own name.
+
+⭐ **Beta and canary are published beside it, clearly labelled, and capturing
+them is the mechanism rather than an extra.** The profile for the next stable is
+ready the day it ships, because it was captured weeks earlier under another
+name.
+
+⛔ **A beta profile is never promoted into the stable path when it ships.** It is
+a different capture of a different build, and the stable build gets its own.
+
+⛔ **Historical versions are out of scope.** The corpus accretes going forward,
+which is what a dated append-only corpus is. There is no backfill. A historical
+profile contributed from outside is accepted with `vendor` provenance and stays
+a draft unless somebody can capture the build, because a value nobody can
+re-measure is a value nobody should trust.
+
+```bash
+sh scripts/common/check-routes.sh --assert-latest-is-stable
+```
+
+---
+
 ## What it will do
 
 - **Capture** from a real browser, off a socket, from outside the client, so

@@ -13,31 +13,34 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order from item 1, closing entries in place with their acceptance commands run. Session started 2026-09-01T07:58:00Z, unattended, quota twenty effort points. |
-| the resume point | `DRIVER-02`, then `SCHEMA-08`, `HARNESS-09`, and the small entries the work order lists. `CORPUS-01` and `HARNESS-10` are closed. |
-| in flight | Nothing is half-edited. Both closed entries carry their acceptance output and the record moved in the same change. |
-| the state of the tree | ⛔ Dirty and uncommitted on `main` at `bd02224`. The new crate, the first profile, two experiments, `check-corpus` and every record edit are in the working tree and not committed. The gate was green at 20 passed before the last few edits. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order from item 1, closing entries in place with their acceptance commands run. Session ran 2026-09-01T07:58:00Z to 2026-09-01T10:43:02Z, unattended, ended by operator interrupt with six entries closed. |
+| the resume point | The work order's item 1, **`CORPUS-02`**, the capture matrix. One profile on one platform is what everything below it is now waiting on. |
+| in flight | ⛔ Nothing. Every entry touched is closed with its acceptance command run, the record moved in the same change, and the tree committed. |
+| the state of the tree | Clean and pushed on `main`. The gate passes 21 checks with `check-twins` alongside, both halves of every pair. |
 | the paste | below |
 
 ---
 
-## What changed about this project in this session
+## What changed about this project on 2026-09-01
 
-**The corpus is not empty.** One measured profile, Chrome `151.0.7922.76` on
+⭐ **The corpus is not empty.** One measured profile, Chrome `151.0.7922.76` on
 Windows, at `corpus/v1/chrome/stable/win64/151.0.7922.76.json`, with the
-`ClientHello` it was read from under `raw/v1/`. `b-ids-corpus` wrote it and
-`scripts/common/check-corpus` is the pair that keeps it honest.
+`ClientHello` it was read from beside it. `b-ids-corpus` wrote it and
+`check-corpus` asks git whether anything published was ever edited.
 
-**Terminating the handshake changes nothing the raw surface can see.** Measured
-over three rounds of one browser: seventeen of nineteen TLS fields agree, none
-differ, and the two that cannot be compared carry a per-connection draw.
+⭐ **Three measurements, each with its conditions.** Terminating the handshake
+changes nothing the raw surface can see; the inherited version-discovery defect
+is real to the digit; and no parser panics in a million runs.
 
 ⚠ **Two conditions still stand.** Every capture goes through a per-launch key
-pin rather than a trust store, which is recorded per profile in
-`captured.trust` and is still unmeasured against a real trust anchor. And the
-operator ruled at the start of the session that a measured profile goes into the
-committed corpus with its conditions recorded;
-[`../../TODO/RULES.md`](../../TODO/RULES.md) carries that ruling.
+pin rather than a trust store, recorded per profile in `captured.trust` and
+still unmeasured against a real trust anchor. And the corpus describes a build a
+major behind what stable is serving, which `DRIVER-02` is what revealed.
+
+⚠ **Nothing is published.** The canonical corpus is on the default branch
+deliberately, so a capture is reviewable as a diff. The data branch, the
+generated formats and the fetchable routes are `PUB-02`, `SCHEMA-08` and
+`PUB-03`, and all three are open.
 
 ---
 

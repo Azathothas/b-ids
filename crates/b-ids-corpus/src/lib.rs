@@ -30,4 +30,4 @@ pub mod store;
 
 pub use capture::{Identity, Refusal, profile_from};
 pub use route::{CORPUS_DIR, LAYOUT, NoRoute, RAW_DIR, Route, route};
-pub use store::{Added, Index, IndexEntry, Pointers, Published, Store};
+pub use store::{Added, Index, IndexEntry, Pointers, Published, STABLE, Store};

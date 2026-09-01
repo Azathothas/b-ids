@@ -341,6 +341,11 @@ compare_pair "check-vendor"         check-vendor.sh         "--json"          ch
 # and it is the half that decides the exit code.
 compare_pair "check-corpus"         check-corpus.sh         "--json"          check-corpus.ps1         "-Json"
 
+# ⚠ BOTH HALVES ENUMERATE AND READ THE LAST BYTE THEMSELVES, with no shared
+# binary between them, so this pair is a genuine two-implementation comparison
+# rather than two wrappers over one answer.
+compare_pair "check-routes"         check-routes.sh         "--json"          check-routes.ps1         "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

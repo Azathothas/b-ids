@@ -164,10 +164,56 @@ printf '  trust     spki-pin, one key for one launch, no trust store changed\n'
 printf '  headless  %s\n' "${HEADLESS:-no}"
 printf '  switches  %s\n' "$(wc -l < "$OUT/switches.txt" | tr -d ' ')"
 
+# -- the identity, written from what the run did rather than typed ------------
+#
+# ⛔ THE DOOR THIS CLOSES. `captured.trust` and `captured.switches` are the
+# conditions of the measurement, and `HARNESS-10`'s comparison across profiles
+# reads the first of them. A hand-written identity file is a field somebody
+# TYPES, so a profile could claim a trust store while the run used a pin and
+# nothing in the bytes could contradict it. Found by the door sweep at the end
+# of the session that added the field.
+#
+# ⚠ What is still typed is the browser NAME, the channel and whether the build
+# is branded. Those are labels on the subject rather than readings off this run,
+# and `DRIVER-06` is the entry that measures the last of them.
+IDENTITY="$OUT/identity.json"
+node -e '
+const fs = require("fs");
+const [resolvedPath, switchesPath, out, headless] = process.argv.slice(1);
+const resolved = fs.readFileSync(resolvedPath, "utf8").split(/\r?\n/)
+  .filter(Boolean).map((l) => JSON.parse(l));
+const chrome = resolved.find((r) => r.family === "chrome");
+if (!chrome) { throw new Error("chrome did not resolve"); }
+fs.writeFileSync(out, JSON.stringify({
+  name: "Chrome",
+  version: chrome.version,
+  channel: "stable",
+  branded: true,
+  os: process.platform === "win32" ? "windows" : "linux",
+  arch: "x86_64",
+  distribution: null,
+  method: "host",
+  harness: "b-ids-harness 0.0.0",
+  operator: "",
+  // ⛔ Read from the switch list the driver reported, never asserted here. The
+  // pin flag being present IS the trust configuration.
+  trust: fs.readFileSync(switchesPath, "utf8")
+    .includes("--ignore-certificate-errors-spki-list=") ? "spki-pin" : "not-applicable",
+  switches: fs.readFileSync(switchesPath, "utf8").split(/\r?\n/).filter(Boolean),
+  headless: headless === "--headless",
+}, null, 2) + "\n");
+' "$OUT/resolved.jsonl" "$OUT/switches.txt" "$IDENTITY" "${HEADLESS:-}" || {
+  printf '10-first-profile: could not write the identity file\n' >&2
+  exit 1
+}
+printf '  identity  trust=%s\n' "$(awk -F'"' '/"trust"/ { print $4 }' "$IDENTITY")"
+
 printf '\nleft in %s\n' "$OUT"
 printf '  captures.jsonl  every connection the navigation opened\n'
 printf '  driven.txt      what the driver reported, switches included\n'
 printf '  harness.err     the pin, and the sampling shortfall if there was one\n'
+printf '  identity.json   ⚠ the operator fills in name, channel, branded and\n'
+printf '                  operator; everything else is read from this run\n'
 printf '\nWrite the profile with:\n'
-printf '  %s add --captures %s --identity IDENTITY.json --root .\n' "$CORPUS" "$CAPTURES"
+printf '  %s add --captures %s --identity %s --root .\n' "$CORPUS" "$CAPTURES" "$IDENTITY"
 exit 0

@@ -1,47 +1,57 @@
 # SUMMARY.md
 
-The last session's table. ⚠ **A snapshot, never an authority.**
-[`PROGRESS.md`](PROGRESS.md) is the record and the work order;
-[`INDEX.md`](INDEX.md) is the list. When this file and either of those disagree,
-this one is stale.
-
-⛔ Overwritten at the end of every session.
+⛔ **The last session's table, and a snapshot rather than an authority.**
+[`PROGRESS.md`](PROGRESS.md) is the record and is what a session reads first.
+Overwritten every session.
 
 ---
 
-## 2026-09-01, 03:47:48Z to 07:45Z
+## 2026-09-01, second session
 
 | row | measured |
 | --- | --- |
-| Elapsed | 3h41m from the recorded start instant to the last work commit `1e0d30a`, and 3h57m to the remote going green. |
-| Commits | the session work squashed to 1, then 3 more: the review record, a red-build fix, and this table. 4 pushed on `main` from `bd02855`, and one rerun of a Windows toolchain race that is a runner fault. |
-| Work | **7 entries completed**, 15 effort points. 0 deferred, 0 failed. Operator interrupt ended the session before the twenty-point quota. |
-| Changes | 273 files changed, 73,058 insertions, 343 deletions. ⚠ 210 of those files are the vendored tree; 63 are this project's own. |
-| Size | 43,268 lines tracked outside `references/` and `vendor/` |
-| Checks | ⭐ green, local and remote. 20 checks, 19 passed and `check-twins` skipped by `--fast`; run separately, 1025s, every pair agrees. At the start: 19 checks, same shape. ⚠ The remote went red once, on a test of this session's own, and was fixed before the session ended. |
-| Tests | 192 across 22 test files in 4 crates, up from 166 in 16. ⚠ One of them, the driven capture, is opt-in behind an environment variable and is gate part (b). |
-| Cost | no money. Network: one shallow clone of rustls, two crates.io resolutions, one reference-corpus read. |
-| Health | ⛔ 1 fabricated number found in this session's own writing and corrected in three files. 3 traps paid for and written down. 1 stale document claim fixed. Tree clean, nothing deployed, nothing published. |
+| Elapsed | 2026-09-01T07:58:00Z to 2026-09-01T10:43:02Z, **2h 45m**, ended by operator interrupt |
+| Commits | 1 pushed mid-session (`0df1fd7`), 1 at the close. ⚠ Two, not one. See the note below. |
+| Work | **6 completed, 0 deferred, 0 failed.** `CORPUS-01` (M), `HARNESS-10` (S), `DRIVER-02` (M), `HARNESS-09` (M), `TOOL-06` (S), `CORPUS-03` (S) = **9 effort points** |
+| Changes | 70 files changed, 7,684 insertions, 332 deletions, plus 3 new files at the close |
+| Size | 43,389 lines to **50,740**, excluding the reference corpus and the vendored tree. +7,351 |
+| Checks | started at 19 passed 1 skipped of 20; ends at **21 passed 1 skipped of 22**. Two new checks, `check-corpus` and `check-routes`, both halves, both in `check-twins` |
+| Cost | one image pulled and removed (918 MB), one container run, ~300s of processor on the fuzz run. No money. |
+| Health | ⭐ the corpus holds its first measured profile. 2 new crates-worth of surface, 0 debts introduced, 0 entries left partial, tree clean. ⛔ Nothing deployed; nothing is published from this repository yet. |
 
 ---
 
-## What closed
+## What moved, in one line each
 
-| entry | effort | what it now does |
-| --- | --- | --- |
-| `VENDOR-01` | L | rustls vendored at `v/0.23.43` and compiled here, with a manifest, a change record, a derived patch series and a two-legged scan |
-| `HARNESS-13` | L | `--ca-out` mints an authority, terminates the handshake, and the harness reads a browser's HTTP/2 through it |
-| `HARNESS-02` | M | all nine switches, after one day at `partial` |
-| `HARNESS-05` | S | the priority block measured on two browsers: `80000000ff` on all thirteen HEADERS frames |
-| `VALID-02` | S | ten exhibits in two public repositories, each with a file, a line and the check it fails |
-| `DRIVER-01` | M | resolve a browser with the source that answered, drive it into a profile nobody keeps |
-| `DRIVER-03` | S | the headless product token, measured rather than inherited, and the substitution recorded |
+| | |
+| --- | --- |
+| ⭐ `CORPUS-01` | the corpus is not empty: Chrome `151.0.7922.76`, measured here, with the `ClientHello` it was read from beside it |
+| ⭐ `HARNESS-10` | terminating the handshake changes nothing the raw surface can see: 17 of 19 TLS fields agree, none differ |
+| ⭐ `DRIVER-02` | the inherited version-discovery defect reproduced here to the digit, and it shows the corpus is a major behind stable |
+| `HARNESS-09` | one million coverage-guided runs at the parsers, no crash; 6,767 mutations run on every host in 0.47s |
+| `TOOL-06` | no published single-value file ends with a newline, in both halves and in the gate |
+| `CORPUS-03` | `latest` means stable, and it cannot mean anything else because of how it is built |
 
 ---
 
-## ⛔ What is still not true
+## ⚠ The three things a reader should not have to find out later
 
-- **The corpus is empty.** Captures were taken and nothing writes a profile.
-  `CORPUS-01` is the top of the work order for that reason.
-- **Nothing is published.** No release, no data branch, no route.
-- **One quantity is `measured-here`** and it is not published either.
+⛔ **There are two commits, not one.** The first was pushed mid-session as a
+crash checkpoint, because four entries of uncommitted work is more than a
+session should risk. Squashing them now would rewrite published history and
+need a force push, which
+[`../docs/conventions/git.md`](../docs/conventions/git.md) section 5 and
+[`../docs/security/remote-ops.md`](../docs/security/remote-ops.md) both refuse
+without the operator's explicit instruction for that specific commit.
+
+⚠ **Three claims in this session's own writing were wrong and were corrected.**
+A corpus size quoted from an assertion's floor rather than measured (6,767, not
+"over five thousand"); a pasted suite count that moved after it was pasted; and
+a baseline line in `PROGRESS.md` itself. All three were found by the claim
+audit, and the last one was in the file the claim audit is written into.
+
+⛔ **`check-twins` reported a drift that was not one.** `.codegraph/` was created
+between its two halves, so the two probes disagreed about a directory that
+appeared mid-run. Both use the identical rule and both agree now. A run whose
+tree moved underneath it is not evidence, and that is written into the record as
+a trap and an open question.

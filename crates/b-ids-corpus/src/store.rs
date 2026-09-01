@@ -33,14 +33,24 @@ use crate::route::{CORPUS_DIR, LAYOUT, RAW_DIR, Route, as_route, route, version_
 /// The schema identifier the index carries.
 pub const INDEX_SCHEMA: &str = "corpus-index/1";
 
-/// The schema identifier the latest-per-key pointer file carries.
-pub const POINTER_SCHEMA: &str = "corpus-latest/1";
+/// The schema identifier the pointer file carries.
+///
+/// ⚠ Version 2 splits `latest`, which is stable only, from `per_channel`.
+/// Version 1 had one map keyed by channel and left what `latest` means
+/// undecided. A version is part of the data rather than implied by the reader.
+pub const POINTER_SCHEMA: &str = "corpus-latest/2";
 
 /// The index file's name, under the layout directory.
 pub const INDEX_FILE: &str = "index.json";
 
 /// The pointer file's name, under the layout directory.
 pub const POINTER_FILE: &str = "latest.json";
+
+/// The channel a `latest` pointer is allowed to name.
+///
+/// ⛔ **One value, and it is not configurable.** A ceiling anybody can raise
+/// from a flag is a ceiling that gets raised instead of met. `CORPUS-03`.
+pub const STABLE: &str = "stable";
 
 /// How deep a profile sits under the layout directory: browser, channel,
 /// platform, then the file.
@@ -115,18 +125,37 @@ pub struct Index {
     pub profiles: Vec<IndexEntry>,
 }
 
-/// The newest profile for each browser, channel and platform.
+/// The pointers a consumer follows instead of listing the corpus.
 ///
-/// ⚠ **Keyed by channel rather than resolving one.** What `latest` means across
-/// channels is `CORPUS-03`'s question, and this file never has to answer it.
+/// ⛔ **`latest` MEANS STABLE AND NOTHING ELSE**, and it is a separate map from
+/// the per-channel one for exactly that reason. A consumer following a pointer
+/// called `latest` must never be handed a pre-release build; that is the same
+/// failure as shipping a version nobody runs yet.
+///
+/// ⭐ **The rule is enforced by CONSTRUCTION rather than by a check.**
+/// [`Store::pointers`] builds `latest` from stable profiles alone, so a
+/// non-stable route cannot be in it, and [`Store::verify`] compares the written
+/// file against the derived one so a hand-edited pointer file is refused. A
+/// class of defect that cannot be represented is stronger than one that is
+/// tested for.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pointers {
     /// The schema this file is written against.
     pub schema: String,
     /// The layout version every path in it is under.
     pub layout: String,
-    /// `browser/channel/platform` to the route of its newest build.
+    /// `browser/platform` to the route of its newest STABLE build.
+    ///
+    /// ⛔ Stable only. `CORPUS-03`.
     pub latest: BTreeMap<String, String>,
+    /// `browser/channel/platform` to the route of that channel's newest build.
+    ///
+    /// ⭐ **Beta and canary are published beside `latest`, in their own paths,
+    /// clearly labelled**, because capturing them is how this project gets
+    /// ahead of a release rather than staying perpetually behind it: the
+    /// profile for the next stable is ready the day it ships, having been
+    /// captured weeks earlier under another name.
+    pub per_channel: BTreeMap<String, String>,
 }
 
 /// The corpus, rooted at a directory.
@@ -357,31 +386,98 @@ impl Store {
     ///
     /// Whatever deriving the index said.
     pub fn pointers(&self) -> Result<Pointers, String> {
-        let mut latest: BTreeMap<String, (Vec<u64>, String, String)> = BTreeMap::new();
-        for entry in self.index()?.profiles {
-            let key = format!(
-                "{}/{}/{}",
-                entry.browser.to_ascii_lowercase(),
-                entry.channel,
-                entry.platform
-            );
-            let order = version_order(&entry.version);
-            let candidate = (order.0, order.1, entry.profile.path.clone());
-            match latest.get(&key) {
-                // ⚠ Component-wise numeric, never lexicographic: `152.0.7977.9`
-                // sorts after `152.0.7977.64` as text, and a pointer built that
-                // way hands a consumer an older build while looking correct.
+        // ⚠ Component-wise numeric, never lexicographic: `152.0.7977.9` sorts
+        // after `152.0.7977.64` as text, and a pointer built that way hands a
+        // consumer an older build while looking correct.
+        let keep = |map: &mut BTreeMap<String, (Vec<u64>, String, String)>,
+                    key: String,
+                    version: &str,
+                    path: &str| {
+            let order = version_order(version);
+            let candidate = (order.0, order.1, path.to_owned());
+            match map.get(&key) {
                 Some(current) if (&current.0, &current.1) >= (&candidate.0, &candidate.1) => {}
                 _ => {
-                    latest.insert(key, candidate);
+                    map.insert(key, candidate);
                 }
             }
+        };
+
+        let mut per_channel: BTreeMap<String, (Vec<u64>, String, String)> = BTreeMap::new();
+        let mut latest: BTreeMap<String, (Vec<u64>, String, String)> = BTreeMap::new();
+        for entry in self.index()?.profiles {
+            let browser = entry.browser.to_ascii_lowercase();
+            keep(
+                &mut per_channel,
+                format!("{browser}/{}/{}", entry.channel, entry.platform),
+                &entry.version,
+                &entry.profile.path,
+            );
+            // ⛔ STABLE ONLY, and this is the whole of `CORPUS-03`. A pointer
+            // called `latest` that could hold a beta build would hand a
+            // consumer a pre-release, and no check downstream can undo that
+            // because the consumer has already fetched it.
+            if entry.channel == STABLE {
+                keep(
+                    &mut latest,
+                    format!("{browser}/{}", entry.platform),
+                    &entry.version,
+                    &entry.profile.path,
+                );
+            }
         }
+        let flatten = |m: BTreeMap<String, (Vec<u64>, String, String)>| {
+            m.into_iter().map(|(k, v)| (k, v.2)).collect()
+        };
         Ok(Pointers {
             schema: POINTER_SCHEMA.to_owned(),
             layout: LAYOUT.to_owned(),
-            latest: latest.into_iter().map(|(k, v)| (k, v.2)).collect(),
+            latest: flatten(latest),
+            per_channel: flatten(per_channel),
         })
+    }
+
+    /// Every `latest` pointer that does not resolve to a stable profile.
+    ///
+    /// ⭐ **Empty by construction from [`Store::pointers`], and read back
+    /// anyway.** The derivation cannot produce a non-stable entry; this reads
+    /// the pointer file that is actually on disk, which is what a consumer
+    /// follows, and a hand-edited one is exactly what this refuses.
+    ///
+    /// # Errors
+    ///
+    /// Whatever reading the corpus or the pointer file said.
+    pub fn latest_that_is_not_stable(&self) -> Result<Vec<String>, String> {
+        let path = self.corpus_dir().join(POINTER_FILE);
+        let text = std::fs::read_to_string(&path).map_err(|e| format!("{POINTER_FILE}: {e}"))?;
+        let pointers: Pointers = serde_json::from_str(&text)
+            .map_err(|e| format!("{POINTER_FILE}: not a pointer file: {e}"))?;
+        let by_route: BTreeMap<String, String> = self
+            .profiles()?
+            .into_iter()
+            .filter_map(|(_, profile)| {
+                let found = route(&profile).ok()?;
+                Some((
+                    as_route(&found.profile),
+                    profile.browser.channel.to_string(),
+                ))
+            })
+            .collect();
+
+        let mut problems = Vec::new();
+        for (key, at) in &pointers.latest {
+            match by_route.get(at) {
+                Some(channel) if channel == STABLE => {}
+                Some(channel) => problems.push(format!(
+                    "latest/{key} resolves to {at}, whose channel is {channel}. A pointer called \
+                     latest means stable and nothing else"
+                )),
+                None => problems.push(format!(
+                    "latest/{key} resolves to {at}, which is not a profile in this corpus"
+                )),
+            }
+        }
+        Ok(problems)
     }
 
     /// Write the index and the pointer file from what the tree says.
@@ -453,14 +549,14 @@ impl Store {
                                     as_route(&expected.hello)
                                 ));
                             }
-                            if text.ends_with('\n') {
-                                problems.push(format!(
-                                    "{}: ends with a newline, and it carries exactly one value. A \
-                                     consumer of a single-value route should never have to strip \
-                                     anything",
-                                    as_route(&expected.hello)
-                                ));
-                            }
+                            // ⚠ THE TRAILING-NEWLINE RULE IS NOT CHECKED HERE,
+                            // and that is deliberate. `scripts/common/
+                            // check-routes` owns it, over every published route
+                            // file rather than only over a sidecar that has a
+                            // profile beside it, and two checks holding one
+                            // rule is two places for it to be wrong. What this
+                            // owns is the question that needs the profile:
+                            // whether the file and the field agree.
                         }
                         Err(err) => problems.push(format!(
                             "{}: {err}. Every profile publishes its bytes beside it",

@@ -394,3 +394,63 @@ fn http2_the_akamai_string_is_derived_from_the_frames() {
         "6:65537;1:8192;4:3145728;2:0|11259375|0|m,a,s,p"
     );
 }
+
+#[test]
+fn http2_every_frame_re_encodes_to_the_bytes_it_was_read_from() {
+    // ⭐ THE ROUND TRIP THAT MAKES THE CORPUS'S RAW BLOCK A BACKSTOP. A profile
+    // stores its frames as `RawFrame::wire_hex`, and a re-encoding that lost or
+    // moved a byte would produce a raw block that reparses to something else
+    // while looking complete.
+    //
+    // ⚠ Found untested by the guard-mutation pass: it was exercised only
+    // indirectly, through the corpus rebuild, which cannot say WHICH byte moved.
+    let bytes = support::fixture_bytes("h2-connection.hex");
+    let mut notes = Vec::new();
+    let capture = h2::parse_connection(&bytes, ValuePolicy::NamesOnly, &mut notes)
+        .expect("the committed connection parses");
+
+    let rebuilt: String = capture.frames.iter().map(h2::RawFrame::wire_hex).collect();
+    let after_preface = b_ids_harness::hex(&bytes[PREFACE.len()..]);
+    assert_eq!(
+        rebuilt, after_preface,
+        "the frames re-encode to the bytes behind the preface, byte for byte"
+    );
+}
+
+#[test]
+fn http2_re_encoding_keeps_a_declared_length_that_disagrees_with_what_arrived() {
+    // ⛔ A frame that declared more than it delivered is what the wire carried,
+    // and re-encoding it with the arrived length would produce bytes no client
+    // sent while looking tidier. The disagreement IS the measurement.
+    let frame = h2::RawFrame {
+        declared_length: 0x00ff_ffff,
+        bytes_arrived: 2,
+        frame_type: 0x04,
+        flags: 0x01,
+        stream_id: 1,
+        reserved_bit: false,
+        payload_hex: "0000".to_owned(),
+    };
+    assert_eq!(
+        frame.wire_hex(),
+        "ffffff040100000001".to_owned() + "0000",
+        "the head carries the DECLARED length and the arrived payload follows"
+    );
+}
+
+#[test]
+fn http2_re_encoding_puts_the_reserved_bit_back_where_it_was_read_from() {
+    // ⚠ The specification says a receiver ignores it, so a sender that sets it
+    // is a sender that stands out. A re-encoding that dropped it would erase
+    // exactly that.
+    let frame = h2::RawFrame {
+        declared_length: 0,
+        bytes_arrived: 0,
+        frame_type: 0x00,
+        flags: 0x00,
+        stream_id: 1,
+        reserved_bit: true,
+        payload_hex: String::new(),
+    };
+    assert_eq!(frame.wire_hex(), "00000000008000_0001".replace('_', ""));
+}

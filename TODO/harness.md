@@ -1289,7 +1289,7 @@ test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 | | |
 | --- | --- |
 | `fuzz/fuzz_targets/parsers.rs` | coverage-guided, one million runs, ⚠ needs a nightly toolchain and a platform that can link libFuzzer |
-| `crates/b-ids-harness/tests/hostile.rs` | a deterministic corpus of over five thousand mutations, ⭐ on every host and every push, in 0.44s |
+| `crates/b-ids-harness/tests/hostile.rs` | a deterministic corpus of **6767** mutations, ⭐ on every host and every push, in 0.44s |
 
 ⛔ **Both call the same function.** `b_ids_harness::fuzz::drive_every_parser` is
 the list of parsers, and it lives in the library rather than in either caller. A
