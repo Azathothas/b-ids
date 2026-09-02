@@ -772,3 +772,440 @@ cargo test -p b-ids-driver branded -- --nocapture
 
 Passing means: an unbranded capture whose profile claims `branded: true` is
 rejected by the validator with a message naming the brand list.
+
+---
+
+## DRIVER-07. The browser's own output is discarded, so a lane that captured nothing says nothing
+
+**Source** found while working `CORPUS-02`, 2026-09-02; authored on the operator's ruling the same day
+**Category** driver, **Priority** P2, **Effort** S, **Status** done
+
+### Problem
+
+`b-ids-driver drive` gave the browser `Stdio::null()`, so a lane that captured
+nothing carried no word from the browser about why. A person reading the
+artefact learns that the process exited and nothing else.
+
+### Premise
+
+⚠ **Measured rather than anticipated.** On 2026-09-02 the `edge` capture lane
+launched Edge on a hosted runner, the browser exited after **1402 ms** having
+opened no connection, and what it said went to a null sink. `capture.yml` run
+`33584060390`.
+
+### Approach
+
+`Launch.log: Option<PathBuf>`, and `--log PATH` on the command. Both streams go
+to the named file.
+
+⚠ **A FILE rather than a pipe.** A pipe nobody drains fills, and a browser that
+filled it would block on a write while this process waits for the browser to
+exit.
+
+⛔ **Opened before the spawn**, so a path that cannot be written is a refusal
+rather than a launch whose output went nowhere while a caller believed it was
+being recorded.
+
+Must not: capture the streams and discard them on a successful run. The empty
+file IS the answer on a healthy launch.
+
+### Consumers
+
+None: no route or generated file carries a browser log. It is written under the
+ignored scratch directory and uploaded as a lane artefact.
+
+### Prove
+
+```bash
+cargo test -p b-ids-driver resolve_and_drive -- --nocapture
+```
+
+Passing means: `--log` with no value is refused; a path that cannot be opened is
+refused before the browser starts, naming the path; and a launch with a log
+path writes the file.
+
+### Closing
+
+**Closed 2026-09-02T07:20:00Z**, and the work landed under `CORPUS-02` before
+this entry existed, which is why the entry is authored and closed in one change:
+the operator ruled on 2026-09-02 that it should have been its own unit of work.
+
+```text
+$ cargo test -p b-ids-driver resolve_and_drive -- --nocapture
+running 10 tests
+test resolve_and_drive_a_family_name_round_trips ... ok
+test resolve_and_drive_completes_a_capture_against_the_harness ... ok
+test resolve_and_drive_the_vendor_name_is_what_the_corpus_routes_by ... ok
+test resolve_and_drive_reports_a_build_from_a_source_it_names ... ok
+test resolve_and_drive_log_refuses_a_path_it_cannot_write ... ok
+test resolve_and_drive_browser_refuses_a_family_the_resolver_cannot_produce ... ok
+test resolve_and_drive_log_with_no_value_is_refused ... ok
+test resolve_and_drive_browser_with_no_value_is_refused ... ok
+test resolve_and_drive_browser_reports_only_the_family_it_names ... ok
+test resolve_and_drive_log_records_what_the_browser_said ... ok
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.38s
+exit=0
+```
+
+⚠ **What is asserted is the FILE, not its content.** A browser that says nothing
+on a healthy run is normal, and a test demanding output would fail for the wrong
+reason. The file existing is what a later diagnosis needs.
+
+⛔ **And the diagnosis it was written for has not been taken yet.** The `edge`
+lane still exits having opened no connection; `--log` means the next run of it
+carries what Edge said. `CORPUS-02` is where that gets read.
+
+---
+
+## DRIVER-08. Purge the machine's browsers, install the build the cell names
+
+**Source** the operator, 2026-09-02, on reading that the corpus records builds nobody chose
+**Category** driver, **Priority** P0, **Effort** L, **Status** open
+
+### Problem
+
+⛔ **On a machine this project controls completely, it measures whatever
+somebody else's image happened to install.** A capture lane calls
+`b-ids-driver resolve`, which by design finds what is already there, so the
+corpus records a build nobody chose from a source nobody named.
+
+### Premise
+
+⛔ **Measured, and the cost is already paid.** On 2026-09-02, `ubuntu-latest`
+served Chrome `151.0.7922.173` and `windows-latest` served `151.0.7922.174`, so
+the single highest-value capture available, one build on two platforms, was
+unobtainable. All three published profiles carry `captured.acquisition: null`:
+the corpus records "it was already here" rather than a URL and a digest, which
+is the weakest provenance the artefact half can have in a project whose product
+is provenance.
+
+⚠ **And the apparatus exists without a caller.** `b_ids_driver::acquire` has a
+route plan and an injected fetcher, `DRIVER-05` closed on it, and nothing
+outside its own tests calls it: there is no real fetcher, no unpack, no install,
+no purge, and no `acquire` subcommand.
+
+### Approach
+
+A provisioning step, before the resolve step, in every capture lane:
+
+1. ⛔ **Purge every browser of the target family from the machine**, by every
+   route an image might have installed one: the package manager, the vendor's
+   own uninstaller, and the paths `b_ids_driver::resolve` searches.
+2. ⛔ **Confirm the purge**, by running `resolve` and requiring it to exit **2**.
+   A purge that reported success while a browser remained is the "reporting a
+   result the code never read" row of
+   [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+3. **Install the build the matrix cell names**, from the route that cell names,
+   with the archive's digest recorded.
+4. ⛔ **Confirm the install**, by running `resolve` and requiring the version it
+   reports to be the version asked for. A lane that installed one build and
+   captured another is the defect this entry exists to prevent, one step along.
+5. **Set it up headless and unattended**, with no first-run state and no
+   profile that outlives the run, which is what the driver already does.
+
+⭐ **Two routes, because they are two products.** Ruled by the operator
+2026-09-02, and the matrix carries both as separate cells:
+
+| route | what it serves | what a profile records |
+| --- | --- | --- |
+| the vendor's own channel | branded Chrome, current build only | `branded: true`, and both platforms get the same build because both install on the same day from the same channel |
+| the automation-build index | an exact build, any version, every platform | `branded: false`. ⚠ A different brand list and a different `sec-ch-ua`: `DRIVER-06` is the entry that measures the difference |
+
+⛔ **Never redistribute the artefact.** The URL and the digest are published;
+the binary is the vendor's to serve. That rule is `DRIVER-05`'s and it does not
+move.
+
+⛔ **A lane that cannot provision captures nothing and exits 2.** "This runner
+has no browser" and "the capture failed" are different facts, and `CI-07` is the
+rule.
+
+Must not: install alongside the image's browser and hope the driver picks the
+right one. Two browsers on one machine is a capture that is wrong in a way
+nothing notices, which is exactly what this entry is replacing.
+
+Must not: run the purge on a machine that is not disposable. `HARNESS-14`'s
+`B_IDS_DISPOSABLE` guard is the shape; a developer's laptop must not lose its
+browser to an experiment.
+
+### Decision
+
+**Ruled by the operator 2026-09-02.** Purge completely, confirm no leftovers,
+install the build that is wanted, set it up headlessly, and carry both the
+branded and the unbranded route as separate matrix cells. ⭐ Priority P0.
+
+### Consumers
+
+`corpus/v1/**` gains a populated `captured.acquisition` on every profile written
+after this lands. ⚠ **Nothing is fetched from this repository yet**, so there
+are no consumers to break: `PUB-01`, `PUB-02` and `PUB-03` are the three
+surfaces and none exists. The field is already in the published schema and
+already optional, so the change is additive whenever they do.
+
+### Prove
+
+```bash
+sh scripts/common/check-provisioning.sh
+```
+
+Passing means: on a disposable machine, the script purges every browser of the
+named family and `resolve` then exits 2; it installs the named build and
+`resolve` then reports exactly that version; a purge that leaves a binary
+behind, and an install that produces a different version than was asked for, are
+both refused with a message naming what was found.
+
+### ⚠ Open, with what exists and what remains. Landed 2026-09-02
+
+⭐ **The tool and its acceptance exist; no lane uses either yet, and nothing has
+run on a runner.** The entry stays open rather than closing on machinery.
+
+| what exists now | |
+| --- | --- |
+| ⭐ [`../scripts/common/provision-browser.sh`](../scripts/common/provision-browser.sh) | purge, confirm the purge by requiring `resolve` to exit 2, install, confirm the version. The vendor route is implemented for Linux and Windows. |
+| ⭐ [`../scripts/common/check-provisioning.sh`](../scripts/common/check-provisioning.sh) | the acceptance: seven refusals asserted on any host, and the provisioning itself only where the machine is disposable |
+| the `--plan` mode | prints what the tool would do, per platform and route, and runs nothing. It is what a person reads before letting this near a machine. |
+
+```text
+$ sh scripts/common/check-provisioning.sh
+provisioning ok: 7 check(s), every refusal held, provisioning skipped
+  SKIP the provisioning itself: this machine is not disposable, so nothing
+  was purged. .github/workflows/provision.yml is where that leg runs.
+exit=0
+```
+
+#### ⛔ The guard is two conditions, and the reason is an incident
+
+⚠ **On 2026-09-02 this tool ran its purge path on the operator's own laptop.** A
+session proving the guard could fail mutated the single condition and ran the
+live tool on the machine the guard protects. Nothing was removed, because the
+Windows uninstaller match did not fire, and the confirm step then refused
+correctly at exit 1; the install step is after that confirm and was never
+reached. ⛔ "It happened not to match" is not a safety margin.
+
+⭐ **Two conditions from two sources now, and one edit cannot lift both**:
+`B_IDS_DISPOSABLE=1`, which this project sets only inside a workflow, and `CI`,
+which the platform sets on every hosted runner. All three refusal paths are
+asserted:
+
+```text
+B_IDS_DISPOSABLE=unset and CI=unset, and BOTH are required.      exit=2
+B_IDS_DISPOSABLE=unset and CI=true,  and BOTH are required.      exit=2
+B_IDS_DISPOSABLE=1     and CI=unset, and BOTH are required.      exit=2
+```
+
+⛔ **And the rule that was missing is written down**: a test that has to bypass a
+guard runs against a copy under the ignored scratch directory, never against the
+file on a machine the guard protects.
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+carries the row and [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) the
+incident.
+
+#### ⛔ What remains, in order
+
+1. **The `for-testing` route.** Read the automation-build index, pick the entry
+   for the exact build and platform, fetch the zip, unpack it where `resolve`
+   looks. ⚠ It is the route that makes an exact version reachable at all, and it
+   is the unbranded product.
+2. **The matrix carries both routes.** Each cell in
+   [`../.github/capture-matrix.json`](../.github/capture-matrix.json) names its
+   route, and a `for-testing` cell records `branded: false`.
+3. **A provisioning workflow, or a step in `capture.yml`**, that runs
+   the tool before the resolve step and fails the lane loudly when provisioning
+   does not confirm.
+4. ⛔ **A run on a disposable runner**, both platforms, which is the only place
+   the purge and the install have ever been executed. Until that has happened,
+   nothing here is measured: what exists is a tool whose refusals are proved and
+   whose success path is not.
+5. **`captured.acquisition` populated** from what the tool printed: the route,
+   the URL, the sha256 and the byte count. `b_ids_driver::acquire` already has
+   the shape and still has no caller.
+6. **`check-provisioning` into the gate**, with a PowerShell twin, once the work
+   above lands. ⚠ It is deliberately out of the gate today: it is the acceptance
+   for an entry that is not finished, and `check-staleness` and `check-sources`
+   are the precedent for a check that lives outside it.
+
+
+---
+
+## DRIVER-09. The most dangerous script in the tree is the one with no twin
+
+**Source** found while writing `DRIVER-08`'s tool, 2026-09-02
+**Category** driver, **Priority** P1, **Effort** M, **Status** done
+
+### Problem
+
+⛔ **`scripts/common/provision-browser.sh` purges browsers on Windows and it is
+a POSIX shell script.** So does its acceptance,
+`scripts/common/check-provisioning.sh`. Every other check in `common/` has two
+halves for a reason this one does not escape: a native PowerShell session on
+Windows has no `sh`, and a runner that has to install a POSIX layer before it
+can purge a browser has already changed the machine the capture is about to
+measure.
+
+⚠ **And the shape is the one this project rejects everywhere else.** The tool
+is a single script with per-platform branches, which is the arrangement
+[`../scripts/README.md`](../scripts/README.md) argues against at length in the
+section listing what does not have a twin and why. It is listed there as a debt
+now, which is honest and is not a fix.
+
+### Premise
+
+⭐ **Measured.** The tool and the check exist and were run on this Windows host
+through `sh`; `check-provisioning` reports seven refusals held. Neither has a
+`.ps1`, so `check-twins` compares nothing for either, and `check-exit-codes`
+sees one script where every other check gives it two.
+
+### Approach
+
+Write `provision-browser.ps1` and `check-provisioning.ps1`, then register the
+pairs in `check-twins.sh` so the `--json` answer and the exit code of each half
+are compared on one tree, exactly as the other twenty-six pairs are.
+
+⭐ **The split is per platform and it makes both halves smaller.** The sh half
+keeps the package-manager and vendor-uninstaller routes for Linux; the
+PowerShell half keeps the registry uninstaller and the per-user install paths
+for Windows. Neither carries a branch for a platform it will never run on.
+
+⛔ **The two-condition guard is duplicated deliberately, and both halves are
+asserted.** A guard implemented once and called from two places is one guard;
+this project's twin rule accepts that duplication everywhere else, and what is
+being duplicated here is the thing standing between a machine and losing its
+browser. `check-provisioning` asserts all three refusal paths in each half.
+
+Must not: have the PowerShell half shell out to `sh`. That reports a green half
+of a pair as the whole pair on the hosts that most need the other half, which is
+the check contract in [`../scripts/README.md`](../scripts/README.md).
+
+⛔ **This entry was written saying the twin should wait for `DRIVER-08`'s
+success path, and the gate disproved that within the hour.** The sh half cannot
+land alone: `check-exit-codes` counts the scripts of its own language, the two
+counts had been equal only by coincidence, and one untwinned script broke the
+tie. ⭐ The correction stays here rather than being edited away, because a
+plan a check refused is worth more on the page than a plan nobody tested.
+
+### Consumers
+
+Nothing is published yet, so there are no consumers to break. The capture
+workflow is the only caller either script will have.
+
+### Prove
+
+⛔ **The acceptance, and it is a command.**
+
+```bash
+sh scripts/common/check-twins.sh
+```
+
+Passing means: exit 0, and `check-provisioning` is compared among the pairs.
+⚠ Run it on a host with `pwsh`, and do not edit the tree while it runs.
+
+### ⭐ Closed 2026-09-02
+
+⛔ **The gate refused the sh half on its own, and that is why this closed the
+day it was written.** `check-exit-codes` reported 27 scripts against 25 the
+minute the provisioning tool landed untwinned, and `check-twins` called it a
+drift. ⭐ The rule about two halves had never had teeth before, because the
+two counts had always been equal; one sh script with no twin and one PowerShell
+script with no twin had been cancelling each other out.
+
+| what landed | |
+| --- | --- |
+| [`../scripts/common/provision-browser.ps1`](../scripts/common/provision-browser.ps1) | the same four steps, the same two-condition guard, the same argument refusals, and the Windows purge as native PowerShell rather than as a payload handed to `powershell -Command` from sh |
+| [`../scripts/common/check-provisioning.ps1`](../scripts/common/check-provisioning.ps1) | ⚠ it drives the PowerShell tool and nothing else, which is the check contract: a half that shelled out to `sh` would report a green half of a pair as the whole pair on the host that most needs this one |
+| the pair in `check-twins.sh` | with the reason it exists written above the row |
+
+```text
+$ pwsh -NoProfile -File scripts/common/check-provisioning.ps1 -Json
+{"schema":"check-provisioning/1","checks":7,"problems":0,"provisioned":"skipped"}
+$ sh scripts/common/check-provisioning.sh --json
+{"schema":"check-provisioning/1","checks":7,"problems":0,"provisioned":"skipped"}
+```
+
+#### ⛔ Mutation-proved, on copies, and never on the live file
+
+⭐ **This is the first guard in this repository mutated under the rule the
+incident produced.** The tool and its check were copied into the ignored scratch
+directory, the copy of the check was pointed at the copy of the tool, and the
+copy of the tool was mutated twice. ⚠ Both mutations leave the tool refusing
+every case, so neither could reach a purge even if it had been run in the tree:
+
+| planted, in the copy | what the check said |
+| --- | --- |
+| the refusal stops naming both conditions | 3 problems, `refused without saying 'BOTH are required'`, exit 1 |
+| the guard exits 0 instead of 2 | 3 problems, `exit 0, expected 2`, exit 1 |
+
+⛔ **What is still not proved is the success path**, in either half. No runner
+has purged or installed anything, and `DRIVER-08` is where that stays recorded.
+
+---
+
+## DRIVER-10. Provisioning is written for one family and the matrix names four
+
+**Source** the operator, 2026-09-02: install and set up any browser version we
+want, headless and unattended, on any runner
+**Category** driver, **Priority** P1, **Effort** L, **Status** open
+
+### Problem
+
+⛔ **`provision-browser.sh` knows Chrome.**
+[`../.github/capture-matrix.json`](../.github/capture-matrix.json) names four
+families, `check-coverage --require-rows` can be asked to fail on all four, and
+`CORPUS-02` cannot close until `edge`, `chromium` and `firefox` have profiles. A
+provisioning step serving one family leaves the other three where they are
+today: whatever the image installed, or nothing at all.
+
+### Premise
+
+⭐ **Measured, per family, and they are not variations of one job:**
+
+| family | what purging and installing it actually needs |
+| --- | --- |
+| `chrome` | the implemented route. The vendor channel on both platforms. |
+| `edge` | ⚠ present on the `ubuntu-latest` image at `/usr/bin/microsoft-edge`, measured in `capture.yml` run 33579619515, and the lane is enabled. Its own vendor channel and its own uninstaller; the resolver finds it already. |
+| `chromium` | ⛔ no vendor channel with a stable download URL by build. On Linux the distribution package is a snap on the runner image, which is a different install mechanism and a different sandbox. |
+| `firefox` | ⛔ a different vendor, a different index, a different archive layout and a different headless switch. The resolver does not know the family at all, which is why the matrix cell is `enabled: false`. |
+
+### Approach
+
+One family per change, in matrix order, and each lands with a profile in the
+corpus rather than with a code path:
+
+1. **`edge`**, which is cheapest: the resolver finds it, the lane is enabled,
+   and only the purge and install routes are missing.
+2. **`firefox`**, the highest-value non-Chrome lane because the TLS stack is
+   genuinely different, and which needs `resolve` to know the family before
+   anything else can be attempted.
+3. **`chromium`**, last, and ⚠ it may end as a recorded refusal rather than a
+   lane: a family with no build addressable by version cannot satisfy what this
+   entry is for. A refusal written down with its reason is a complete outcome.
+
+⭐ **The route table is per family and it is DATA, not branches.** Each family
+names its purge routes, its download index and its headless switch in one
+place, so adding a family is a table row and a fixture rather than a fifth arm
+of a case statement.
+
+Must not: report a family as provisioned because the purge found nothing to
+remove. `DRIVER-08`'s confirm step is the rule and it applies per family.
+
+Must not: fall back to the image's browser when the install route fails. That is
+the defect `DRIVER-08` exists to remove, arriving one family later.
+
+### Consumers
+
+Nothing is published yet, so there are no consumers to break. ⚠ Each family
+this closes changes what `check-coverage --require-rows` reports, which is a
+report rather than a contract.
+
+### Prove
+
+⛔ **The acceptance, and it is a command.**
+
+```bash
+sh scripts/common/check-coverage.sh --require-rows chrome,edge
+```
+
+Passing means: exit 0 with an `edge` row carrying at least one profile whose
+`captured.acquisition` names a URL and a sha256. ⚠ The command is written with
+`edge` because that is step 1; each later family widens the list, and the
+four-family form in `CORPUS-02` is what closes that entry rather than this one.
+
+---

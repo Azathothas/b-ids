@@ -84,6 +84,14 @@ with a fixture, not by trusting the comparison to notice.
 whether the language does.** Every check in `common/` passes that test, which is
 why every one of them has two halves.
 
+⛔ **And the comparison enforces it by arithmetic, which nobody planned.**
+`check-exit-codes` counts the scripts of its own language, and the two counts
+had been equal only by coincidence: one sh script with no twin, one PowerShell
+script with no twin. The provisioning tool landed as an sh half alone and the
+counts went 27 against 25 the same minute. ⭐ A tree that refuses to go green
+over an untwinned script is a better rule than a paragraph asking for one.
+`TODO/driver.md`, `DRIVER-09`.
+
 ---
 
 ## ⚠ What a vendored tree costs the checks that read the whole tree
@@ -569,6 +577,35 @@ of a pair as the whole pair on a host without it.
 invokes it the same way, and refuses to report a result at all if that reads as
 2. A check that could not tell the two apart would pass over everything.
 
+### `common/check-provisioning.sh`
+
+Does the tool that PURGES BROWSERS refuse every machine it must, and does it
+provision what it promises where it is allowed to run?
+
+⛔ **It is not in the gate, and that is deliberate.** It is the acceptance for
+[`../TODO/driver.md`](../TODO/driver.md), `DRIVER-08`, which is open:
+`check-staleness` and `check-sources` are the precedent for a check that lives
+outside the gate. ⭐ It is compared by `check-twins` all the same, so the two
+halves cannot drift while the entry they serve is unfinished.
+
+⭐ **Seven refusals are asserted on every host**, and each half asserts them
+against the tool written in its own language: a machine
+that is not disposable, a route that is not one of the two, a `--version` the
+vendor channel cannot honour, a `for-testing` run with no build to look up, and
+the three ways the two-condition guard can be half-satisfied. Each one is read
+as an exit code from the process, unpiped, and each must SAY which condition it
+is refusing on.
+
+⛔ **The provisioning leg itself is skipped LOUDLY, never silently.** On a
+machine that is not disposable the success line names the skip and names the
+workflow where that leg runs. A check that quietly passed where it could not run
+is the shape that makes a green suite mean nothing.
+
+⚠ **What it does NOT yet prove is the success path**, because that has never
+run: no runner has executed the purge or the install. Seven green refusals over
+a tool whose working path is unmeasured is exactly as much as it claims and no
+more.
+
 ### `common/check-gate.sh`
 
 ⭐ **Run every local gate this host can run, in one command.** Part (a) of
@@ -709,6 +746,43 @@ changes nothing about what is built.
 ⚠ **It needs the pristine copy, so it needs the network, so it is not a gate
 check.** The offline half of the same question belongs to `common/check-vendor`.
 
+### `common/provision-browser.sh`
+
+Purge every browser from a machine, confirm none is left, install the one build
+that was asked for, and confirm the version that arrived.
+
+⛔ **This is the most dangerous file in the repository.** It exists so a runner
+is an environment this project chose rather than one an image happened to ship,
+and the price of that is a tool whose first step is destructive.
+[`../TODO/driver.md`](../TODO/driver.md), `DRIVER-08`.
+
+⛔ **Two independent conditions from two sources, and one edit cannot lift
+both**: `B_IDS_DISPOSABLE=1` and `CI`. ⛔ **What each one is, and why it has to be
+two, is [`../TODO/driver.md`](../TODO/driver.md), `DRIVER-08`.** ⚠ **It was one condition
+and that was measured to be too few**: a session proving the guard could fail
+mutated it and ran the purge on the operator machine.
+[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) carries the incident.
+
+⭐ **`--plan` runs nothing** and prints the purge, the fetch, the install and the
+confirm for this platform and route. It is what a person reads before letting
+this near a machine, and it is the only mode worth running on a machine you keep.
+
+⛔ **The confirm between purge and install is not decoration.** It requires
+`b-ids-driver resolve` to exit 2 -- nothing installed -- before an install is
+attempted. A purge that silently removed nothing would otherwise be followed by
+an install onto a machine that still had the old build, and the capture would
+measure whichever the resolver found first.
+
+⭐ **It is a pair**, and each half carries the routes for its own platform plus
+the guard, the argument refusals and `--plan` for both. ⚠ The sh half is what
+a Linux runner uses; the PowerShell half is what a Windows runner uses without
+first installing a POSIX layer onto the machine the capture is about to
+measure.
+
+⚠ **The `for-testing` route is not implemented**, so the exact-version half of
+the promise is not kept yet; the branded `vendor` route serves the current build
+only, and refuses a `--version` rather than accepting one it cannot honour.
+
 ### `common/git-sync.sh`
 
 Commit and push with the rules in
@@ -739,6 +813,13 @@ git config, and if neither has one it refuses rather than guessing.
 3. ⭐ **Mutation-prove it.** Plant the defect it exists to catch, run it, and
    read the exit code unpiped. **A guard that has never been seen to refuse is
    a guard nobody knows works.**
+
+   ⛔ **And plant it in a COPY, never in the live subject on a machine the
+   guard protects.** For the length of that test the guard is gone, on the one
+   machine it exists for. Copy the script under the ignored scratch directory
+   and mutate that, or mutate on a machine that is thrown away afterwards. ⚠ This
+   rule is here because it was learned the expensive way:
+   [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md).
 
    This is not optional advice, and it has fired here. ⛔ **The
    banned-vocabulary rule was documented in four files and enforced in

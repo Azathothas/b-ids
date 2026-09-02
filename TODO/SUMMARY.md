@@ -4,8 +4,9 @@
 [`PROGRESS.md`](PROGRESS.md) is the record; this is the table that session
 printed in chat.
 
-**Session 2026-09-02T01:14:00Z to 2026-09-02T07:00:00Z, unattended, ended by
-operator interrupt.**
+**Session 2026-09-02T01:14:00Z to 2026-09-02T11:30:00Z.** Unattended until
+07:00Z, then six operator rulings, then an instruction to put the rest into
+TODO and close with a prompt.
 
 ---
 
@@ -13,13 +14,15 @@ operator interrupt.**
 
 | | before | after | read from |
 | --- | --- | --- | --- |
-| entries done | 48 | **62** | `sh scripts/common/check-record.sh` |
-| entries open | 43 | **29** | the same |
-| effort points closed | - | **19** of 20 | five `M` at two, nine `S` at one |
+| entries done | 48 | **64** | `sh scripts/common/check-record.sh` |
+| entries open | 43 | **33** | the same |
+| entries in total | 91 | **97** | six were written this session, two of them closed the same day |
+| scripts answering exit 2 | 22 | **27** | `exit codes ok: 27 script(s)`, in both halves |
+| effort points closed | - | **21** of 20 | six `M` at two, nine `S` at one |
 | profiles in the corpus | 1 | **3** | `corpus=profiles:3 problems:0` |
 | profiles from a machine nobody owns | 0 | **2** | `captured.operator` on each |
-| gate checks | 24 | **26** | `gate ok: 26 passed` |
-| twin pairs compared | 22 | **26** | `every twin pair agrees on this tree` |
+| gate checks | 24 | **27** | `gate ok: all 27 checks passed` |
+| twin pairs compared | 22 | **27** | `every twin pair agrees on this tree` |
 | tests | 256 | **309** | `cargo test --workspace` |
 | experiments in the tree | 2 | **6** | [`../experiments/README.md`](../experiments/README.md) |
 | workflows | 3 | **5** | `workflows ok: 5 file(s), 9 job(s)` |
@@ -27,7 +30,7 @@ operator interrupt.**
 
 ---
 
-## The fourteen entries that closed
+## The fifteen entries that closed
 
 | entry | eff | what it now does |
 | --- | --- | --- |
@@ -45,6 +48,7 @@ operator interrupt.**
 | `CI-08` | S | `check-manual-path`, and a `# manual:` line on all nine jobs |
 | `CORPUS-05` | S | the extension search, recorded and re-runnable |
 | `DOC-01` | S | [`../docs/architecture.md`](../docs/architecture.md), the technical reference |
+| `DRIVER-09` | M | the provisioning tool and its check as pairs, because the gate refused the sh half alone |
 
 ---
 
@@ -60,6 +64,8 @@ operator interrupt.**
 | does Chrome on Linux read the user's NSS database | ⛔ yes, sometimes: 2 handshakes of 4. The inherited claim is refuted | the same run |
 | is `0x12e0` in Chrome 151 | no, in none of three profiles; the origin's `152` capture has it | `60-identify-extension.sh` |
 | what changed between Chrome `151.0.7922.76` and `.174` on `win64` | ⭐ only the version string | `b-ids-validator diff` |
+| ⛔ can one condition hold a browser-purging tool off a laptop | no. It was mutated and the purge path ran on the operator machine | [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) |
+| do the two-condition refusals hold, all three ways | yes: 7 refusals, each exit 2, each naming the missing condition | `check-provisioning` |
 
 ---
 
@@ -72,3 +78,12 @@ operator interrupt.**
 - **The twentieth effort point.** Nineteen were closed when the session ended.
 - **Windows cannot exercise the trust-store route**, and why has not been read.
 - **`EMIT-03` was read and not started.** `HARNESS-05` has unblocked it.
+- ⛔ **`DRIVER-08` is open and the tool it needed is written.** The refusals
+  are proved on this host; ⛔ **the purge and the install have never run on a
+  runner**, so the success path is unmeasured. Six items remain, in the entry,
+  in order.
+- **`DRIVER-10` is new and untouched**: the three browser families beyond Chrome
+  that the matrix names, and ⚠ they are not variations of one job.
+- ⚠ **This session ran a browser-purging tool on the operator machine with
+  its guard disabled.** Nothing was removed; that was luck rather than
+  design. It is the first section of [`PROGRESS.md`](PROGRESS.md).

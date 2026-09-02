@@ -14,6 +14,50 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T11:25:00Z - a tool that purges browsers, and the guard it needed twice
+
+**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-08`, `DRIVER-09` and
+`DRIVER-10`, [`docs/HISTORY/README.md`](docs/HISTORY/README.md), and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`scripts/common/provision-browser.sh`**: purge every browser of a family
+  from a machine, confirm the purge by requiring `b-ids-driver resolve` to exit
+  2, install the build that was asked for, and confirm the version that
+  arrived. ⚠ The branded vendor route only, and it refuses a `--version` the
+  channel cannot honour rather than accepting one it would ignore.
+- ⭐ **`scripts/common/check-provisioning.sh`**: seven refusals asserted on any
+  host, and the provisioning leg skipped loudly rather than silently where the
+  machine is not disposable. ⛔ Outside the gate on purpose, because it is the
+  acceptance for an entry that is open.
+- ⛔ **The guard is two independent conditions from two sources**, after one
+  condition was measured to be too few: this session mutated the single
+  condition and ran the purge path on the operator's own machine. Nothing was
+  removed, and that was an accident of registry matching rather than a margin.
+  [`docs/HISTORY/README.md`](docs/HISTORY/README.md) carries the incident.
+- ⛔ **Two rules were written down that this project did not have**: a guard on
+  something irreversible takes two conditions from two sources, and a test that
+  has to bypass a guard runs against a copy rather than against the file on a
+  machine the guard protects. Both are in
+  [`docs/conventions/forbidden-patterns.md`](docs/conventions/forbidden-patterns.md)
+  and in [`scripts/README.md`](scripts/README.md) where checks are written.
+- ⛔ **Both scripts are PAIRS, because the gate refused them otherwise.**
+  `check-exit-codes` reported 27 scripts against 25 the minute the sh halves
+  landed: the two counts had been equal only by coincidence, and one untwinned
+  script broke the tie. `provision-browser.ps1` and `check-provisioning.ps1`
+  exist, they report the same JSON as their halves, and the pair is compared by
+  `check-twins`. `DRIVER-09`, closed the day it was written.
+- ⭐ **The first guard mutated under the new rule**: the tool and its check
+  were copied into the ignored scratch directory and the copy was mutated
+  twice, each mutation leaving every case refused so that neither could reach a
+  purge. The check reported 3 problems and exit 1 both times.
+- ⚠ **`DRIVER-08` stays open and `DRIVER-10` was written rather than
+  started**: the three browser families beyond Chrome that the matrix names.
+  ⛔ The purge and the install have never run on a runner, so the tool has a
+  proved refusal path and an unproved success path.
+
 ### 2026-09-02T06:50:00Z - more than one source, a manual path for every job, and a diff
 
 **Record:** [`TODO/ci.md`](TODO/ci.md) `CI-06` and `CI-08`,

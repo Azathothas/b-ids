@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 91  open 29  blocked 0  done 62
+total 97  open 33  blocked 0  done 64
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
-| P0 | 0 | 0 | 9 | 9 |
-| P1 | 7 | 0 | 33 | 40 |
-| P2 | 19 | 0 | 18 | 37 |
+| P0 | 2 | 0 | 9 | 11 |
+| P1 | 8 | 0 | 34 | 42 |
+| P2 | 20 | 0 | 19 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **29** | **0** | **62** | **91** |
+| **all** | **33** | **0** | **64** | **97** |
 
 ---
 
@@ -53,6 +53,10 @@ total 91  open 29  blocked 0  done 62
 | DRIVER-04 | P2 | S | done | The root store a browser actually reads | [`driver.md`](driver.md) |
 | DRIVER-05 | P2 | M | done | Acquisition, with more than one way to get a build | [`driver.md`](driver.md) |
 | DRIVER-06 | P2 | M | open | Branded and unbranded builds are different products | [`driver.md`](driver.md) |
+| DRIVER-07 | P2 | S | done | The browser's own output is discarded, so a lane that captured nothing says nothing | [`driver.md`](driver.md) |
+| DRIVER-08 | P0 | L | open | Purge the machine's browsers, install the build the cell names | [`driver.md`](driver.md) |
+| DRIVER-09 | P1 | M | done | The most dangerous script in the tree is the one with no twin | [`driver.md`](driver.md) |
+| DRIVER-10 | P1 | L | open | Provisioning is written for one family and the matrix names four | [`driver.md`](driver.md) |
 | EMIT-01 | P2 | L | open | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
 | EMIT-02 | P2 | L | open | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
 | EMIT-03 | P2 | S | open | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
@@ -71,6 +75,8 @@ total 91  open 29  blocked 0  done 62
 | HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
 | HARNESS-14 | P2 | M | done | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
+| HARNESS-15 | P0 | M | open | A cold hello is thrown away because its own connection carried no HTTP/2 | [`harness.md`](harness.md) |
+| HARNESS-16 | P2 | S | open | The trust store a Windows runner can be made to use without a person | [`harness.md`](harness.md) |
 | LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
 | LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |

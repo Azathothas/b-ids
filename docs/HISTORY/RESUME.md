@@ -13,10 +13,10 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-02T01:14:00Z to 2026-09-02T07:00:00Z, unattended, ended by operator interrupt. |
-| the resume point | The work order's item 1, **`CORPUS-02`**, continued: the `edge` lane is enabled and wired and has not produced a profile. |
-| in flight | ⛔ Nothing. Fourteen entries closed in place with their acceptance commands run; `CORPUS-02` left open with its blocker named. |
-| the state of the tree | Clean and pushed on `main`. The gate passes 26 checks with `check-twins` alongside, and all 26 pairs agree. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-02T01:14:00Z to 2026-09-02T11:30:00Z, unattended until 07:00Z and then directed by the operator. |
+| the resume point | The work order's item 1, **`DRIVER-08`**, and specifically its step 4: ⛔ **the purge and the install have never run on a runner.** The tool and its seven refusals exist; the success path is unmeasured. |
+| in flight | ⛔ Nothing. Fourteen entries closed in place with their acceptance commands run; `DRIVER-08` left open with six named items; `DRIVER-09` and `DRIVER-10` written and untouched. |
+| the state of the tree | Clean and pushed on `main`. The gate passes 26 checks with `check-twins` alongside, and all 27 pairs agree. `check-provisioning` is the 27th script and sits outside the gate on purpose. |
 | the paste | below |
 
 ---
@@ -44,6 +44,12 @@ handshakes on a runner that was then thrown away.
 between a per-launch key pin and a real trust anchor, 0 differing. ⚠ One
 platform, one build, one day.
 
+⛔ **And a browser-purging tool was run on the operator machine with its guard
+disabled, on purpose, by this session.** Nothing was removed, and that was an
+accident of registry matching rather than a safety margin.
+[`README.md`](README.md) carries the incident; the guard is two independent
+conditions now, and a test that has to bypass a guard runs against a copy.
+
 ---
 
 ## The conditions this session leaves
@@ -62,11 +68,23 @@ fetchable routes are `PUB-02`, `SCHEMA-08` and `PUB-03`.
 ⚠ **Windows cannot exercise the trust-store route**, and nobody has read why.
 `50-trust-anchor.sh` exits 2 there rather than reporting a one-sided comparison.
 
+⚠ **A tool that purges browsers lives in `scripts/common/` now.** It refuses
+any machine that is not both marked disposable by this project and running on
+a hosted runner. ⛔ Run it with `--plan` and nothing else on a machine you
+keep, and do not disable a condition to see what happens.
+
 ---
 
 ```text
 Read ./docs/AGENTS.md in full & follow.
 ```
 
-⭐ **That is the whole prompt.** The router names what to read, in what order,
-and what a session owes at each end. Everything else is reached from it.
+⭐ **That is the whole prompt, and it stays the minimum.** The router names
+what to read, in what order, and what a session owes at each end. Everything
+else is reached from it.
+
+⚠ **An operator who wants a session steered adds to it rather than replacing
+it**, which is what happened on 2026-09-02: the same line, followed by the
+unattended terms, the point to start from, and the standing warnings about the
+append-only corpus and history. ⛔ Those additions are instructions for one
+session and they do not belong in this file, which is overwritten by the next.

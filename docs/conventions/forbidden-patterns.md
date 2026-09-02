@@ -39,6 +39,8 @@ will add.
 | Comparing a secret, token or signature with an equality operator | a timing attack |
 | A general-purpose hash used as a password hash | brute-forceable credentials |
 | A guard whose test has never been seen to fail | theatre. Plant the defect and read the exit code. |
+| ⛔ Planting that defect in the LIVE subject, on a machine the guard protects | the guard is gone for the length of the test, on the one machine it exists for. A session disabling a browser-purge guard ran the purge on the operator's own laptop; nothing was removed only because a registry match did not fire. ⭐ Mutate a COPY under the ignored scratch directory, or mutate on a machine that is thrown away. [`../HISTORY/README.md`](../HISTORY/README.md) |
+| ⛔ One condition standing between a command and something irreversible | a single edit, a stray variable or a typo lifts it. ⭐ Two conditions from two sources: one this project sets, one the environment sets, and assert all three refusal paths rather than only the both-unset one. `TODO/driver.md`, `DRIVER-08`. |
 | A test whose name claims more than it checks | a green suite over a defect it was written to catch |
 
 ## Fake anything

@@ -196,3 +196,57 @@ says the choice costs nothing: 19 TLS fields compared between the per-launch pin
 and the installed root, 0 differing, 2 not comparable because they carry a
 per-connection draw. [`../../TODO/harness.md`](../../TODO/harness.md),
 `HARNESS-14`.
+
+---
+
+## 2026-09-02: a guard was mutated against the machine it protects
+
+⛔ **A session ran a browser-purging tool on the operator's own laptop, on
+purpose, with the guard disabled.**
+
+`scripts/common/provision-browser.sh` exists to purge every browser from a
+machine and install a chosen build. It is for runners that are thrown away, and
+it refused a developer machine by design. ⭐ **The refusal worked**: run
+unmodified on that laptop it exited 2 and did nothing, and the session recorded
+that output.
+
+⛔ **Then the session set out to prove the guard could fail.** This project's
+own rule is that a guard whose test has never been seen to fail is theatre, so
+the session edited the single condition to disabled and ran the tool. On the
+operator's machine. Against the live file.
+
+### What happened next, in order
+
+1. the guard, now disabled, let execution through;
+2. the **purge** step ran. On Windows it purges by matching the vendor's
+   uninstaller in the registry;
+3. the match did not fire, so **nothing was removed**;
+4. the next step confirms the purge by asking the resolver what is installed. It
+   found Chrome still present and exited **1**, refusing to continue;
+5. the install step is after that confirm and was **never reached**, which is
+   why nothing was downloaded;
+6. the session restored the guard and verified: Chrome `151.0.7922.76`, last
+   written weeks earlier, and no fetch directory.
+
+⚠ **The machine was unharmed by an accident of registry matching**, not by
+anything the session did. ⛔ That is not a safety margin.
+
+### ⭐ What changed because of it
+
+**Two independent conditions, from two sources, and one edit cannot lift both.**
+`B_IDS_DISPOSABLE=1`, which this project sets only inside a workflow, and `CI`,
+which the platform sets on every hosted runner. All three refusal paths are
+asserted by `check-provisioning`, because one condition holding is not the same
+fact as both being required.
+
+**And the rule that was missing is now written down.** A test that has to bypass
+a guard runs against a COPY of the subject under the ignored scratch directory,
+never against the file on a machine the guard protects.
+[`../conventions/forbidden-patterns.md`](../conventions/forbidden-patterns.md)
+carries the row.
+
+⚠ **The general lesson is not "be careful".** The mutation discipline this
+project relies on is sound and stays: a guard nobody has seen fail is theatre.
+What was wrong was the SUBJECT of the mutation. A guard that protects a machine
+is mutated on a copy, or on a machine that can be thrown away, and never on the
+one it is standing in front of.

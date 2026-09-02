@@ -52,9 +52,13 @@ ruled; a ruled entry carries the date and the ruling.}}
      ⛔ It is here because this repository's files are fetched by URL from
      outside this tree, so nothing here fails when a contract breaks. -->
 
-{{Which rows of ../docs/consumers.md this touches, and whether the change is
-breaking by that file's definition. "None: this file has no consumers" is a
-complete answer and is still written down.}}
+{{Who fetches what this change touches, and whether the change is breaking for
+them. ⚠ Nothing is fetched from this repository yet: `PUB-01`, `PUB-02` and
+`PUB-03` are the three surfaces and none exists, so "nothing is published yet,
+so there are no consumers to break" is a complete answer today and is still
+written down. ⛔ When a surface exists, name it here rather than a register
+file: this template used to cite one the tree does not have, which is the
+`TOOL-10` defect in the document that teaches the form.}}
 
 ## Prove
 

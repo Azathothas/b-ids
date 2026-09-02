@@ -2063,3 +2063,145 @@ refuses.
 what `DRIVER-04` warned about in as many words: on Windows the store a browser
 reads is not obviously the one `certutil` writes to, and measuring against the
 wrong store gives a confident wrong answer.
+
+---
+
+## HARNESS-15. A cold hello is thrown away because its own connection carried no HTTP/2
+
+**Source** the operator, 2026-09-02: "solve this properly" rather than behind a switch
+**Category** harness, **Priority** P0, **Effort** M, **Status** open
+
+### Problem
+
+⛔ **`select` requires ONE connection to carry both halves**, and on one platform
+no connection does. It keeps "the first connection that reached HTTP/2", so a
+connection carrying a perfectly good **cold `ClientHello`** and no HTTP/2 is
+classified `Abandoned` and discarded, and the TLS half is then taken from a
+**resumed** connection or from nothing at all.
+
+### Premise
+
+⛔ **Measured, twice, on hosted runners.** `capture.yml` runs `33579619515` and
+`33580371329`: Chrome on `ubuntu-latest` opened eight connections per
+navigation, abandoned the first two after completing their handshakes, and
+resumed every one of the remaining six. `b-ids-corpus add` reported
+`8 connection(s): 0 cold, 6 resumed, 0 further cold, 2 abandoned` and refused,
+correctly, to publish anything.
+
+⚠ **The two abandoned connections each carried a cold hello.** They are the only
+cold hellos in that navigation, and the current rule is what threw them away.
+
+### Approach
+
+⭐ **Select per HALF, and record which connection each came from.**
+
+| half | taken from |
+| --- | --- |
+| `tls`, and the `ClientHello` bytes beside it | the first connection whose hello does **not** offer a pre-shared key, whether or not it reached HTTP/2 |
+| `http2`, `http`, and the frame bytes | the first connection that reached HTTP/2 |
+
+⛔ **A profile says whether the two came from one connection.** Two halves from
+two sockets of one navigation is a condition of the measurement, not a detail,
+and a reader who cannot tell cannot reason about a field that spans them.
+
+⭐ **This removes the need to suppress session tickets during a capture.** The
+browser then behaves exactly as it does in the wild: it resumes when it can, and
+the project reads the cold hello it sent before it could. ⚠ `--no-resumption`
+stays as a **control** for the comparison `experiments/30-resumption-control.sh`
+runs; it stops being a condition every published profile is taken under.
+
+⛔ **`Kind::Abandoned` stops meaning "useless".** It means "reached no HTTP/2",
+which is a fact about one half rather than a verdict on the connection, and the
+name changes with the meaning.
+
+Must not: average or merge two connections' TLS halves. Two connections that
+differ are the data; this takes ONE cold hello and says which socket it came
+from.
+
+Must not: fall back to a resumed hello when no cold one exists. A navigation
+with no cold connection publishes nothing, exactly as it does today.
+
+### Decision
+
+**Ruled by the operator 2026-09-02**: solve the cause rather than suppress it.
+⭐ The switch stays for the control and leaves the capture path.
+
+### Consumers
+
+`corpus/v1/**` gains a field naming the connection each half came from.
+⚠ Not breaking: it is additive and optional, and no published route's shape
+changes.
+
+### Prove
+
+```bash
+cargo test -p b-ids-harness connection_selection -- --nocapture
+```
+
+Passing means: the thirteen-connection fixture with its cold connection made to
+carry no HTTP/2 still yields a TLS half, taken from that connection, and an
+HTTP/2 half taken from a later one; the profile records both connection numbers;
+and a navigation whose every hello resumed still publishes nothing.
+
+---
+
+## HARNESS-16. The trust store a Windows runner can be made to use without a person
+
+**Source** found while closing `HARNESS-14`, 2026-09-02; authored on the operator's ruling
+**Category** harness, **Priority** P2, **Effort** S, **Status** open
+
+### Problem
+
+⛔ **`HARNESS-14`'s comparison has no answer on Windows**, because the root could
+not be installed there. `certutil -addstore -user Root` returned non-zero under a
+bounded call with its stdin closed, so the run exited **2** and reported no
+comparison, which is correct and is not an answer.
+
+### Premise
+
+⛔ **Measured, once, and only once.** `trust-anchor.yml` run `33594293802`, on
+`windows-latest`, after the msys-path defect was corrected. The pinned route
+completed 2 handshakes of 4 in the same run, so the harness and the browser were
+both working.
+
+⚠ **Why it failed has NOT been read**, and writing a reason would be the guess
+this project refuses. What is known is that the command did not succeed
+non-interactively in that run.
+
+### Approach
+
+Read, rather than guess:
+
+- capture `certutil`'s own output, which the bounded call currently discards;
+- try the stores a browser on Windows is documented to read, and record which
+  one the subject actually honours;
+- if a route needs a person, ⛔ **record that as the answer**. "This platform
+  cannot be provisioned unattended" is a result, and `DRIVER-08` needs to know
+  it before it promises a lane.
+
+⚠ **`DRIVER-04` warned about exactly this** in as many words: on Windows the
+store a browser reads is not obviously the one `certutil` writes to, and
+measuring against the wrong store gives a confident wrong answer.
+
+Must not: install a root on a machine that is not disposable.
+`B_IDS_DISPOSABLE` is the guard and it does not move.
+
+Must not: report a comparison from one side. `experiments/50-trust-anchor.sh`
+already refuses to and that refusal is what produced this entry.
+
+### Consumers
+
+None: no published route carries a trust-store result. It reaches
+`captured.trust` only for profiles taken through that route, and none exists.
+
+### Prove
+
+```bash
+sh experiments/50-trust-anchor.sh --json
+```
+
+Passing means: on a disposable Windows machine the script either reports a
+comparison with its field counts, or reports which store it tried, what the tool
+said, and that the platform cannot be provisioned unattended.
+
+---

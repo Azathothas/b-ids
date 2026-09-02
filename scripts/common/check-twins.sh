@@ -449,6 +449,22 @@ compare_pair "check-sources"        check-sources.sh        "--report scripts/fi
 # a parse rather than two wrappers over one answer.
 compare_pair "check-manual-path"    check-manual-path.sh    "--json"          check-manual-path.ps1    "-Json"
 
+# ⛔ THE PAIR THAT THIS COMPARISON FORCED INTO EXISTENCE. The sh half of the
+# provisioning tool landed alone, and check-exit-codes immediately reported 27
+# scripts against 25: the counts had been equal only by coincidence, and two
+# untwinned scripts broke the tie. ⭐ A drift nobody could dismiss is what a
+# comparison is for. TODO/driver.md, DRIVER-09.
+#
+# ⚠ EACH HALF DRIVES THE TOOL IN ITS OWN LANGUAGE, so this row compares two
+# acceptances of two implementations rather than two wrappers over one. The
+# refusals are identical facts stated in two languages, which is why the
+# json answers can be compared at all.
+#
+# ⛔ NEITHER HALF EVER PURGES ANYTHING HERE. The provisioning leg runs only
+# where the machine is disposable, and every host that runs this comparison
+# reports it skipped.
+compare_pair "check-provisioning"   check-provisioning.sh   "--json"          check-provisioning.ps1   "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

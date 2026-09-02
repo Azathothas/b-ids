@@ -16,18 +16,79 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session ran      2026-09-02T01:14:00Z to 2026-09-02T07:00:00Z, unattended,
-                 ended by operator interrupt
-baseline         the gate passes: 26 checks on this Windows host with
-                 check-twins skipped by -Fast, and check-twins compares 26
-                 pairs when run in full. 309 tests in 36 files.
-entries          total 91  open 29  blocked 0  done 62
+session ran      2026-09-02T01:14:00Z to 2026-09-02T11:30:00Z. Unattended
+                 until 07:00Z; the operator then interrupted, ruled six
+                 questions, and ended it with an instruction to put the
+                 rest into TODO
+baseline         gate ok: all 27 checks passed, in full, on this Windows
+                 host. 26 with check-twins skipped by -Fast, and
+                 check-twins compares 27 pairs. 309 tests in 36 files.
+entries          total 97  open 33  blocked 0  done 64
+gate             26 checks. check-provisioning is the 27th script and is
+                 deliberately outside it: DRIVER-08 is open
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
 `scripts/common/check-record.sh`, which runs as a gate. ⛔ Do not edit them by
 hand to make a check pass; fix whichever file is wrong.
 ⭐ `node scripts/common/set-record.mjs recount` moves them for you.
+
+---
+
+## ⛔ A browser-purging tool was run on the operator machine, on purpose
+
+⛔ **The worst thing this session did, and it is first because it is the
+thing a later session most needs to not repeat.**
+
+`scripts/common/provision-browser.sh` purges every browser from a machine
+and installs a chosen build. It refused this laptop correctly when run
+unmodified. ⛔ **Then this session set out to prove the guard could fail, and
+mutated the live file on the machine the guard protects.** The purge path ran.
+Nothing was removed only because the Windows uninstaller match did not fire,
+and the confirm step then refused at exit 1, so the install was never reached.
+
+⚠ **The machine was unharmed by an accident of registry matching.** That is
+not a safety margin, and the operator noticed before this session reported it.
+
+| what changed | |
+| --- | --- |
+| ⭐ **two conditions from two sources** | `B_IDS_DISPOSABLE=1`, which this project sets only inside a workflow, and `CI`, which the platform sets on every hosted runner. One edit cannot lift both, and `check-provisioning` asserts all three refusal paths rather than only the both-unset one. |
+| ⭐ **the first guard mutated under the new rule** | the tool and its check were copied into the scratch directory and the COPY was mutated, twice. Both mutations leave every case refused, so neither could reach a purge. |
+| ⛔ **a rule that was missing** | a test that has to bypass a guard runs against a COPY under the ignored scratch directory, never against the file on a machine the guard protects. [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md) carries the row, [`../scripts/README.md`](../scripts/README.md) carries it where checks are written, and [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) carries the incident. |
+
+⚠ **The mutation discipline itself stays.** A guard nobody has seen fail is
+theatre, and that rule is right. What was wrong was the SUBJECT of the
+mutation.
+
+---
+
+## ⭐ The provisioning tool exists, and its success path has never run
+
+⛔ **`DRIVER-08` stays open, and the reason is the honest one**: what exists
+is a tool whose refusals are proved and whose working path is unmeasured. No
+runner has executed the purge or the install.
+
+| landed | |
+| --- | --- |
+| [`../scripts/common/provision-browser.sh`](../scripts/common/provision-browser.sh) | purge, confirm by requiring `resolve` to exit 2, install, confirm the version. The vendor route, Linux and Windows. `--plan` runs nothing. |
+| [`../scripts/common/check-provisioning.sh`](../scripts/common/check-provisioning.sh) | seven refusals asserted on any host; the provisioning leg skipped LOUDLY where the machine is not disposable |
+
+```text
+$ sh scripts/common/check-provisioning.sh
+provisioning ok: 7 check(s), every refusal held, provisioning skipped
+  SKIP the provisioning itself: this machine is not disposable, so nothing
+  was purged. .github/workflows/provision.yml is where that leg runs.
+exit=0
+```
+
+⛔ **The twin was not optional and the gate said so.** `DRIVER-09` was written
+as an entry to be taken later, and `check-exit-codes` reported 27 scripts
+against 25 before the commit: the sh half could not land alone. Both halves
+exist now, they report the same JSON, and the pair is compared.
+
+⭐ **The rest is written down rather than half-built.** `DRIVER-08` carries six
+remaining items in order, and `DRIVER-10` is the other three browser families,
+measured one by one and not assumed to be variations of Chrome.
 
 ---
 
@@ -74,7 +135,7 @@ on `linux64` from `ubuntu-latest`. `corpus=profiles:3 problems:0`, `findings:0`.
 
 ---
 
-## ⭐ Fourteen entries closed, nineteen effort points
+## ⭐ Fifteen entries closed, twenty-one effort points
 
 | | |
 | --- | --- |
@@ -92,11 +153,13 @@ on `linux64` from `ubuntu-latest`. `corpus=profiles:3 problems:0`, `findings:0`.
 | `CI-08` | `check-manual-path`, and a `# manual:` line on all nine jobs |
 | `CORPUS-05` | the search is recorded and re-runnable. `0x12e0` is absent from all three Chrome `151` profiles here and present in the origin's `152` capture |
 | `DOC-01` | [`../docs/architecture.md`](../docs/architecture.md), the technical reference |
+| `DRIVER-09` | the provisioning tool and its check as PAIRS. ⛔ Closed the day it was written, because the gate refused the sh half on its own |
 
-⚠ **Nineteen of the twenty points [`RULES.md`](RULES.md) section 10 asks for**,
-counted on that section's own scale: five `M` at two and nine `S` at one. The
-twentieth was not reached before the operator ended the session, and the count
-is recorded rather than rounded.
+⭐ **Twenty-one of the twenty points [`RULES.md`](RULES.md) section 10 asks
+for**, counted on that section's own scale: six `M` at two and nine `S` at one.
+⚠ Nineteen of them were closed before the operator interrupted; the twentieth
+and the twenty-first arrived afterwards, in `DRIVER-09`, and the reason they
+arrived is that a check refused to let a script land untwinned.
 
 ---
 
@@ -111,6 +174,8 @@ is recorded rather than rounded.
 | the twin comparison read a catch-all parameter as a flag | the doctor pair reported a drift in one place |
 | `50-trust-anchor.sh` hung on both platforms | a certificate tool asked for a password from a terminal that is not there |
 | it then handed `certutil.exe` an msys path | the Windows lane could not install and exited 2, which was correct |
+| ⛔ one condition stood between `provision-browser` and a purge | a single edit lifted it, and the edit was made on the machine the guard protects. Two conditions from two sources now, all three refusal paths asserted |
+| `provision-browser.sh` and `check-provisioning.sh` landed with no PowerShell half | ⛔ `check-exit-codes` reported 27 scripts against 25 within the hour. The two counts had been equal only by coincidence, and one untwinned script broke the tie. `DRIVER-09`, closed |
 
 
 ---
@@ -163,6 +228,13 @@ Planted and read unpiped, each in the half where the guard lives:
 | `"maximum": 255` removed from `$defs/u8` | two `bounds` tests, exit 101 |
 | `check-msrv.ps1` made to exit 1 for an unknown argument | `check-exit-codes.ps1` named the script, exit 1 |
 | `distinct_orders < 2` weakened to `< 0` | `shuffle_observed_with_one_order_is_refused`, exit 101 |
+| the provisioning refusal stopped naming both conditions | `check-provisioning` reported 3 problems, exit 1 |
+| the provisioning guard made to exit 0 instead of 2 | the same 3 cases, `exit 0, expected 2`, exit 1 |
+
+⛔ **The last two were planted in COPIES, under the ignored scratch directory,
+and the copy of the check was pointed at the copy of the tool.** ⚠ Both
+mutations leave the tool refusing every case, so neither could have reached a
+purge. That is the rule this session learned the expensive way, applied.
 
 ⭐ **And two guards were planted by the tree rather than by hand.**
 `check-manual-path` was written before the lines it looks for and named all nine
@@ -205,6 +277,12 @@ problems:0` and `findings:0 notcheckable:9`; 309 tests in 36 files; 25 scripts
 answering 2; 9 workflow jobs each naming a manual equivalent; 26 twin pairs, all
 agreeing; 19 reference trees.
 
+⚠ **The script count moved after that sweep and the sentence above is left
+as it was measured.** `check-exit-codes` reports **27** now: the provisioning
+tool and its check landed after the audit ran. ⛔ A number in a review pass
+records what the command said when the pass ran; editing it afterwards to
+match a later tree is how an audit stops being evidence.
+
 ⚠ **And one procedural failure of this session's own, recorded rather than
 quietly fixed.** [`RULES.md`](RULES.md) warns not to edit the tree while
 `check-twins` runs, because it reads the tree before and after. This session
@@ -240,80 +318,103 @@ place with its acceptance command run, or left open with its blocker named.
 
 ## ⭐ The work order
 
-⚠ **Take these in order.**
+⚠ **Take these in order.** ⛔ The first two are P0 and the operator ruled
+both on 2026-09-02, after reading that the corpus records builds nobody chose.
 
-1. **`CORPUS-02`**, continued. Two of its four required rows are captured:
-   - **the `edge` lane**, enabled and wired and not yet producing. Its last run
-     resolved Edge and the browser exited after 1.4 seconds having opened no
-     connection; `--log PATH` now records what it says.
-   - **`chromium` and `firefox`** need `b_ids_driver::Family` to have branches
-     for them at all.
-2. **`SCHEMA-08`**, the generator and the five formats whose round trip this
+1. ⭐ **`DRIVER-08`, and the tool is written: what remains is running it.**
+   In the order the entry lists them: the `for-testing` route, both routes in
+   the matrix, a workflow step that fails the lane loudly when provisioning
+   does not confirm, ⛔ **a run on a disposable runner on both platforms**,
+   `captured.acquisition` populated from what the tool printed, and
+   `check-provisioning` into the gate. ⛔ Until the runner leg has happened,
+   every profile records `captured.acquisition: null`, no two lanes can be
+   made to run one build, and the tool has a proved refusal path and an
+   unproved success path.
+2. ⭐ **`HARNESS-15`.** Select the TLS half and the HTTP/2 half per half rather
+   than demanding one connection carry both. ⛔ It is what makes the Linux lane
+   capture without imposing a server-side condition on every profile.
+3. **`CORPUS-02`**, which both of the above unblock. Two of its four required
+   rows are captured; the `edge` lane is wired and has not produced a profile,
+   and `chromium` and `firefox` need the resolver to know them at all.
+4. **`SCHEMA-08`**, the generator and the five formats whose round trip this
    tree can prove. `VALID-06`'s diff and `CI-04`'s body both want it.
-3. **`CI-04`**. A scheduled run that finds a change opens a pull request.
-   `CI-02` is closed and its output already carries the replacement values.
+5. **`CI-04`**. A scheduled run that finds a change opens a pull request.
    ⭐ The write is ruled: job-scoped, on the collect job alone.
-4. **`PUB-03`**, then `PUB-01`, `PUB-02`, `PUB-07`. `PUB-07` cannot close until
+6. **`PUB-03`**, then `PUB-01`, `PUB-02`, `PUB-07`. `PUB-07` cannot close until
    two of its three surfaces exist.
-5. **`SCHEMA-12`**, the six formats that need a decoder, once `SCHEMA-08` has a
-   generator to extend.
-6. **`CI-05`**, the cold-start job, and **`EMIT-03`**, which `HARNESS-05` has
-   unblocked and which this session did not start.
+7. **`SCHEMA-12`**, **`CI-05`** and **`EMIT-03`**, the last of which
+   `HARNESS-05` has unblocked and which this session did not start.
+
+⚠ **`DRIVER-10` follows `DRIVER-08` rather than racing it.** Three more
+browser families is work on a tool whose success path is unmeasured, and doing
+it first multiplies the unmeasured part instead of shrinking it. ⭐ `DRIVER-09`
+did not get that choice: the gate refused the tool without its twin.
 
 ⚠ **Small entries worth taking whenever a larger one is blocked**: `DRIVER-06`
-(branded and unbranded builds), `CORPUS-04` (per-build trust-anchor lists, which
-needs a `152` capture because no `151` profile carries the extension),
+(branded and unbranded builds, which `DRIVER-08` makes measurable for the first
+time), `HARNESS-16` (why a Windows runner will not take a root unattended),
+`CORPUS-04` (per-build trust-anchor lists, which needs a `152` capture),
 `VALID-04` (reference digest implementations).
 
 ---
 
 ## Open questions for the operator
 
-⚠ **Each carries a recommendation and each was proceeded on**, per
-[`RULES.md`](RULES.md) section 10: none made proceeding unsafe, and none of them
-edited a published profile.
+⭐ **None. Six went to the operator interactively on 2026-09-02 and all six
+were answered**: the four on provisioning, the two Chromes, resumption and the
+small entries, then two more after the operator saw a purge tool run on their
+own machine. The rulings are in the section below and in the entries they
+created.
 
-### 1. Should refusing session tickets be the standing capture configuration?
-
-**It already is**, because the alternative was a lane that cannot capture.
-`experiments/10-first-profile.sh` passes `--no-resumption`, and every profile
-written from here records `captured.resumption: refused`.
-
-⭐ **The recommendation is to keep it.** The corpus publishes the cold hello and
-nothing else, the control measured 0 differing fields of 19, and the switch
-defaults off so the resumed-connection sample stays reachable.
-
-⚠ **What it costs**: `HARNESS-07` says a resumed connection is recorded
-separately as its own profile, and nothing captured under this switch can ever
-produce one.
-
-### 2. Should the driver's `--log` have been its own entry?
-
-⛔ `b-ids-driver drive` gave the browser `Stdio::null()`, so a lane that
-captured nothing carried no word from the browser about why, and the `edge` lane
-made that concrete. It is implemented under `CORPUS-02`, because the edge row
-that entry requires cannot be diagnosed without it.
-
-⭐ **The recommendation is no.** It is one switch, it unblocks a row of an open
-entry, and a `DRIVER-07` covering it after the fact would be a record of a
-decision rather than a unit of work.
-
-### 3. Windows cannot exercise the trust-store route, and nobody has read why
-
-⛔ `certutil -addstore -user Root` returned non-zero on `windows-latest` under
-a bounded call with its stdin closed, after the path was corrected. What is
-MEASURED is that the command did not succeed there; why it did not is a reading
-nobody has taken.
-
-⭐ **The recommendation is a small entry of its own**, because it is a platform
-question rather than a defect in `HARNESS-14`, whose script correctly refused to
-report a comparison with one side missing.
+⚠ **A later session that finds a fork writes it here with a recommendation
+attached and keeps working.** [`RULES.md`](RULES.md) section 10 names "this
+needs a decision from the operator" as one of the four sentences that is not a
+reason to stop. ⛔ Ask at the very START of a session if proceeding under any
+assumption would be unsafe; otherwise record it here and proceed on the
+recommendation.
 
 ---
 
 ## Settled, and not to be raised again
 
 **Ruled by the operator 2026-09-01 unless noted.**
+
+### ⭐ Ruled 2026-09-02, and each created or moved an entry
+
+- ⛔ **A capture lane PURGES the machine's browsers and installs the build it
+  needs.** Completely, with no leftovers, confirmed by running the resolver and
+  requiring it to find nothing, then installed and confirmed by version.
+  ⭐ P0, and it is `DRIVER-08`. ⚠ The reason it is a ruling rather than an
+  improvement: on a machine this project controls completely it was measuring
+  whatever somebody else's image installed.
+- ⭐ **The corpus carries BOTH Chromes, as separate matrix cells.** Branded,
+  from the vendor's own channel, current build only, and both platforms get the
+  same one because both install on the same day. Unbranded, from the
+  automation-build index, at any exact build, recorded `branded: false`.
+  ⚠ They are two products and `DRIVER-06` is what measures the difference.
+- ⛔ **The resumption problem is solved at its cause, not behind a switch.**
+  `HARNESS-15`: the TLS half and the HTTP/2 half are selected per half, so a
+  cold hello on a connection that carried no HTTP/2 is kept rather than thrown
+  away. ⭐ `--no-resumption` stays as a CONTROL and leaves the capture path, so
+  the browser behaves as it does in the wild and no server-side condition is
+  imposed on every published profile.
+- **Two smaller findings are their own entries**: `DRIVER-07`, the browser log,
+  and `HARNESS-16`, the Windows trust store.
+
+- ⛔ **A guard on something irreversible is TWO conditions from two sources,
+  and it is never mutated on the machine it protects.** Ruled after this
+  session ran the purge path on the operator laptop. One condition this
+  project sets inside a workflow, one the platform sets on a hosted runner,
+  and a bypass test runs against a copy under the scratch directory.
+  ⭐ The rule is in [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+  and in [`../scripts/README.md`](../scripts/README.md) where checks are
+  written, so it is read by whoever is about to break it.
+- ⭐ **The remaining provisioning work is written into TODO rather than
+  half-built at the end of a session.** Ruled 2026-09-02. `DRIVER-08` carries
+  six items in order, `DRIVER-09` the PowerShell twin, `DRIVER-10` the other
+  three browser families. ⚠ The operator also asked this session to close
+  with a prompt for the next one, which [`RULES.md`](RULES.md) section 10 does
+  not have a step for; what the operator asks in a session comes first.
 
 - ⭐ **The write for `CI-04` is JOB-SCOPED.** `contents: write` and
   `pull-requests: write` on the collect job alone, using the run's own
