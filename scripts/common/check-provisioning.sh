@@ -64,6 +64,20 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-provisioning: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
+# ⛔ THE SCRATCH DIRECTORY IS CREATED, NEVER ASSUMED. It is ignored by git, so a
+# fresh checkout does not have it, and a redirect into a directory that is not
+# there fails BEFORE the command on its left ever runs.
+#
+# ⚠ MEASURED 2026-09-02, provision.yml run 33627230086, the first time this ran
+# on a runner at all: both lanes reported that the tool "did not purge and
+# install cleanly" when the tool had never been invoked. ⭐ It failed safe,
+# because nothing was purged, and it failed for a reason the message did not
+# name. TODO/driver.md, DRIVER-08.
+mkdir -p "$REPO_ROOT/.tmp" || {
+  printf 'check-provisioning: cannot create %s/.tmp\n' "$REPO_ROOT" >&2
+  exit 2
+}
+
 TOOL="$REPO_ROOT/scripts/common/provision-browser.sh"
 [ -f "$TOOL" ] || { printf 'check-provisioning: no tool at %s\n' "$TOOL" >&2; exit 2; }
 
@@ -183,12 +197,16 @@ fi
 PROVISIONED="skipped"
 if [ "${B_IDS_DISPOSABLE:-}" = "1" ] && [ -n "${CI:-}" ]; then
   CHECKED=$((CHECKED + 1))
-  if B_IDS_DISPOSABLE=1 sh "$TOOL" --browser chrome --route vendor > "$REPO_ROOT/.tmp/provisioned.txt" 2>&1
-  then
+  B_IDS_DISPOSABLE=1 sh "$TOOL" --browser chrome --route vendor > "$REPO_ROOT/.tmp/provisioned.txt" 2>&1
+  # ⛔ READ FROM THE PROCESS, and REPORTED. A problem line naming only what was
+  # attempted cannot be told apart from one where the command never ran, which
+  # is exactly what happened the first time this reached a runner.
+  vendor_rc=$?
+  if [ "$vendor_rc" = 0 ]; then
     PROVISIONED="ok"
   else
     PROVISIONED="failed"
-    PROBLEMS="$PROBLEMS  provisioning: the tool did not purge and install cleanly
+    PROBLEMS="$PROBLEMS  provisioning: the vendor route exited $vendor_rc. Its output is in .tmp/provisioned.txt
 "
     COUNT=$((COUNT + 1))
   fi
@@ -200,13 +218,14 @@ fi
 ACQUIRED="skipped"
 if [ -n "$BUILD" ] && [ "${B_IDS_DISPOSABLE:-}" = "1" ] && [ -n "${CI:-}" ]; then
   CHECKED=$((CHECKED + 1))
-  if B_IDS_DISPOSABLE=1 sh "$TOOL" --browser chrome --route for-testing --version "$BUILD" \
+  B_IDS_DISPOSABLE=1 sh "$TOOL" --browser chrome --route for-testing --version "$BUILD" \
     > "$REPO_ROOT/.tmp/acquired.txt" 2>&1
-  then
+  ft_rc=$?
+  if [ "$ft_rc" = 0 ]; then
     ACQUIRED="ok"
   else
     ACQUIRED="failed"
-    PROBLEMS="$PROBLEMS  for-testing: the tool did not acquire and confirm $BUILD
+    PROBLEMS="$PROBLEMS  for-testing: $BUILD exited $ft_rc. Its output is in .tmp/acquired.txt
 "
     COUNT=$((COUNT + 1))
   fi

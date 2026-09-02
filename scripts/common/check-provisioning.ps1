@@ -204,16 +204,34 @@ if ($ftPlanRc -ne 0) {
 }
 
 # 7. ⚠ THE PROVISIONING ITSELF, only where the machine is thrown away.
+# ⛔ THE SCRATCH DIRECTORY IS CREATED, NEVER ASSUMED. It is ignored by git, so a
+# fresh checkout does not have it, and a redirect into a directory that is not
+# there fails before the command on its left ever runs.
+#
+# ⚠ MEASURED 2026-09-02, provision.yml run 33627230086, the first time this ran
+# on a runner at all. ⛔ This half printed NOTHING and exited 1: the redirect
+# threw under $ErrorActionPreference = 'Stop' and the summary below is written
+# at the end, so the throw skipped it. A failing acceptance that says nothing is
+# not diagnosable, which is why each leg is wrapped now.
+$scratch = Join-Path $root '.tmp'
+New-Item -ItemType Directory -Force -Path $scratch | Out-Null
+
 $provisioned = 'skipped'
 if ($env:B_IDS_DISPOSABLE -eq '1' -and -not [string]::IsNullOrEmpty($env:CI)) {
     $checked = $checked + 1
-    & $pwshExe -NoProfile -File $tool -Browser chrome -Route vendor `
-        > (Join-Path $root '.tmp' | Join-Path -ChildPath 'provisioned.txt') 2>&1
-    if ($LASTEXITCODE -eq 0) {
+    try {
+        & $pwshExe -NoProfile -File $tool -Browser chrome -Route vendor `
+            > (Join-Path $scratch 'provisioned.txt') 2>&1
+        $vendorRc = $LASTEXITCODE
+    } catch {
+        $vendorRc = -1
+        $problems += ('  provisioning: the vendor route could not be started: ' + $_.Exception.Message)
+    }
+    if ($vendorRc -eq 0) {
         $provisioned = 'ok'
     } else {
         $provisioned = 'failed'
-        $problems += '  provisioning: the tool did not purge and install cleanly'
+        $problems += ('  provisioning: the vendor route exited ' + $vendorRc + '. Its output is in .tmp/provisioned.txt')
     }
 }
 
@@ -223,13 +241,19 @@ if ($env:B_IDS_DISPOSABLE -eq '1' -and -not [string]::IsNullOrEmpty($env:CI)) {
 $acquired = 'skipped'
 if ($Build -and $env:B_IDS_DISPOSABLE -eq '1' -and -not [string]::IsNullOrEmpty($env:CI)) {
     $checked = $checked + 1
-    & $pwshExe -NoProfile -File $tool -Browser chrome -Route for-testing -Version $Build `
-        > (Join-Path $root '.tmp' | Join-Path -ChildPath 'acquired.txt') 2>&1
-    if ($LASTEXITCODE -eq 0) {
+    try {
+        & $pwshExe -NoProfile -File $tool -Browser chrome -Route for-testing -Version $Build `
+            > (Join-Path $scratch 'acquired.txt') 2>&1
+        $ftRc = $LASTEXITCODE
+    } catch {
+        $ftRc = -1
+        $problems += ('  for-testing: ' + $Build + ' could not be started: ' + $_.Exception.Message)
+    }
+    if ($ftRc -eq 0) {
         $acquired = 'ok'
     } else {
         $acquired = 'failed'
-        $problems += ('  for-testing: the tool did not acquire and confirm ' + $Build)
+        $problems += ('  for-testing: ' + $Build + ' exited ' + $ftRc + '. Its output is in .tmp/acquired.txt')
     }
 }
 
