@@ -52,10 +52,33 @@ fn describe(stability: &Stability) -> String {
 }
 
 fn main() -> ExitCode {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    // ⭐ THE LABELS ARE THE CALLER'S, because this driver is not only about the raw
+    // and terminating surfaces. `experiments/30-resumption-control.sh` compares two
+    // TERMINATING runs whose ticket policy differs, and a report calling one of them
+    // `raw` would be the "display that lies" row of
+    // docs/conventions/forbidden-patterns.md.
+    let mut labels = ("raw".to_owned(), "terminated".to_owned());
+    if let Some(i) = args.iter().position(|a| a == "--labels") {
+        let Some(value) = args.get(i + 1).cloned() else {
+            eprintln!("compare-modes: --labels needs A,B");
+            return ExitCode::from(2);
+        };
+        let Some((a, b)) = value.split_once(',') else {
+            eprintln!("compare-modes: --labels takes two names separated by a comma");
+            return ExitCode::from(2);
+        };
+        if a.is_empty() || b.is_empty() {
+            eprintln!("compare-modes: --labels needs a name on both sides of the comma");
+            return ExitCode::from(2);
+        }
+        labels = (a.to_owned(), b.to_owned());
+        args.drain(i..=i + 1);
+    }
+    let (label_a, label_b) = labels;
     let [raw_path, terminated_path] = args.as_slice() else {
         eprintln!(
-            "usage: compare-modes RAW.jsonl TERMINATED.jsonl\n\
+            "usage: compare-modes [--labels A,B] RAW.jsonl TERMINATED.jsonl\n\
              \n\
              Both files are what `b-ids-harness --json` printed, the first from a run with\n\
              --raw and the second from a run with --ca-out, off the SAME browser and build."
@@ -79,11 +102,11 @@ fn main() -> ExitCode {
     let raw_split = b_ids_harness::resumption_split(&raw);
     let terminated_split = b_ids_harness::resumption_split(&terminated);
     println!(
-        "raw:        {} cold, {} resumed, {} abandoned",
+        "{label_a}: {} cold, {} resumed, {} abandoned",
         raw_split.cold, raw_split.resumed, raw_split.abandoned
     );
     println!(
-        "terminated: {} cold, {} resumed, {} abandoned",
+        "{label_b}: {} cold, {} resumed, {} abandoned",
         terminated_split.cold, terminated_split.resumed, terminated_split.abandoned
     );
     // ⭐ A finding in its own right, and it belongs above the field list rather
@@ -91,8 +114,8 @@ fn main() -> ExitCode {
     // resumption at all.
     if raw_split.resumed != terminated_split.resumed {
         println!(
-            "⚠ the two surfaces produced different numbers of resumed connections, which is a \
-             mode effect on the RUN even where every field of the cold hello agrees"
+            "⚠ {label_a} and {label_b} produced different numbers of resumed connections, \
+             which is an effect on the RUN even where every field of the cold hello agrees"
         );
     }
 
@@ -106,7 +129,7 @@ fn main() -> ExitCode {
         .collect();
     let comparison = compare(&raw, &terminated);
     println!(
-        "\ncomparing {} raw hello(s) against {} terminated, resumed connections excluded",
+        "\ncomparing {} {label_a} hello(s) against {} {label_b}, resumed connections excluded",
         comparison.raw_hellos, comparison.terminated_hellos
     );
     if comparison.raw_hellos == 0 || comparison.terminated_hellos == 0 {
@@ -129,19 +152,22 @@ fn main() -> ExitCode {
             Verdict::Agrees(value) => println!("  agrees        {}  {value}", field.field),
             Verdict::Differs { raw, terminated } => {
                 println!("  DIFFERS       {}", field.field);
-                println!("      raw         {raw}");
-                println!("      terminated  {terminated}");
+                println!("      {label_a}  {raw}");
+                println!("      {label_b}  {terminated}");
             }
             Verdict::NotComparable { raw, terminated } => {
                 println!("  not comparable {}", field.field);
-                println!("      raw         {}", describe(raw));
-                println!("      terminated  {}", describe(terminated));
+                println!("      {label_a}  {}", describe(raw));
+                println!("      {label_b}  {}", describe(terminated));
             }
         }
     }
 
+    // ⛔ A statement about the COMPARISON rather than about either file. The
+    // TLS half is the only half both sides can be assumed to carry, so these
+    // fields are never compared here whatever the two runs were.
     println!(
-        "\nonly the terminating surface can see: {}",
+        "\nnot compared, because only a terminating surface carries them: {}",
         comparison.only_terminated_sees.join(", ")
     );
     let differing = comparison.differing().len();

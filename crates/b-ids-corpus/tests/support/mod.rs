@@ -96,6 +96,7 @@ pub fn identity() -> Identity {
         harness: "b-ids-harness 0.0.0".to_owned(),
         operator: "test".to_owned(),
         trust: Trust::SpkiPin,
+        resumption: Some(b_ids_schema::Resumption::Refused),
         switches: vec![
             "--user-data-dir=/home/user/throwaway-1234".to_owned(),
             "--no-first-run".to_owned(),

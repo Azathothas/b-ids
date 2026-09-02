@@ -114,13 +114,7 @@ fn add(root: &str, captures_path: &str, identity_path: &str) -> ExitCode {
     // connection is the one a fresh client sends, and a resumed one produces a
     // different digest. Nothing is averaged and nothing is deduplicated.
     let selection = b_ids_harness::select(&captures);
-    println!(
-        "{} connection(s): 1 cold, {} resumed, {} further cold, {} abandoned",
-        selection.connections(),
-        selection.resumed.len(),
-        selection.additional_cold.len(),
-        selection.abandoned.len()
-    );
+    println!("{}", selection.report());
     let Some(cold) = selection.cold else {
         eprintln!(
             "b-ids-corpus: no connection of this navigation reached HTTP/2, so there is no cold \

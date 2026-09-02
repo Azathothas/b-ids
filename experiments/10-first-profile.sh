@@ -25,6 +25,17 @@
 # answer, and until it has, every profile this writes carries `spki-pin` in
 # `captured.trust` so the comparison is possible at all.
 #
+# ⛔ THE HARNESS ISSUES NO SESSION TICKETS, and that is a condition too.
+# --no-resumption is passed, so the subject cannot resume and every hello is a
+# cold one. ⚠ MEASURED on hosted runners, twice, capture.yml runs
+# 33579619515 and 33580371329: with tickets offered, Chrome on ubuntu-latest
+# abandoned both of the connections that were not resumed and resumed every
+# one it kept, so the navigation produced NO cold connection and nothing could
+# be published from it. ⭐ experiments/30-resumption-control.sh is the
+# control: 19 TLS fields compared, 0 differing, so the switch changes WHICH
+# connections are cold rather than WHAT a cold hello is. The profile records
+# it in `captured.resumption`, read back from what the harness reported.
+#
 # ⚠ HEADER VALUES ARE RECORDED, DELIBERATELY. The default capture shape is
 # names only, because a model whose natural form carries values is a model that
 # will one day publish a credential. A corpus profile is the case the default
@@ -101,7 +112,7 @@ HARNESS_ERR="$OUT/harness.err"
 : > "$HARNESS_ERR"
 
 printf '\nbinding the terminating harness\n'
-"$HARNESS" --ca-out "$OUT/ca.pem" --json --header-values \
+"$HARNESS" --ca-out "$OUT/ca.pem" --json --header-values --no-resumption \
   --handshakes 8 --run-timeout-ms 60000 --timeout-ms 5000 \
   > "$CAPTURES" 2>"$HARNESS_ERR" &
 HARNESS_PID=$!
@@ -156,11 +167,22 @@ fi
 # them is a condition of what was captured through it.
 awk 'NR>1 && /^  --/ { sub(/^  /, ""); print }' "$OUT/driven.txt" > "$OUT/switches.txt"
 
+# -- the resumption configuration the HARNESS reported ----------------------
+# ⛔ Read back from the harness rather than from what was asked for. The
+# switch is a CONDITION of the capture, and a run in which it was refused
+# would otherwise be recorded under a condition it did not have.
+RESUMPTION=$(awk '/^resumption: /{ sub(/^resumption: /, ""); print; exit }' "$HARNESS_ERR")
+if [ -z "$RESUMPTION" ]; then
+  printf '10-first-profile: the harness reported no resumption line\n' >&2
+  exit 1
+fi
+
 printf '\nconditions\n'
 printf '  host      %s\n' "$(uname -s -r 2>/dev/null || printf 'unknown')"
 printf '  rustc     %s\n' "$(rustc --version 2>/dev/null || printf 'unknown')"
 printf '  taken     %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 printf '  trust     spki-pin, one key for one launch, no trust store changed\n'
+printf '  resumption %s, read from what the harness reported\n' "$RESUMPTION"
 printf '  headless  %s\n' "${HEADLESS:-no}"
 printf '  switches  %s\n' "$(wc -l < "$OUT/switches.txt" | tr -d ' ')"
 
@@ -179,7 +201,7 @@ printf '  switches  %s\n' "$(wc -l < "$OUT/switches.txt" | tr -d ' ')"
 IDENTITY="$OUT/identity.json"
 node -e '
 const fs = require("fs");
-const [resolvedPath, switchesPath, out, headless] = process.argv.slice(1);
+const [resolvedPath, switchesPath, out, headless, resumption] = process.argv.slice(1);
 const resolved = fs.readFileSync(resolvedPath, "utf8").split(/\r?\n/)
   .filter(Boolean).map((l) => JSON.parse(l));
 const chrome = resolved.find((r) => r.family === "chrome");
@@ -200,9 +222,14 @@ fs.writeFileSync(out, JSON.stringify({
   trust: fs.readFileSync(switchesPath, "utf8")
     .includes("--ignore-certificate-errors-spki-list=") ? "spki-pin" : "not-applicable",
   switches: fs.readFileSync(switchesPath, "utf8").split(/\r?\n/).filter(Boolean),
+  // ⛔ Read from what the HARNESS reported, never from what this script
+  // asked for. A run whose switch was refused would otherwise record a
+  // condition it did not have, and a cold hello looks the same either way,
+  // so nothing in the bytes could contradict it.
+  resumption: resumption || null,
   headless: headless === "--headless",
 }, null, 2) + "\n");
-' "$OUT/resolved.jsonl" "$OUT/switches.txt" "$IDENTITY" "${HEADLESS:-}" || {
+' "$OUT/resolved.jsonl" "$OUT/switches.txt" "$IDENTITY" "${HEADLESS:-}" "$RESUMPTION" || {
   printf '10-first-profile: could not write the identity file\n' >&2
   exit 1
 }

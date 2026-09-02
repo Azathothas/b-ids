@@ -228,6 +228,63 @@ impl fmt::Display for Trust {
     }
 }
 
+/// Whether the harness offered the subject a way to resume a session.
+///
+/// ⛔ **A condition of the measurement, and it decides whether a cold
+/// handshake is obtainable at all.** A server that issues session tickets lets
+/// the subject resume, and a resumed hello is a different hello: it offers a
+/// pre-shared key where a cold one offers an empty session ticket. WARN
+/// **Measured on hosted runners 2026-09-02**, over two independent runs of
+/// `capture.yml`: Chrome on `ubuntu-latest` abandoned both of its first two
+/// connections after the handshake and every later one resumed, so the
+/// navigation produced NO cold connection and nothing could be published from
+/// it. `TODO/corpus.md`, `CORPUS-02`.
+///
+/// ⚠ **An enum rather than a boolean, and absent rather than defaulted.** A
+/// profile written before this field existed did not record the condition, and
+/// reading one as `offered` would be a condition nobody measured reported as
+/// one somebody did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Resumption {
+    /// The harness issued session tickets, so the subject could resume.
+    ///
+    /// ⚠ This is the standing configuration and it is what every profile
+    /// taken before 2026-09-02 was captured under.
+    Offered,
+    /// The harness issued no session tickets, so every hello is a cold one.
+    ///
+    /// ⭐ **It removes the resumed connections from the sample rather than
+    /// changing what a cold hello looks like.** A subject with no ticket for an
+    /// origin sends the hello a fresh client sends, which is the one this
+    /// corpus publishes.
+    Refused,
+}
+
+impl Resumption {
+    /// Every resumption configuration, in the order the vocabulary is written
+    /// down.
+    #[must_use]
+    pub fn all() -> [Self; 2] {
+        [Self::Offered, Self::Refused]
+    }
+
+    /// The word as it is written in a profile.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Offered => "offered",
+            Self::Refused => "refused",
+        }
+    }
+}
+
+impl fmt::Display for Resumption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// When the capture was taken, by what, and how.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Captured {
@@ -249,6 +306,14 @@ pub struct Captured {
     /// condition somebody did.
     #[serde(default = "Trust::not_applicable")]
     pub trust: Trust,
+    /// Whether the harness offered the subject a way to resume a session.
+    ///
+    /// ⛔ **Absent where it was not recorded, never defaulted.** A profile
+    /// written before the field existed did not measure the condition, and
+    /// `None` says exactly that. ⭐ Every profile written since carries it,
+    /// read from what the harness reported rather than typed beside it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resumption: Option<Resumption>,
     /// The switches the subject was launched with, in order.
     ///
     /// ⛔ Every one of them is a condition of what was captured through it.

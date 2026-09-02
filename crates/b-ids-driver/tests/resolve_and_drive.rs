@@ -106,7 +106,9 @@ fn resolve_and_drive_completes_a_capture_against_the_harness() {
     // given and the key the harness serves cannot drift apart.
     let authority = b_ids_harness::mint(IpAddr::from([127, 0, 0, 1])).expect("an authority mints");
     let pin = authority.spki_pin();
-    let terminator = authority.server_config().expect("a server configuration");
+    let terminator = authority
+        .server_config(b_ids_schema::Resumption::Offered)
+        .expect("a server configuration");
 
     let oracle = b_ids_harness::Oracle::bind(b_ids_harness::Config {
         protocol: b_ids_harness::Protocol::TlsTerminated,

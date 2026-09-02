@@ -103,10 +103,37 @@ impl Selection<'_> {
     /// How many connections the navigation opened.
     #[must_use]
     pub fn connections(&self) -> usize {
-        self.abandoned.len()
-            + self.resumed.len()
-            + self.additional_cold.len()
-            + usize::from(self.cold.is_some())
+        self.abandoned.len() + self.resumed.len() + self.additional_cold.len() + self.cold_count()
+    }
+
+    /// How many cold connections there are, which is zero or one.
+    ///
+    /// ⛔ **Read from the field rather than assumed.** A navigation in which
+    /// every connection that reached HTTP/2 resumed has NO cold connection, and
+    /// a report that said otherwise would be a number nobody measured.
+    #[must_use]
+    pub fn cold_count(&self) -> usize {
+        usize::from(self.cold.is_some())
+    }
+
+    /// One line saying what this navigation's connections were.
+    ///
+    /// ⛔ **It lives here rather than in a caller's format string, and that is
+    /// the defect this method exists because of.** `b-ids-corpus add` printed
+    /// the word `cold` behind a hardcoded `1`, so a navigation with no cold
+    /// connection was reported as having one, on the line above the refusal
+    /// saying it had none. A number in a format string is a number no test can
+    /// reach; a method is one every test can.
+    #[must_use]
+    pub fn report(&self) -> String {
+        format!(
+            "{} connection(s): {} cold, {} resumed, {} further cold, {} abandoned",
+            self.connections(),
+            self.cold_count(),
+            self.resumed.len(),
+            self.additional_cold.len(),
+            self.abandoned.len()
+        )
     }
 }
 

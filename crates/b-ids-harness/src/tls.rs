@@ -28,6 +28,8 @@ use std::sync::Arc;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 use rustls::server::{ServerConfig, ServerConnection};
 
+use b_ids_schema::Resumption;
+
 /// The protocols offered over ALPN, in the order the server prefers them.
 ///
 /// ⚠ **Both, and `h2` first.** Offering only `h2` would refuse a browser that
@@ -133,15 +135,35 @@ impl Authority {
 
     /// Build the server configuration this authority serves.
     ///
+    /// ⭐ **`resumption` is a condition of every capture taken through this
+    /// configuration**, not a tuning knob. ⚠ Measured on hosted runners
+    /// 2026-09-02: with tickets offered, Chrome on `ubuntu-latest` abandoned the
+    /// only connections that were not resumed, so the navigation produced no
+    /// cold handshake and nothing could be published from it.
+    /// `TODO/corpus.md`, `CORPUS-02`.
+    ///
+    /// ⛔ **Refusing resumption removes the resumed connections from the
+    /// sample; it does not change what a cold hello looks like.** A subject with
+    /// no ticket for an origin sends the hello a fresh client sends.
+    ///
     /// # Errors
     ///
     /// A string naming what rustls refused.
-    pub fn server_config(&self) -> Result<Arc<ServerConfig>, String> {
+    pub fn server_config(&self, resumption: Resumption) -> Result<Arc<ServerConfig>, String> {
         let mut config = ServerConfig::builder()
             .with_no_client_auth()
             .with_single_cert(self.chain.clone(), self.key.clone_key())
             .map_err(|e| format!("server configuration: {e}"))?;
         config.alpn_protocols = ALPN.iter().map(|p| p.to_vec()).collect();
+        if resumption == Resumption::Refused {
+            // ⛔ BOTH halves, because a subject that cannot resume under one
+            // protocol version can under the other. TLS 1.3 resumes from a
+            // ticket the server sends after the handshake; TLS 1.2 resumes from
+            // a session the server stored. Setting one and not the other is a
+            // switch that works on the version nobody measured.
+            config.send_tls13_tickets = 0;
+            config.session_storage = Arc::new(rustls::server::NoServerSessionStorage {});
+        }
         Ok(Arc::new(config))
     }
 }

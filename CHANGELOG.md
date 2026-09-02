@@ -14,6 +14,42 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T02:20:00Z - the capture matrix runs, and a lane that captured nothing says why
+
+**Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02`,
+[`TODO/harness.md`](TODO/harness.md) `HARNESS-07`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`capture.yml` has run on hosted runners**, twice, every job green. The
+  `win64` lane's profile is published: Chrome `151.0.7922.174` from
+  `windows-latest`, the first capture in this corpus taken on a machine nobody
+  owns.
+- ⛔ **`b-ids-corpus add` printed `1 cold` as a literal**, so its report claimed
+  a cold connection on a run that had none, on the line above the refusal saying
+  it had none. The line is `Selection::report` now, where a test reaches it.
+- ⭐ **`b-ids-harness --no-resumption`**, which issues no session tickets so the
+  subject cannot resume and every hello is a cold one. It is REFUSED without
+  `--ca-out`, because resumption is a property of the terminator and a switch
+  that reached nothing would be a flag no code reads.
+- ⭐ **`captured.resumption` in the schema and in the published contract**,
+  absent rather than defaulted on a profile written before the field existed,
+  and read back from what the harness reported rather than typed beside the
+  capture.
+- ⭐ **`experiments/30-resumption-control.sh`**, the control that says the switch
+  is safe: 19 TLS fields compared across three rounds, 0 differing, 2 not
+  comparable because they carry a per-connection draw.
+- **`compare-modes --labels A,B`**, because a driver that called a terminating
+  run `raw` was a display that lies.
+
+⛔ **Two findings about the runners, both measured rather than assumed.**
+`ubuntu-latest` and `windows-latest` do not serve the same Chrome build
+(`151.0.7922.173` against `151.0.7922.174`), so one build on two platforms needs
+pinned acquisition. And the `linux64` lane produced no cold connection at all,
+twice, because Chrome abandoned the connections that were not resumed.
+
 ### 2026-09-01T15:10:00Z - acquisition, the capture matrix, and a coverage report
 
 **Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-05`,

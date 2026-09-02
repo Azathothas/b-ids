@@ -406,6 +406,82 @@ not carry that field, matched its PowerShell twin exactly. ⚠ A divergence the
 twin comparison structurally could not see, found by reading the two human
 outputs side by side. Both jq reads strip the carriage return now.
 
+### ⭐ 2026-09-02: the matrix ran, and it found why a lane can capture nothing
+
+⭐ **`capture.yml` has run on hosted runners and every job passed.** Run
+`33579619515`, dispatched with the authenticated `gh` on the default branch:
+the plan job, both browser lanes, the fuzz lane and the collect job, all green.
+That is the first time the capture matrix has ever run.
+
+| what the runners served | |
+| --- | --- |
+| `ubuntu-latest`, image `ubuntu24/20260823.283` | Chrome `151.0.7922.173`, and ⭐ **Edge `151.0.4129.101` also resolved**, at `/usr/bin/microsoft-edge` |
+| `windows-latest`, image `win25-vs2026/20260824.214` | Chrome `151.0.7922.174` |
+
+⛔ **The two runners do not carry the same Chrome build**, so two profiles of
+ONE build on TWO platforms is not obtainable from the preinstalled browser. It
+needs pinned acquisition, which is `DRIVER-05`'s route rather than this lane's.
+⚠ The premise above says one browser version on two platforms produced the same
+digests; nothing here confirms or refutes it, because no version was shared.
+
+#### ⛔ The `linux64` lane captured nothing, twice, and the reason is resumption
+
+⚠ **Reproduced rather than raced.** Runs `33579619515` and `33580371329`
+produced the same shape: Chrome on `ubuntu-latest` abandoned both of the
+connections that were not resumed and resumed every one it kept, so the
+navigation had **no cold connection** and there was nothing to publish. More
+connections do not help, because the first completed handshake leaves a ticket
+and everything after it resumes.
+
+⛔ **And the report said `1 cold` on the line above the refusal saying there was
+none.** `b-ids-corpus add` carried the word behind a hardcoded `1` in its format
+string: the "a hardcoded or synthetic status, progress or metric" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+⭐ Fixed by moving the line to `Selection::report`, where a test can reach it,
+and the guard was seen to fail: reverting `cold_count` to a literal `1` takes
+`connection_selection_reports_no_cold_connection_when_every_one_resumed` red at
+exit 101.
+
+#### ⭐ The fix, and the control that says it is safe
+
+`b-ids-harness --no-resumption` issues no session tickets, so the subject cannot
+resume and every hello is a cold one. `experiments/10-first-profile.sh` passes
+it, the harness **reports** the configuration on stderr, and the script reads
+that line back into `captured.resumption` rather than typing it.
+
+⭐ **Measured, not argued.** `experiments/30-resumption-control.sh`, three
+rounds on this Windows host against Chrome `151.0.7922.76`, headless:
+
+```text
+offered: 4 cold, 11 resumed, 3 abandoned
+refused: 15 cold, 0 resumed, 3 abandoned
+modes=agree differing:0 not_comparable:2 fields:19
+```
+
+⚠ The two not-comparable fields are `tls.cipher_suites` and
+`tls.extensions.order`, both of which carry a per-connection GREASE draw or
+shuffle, and `b_ids_harness::modes` reports those as not comparable rather than
+as findings. ⭐ **So the switch changes WHICH connections are cold, not WHAT a
+cold hello is**, which is the claim the code makes about itself.
+
+#### What the corpus holds now
+
+⭐ **The `win64` runner profile is published**: `151.0.7922.174`, captured on
+`windows-latest` by the same script a person runs. ⚠ It is a real second source
+and it is not a second capture of the same build as the laptop's
+`151.0.7922.76`.
+
+#### ⛔ What still blocks this entry
+
+The acceptance command names four rows and two of them cannot be reached at all:
+
+| row | why it has no capture |
+| --- | --- |
+| `chrome` | ⭐ captured, on `win64` from a runner and on `win64` from a laptop |
+| `edge` | ⛔ **the matrix's `browser` column reaches nothing.** `b-ids-driver drive` takes `browsers.first()` and has no switch for choosing a family, so an `edge` lane would drive Chrome and label it Edge. ⚠ The blocker the plan file records, the driver resolving Edge on a runner image, is measured as REMOVED. |
+| `chromium` | `b_ids_driver::Family` has two variants, `Chrome` and `Edge`. Nothing can resolve Chromium. |
+| `firefox` | the same. `VALID-03` is the check that would say so from the corpus side. |
+
 ---
 
 ## CORPUS-03. `latest` means stable, and beta is how the project gets ahead

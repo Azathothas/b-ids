@@ -25,6 +25,7 @@ way out where it left things.
 | --- | --- |
 | [`10-first-profile.sh`](10-first-profile.sh) | what does the browser on this machine put on the wire, and does the corpus hold it? |
 | [`20-compare-capture-modes.sh`](20-compare-capture-modes.sh) | does completing the handshake change what the browser offers before it? |
+| [`30-resumption-control.sh`](30-resumption-control.sh) | does refusing session tickets change the cold hello, or only which connections are cold? |
 
 ---
 

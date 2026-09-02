@@ -175,6 +175,13 @@
           ],
           "description": "How the subject came to trust the harness. A condition of the measurement: a profile carrying both a ClientHello and HTTP/2 frames may not be not-applicable."
         },
+        "resumption": {
+          "enum": [
+            "offered",
+            "refused"
+          ],
+          "description": "Whether the harness offered the subject a way to resume a session. A condition of the measurement: a server that issues session tickets lets the subject resume, and a resumed hello offers a pre-shared key where a cold one offers an empty session ticket. ABSENT rather than defaulted on a profile written before the field existed, because a condition nobody recorded is not a condition somebody measured."
+        },
         "switches": {
           "type": "array",
           "items": {

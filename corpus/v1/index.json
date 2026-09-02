@@ -3,6 +3,27 @@
   "layout": "v1",
   "profiles": [
     {
+      "id": "chrome-151.0.7922.174-win64-stable",
+      "browser": "Chrome",
+      "version": "151.0.7922.174",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-09-02T01:31:39Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/win64/151.0.7922.174.json",
+        "sha256": "7e552890738bdee26f3738fb6db6145842cc592823ec7bde47371f37c3adc31c",
+        "bytes": 15732
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/win64/151.0.7922.174.hello.hex",
+        "sha256": "7cbfa8debfcc555461c806d9177b0885a1dfb08790bfa248d97d8ccc7f6d8a99",
+        "bytes": 3542
+      }
+    },
+    {
       "id": "chrome-151.0.7922.76-win64-stable",
       "browser": "Chrome",
       "version": "151.0.7922.76",

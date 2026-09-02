@@ -15,7 +15,7 @@ use crate::http2::{Frame, Http2Half, SettingEntry, StreamPriority};
 use crate::tls::{Ech, Extension, Grease, KeyShare, Shuffle, TlsHalf};
 use crate::{
     Browser, Captured, Channel, Digests, Os, Platform, PlatformToken, Profile, ProfileId,
-    Provenance, ProvenanceEntry, ProvenanceKind, Raw, SCHEMA_ID, Trust,
+    Provenance, ProvenanceEntry, ProvenanceKind, Raw, Resumption, SCHEMA_ID, Trust,
 };
 
 /// A profile that is well formed and internally coherent.
@@ -71,6 +71,12 @@ pub fn profile() -> Profile {
             // refuses that combination under a trust configuration that says no
             // handshake completed.
             trust: Trust::SpkiPin,
+            // ⚠ `Offered`, because that is the configuration every capture
+            // before 2026-09-02 was taken under and this fixture stands in for
+            // one of them. ⛔ Not `None`: a fixture whose condition was
+            // unrecorded would exercise the read path for an OLD profile, and
+            // this one stands in for what the harness writes today.
+            resumption: Some(Resumption::Offered),
             switches: vec![
                 "--user-data-dir=(throwaway)".to_owned(),
                 "--headless=new".to_owned(),

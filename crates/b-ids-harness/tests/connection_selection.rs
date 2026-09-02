@@ -142,3 +142,52 @@ fn connection_selection_classifies_a_connection_that_sent_nothing_as_abandoned()
     assert!(selection.cold.is_none());
     assert_eq!(selection.abandoned.len(), 1);
 }
+
+/// ⭐ The report reads the cold count off the selection.
+///
+/// ⛔ **This is the guard for a defect that shipped.** `b-ids-corpus add`
+/// printed `1 cold` as a literal inside its format string, so the line was true
+/// only on the runs where it happened to be. A hardcoded metric is the
+/// `docs/conventions/forbidden-patterns.md` row "a display that lies".
+#[test]
+fn connection_selection_reports_the_cold_count_it_measured() {
+    let navigation = thirteen_connection_navigation();
+    let selection = select(&navigation);
+    assert_eq!(
+        selection.cold_count(),
+        1,
+        "the fixture has one cold connection"
+    );
+    assert_eq!(
+        selection.report(),
+        "13 connection(s): 1 cold, 11 resumed, 0 further cold, 1 abandoned"
+    );
+}
+
+/// ⭐ A navigation whose every HTTP/2 connection resumed has NO cold one.
+///
+/// ⚠ **Measured on a hosted runner, 2026-09-02.** `capture.yml` run
+/// 33579619515's `linux64` lane abandoned both of its first two connections
+/// after the handshake and every later one resumed, so nothing was publishable
+/// from it. The report said `1 cold` on the line above the refusal saying there
+/// was none.
+#[test]
+fn connection_selection_reports_no_cold_connection_when_every_one_resumed() {
+    let mut navigation = thirteen_connection_navigation();
+    // ⛔ The cold connection is abandoned, which is what the runner did. It is
+    // not removed: a dropped connection would change the total and hide the
+    // shape this test is about.
+    navigation[1].http2 = None;
+
+    let selection = select(&navigation);
+    assert!(
+        selection.cold.is_none(),
+        "every connection that reached HTTP/2 resumed"
+    );
+    assert_eq!(selection.cold_count(), 0);
+    assert_eq!(selection.connections(), 13, "a connection was dropped");
+    assert_eq!(
+        selection.report(),
+        "13 connection(s): 0 cold, 11 resumed, 0 further cold, 2 abandoned"
+    );
+}

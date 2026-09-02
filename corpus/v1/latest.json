@@ -2,9 +2,9 @@
   "schema": "corpus-latest/2",
   "layout": "v1",
   "latest": {
-    "chrome/win64": "corpus/v1/chrome/stable/win64/151.0.7922.76.json"
+    "chrome/win64": "corpus/v1/chrome/stable/win64/151.0.7922.174.json"
   },
   "per_channel": {
-    "chrome/stable/win64": "corpus/v1/chrome/stable/win64/151.0.7922.76.json"
+    "chrome/stable/win64": "corpus/v1/chrome/stable/win64/151.0.7922.174.json"
   }
 }

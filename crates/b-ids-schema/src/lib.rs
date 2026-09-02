@@ -41,7 +41,7 @@ pub use error::Defect;
 pub use id::{PlatformToken, ProfileId, version_order};
 pub use profile::{
     Acquisition, Browser, Captured, Channel, Digests, Os, Platform, Profile, Raw, RecordLayer,
-    Trust,
+    Resumption, Trust,
 };
 pub use provenance::{Provenance, ProvenanceEntry, ProvenanceKind};
 

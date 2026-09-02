@@ -377,3 +377,86 @@ fn switches_raw_is_the_default_surface() {
     assert_eq!(Config::default().protocol, Protocol::TlsRaw);
     assert!(!Config::default().header_values);
 }
+
+#[test]
+fn switches_no_resumption_is_reported_so_a_caller_can_record_it() {
+    // ⭐ THE CONDITION IS PRINTED, and that is the point of the switch rather
+    // than a convenience. `experiments/10-first-profile.sh` reads this line back
+    // into `captured.resumption`, so a profile records the configuration the run
+    // actually had rather than the one the script asked for. A cold hello looks
+    // the same under either policy, so nothing in the bytes could contradict a
+    // wrong claim.
+    //
+    // ⚠ THE DEADLINE IS LOAD-BEARING, for the same reason the `--ca-out` test
+    // above carries one: the command binds and blocks on an accept nobody makes.
+    let dir = std::env::temp_dir().join(format!("b-ids-switches-nores-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    let ca = dir.join("ca.pem");
+    let (_out, err, code) = run_with(
+        &[
+            "--ca-out",
+            &ca.display().to_string(),
+            "--no-resumption",
+            "--once",
+            "--run-timeout-ms",
+            "1500",
+        ],
+        Vec::new(),
+    );
+
+    // ⚠ 1, not 0: the run accepted nothing, so it reports a shortfall. What this
+    // test asserts is the SWITCH and the line it prints.
+    assert_eq!(code, 1, "{err}");
+    assert!(
+        err.contains("resumption: refused"),
+        "the condition is reported on stderr: {err}"
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn switches_the_default_reports_resumption_offered() {
+    // ⛔ THE DEFAULT IS REPORTED TOO, and that is not symmetry for its own sake.
+    // A line printed only when the switch was passed would let a caller record
+    // nothing for the standing configuration, and "not recorded" and "offered"
+    // are different facts.
+    let dir = std::env::temp_dir().join(format!("b-ids-switches-res-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    let ca = dir.join("ca.pem");
+    let (_out, err, code) = run_with(
+        &[
+            "--ca-out",
+            &ca.display().to_string(),
+            "--once",
+            "--run-timeout-ms",
+            "1500",
+        ],
+        Vec::new(),
+    );
+    assert_eq!(code, 1, "{err}");
+    assert!(
+        err.contains("resumption: offered"),
+        "the standing configuration is reported too: {err}"
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn switches_no_resumption_without_ca_out_is_refused() {
+    // ⛔ REFUSED rather than ignored. Only `--ca-out` builds a terminator, and
+    // resumption is a property of one, so the switch on any other surface is a
+    // flag no code reads: the "a setting or flag that no code reads" row of
+    // docs/conventions/forbidden-patterns.md. A caller asking for a condition it
+    // will not get finds out here rather than from a profile recording one it
+    // did not have.
+    let output = Command::new(harness_bin())
+        .args(["--raw", "--no-resumption"])
+        .output()
+        .expect("the harness command runs");
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("--no-resumption is a property of the terminated surface"),
+        "{stderr}"
+    );
+}

@@ -13,46 +13,44 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-01T12:32:05Z to 2026-09-01T15:20:00Z, unattended, ended by operator interrupt. |
-| the resume point | The work order's item 1, **`CORPUS-02`**. Run `capture.yml` on the default branch, take the `linux64` artefact, add it with `b-ids-corpus add`, and close the entry. |
-| in flight | ⛔ Nothing. Seven entries closed in place with their acceptance commands run; `CORPUS-02` left open with its blocker named and what landed recorded under it. |
-| the state of the tree | Clean and pushed on `main`, in two commits. The gate passes 25 checks with `check-twins` alongside, both halves of all 22 pairs. ⚠ The first push went red on both hosts over an absolute path in a pasted transcript; the second fixes it. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session began 2026-09-02T01:14:00Z, unattended. |
+| the resume point | `CORPUS-02`. Two runner captures exist; the `linux64` one had no cold connection and a second run is out. |
+| in flight | The `win64` runner profile is added and uncommitted. Two driver defects are being fixed under `CORPUS-02`. |
+| the state of the tree | ⚠ Dirty: `corpus/v1/chrome/stable/win64/151.0.7922.174.json` and its hello are new, `index.json` and `latest.json` rewritten. The gate was green at the session's start, 24 passed with `check-twins` skipped by `-Fast`. |
 | the paste | below |
 
 ---
 
-## ⭐ What changed about this project on 2026-09-01, second session
+## ⭐ What this session has established so far
 
-**Continuous integration stopped being the last item and became the first.** The
-operator ruled that this project is GitHub CI, 100%: a corpus whose captures
-depend on one person's machine cannot cover the matrix, cannot be reproduced and
-cannot be scheduled, so captures belong on runners.
+⭐ **`capture.yml` has run on hosted runners, and it works.** Run 33579619515,
+dispatched with the authenticated `gh` on the default branch, completed with all
+five jobs green: the plan job, both browser lanes, the fuzz lane and the collect
+job. That is the first time the capture matrix has ever run.
 
-⭐ **A push now settles what is published.** `validate.yml` runs on two hosts with
-the network off for every assertion and the whole history fetched;
-`b-ids-corpus validate` runs the coherence checks over what is PUBLISHED rather
-than over whatever a caller listed; and the generator is asserted to answer the
-same way twice.
+⛔ **The two runners do not carry the same Chrome build.** `ubuntu-latest`
+served `151.0.7922.173` and `windows-latest` served `151.0.7922.174`, so one
+build on two platforms is not obtainable from the preinstalled browser and needs
+pinned acquisition instead.
 
-⭐ **The capture matrix exists and has never run.** `capture.yml` fans out from
-`.github/capture-matrix.json`, every lane failing alone, and `check-coverage`
-reads the same plan to say which cells have a profile. ⛔ No lane has run on a
-runner: that is `CORPUS-02` and it is the next thing.
+⛔ **`b-ids-corpus add` prints `1 cold` as a literal**, so its report claims a
+cold connection on a run that had none. It is beside a refusal that says the
+opposite in the same output.
 
-⛔ **Four checks were reporting green over questions they had not asked**, and
-each is fixed: `check-corpus`'s history leg under a shallow clone, the gate's
-line-endings filter reading the index column alone, `check-twins` unable to tell
-a drift from a tree that moved, and `mine-repo` exiting before its clone.
+⛔ **The `linux64` capture had no cold connection at all.** Both of its first
+two connections were abandoned after the handshake and every later one resumed,
+so nothing was publishable from it. The `win64` capture had one and is added.
+
+⛔ **The matrix's `browser` column reaches nothing.** `b-ids-driver drive`
+takes the first resolved family and has no switch for choosing one, so an `edge`
+lane would drive Chrome. ⚠ The driver DID resolve Edge on the runner at
+`/usr/bin/microsoft-edge`, which is the blocker that cell records.
 
 ---
 
 ## The conditions this session leaves
 
-⚠ **The corpus still holds one profile**, taken on a laptop. It is one source,
-not two, so `VALID-01`'s handshake check still reports `NotCheckable` and
-`CI-04`'s automated-merge condition is still unsatisfiable.
-
-⚠ **Every capture so far went through a per-launch key pin** rather than a real
+⚠ **Every capture still goes through a per-launch key pin** rather than a real
 trust anchor, recorded per profile in `captured.trust`. `HARNESS-14` is the job
 that measures whether it mattered, and `DRIVER-04` lands first.
 

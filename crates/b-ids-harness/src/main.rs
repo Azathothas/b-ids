@@ -32,6 +32,12 @@ usage: b-ids-harness [SWITCHES]
                        that reaches a browser's HTTP/2. It prints the
                        authority public key pin on stderr, which is what a
                        driver passes to trust this one run.
+  --no-resumption      issue no session tickets, so the subject cannot resume
+                       and every hello is a cold one. ⛔ A CONDITION of the
+                       capture, recorded in the profile as
+                       `captured.resumption`, and it needs --ca-out. WARN
+                       Measured on hosted runners: without it, one navigation
+                       produced no cold connection at all.
   --bind ADDR          an address to reach a browser that is not on this
                        machine. Refuses a hostname and refuses the unspecified
                        address, by name.
@@ -64,6 +70,11 @@ exit 0 clean, 1 a comparison failed or a handshake did not complete,
 struct Args {
     config: Config,
     json: bool,
+    /// Whether the terminator issues session tickets.
+    ///
+    /// ⛔ A condition of the capture rather than a tuning knob, and it is
+    /// reported on stderr so a caller records what it actually ran under.
+    resumption: b_ids_schema::Resumption,
     ca_out: Option<String>,
     hello_out: Option<String>,
     expect_file: Option<String>,
@@ -81,6 +92,7 @@ fn parse_args() -> Result<Args, String> {
     let mut args = Args {
         config: Config::default(),
         json: false,
+        resumption: b_ids_schema::Resumption::Offered,
         ca_out: None,
         hello_out: None,
         expect_file: None,
@@ -92,6 +104,7 @@ fn parse_args() -> Result<Args, String> {
             "--raw" => args.config.protocol = Protocol::TlsRaw,
             "--plain" => args.config.protocol = Protocol::Cleartext,
             "--until-h2" => args.config.until_h2 = true,
+            "--no-resumption" => args.resumption = b_ids_schema::Resumption::Refused,
             "--header-values" => args.config.header_values = true,
             "--json" => args.json = true,
             "--once" => args.config.handshakes = 1,
@@ -148,6 +161,20 @@ fn parse_args() -> Result<Args, String> {
             other => return Err(format!("unknown argument: {other}")),
         }
     }
+    // ⛔ REFUSED rather than ignored. Resumption is a property of the
+    // terminator, and only --ca-out builds one, so --no-resumption on any other
+    // surface is a flag no code reads: the
+    // `docs/conventions/forbidden-patterns.md` row "a setting or flag that no
+    // code reads". A caller asking for a condition it will not get finds out
+    // here rather than from a profile that records one it did not have.
+    if args.resumption == b_ids_schema::Resumption::Refused && args.ca_out.is_none() {
+        return Err(
+            "--no-resumption is a property of the terminated surface, which needs --ca-out. \
+             On --raw and --plain no handshake is completed here, so nothing issues a \
+             ticket and the switch would change nothing"
+                .to_owned(),
+        );
+    }
     Ok(args)
 }
 
@@ -181,7 +208,12 @@ fn main() -> ExitCode {
         // completes a verified handshake without any trust store being
         // changed, and that is a condition of whatever is captured through it.
         eprintln!("pin: {}", authority.spki_pin());
-        match authority.server_config() {
+        // ⭐ REPORTED, so a caller records the condition it actually ran under
+        // rather than the one it meant to ask for. `experiments/10-first-profile.sh`
+        // reads this line back into the profile's `captured.resumption`, the
+        // same way it reads the browser's switches back out of the driver.
+        eprintln!("resumption: {}", args.resumption);
+        match authority.server_config(args.resumption) {
             Ok(config) => args.config.terminator = Some(config),
             Err(why) => return fail(&format!("could not build a server configuration: {why}")),
         }

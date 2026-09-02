@@ -94,6 +94,14 @@ pub struct Identity {
     pub operator: String,
     /// How the subject came to trust the harness.
     pub trust: Trust,
+    /// Whether the harness offered the subject a way to resume a session.
+    ///
+    /// ⛔ **Read from what the harness printed, never typed.** ⚠ Defaulted
+    /// on the way in so an identity file written before this field existed still
+    /// reads, and absent rather than assumed: a run that did not report the
+    /// condition did not measure it. `TODO/corpus.md`, `CORPUS-02`.
+    #[serde(default)]
+    pub resumption: Option<b_ids_schema::Resumption>,
     /// The switches the subject was launched with, in order.
     pub switches: Vec<String>,
     /// Where the build came from, when this project fetched it.
@@ -295,6 +303,11 @@ pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, V
             harness: identity.harness.clone(),
             operator: identity.operator.clone(),
             trust: identity.trust,
+            // ⛔ Carried from what the harness reported, never typed beside the
+            // capture. A profile that claimed a resumption configuration the run
+            // did not use would be a condition nobody could contradict from the
+            // bytes: a cold hello looks the same either way.
+            resumption: identity.resumption,
             switches,
             // ⛔ Carried from the identity file rather than derived here. The
             // route that answered and the digest of what arrived are facts

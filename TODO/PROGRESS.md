@@ -16,10 +16,10 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session ran      2026-09-01T12:32:05Z to 2026-09-01T15:20:00Z, unattended,
-                 ended by operator interrupt
-baseline         the gate passes: 25 checks and check-twins, both halves of
-                 every pair. 256 tests in 28 files across 5 crates.
+session ran      2026-09-02T01:14:00Z, unattended, in progress
+baseline         the gate passes: 24 checks on this Windows host with
+                 check-twins skipped by -Fast. 265 tests in 29 files across
+                 the 5 crates that have a tests directory.
 entries          total 91  open 43  blocked 0  done 48
 ```
 
@@ -30,193 +30,70 @@ hand to make a check pass; fix whichever file is wrong.
 
 ---
 
-## The correction that reordered everything
+## The capture matrix has run, and it produced two findings before it produced a profile
 
-**The operator ruled 2026-09-01 that this project is GitHub CI, 100%.** The
-previous session captured its one profile on a developer's Windows laptop and
-ordered continuous integration last. That was the wrong way round: a corpus of
-browser fingerprints whose captures depend on one person's machine cannot cover
-the matrix, cannot be reproduced by anybody else, and cannot be scheduled.
-**Captures belong on runners.**
+**`capture.yml` ran on hosted runners for the first time**, twice, every job
+green both times: the plan job, both browser lanes, the fuzz lane and the
+collect job. Dispatched with the authenticated `gh` on the default branch, which
+is the route the operator ruled 2026-09-01.
 
-Three consequences, each of which moved an entry:
-
-- a runner is **disposable**, so installing a root certificate into its trust
-  store is free and undoes itself. `HARNESS-14` is that job.
-- a runner has **no browser** unless something fetches one, so `DRIVER-05` was
-  the blocker rather than a later nicety. ⚠ Except `ubuntu-latest`, which ships
-  Chrome preinstalled and is therefore the first lane in the matrix.
-- the capture path already works headless and the fuzz run already proved the
-  Linux-container route, so none of this was speculative.
-
-⛔ **The one profile in the corpus stays.** It is a real measurement with its
-conditions recorded and the corpus is append-only. It is simply not the model
-for how the next hundred arrive.
-
----
-
-## What this session did
-
-**Seven entries closed, seven authored, and four checks that were reporting
-green over questions they had not asked.**
-
-### The pipeline a push now runs
+### What the runners actually served
 
 | | |
 | --- | --- |
-| ⭐ `b-ids-corpus validate` | the coherence checks over what is PUBLISHED, plus the cross-profile `shared_handshakes` no per-profile invocation can reach |
-| ⭐ `check-validate` | that answer, plus a determinism leg: the generator runs twice over a throwaway copy and the bytes are compared |
-| ⭐ `check-line-endings` | extracted from inside both gate halves, reading the working-tree column as well as the index one |
-| ⭐ `check-workflows` | four structural rules over every workflow, with a fixture that breaks each one |
-| ⭐ `check-coverage` | every planned capture cell reported as captured, absent or not attempted |
-| ⭐ `validate.yml` | every push, two hosts, `CARGO_NET_OFFLINE` on every assertion, whole history fetched |
-| ⭐ `capture.yml` | the matrix, fanned out from a plan in the tree, every lane failing alone |
-| ⭐ `b-ids-driver::acquire` | routes tried in order, the one that answered recorded with the digest of what arrived |
+| `ubuntu-latest`, image `ubuntu24/20260823.283` | Chrome `151.0.7922.173`. ⭐ Edge `151.0.4129.101` also resolved, at `/usr/bin/microsoft-edge` |
+| `windows-latest`, image `win25-vs2026/20260824.214` | Chrome `151.0.7922.174` |
 
-### ⛔ Four checks were green over questions they had not asked
+⛔ **The two runners do not carry the same Chrome build**, so two profiles of one
+build on two platforms is not obtainable from the preinstalled browser at all.
+It needs pinned acquisition, which is `DRIVER-05`'s route rather than the lane's.
+That is the single highest-value capture available and it is now a known amount
+of work rather than an assumption.
 
-| the check | what it was not checking |
-| --- | --- |
-| `check-corpus` | its history leg ran under `actions/checkout`'s default one-commit clone, so `git log --diff-filter=MDR` saw a single commit and answered "nothing was edited" on every CI run since it was written. Reproduced on a `--depth 1` clone. |
-| the gate's line-endings filter | it read git's INDEX column alone. It found `scripts/common/check-routes.ps1` LF on disk against its own `eol=crlf` on its first run, and fixing that produced no git diff at all. |
-| `check-twins` | it could not tell a real drift from a tree that moved under it. It proved itself twice this session, once by accident. |
-| `mine-repo` | it exited before the clone when its API route was down, so a host that could clone and not reach the API got nothing |
+### ⛔ The `linux64` lane captured nothing, twice, and the reason is resumption
 
-### ⭐ Three findings in this session's own new code
+⚠ **Reproduced rather than raced.** Both runs produced the same shape: Chrome on
+`ubuntu-latest` abandoned the connections that were not resumed and resumed
+every one it kept, so the navigation had no cold connection and there was
+nothing to publish. More connections do not help: the first completed handshake
+leaves a ticket and everything after it resumes.
 
-- ⛔ **An uninitialised awk variable used as a SUBSCRIPT is the empty string, not
-  zero.** `check-workflows` reported a job that does not exist, once per file.
-  ⚠ Its PowerShell twin never had it, because it appends to a list.
-- ⛔ **jq on this Windows host writes CRLF.** `check-coverage`'s human report
-  dropped the word `required` from every required row while its JSON, which does
-  not carry that field, matched its twin exactly. ⚠ A divergence the comparison
-  structurally could not see.
-- ⛔ **The driver cannot link the harness.** Its manifest keeps `b-ids-harness`
-  as a dev dependency on purpose, so `acquire_with` takes the digest as a second
-  injected function rather than hashing the bytes itself.
+⛔ **And the report said `1 cold` on the line above the refusal saying there was
+none.** `b-ids-corpus add` carried the word behind a hardcoded `1` in a format
+string. It is `Selection::report` now, where a test reaches it, and the guard was
+seen to fail at exit 101 against a mutation that restores the literal.
 
-### ⭐ `check-twins` costs 636 seconds now rather than 1056
+### ⭐ The fix, with the control that says it is safe
 
-⛔ **Measured with `--timings` before and after rather than estimated.** 970
-seconds across twenty pairs, of which the `check-gate` row alone was 431: that
-row runs both gates in full, and each gate re-runs the fourteen checks that
-already have a row of their own. A gate running inside `check-twins` skips them
-now and the row costs 54 seconds. ⛔ No pair was dropped; the file compared 18
-at the start of this session and compares 22 now.
+`b-ids-harness --no-resumption` issues no session tickets, so every hello is a
+cold one. The harness **reports** the configuration on stderr and
+`experiments/10-first-profile.sh` reads that line back into
+`captured.resumption` rather than typing it.
 
+⭐ `experiments/30-resumption-control.sh` is the control, three rounds against
+Chrome `151.0.7922.76` on this host:
 
-### ⛔ The remote went red on the first push, and the finding is this session's own
+```text
+offered: 4 cold, 11 resumed, 3 abandoned
+refused: 15 cold, 0 resumed, 3 abandoned
+modes=agree differing:0 not_comparable:2 fields:19
+```
 
-`validate` passed on both hosts. `ci` failed on both, for one reason: the gate
-transcript pasted into `CI-01`'s closing carries the absolute path of the
-repository root on its first line, and `check-no-secrets --public` refuses an
-absolute home path in a public repository.
+So the switch changes which connections are cold, not what a cold hello is.
 
-⛔ **The local gate would have caught it and was not re-run.** The block was
-filled in AFTER the run it pastes, and only the prose checks were run over the
-edit. ⚠ That is the discipline this repository already states: a unit of work
-whose content changed re-passes the gate against what it is NOW, not against
-what it was when the transcript was taken.
+### What the corpus holds now
 
-⭐ **Fixed by eliding the path and marking the substitution**, the way the
-`TOOL-04` paste already elides its scratch directory. ⛔ The rule was not
-widened for a pasted transcript.
-
-⚠ **This session therefore has TWO commits rather than one.** Amending the
-first would need a force push, and "no force push, no history rewrite" is a
-standing ruling. Fixing forward is what
-[`RULES.md`](RULES.md) section 10 step 11 asks for.
-
-## The three review passes, and what each one swept
-
-⛔ **Three different questions, not one sweep written up three times.**
-[`../docs/methodology/reviews.md`](../docs/methodology/reviews.md) is the
-specification. ⭐ All three found something.
-
-### 1. The door sweep: what other door reaches this code
-
-Swept, by grep rather than from memory: every caller of `acquire_with` and
-`plan`, every reader and writer of `captured.acquisition`, every construction of
-`Captured` in the tree, every registration of the five new checks in both gate
-halves and in the twin comparison, and every place the `COMPARED_DIRECTLY` list
-is read.
-
-⛔ **Finding: nothing validated `captured.acquisition`.** The published schema
-constrains its route to an enum and its object to four required fields;
-`Profile::check` did not, so a profile could claim a route no driver can produce
-and a digest that is not one, and every check in this tree would have passed it.
-⭐ Fixed: the route is checked against a named list and the digest against the
-same 64-lower-case-hex shape the corpus index uses for every published file.
-
-⭐ **Confirmed, by counting:** four constructions of `Captured` and every one
-now names the field; five new checks and every one appears in both gate halves,
-in the `COMPARED_DIRECTLY` list and in `check-twins`; two implementations of the
-acquisition route list, and the one that can be compared against the schema is.
-
-⭐ **What the other passes did not look at:** the callers. Both of the others
-read what was written; this one grepped for what was not enumerated.
-
-### 2. The guard mutation: can the new guards actually fail
-
-Planted and read unpiped, each in both halves where a twin exists: the
-shallow-clone refusal, against a real `--depth 1` clone; the determinism leg,
-against an index writer made to append its process id; the tree-moved detection,
-by editing `TODO/` while the comparison ran; `check-workflows`, against a fixture
-that breaks each of its five rules exactly once; `check-coverage --require-rows`,
-against three browsers with no capture; `mine-repo` with one route down and with
-both; and the new `captured.acquisition` route check, disabled with `if false &&`
-and seen to take one test red.
-
-⛔ **Finding: the determinism leg's message ran two findings onto one line.** A
-command substitution strips trailing newlines and the accumulator joined without
-one. Found by the mutation rather than by review, and fixed.
-
-⛔ **Finding: `check-workflows` reported a job that does not exist**, once per
-file. `CI-03` carries the awk rule behind it. ⚠ Its PowerShell twin never had
-the defect, because it appends to a list rather than indexing an array.
-
-⚠ **Two guards were NOT mutated**, and saying so is the point: the `always()`
-rule fires on the fixture but has never been seen to pass over a `needs` on a
-job that does not fan out other than in this tree's own workflows, and
-`check-twins`'s human UNDECIDED banner is the same branch on the same two
-variables as its JSON and was proved only through the JSON.
-
-### 3. The claim audit: which sentence is not backed by an artefact
-
-Swept: every number and every pasted block in the seven closings, this file, the
-changelog, and the two documents the work made stale.
-
-⛔ **Finding: a fabricated block, caught before it was committed.** `CI-01`'s
-closing was written with a gate transcript assembled by hand from a run whose log
-two processes had written into. It was replaced with a marker and then with the
-real run below.
-
-⛔ **Finding: a pair count that was right when written and wrong when read.**
-"one was ADDED" and "three were added" were both counted against the file at the
-moment of writing. Counted from the tree: 18 pairs at the session's first commit
-and 22 now, with the timing figures taken over 20.
-
-⛔ **Finding: a section number that names nothing.** This file cited
-`RULES.md` section 11 for a whole session; that file has ten sections and a
-settled list.
-
-⭐ **Claims checked that stood:** 970 seconds against the sum of the twenty rows;
-431 and 54 against the `check-gate` row before and after; 1056 and 636 against
-the two wall clocks; 84 files CRLF on disk of which 66 are under `references/`;
-5388 tracked files; 256 tests in 28 files.
+⭐ **Two profiles**, and the second is the first this project has taken on a
+machine nobody owns: Chrome `151.0.7922.174` on `win64`, captured on
+`windows-latest` by the same script a person runs.
 
 ---
 
 ## What is in progress
 
-⛔ **Nothing is half-edited.** Every entry this session touched is closed in
-place with its acceptance command run, or left open with its blocker named.
-
-⚠ **`CORPUS-02` is open and it is the next thing.** Its apparatus is built - the
-plan file, the coverage check in both halves, and the fan-out that reads the
-plan - and no lane has run. ⛔ Closing it needs one run of `capture.yml` on a
-hosted runner and the `linux64` profile committed, which needs this session's
-commit on the default branch.
+⚠ **`CORPUS-02` is open.** The apparatus works and one lane publishes. What
+remains is named in the entry: the `edge`, `chromium` and `firefox` rows its
+acceptance command requires.
 
 ---
 
@@ -224,19 +101,20 @@ commit on the default branch.
 
 ⚠ **Take these in order.**
 
-1. ⭐ **`CORPUS-02`.** Run `capture.yml` on the default branch with the
-   authenticated `gh`, download the `linux64` artefact, add it with
-   `b-ids-corpus add`, and close the entry. ⭐ The operator ruled this route
-   2026-09-01: `gh` is authenticated, and `CI-04` is not built first. ⭐ **Two profiles of ONE build on TWO platforms is the single
-   highest-value capture available**: it decides whether the TLS half is
-   platform-independent, and `VALID-01`'s handshake check reports
-   `NotCheckable` until it exists. ⚠ The one profile there today came from a
-   laptop, so it is one source rather than two.
+1. **`CORPUS-02`**, continued. In this sub-order, because each unblocks the next:
+   - **the driver takes a `--browser` switch.** ⛔ `b-ids-driver drive` takes
+     `browsers.first()` today, so the matrix's `browser` column reaches nothing
+     and an `edge` lane would drive Chrome and label it Edge. The plan file's
+     stated blocker for that cell, the driver resolving Edge on a runner, is
+     measured as removed.
+   - **the `linux64` lane, re-run** with the resumption fix on the default
+     branch, and its profile added.
+   - **`chromium` and `firefox`** need `b_ids_driver::Family` to have branches
+     for them at all. `VALID-03` is the check that says so from the corpus side.
 2. **`DRIVER-04`**, then **`HARNESS-14`**. The root store a browser actually
    reads, then the per-launch pin measured against a real trust anchor on a
    disposable runner. ⚠ `DRIVER-04` lands first: on Windows the store a browser
-   reads is not obviously the one `certutil` writes to, and measuring against
-   the wrong store gives a confident wrong answer.
+   reads is not obviously the one `certutil` writes to.
 3. **`SCHEMA-13`** and **`SCHEMA-14`**, both small and both about the published
    contract: numeric bounds the schema does not express, and a credential's
    presence recorded without its value.
@@ -256,15 +134,34 @@ unbranded builds).
 
 ## Open questions for the operator
 
-⭐ **None.** All three were put to the operator interactively at the close of
-2026-09-01 and all three were answered; the rulings are in the section below.
+⚠ **Each carries a recommendation and each was proceeded on**, per
+[`RULES.md`](RULES.md) section 10: none of them made proceeding unsafe, and all
+three are reversible without editing a published profile.
 
-⚠ **A later session that finds a fork writes it here with a recommendation
-attached and keeps working.** [`RULES.md`](RULES.md) section 10 names "this
-needs a decision from the operator" as one of the four sentences that is not a
-reason to stop. ⛔ Ask at the very START of a session if proceeding under any
-assumption would be unsafe; otherwise record it here and proceed on the
-recommendation.
+### 1. Should refusing session tickets be the standing capture configuration?
+
+**It already is**, because the alternative was a lane that cannot capture.
+`experiments/10-first-profile.sh` passes `--no-resumption`, and every profile
+written from here records `captured.resumption: refused`.
+
+⭐ **The recommendation is to keep it.** The corpus publishes the cold hello and
+nothing else, the control measured 0 differing fields of 19, and the switch
+defaults off so the resumed-connection sample stays reachable.
+
+⚠ **What it costs**: `HARNESS-07` says a resumed connection is recorded
+separately as its own profile, and nothing captured under this switch can ever
+produce one. Nothing does that today.
+
+### 2. Should a new entry be authored for the driver's discarded diagnostics?
+
+⛔ `b-ids-driver drive` gives the browser `Stdio::null()`, so a lane that
+captured nothing carries no word from the browser about why. This session
+diagnosed the runner failure from the capture records instead, which worked and
+was slower.
+
+⭐ **The recommendation is yes, as an `S`**, a `--log PATH` that the capture
+script passes and the lane uploads. ⛔ Not authored here: `ENTRY.md` says an
+entry is not filed until the operator approves it.
 
 ---
 
@@ -281,7 +178,7 @@ recommendation.
   that lets Actions create pull requests, which is the operator's to enable and
   cannot be done from the tree.
 - ⭐ **The first runner capture is fetched with `gh` and added by hand.** The
-  authenticated CLI runs `capture.yml`, downloads the `linux64` artefact, and
+  authenticated CLI runs `capture.yml`, downloads the artefact, and
   `b-ids-corpus add` writes it. ⛔ Do not build `CI-04` first: that is machinery
   ahead of the single capture it would review. ⚠ The profile is a real
   measurement either way, taken on the runner by the same script; only the
@@ -294,7 +191,6 @@ recommendation.
   corpus stays append-only in every change an agent makes. ⭐ What it does settle
   is that a laptop capture sitting beside runner captures is not a problem to
   engineer around today.
-
 - **`SCHEMA-08` is SPLIT.** It keeps the generator plus the five formats whose
   round trip this tree can prove: JSON, NDJSON, CSV, TSV and Markdown.
   `SCHEMA-12` carries YAML, TOML, SQLite, CBOR, MessagePack and Protobuf with
