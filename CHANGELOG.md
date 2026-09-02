@@ -14,6 +14,29 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T04:20:00Z - staleness is a schedule, and its output carries the replacement
+
+**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-02` and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`check-staleness`, both halves**, comparing what
+  `b-ids-driver versions` reports against the corpus's own pointer file. Every
+  stale row names the route, the build it holds, the build that is serving, the
+  rollout fraction and every source that answered.
+- ⭐ **`.github/workflows/staleness.yml`**, on a schedule and never on a push,
+  read-only. `CI-04` is the entry that opens a pull request from it.
+- ⛔ **A defect this found in itself**: `--json` printed `"stale":1` and
+  exited 0, because only the human branch carried the exit. Both halves carry
+  it in both modes now.
+- ⛔ **The version ordering is numeric per component**, so `151.0.7922.9` is
+  behind `151.0.7922.76`. The fixture corpus holds that build on purpose.
+- ⚠ **`check-exit-codes` counted tracked scripts only**, so a script that had
+  never been staged escaped it. It reads untracked-not-ignored too now, and the
+  count went from 22 to 23 the moment it did.
+
 ### 2026-09-02T04:00:00Z - the multipart boundary, as a pattern rather than a value
 
 **Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-11` and

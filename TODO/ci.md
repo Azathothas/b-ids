@@ -260,7 +260,7 @@ strips trailing newlines, so the separator is a literal one now.
 ## CI-02. Staleness is a schedule, not a push trigger
 
 **Source** the founding brief; the shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 10
-**Category** ci, **Priority** P1, **Effort** M, **Status** open
+**Category** ci, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -299,6 +299,97 @@ sh scripts/common/check-staleness.sh --json
 Passing means: run against a fixture corpus that is deliberately one version
 behind, the output names the current version, its rollout fraction, every source
 that answered, and the replacement values.
+
+### Closing
+
+**Closed 2026-09-02T04:20:00Z.** `check-staleness`, both halves, reads what
+`b-ids-driver versions` reports and compares it against the corpus's own pointer
+file, and `staleness.yml` runs it on a schedule and never on a push.
+
+```text
+$ sh scripts/common/check-staleness.sh --corpus .tmp/staleness-fixture/corpus/v1 \
+    --versions .tmp/staleness-fixture/versions-behind.json
+staleness: 1 of 1 route(s) are behind
+
+  chrome/stable/win64
+    holds    151.0.7922.9
+    serving  151.0.7922.200 at fraction 1
+    highest  152.0.8001.5 at fraction 0.02
+
+  sources that answered: releases=151.0.7922.200
+  sources that did not:  chrome-for-testing=connection refused
+
+  the replacement is a CAPTURE of 151.0.7922.200, not an edit: the corpus
+  is append-only and a correction is a new profile. TODO/ci.md, CI-02.
+exit=1
+```
+
+```text
+$ sh scripts/common/check-staleness.sh --versions scripts/fixtures/staleness-versions.json --json
+{"schema":"check-staleness/1","routes":2,"stale":2,"serving":"999.0.0.2","fraction":1,"highest_known":"999.0.1.0","highest_fraction":0.01,"answered":1,"silent":1}
+exit=1
+
+$ pwsh -NoProfile -File scripts/common/check-staleness.ps1 -Versions scripts/fixtures/staleness-versions.json -Json
+{"schema":"check-staleness/1","routes":2,"stale":2,"serving":"999.0.0.2","fraction":1,"highest_known":"999.0.1.0","highest_fraction":0.01,"answered":1,"silent":1}
+exit=1
+```
+
+⭐ **Byte-identical, from two implementations that share no binary.**
+
+```text
+$ sh scripts/common/check-staleness.sh --corpus .tmp/staleness-fixture/current/v1 \
+    --versions .tmp/staleness-fixture/versions-current.json
+staleness ok: 1 route(s) hold 151.0.7922.174, which is what is serving at fraction 1
+exit=0
+```
+
+#### ⭐ The output carries the replacement values, which was the point
+
+A check that only says a fingerprint changed is half a tool. Every stale row
+names the route, the build it holds, the build that is serving, that build's
+rollout fraction, the highest build the vendor knows and ITS fraction, and every
+source that answered. ⛔ And it names what the replacement IS: a **capture** of
+the new build, not an edit, because the corpus is append-only.
+
+#### ⛔ A defect this found in itself: `--json` exited 0 over a stale corpus
+
+⚠ **Measured on the first run.** The JSON branch printed `"stale":1` and
+returned 0, because only the human branch carried the exit. That is the "a step
+that exits 0 having done nothing it was asked to do" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+in the mode a scheduled job reads. ⭐ Both halves carry the exit in both modes
+now, and the row above shows the JSON form at exit 1.
+
+#### ⛔ The version ordering is numeric per component
+
+`151.0.7922.9` is **behind** `151.0.7922.76` and a lexical comparison says the
+opposite. ⚠ The fixture corpus holds `151.0.7922.9` on purpose, so the run above
+is that case rather than an easier one. ⭐ Both halves implement the comparison
+themselves rather than sharing a binary, which is what makes the twin row a
+comparison rather than two wrappers over one answer.
+
+#### One source being unreachable is not a failure
+
+The fixture's second source answers with an error, and the report says so on its
+own line rather than dying. ⛔ Nothing here fetches: `b-ids-driver versions`
+asks each source separately and this reads what it reported, because a second
+fetcher would be a second answer to "what is current".
+
+#### A staged rollout is not a chase
+
+The chosen build is the one **serving**, which during a rollout is not the
+highest the vendor knows. Both are printed with their fractions, so a reader can
+see that `999.0.1.0` exists at one per cent and that chasing it would capture a
+build almost nobody has. `DRIVER-02` owns that reading and this does not
+re-derive it.
+
+#### ⚠ What is NOT here, and it is by design
+
+⛔ **Nothing opens a pull request.** `CI-04` is that entry and the write belongs
+to its job and to no other; `staleness.yml` carries `contents: read` and no
+more. ⭐ The workflow prints the human form only when there is something to
+report, and it treats exit 2 as a fact about the vendor rather than as a stale
+corpus, which is `CI-07`'s rule.
 
 ---
 

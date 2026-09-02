@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 91  open 37  blocked 0  done 54
+total 91  open 36  blocked 0  done 55
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
-| P1 | 8 | 0 | 32 | 40 |
+| P1 | 7 | 0 | 33 | 40 |
 | P2 | 25 | 0 | 12 | 37 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **37** | **0** | **54** | **91** |
+| **all** | **36** | **0** | **55** | **91** |
 
 ---
 
@@ -31,7 +31,7 @@ total 91  open 37  blocked 0  done 54
 | id | pri | eff | status | title | file |
 | --- | --- | --- | --- | --- | --- |
 | CI-01 | P1 | M | done | Every push: validate, with no network and no browser | [`ci.md`](ci.md) |
-| CI-02 | P1 | M | open | Staleness is a schedule, not a push trigger | [`ci.md`](ci.md) |
+| CI-02 | P1 | M | done | Staleness is a schedule, not a push trigger | [`ci.md`](ci.md) |
 | CI-03 | P1 | L | done | The capture matrix, fanned out, with every lane allowed to fail alone | [`ci.md`](ci.md) |
 | CI-04 | P1 | M | open | A scheduled run that finds a change opens a pull request, not an issue | [`ci.md`](ci.md) |
 | CI-05 | P2 | M | open | The cold-start job, which is the only thing that catches rot | [`ci.md`](ci.md) |

@@ -472,6 +472,30 @@ repository with an empty list, so both halves reported ok over zero files.
 
 ⛔ **It reports, it does not strip.** The generator is what gets fixed.
 
+### `common/check-staleness.sh`
+
+Is the corpus behind the build the vendor is serving, and what would replace it?
+
+⛔ **A SCHEDULE, NEVER A PUSH TRIGGER, and it is not in the gate.** A browser
+shipping a new version is not a defect in a commit, and without `--versions`
+this reaches the network, which gate part (a) must not.
+[`../.github/workflows/staleness.yml`](../.github/workflows/staleness.yml) is
+where it runs. [`../TODO/ci.md`](../TODO/ci.md), `CI-02`.
+
+⭐ **Exit 1 is the SIGNAL rather than a defect in this tree.** 0 means the
+corpus holds the serving build, 1 means it is behind, and 2 means no source
+answered, which is a fact about the vendor rather than about this repository.
+
+⛔ **The ordering is numeric per component.** `151.0.7922.9` is behind
+`151.0.7922.76`, and a string comparison says the opposite. ⚠ Both halves
+implement it themselves, so the pair is a genuine two-implementation comparison.
+
+⛔ **It never fetches anything itself.** `b-ids-driver versions` asks each
+source separately and reports which answered; a second fetcher here would be a
+second answer to what is current. `--versions FILE` takes the same JSON from a
+file, which is how the twin comparison runs with no network, against
+[`fixtures/staleness-versions.json`](fixtures/staleness-versions.json).
+
 ### `common/check-exit-codes.sh`
 
 Does every script in this tree report "could not run" as **2**, on both halves

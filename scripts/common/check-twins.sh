@@ -421,6 +421,14 @@ compare_pair "check-routes"         check-routes.sh         "--json"          ch
 # TODO/ci.md, CI-07.
 compare_pair "check-exit-codes"     check-exit-codes.sh     "--json"          check-exit-codes.ps1     "-Json"
 
+# ⚠ AGAINST A TRACKED FIXTURE, never the network. Without --versions this
+# pair asks a vendor what is serving, and a comparison whose answer depends on
+# a remote reports the host rather than the pair. ⭐ The fixture is one build
+# ahead of everything in the corpus, so BOTH halves report stale and exit 1:
+# an agreement on a refusal is the half of this pair that matters.
+compare_pair "check-staleness"      check-staleness.sh      "--versions scripts/fixtures/staleness-versions.json --json" \
+                                    check-staleness.ps1     "-Versions scripts/fixtures/staleness-versions.json -Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

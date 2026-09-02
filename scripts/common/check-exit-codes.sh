@@ -62,7 +62,11 @@ UNKNOWN='--b-ids-check-exit-codes-not-a-real-argument'
 # This half cannot assume pwsh exists, and a check that SKIPPED the PowerShell
 # side silently would report a green half of a pair as the whole pair.
 # scripts/README.md carries the contract; check-twins runs both.
-SCRIPTS=$(git ls-files -- 'scripts/*.sh' | LC_ALL=C sort)
+# ⚠ TRACKED PLUS UNTRACKED-NOT-IGNORED, because a script that has never been
+# staged is exactly the one somebody has just written, and the one most likely
+# to have got this wrong. check-routes takes the same view of a route file for
+# the same reason.
+SCRIPTS=$({ git ls-files -- 'scripts/*.sh'; git ls-files --others --exclude-standard -- 'scripts/*.sh'; } | LC_ALL=C sort -u)
 [ -n "$SCRIPTS" ] || { printf 'check-exit-codes: no scripts found\n' >&2; exit 2; }
 
 PROBLEMS=""

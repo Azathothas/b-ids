@@ -72,7 +72,11 @@ if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
 # that is the shape that used to bind and fail with 1.
 $unknown = '-BIdsCheckExitCodesNotARealArgument'
 
-$scripts = & git ls-files -- 'scripts/*.ps1'
+# ⚠ TRACKED PLUS UNTRACKED-NOT-IGNORED, because a script that has never been
+# staged is exactly the one somebody has just written.
+$tracked = & git ls-files -- 'scripts/*.ps1'
+$untracked = & git ls-files --others --exclude-standard -- 'scripts/*.ps1'
+$scripts = @($tracked) + @($untracked) | Where-Object { $_ } | Sort-Object -Unique
 if ($LASTEXITCODE -ne 0 -or -not $scripts) {
     [Console]::Error.WriteLine('check-exit-codes: no scripts found')
     exit 2
