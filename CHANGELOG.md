@@ -14,6 +14,23 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T04:45:00Z - the technical reference exists, and the conflict rule names it
+
+**Record:** [`TODO/docs.md`](TODO/docs.md) `DOC-01` and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **[`docs/architecture.md`](docs/architecture.md)**: what a profile is,
+  what each of the five components does to one and what it is not, the state a
+  capture passes through as a diagram, what is published against what is
+  derived, and the limits stated rather than left to be discovered.
+- **The conflict rule names it**, and the interim wording it replaced is in
+  [`docs/HISTORY/README.md`](docs/HISTORY/README.md) with its date rather than
+  deleted. Its three exceptions survived the replacement deliberately.
+- ⛔ **The router said the corpus holds one profile.** It holds three.
+
 ### 2026-09-02T04:35:00Z - the trust anchor apparatus, and a search that narrowed itself
 
 **Record:** [`TODO/harness.md`](TODO/harness.md) `HARNESS-14`,

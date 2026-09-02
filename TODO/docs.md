@@ -14,7 +14,7 @@ records that the decision was made rather than forgotten.
 ## DOC-01. There is no technical reference, and one document is pretending not to notice
 
 **Source** found while adopting the conventions, 2026-08-30
-**Category** docs, **Priority** P2, **Effort** S, **Status** open
+**Category** docs, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -51,6 +51,60 @@ sh scripts/common/check-docs.sh
 Passing means: docs/architecture.md exists, every claim in it names a file in
 the tree, the conflict rule names it, and the interim wording is in the history
 directory with its date.
+
+### Closing
+
+**Closed 2026-09-02T04:45:00Z.**
+[`../docs/architecture.md`](../docs/architecture.md) exists, the conflict rule
+names it, and the interim wording is in
+[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) with its date.
+
+```text
+$ sh scripts/common/check-docs.sh
+docs ok: 53 files, 880 relative links, 86 cited paths, 155 shell blocks. Links, paths and prose clean.
+exit=0
+```
+
+#### What the reference carries
+
+| section | what it settles |
+| --- | --- |
+| the product is a profile | the four halves, the conditions block, and that `digests` is empty on purpose |
+| five components | what each crate does and, per row, ⛔ what it is not |
+| the state a capture passes through | the pipeline as a diagram, with the four arrows a value can be lost at and what holds each |
+| what is published, and what is derived | which files are append-only and which are rewritten from the tree |
+| ⛔ the limits | stated rather than discovered by a reader |
+
+#### ⛔ It was not written before the schema, and that was the entry's own rule
+
+`SCHEMA-01` through `SCHEMA-09` are closed, so the page describes a model that
+exists and every claim in it names a file the check resolves. ⭐ **A reference
+describing a schema nobody had written is the claim this project exists to stop
+making**, and `check-docs` asserts every cited path resolves, so the rule is held
+by a gate rather than by memory.
+
+#### The conflict rule was amended in place, not doubled
+
+⛔ **Both rules live is the failure mode the entry named.** The interim wording
+is gone from [`../docs/conventions/docs.md`](../docs/conventions/docs.md) and
+kept verbatim in the history directory with the date it was withdrawn and what
+replaced it.
+
+⭐ **Its three exceptions survived the replacement, deliberately.** A value this
+project did not measure, a term, and a reading of somebody else's code at a named
+commit each have a document NEARER the thing measured than a reference page can
+be, and the new rule names all three.
+
+#### ⚠ Two stale claims this found on the way
+
+⛔ **The router said the corpus holds one profile.** It holds three, and
+`docs/AGENTS.md` said one because the sentence was written the day the first
+landed. Corrected in the same change.
+
+⛔ **The reference nearly said four crates when there are nine.** `b-ids` and
+`b-ids-cli` are scaffolding whose own first lines say so, and a page that listed
+five components and stopped would have implied the other four do something. They
+are named as scaffolding, with the entries that fill them.
 
 ---
 

@@ -62,16 +62,25 @@ the source, or have a check assert the two agree.
 ⚠ The trap is that a value which never changes cannot expose a missing check.
 It sits correct for a year and drifts the first time it moves.
 
-### The document nearest the measurement wins
+### ⭐ The technical reference settles a technical conflict
 
-⚠ **There is no single technical reference here yet, and pretending otherwise
-would send a reader to a file nobody wrote.** Until a schema exists and a
-document owns it, a conflict is settled by which document is nearest to the
-thing that was measured: a value against
-[`../inherited-claims.md`](../inherited-claims.md), a term against
-[`../glossary.md`](../glossary.md), a reading of somebody else's code against
-[`../reference-sweeps/findings.md`](../reference-sweeps/findings.md). Fix the
-other document in the same change and say in the entry that you did.
+⛔ **[`../architecture.md`](../architecture.md) is that reference.** When two
+documents disagree about what a profile is, what a component does, or what state
+a capture passes through, it wins and the other is fixed in the same change.
+
+⚠ **It does not settle everything, and the three exceptions are not a
+weakening.** Each names a document that is NEARER the thing measured than a
+reference page can be:
+
+| the disagreement is about | it is settled by |
+| --- | --- |
+| a value this project did not measure | [`../inherited-claims.md`](../inherited-claims.md), which carries its source and its status |
+| a term | [`../glossary.md`](../glossary.md), which carries the caveat attached to each |
+| a reading of somebody else's code | [`../reference-sweeps/findings.md`](../reference-sweeps/findings.md), which names the commit it was read at |
+
+⚠ **This rule replaced an interim one on 2026-09-02**, and the wording it
+replaced is in [`../HISTORY/README.md`](../HISTORY/README.md) rather than
+deleted. `DOC-01`.
 
 ### Documentation ships with the code it describes
 

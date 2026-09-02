@@ -19,7 +19,7 @@ the entries themselves. Do not add a "previous sessions" section.
 session ran      2026-09-02T01:14:00Z, unattended, in progress
 baseline         the gate passes: 25 checks on this Windows host with
                  check-twins skipped by -Fast.
-entries          total 91  open 35  blocked 0  done 56
+entries          total 91  open 34  blocked 0  done 57
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -106,6 +106,7 @@ cell is enabled and required.
 | ⭐ `SCHEMA-14` | a credential is recorded as PRESENT, in its wire position, with no value. It was dropped entirely before, so the order closed over an unmarked gap. Three refusals added, no way to record a value |
 | ⭐ `VALID-03` | `unreachable_dimensions`, over every browser, channel and platform the corpus carries, reading `Family::all` rather than a list of its own |
 | ⭐ `DRIVER-04` | `experiments/40-trust-paths.sh`. ⛔ The negative control is the finding: with no trust flag at all, four connections completed zero handshakes |
+| `DOC-01` | [`../docs/architecture.md`](../docs/architecture.md), the technical reference, and the conflict rule now names it. The interim wording is in the history directory |
 | ⭐ `CORPUS-05` | the search is recorded and re-runnable. ⭐ `0x12e0` is absent from all three Chrome `151` profiles here and present in the origin's `152` capture: a codepoint added in one release |
 | ⭐ `CI-02` | `check-staleness`, both halves, plus a scheduled `staleness.yml`. ⛔ Its `--json` mode printed `stale:1` and exited 0 on the first run, which is the "exits 0 having done nothing" row |
 | ⭐ `SCHEMA-11` | `http.multipart_boundary`, as a PATTERN: prefix, random length and alphabet. ⛔ Absent in every profile, because the two known patterns are inherited by reading and nothing inherited is published as data |

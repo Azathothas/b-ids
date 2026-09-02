@@ -138,3 +138,30 @@ the removal.
 ⚠ **The narrower lesson, and the one worth carrying:** [`../../LICENSE`](../../LICENSE)
 is not edited by hand, and a text carrying one token twice is why. ⛔ It is
 copied from a canonical source or it is left alone.
+
+---
+
+## 2026-09-02: "the document nearest the measurement wins", withdrawn
+
+⚠ **The wording below governed this tree from 2026-08-30 to 2026-09-02**, in
+[`../conventions/docs.md`](../conventions/docs.md), and it is kept here in its
+original form because it was honest about a gap rather than wrong:
+
+> ⚠ **There is no single technical reference here yet, and pretending otherwise
+> would send a reader to a file nobody wrote.** Until a schema exists and a
+> document owns it, a conflict is settled by which document is nearest to the
+> thing that was measured: a value against `inherited-claims.md`, a term against
+> `glossary.md`, a reading of somebody else's code against
+> `reference-sweeps/findings.md`. Fix the other document in the same change and
+> say in the entry that you did.
+
+⭐ **What replaced it, and why now.** The rule pointed at nothing because the
+schema did not exist. `SCHEMA-01` through `SCHEMA-09` landed and
+[`../architecture.md`](../architecture.md) now describes the model, the five
+components, the state a capture passes through and the limits, so a technical
+conflict has somewhere to be settled.
+
+⛔ **The three exceptions in the old wording survived the replacement**, and that
+is deliberate rather than leftover. Each names a document that is nearer the
+thing measured than a reference page can be: a value this project did not
+measure, a term, and a reading of somebody else's code at a named commit. `DOC-01`.

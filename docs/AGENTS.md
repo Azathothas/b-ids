@@ -33,11 +33,12 @@ project says so.** A server deciding whether a caller is a real browser needs
 the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
-⭐ **The corpus holds one profile**, written 2026-09-01: Chrome
-`151.0.7922.76` on Windows, measured on this project's own harness, with the
-`ClientHello` it was read from beside it. ⚠ One profile is not a matrix, and
-`CORPUS-02` is the entry that makes it one.
-[`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next.
+⭐ **The corpus holds three profiles**, all Chrome `151`: one taken on a
+laptop 2026-09-01 and two taken on hosted runners 2026-09-02, each with the
+`ClientHello` it was read from beside it. ⚠ Three profiles of one major on two
+platforms is not a matrix, and `CORPUS-02` is the entry that makes it one.
+[`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next, and
+[`architecture.md`](architecture.md) is what the thing is.
 
 ⚠ **Everything else in this tree is a fixture or an inherited claim, and
 neither is a measurement.** A fixture is shaped like a capture and says so in
@@ -174,6 +175,7 @@ replaced by a code-graph query.
 | file | answers |
 | --- | --- |
 | ⭐ [`inherited-claims.md`](inherited-claims.md) | every value carried from somewhere else, with its source and its status. **When another document disagrees with it about provenance, this one wins.** |
+| ⭐ [`architecture.md`](architecture.md) | **the technical reference.** What a profile is, what the five components do to one, the state a capture passes through, and the limits. ⛔ When two documents disagree about a technical fact, this one settles it. |
 | ⭐ [`glossary.md`](glossary.md) | the terms, with the caveat attached to each rather than to the page that uses it |
 | [`reference-sweeps/findings.md`](reference-sweeps/findings.md) | what eighteen repositories were read at, and what was true in them. ⭐ One of them is the origin this project's values came from. |
 | [`reference-sweeps/usable.md`](reference-sweeps/usable.md) | the mechanisms from those repositories, at file and line, for the session doing the work |
