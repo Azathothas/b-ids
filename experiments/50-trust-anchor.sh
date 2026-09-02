@@ -161,7 +161,16 @@ install_root() {
         -k /Library/Keychains/System.keychain "$ir_pem" >/dev/null 2>&1 || return 2
       ;;
     MINGW*|MSYS*|CYGWIN*|Windows*)
-      store certutil -addstore -user Root "$ir_pem" >/dev/null 2>&1 || return 2
+      # ⛔ A NATIVE TOOL GETS A NATIVE PATH. MEASURED 2026-09-02, run
+      # 33592736694: this ran under Git Bash on the runner and handed
+      # certutil.exe an msys path like /d/a/b-ids/..., which it cannot open, so
+      # the install failed and the platform went unmeasured while the Linux lane
+      # reported a full comparison. docs/conventions/shell.md is the rule.
+      ir_native="$ir_pem"
+      if command -v cygpath >/dev/null 2>&1; then
+        ir_native=$(cygpath -w "$ir_pem")
+      fi
+      store certutil -addstore -user Root "$ir_native" >/dev/null 2>&1 || return 2
       ;;
     *) return 2 ;;
   esac

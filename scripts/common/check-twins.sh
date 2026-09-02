@@ -262,12 +262,19 @@ sh_flags=$(awk '
   }
 ' "$SH_PROBE" | sort -u)
 
+# ⛔ THE CATCH-ALL PARAMETER IS NOT A FLAG, and excluding it is not widening
+# the comparison. `$UnboundArguments` is what makes an unknown flag exit 2
+# rather than 1, so demanding a POSIX `--unbound-arguments` beside it would be
+# demanding a flag that must not exist. TODO/ci.md, CI-07.
+# ⚠ `true` goes with it, from `ValueFromRemainingArguments = $true`: the
+# extractor reads the first $NAME on a line and that attribute carries one.
 ps_flags=$(awk '
   /^param\(/ { inparam = 1; next }
   inparam && /^\)/ { exit }
   inparam && match($0, /\$[A-Za-z][A-Za-z0-9]*/) {
-    f = substr($0, RSTART + 1, RLENGTH - 1)
-    print tolower(f)
+    f = tolower(substr($0, RSTART + 1, RLENGTH - 1))
+    if (f == "unboundarguments" || f == "true") next
+    print f
   }
 ' "$PS_PROBE" | sort -u)
 
