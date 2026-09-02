@@ -27,6 +27,7 @@ way out where it left things.
 | [`20-compare-capture-modes.sh`](20-compare-capture-modes.sh) | does completing the handshake change what the browser offers before it? |
 | [`30-resumption-control.sh`](30-resumption-control.sh) | does refusing session tickets change the cold hello, or only which connections are cold? |
 | [`40-trust-paths.sh`](40-trust-paths.sh) | which trust route lets a browser complete a handshake with this harness, on this platform? |
+| [`50-trust-anchor.sh`](50-trust-anchor.sh) | does trusting a real root change what the browser puts on the wire, against trusting one key for one launch? |
 
 ---
 
