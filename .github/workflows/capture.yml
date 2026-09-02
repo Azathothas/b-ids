@@ -198,6 +198,7 @@ jobs:
             corpus/
             raw/
             .tmp/10-first-profile/
+            .tmp/provision-browser/acquisition.json
           if-no-files-found: warn
           retention-days: 14
 

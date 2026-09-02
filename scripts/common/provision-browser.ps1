@@ -456,11 +456,26 @@ if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
     # IT. The Edge index states a SHA-256 for every artefact and the Chrome
     # automation index states none, so this fires on one route and reports the
     # absence on the other. ⛔ A mismatch is a refusal.
-    $publishedJson = & $driver acquire --browser $Browser --version $Version --index $indexPath --json 2>$null
+    # ⭐ THE DRIVER'S ANSWER IS READ ONCE AND BOTH VALUES COME OUT OF IT: the
+    # route a profile records, and the digest the publisher states.
+    #
+    # ⛔ THE ROUTE NAME COMES FROM THE DRIVER'S ROUTE TABLE, never from a
+    # mapping here. Measured 2026-09-02, capture.yml run 33637307031: a mapping
+    # in the sh half turned for-testing into chrome-for-testing whatever the
+    # family was, so the first Edge profile recorded a Chrome route.
+    $acquiredJson = & $driver acquire --browser $Browser --version $Version --index $indexPath --json 2>$null
+    $acquiredLine = if ($acquiredJson) { [string]@($acquiredJson)[0] } else { '' }
     $published = ''
-    if ($publishedJson) {
-        $m = [regex]::Match([string]@($publishedJson)[0], '"published_sha256":"([0-9a-f]{64})"')
+    $script:recordedRoute = ''
+    if ($acquiredLine) {
+        $rm = [regex]::Match($acquiredLine, '"route":"([a-z-]+)"')
+        if ($rm.Success) { $script:recordedRoute = $rm.Groups[1].Value }
+        $m = [regex]::Match($acquiredLine, '"published_sha256":"([0-9a-f]{64})"')
         if ($m.Success) { $published = $m.Groups[1].Value }
+    }
+    if (-not $script:recordedRoute) {
+        [Console]::Error.WriteLine('provision-browser: the driver named no route for this acquisition')
+        exit 1
     }
     if ($published) {
         $arrived = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -559,7 +574,10 @@ if (Test-Path -LiteralPath $archive) {
     # ⚠ THE ROUTE NAME IS THE PROFILE'S VOCABULARY, not this script's flag. The
     # flag is for-testing and the recorded route is chrome-for-testing, which is
     # what b_ids_schema::ACQUISITION_ROUTES accepts.
-    $recordedRoute = if ($Route -eq 'for-testing') { 'chrome-for-testing' } else { $Route }
+    # ⚠ The index routes set this from the driver's route table above; the
+    # vendor route has no index to ask and its flag and its recorded name are
+    # the same word.
+    $recordedRoute = if ($script:recordedRoute) { $script:recordedRoute } else { $Route }
     $record = [ordered]@{
         route  = $recordedRoute
         url    = $url

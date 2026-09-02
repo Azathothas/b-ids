@@ -454,13 +454,28 @@ index_fetch() {
     return 1
   }
 
+  # ⭐ THE DRIVER'S ANSWER IS READ ONCE AND BOTH VALUES COME OUT OF IT: the
+  # route a profile records, and the digest the publisher states.
+  #
+  # ⛔ THE ROUTE NAME COMES FROM THE DRIVER'S ROUTE TABLE, never from a mapping
+  # here. ⚠ Measured 2026-09-02, capture.yml run 33637307031: a `case` in this
+  # script mapped `for-testing` to `chrome-for-testing` whatever the family
+  # was, so the first Edge profile recorded a Chrome route. The driver knows
+  # which index answered and this reads that.
+  ACQUIRED_JSON=$("$DRIVER" acquire --browser "$BROWSER" --version "$VERSION" \
+    --index "$OUT/index.json" --json)
+  RECORDED_ROUTE=$(printf '%s' "$ACQUIRED_JSON" |
+    awk -F'"route":"' 'NR==1 { split($2, a, /"/); print a[1] }')
+  [ -n "$RECORDED_ROUTE" ] || {
+    printf 'provision-browser: the driver named no route for this acquisition\n' >&2
+    return 1
+  }
   # ⭐ AND WHERE THE PUBLISHER STATES A DIGEST, WHAT ARRIVED IS COMPARED WITH
   # IT. The Edge index states a SHA-256 for every artefact and the automation
   # index for Chrome states none, so this fires on one route and reports the
   # absence on the other. ⛔ A mismatch is a refusal: an artefact that is not
   # the one the publisher named is not the one a profile would be describing.
-  PUBLISHED=$("$DRIVER" acquire --browser "$BROWSER" --version "$VERSION" \
-    --index "$OUT/index.json" --json |
+  PUBLISHED=$(printf '%s' "$ACQUIRED_JSON" |
     awk -F'"published_sha256":"' 'NR==1 { split($2, a, /"/); print a[1] }')
   if [ -n "$PUBLISHED" ]; then
     ARRIVED=$(sha256sum "$ARCHIVE" 2>/dev/null | awk '{ print $1 }')
@@ -678,14 +693,11 @@ if [ -f "$ARCHIVE" ]; then
   # would be indistinguishable from a surviving template placeholder to the
   # check that looks for one.
   #
-  # ⚠ THE ROUTE NAME IS THE PROFILE'S VOCABULARY, not this script's flag. They
-  # agree for `vendor` and differ for the other one: the flag is `for-testing`
-  # and the recorded route is `chrome-for-testing`, which is what
-  # b_ids_schema::ACQUISITION_ROUTES accepts.
-  case "$ROUTE" in
-    for-testing) RECORDED_ROUTE="chrome-for-testing" ;;
-    *) RECORDED_ROUTE="$ROUTE" ;;
-  esac
+  # ⚠ THE ROUTE NAME IS THE PROFILE'S VOCABULARY, not this script's flag. The
+  # index routes set it from the driver's route table in `index_fetch`; the
+  # vendor route has no index to ask and its flag and its recorded name are the
+  # same word.
+  RECORDED_ROUTE="${RECORDED_ROUTE:-$ROUTE}"
   node -e '
     const fs = require("fs");
     const [out, route, url, sha256, bytes] = process.argv.slice(1);
