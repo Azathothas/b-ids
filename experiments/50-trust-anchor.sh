@@ -135,21 +135,33 @@ head -1 "$OUT/resolved.jsonl"
 PLATFORM=$(uname -s 2>/dev/null || printf 'unknown')
 STORE_NICK="b-ids-trust-anchor"
 
+# ⛔ EVERY STORE COMMAND IS BOUNDED AND ITS STDIN IS CLOSED, and both halves
+# of that are paid for. MEASURED 2026-09-02, run 33590621046: the first run of
+# this script hung on both platforms and the job was cancelled at its 25-minute
+# limit with the measurement already taken and the comparison never printed. A
+# certificate tool that asks for a password reads from a terminal that is not
+# there and waits forever; </dev/null turns that into an immediate end of file
+# and the timeout turns anything else into a bounded failure.
+store() {
+  timeout 60 "$@" </dev/null
+}
+
 install_root() {
   ir_pem=$1
   case "$PLATFORM" in
     Linux*)
       command -v certutil >/dev/null 2>&1 || return 2
       mkdir -p "$HOME/.pki/nssdb" || return 2
-      certutil -d "sql:$HOME/.pki/nssdb" -N --empty-password >/dev/null 2>&1
-      certutil -d "sql:$HOME/.pki/nssdb" -A -t "C,," -n "$STORE_NICK" -i "$ir_pem" || return 2
+      store certutil -d "sql:$HOME/.pki/nssdb" -N --empty-password >/dev/null 2>&1
+      store certutil -d "sql:$HOME/.pki/nssdb" -A -t "C,," -n "$STORE_NICK" -i "$ir_pem" \
+        >/dev/null 2>&1 || return 2
       ;;
     Darwin*)
-      security add-trusted-cert -d -r trustRoot \
-        -k /Library/Keychains/System.keychain "$ir_pem" || return 2
+      store security add-trusted-cert -d -r trustRoot \
+        -k /Library/Keychains/System.keychain "$ir_pem" >/dev/null 2>&1 || return 2
       ;;
     MINGW*|MSYS*|CYGWIN*|Windows*)
-      certutil -addstore -user Root "$ir_pem" >/dev/null || return 2
+      store certutil -addstore -user Root "$ir_pem" >/dev/null 2>&1 || return 2
       ;;
     *) return 2 ;;
   esac
@@ -159,15 +171,16 @@ install_root() {
 remove_root() {
   case "$PLATFORM" in
     Linux*)
-      certutil -d "sql:$HOME/.pki/nssdb" -D -n "$STORE_NICK" >/dev/null 2>&1
-      certutil -d "sql:$HOME/.pki/nssdb" -L 2>/dev/null | grep -q "$STORE_NICK" && return 1
+      store certutil -d "sql:$HOME/.pki/nssdb" -D -n "$STORE_NICK" >/dev/null 2>&1
+      store certutil -d "sql:$HOME/.pki/nssdb" -L 2>/dev/null | grep -q "$STORE_NICK" && return 1
       ;;
     Darwin*)
-      security delete-certificate -c "$STORE_NICK" /Library/Keychains/System.keychain >/dev/null 2>&1
+      store security delete-certificate -c "$STORE_NICK" \
+        /Library/Keychains/System.keychain >/dev/null 2>&1
       ;;
     MINGW*|MSYS*|CYGWIN*|Windows*)
-      certutil -delstore -user Root "$STORE_NICK" >/dev/null 2>&1
-      certutil -store -user Root 2>/dev/null | grep -q "$STORE_NICK" && return 1
+      store certutil -delstore -user Root "$STORE_NICK" >/dev/null 2>&1
+      store certutil -store -user Root 2>/dev/null | grep -q "$STORE_NICK" && return 1
       ;;
   esac
   return 0
@@ -228,6 +241,15 @@ run_route() {
   if [ "$rr_route" != "pin" ]; then
     remove_root || printf '50-trust-anchor: the root is STILL in the store after removal\n' >&2
   fi
+  # ⭐ ONE FIXED LINE PER ROUTE. The first run printed nothing between the
+  # round header and the comparison, so a job that hung at the end carried a
+  # report saying only which round it had reached.
+  rr_conn=$(awk 'NR>1 && /^{/' "$rr_captures" | wc -l | tr -d ' ')
+  rr_hs=$(grep -c '"termination":{' "$rr_captures" 2>/dev/null)
+  rr_h2=$(grep -c '"http2":{' "$rr_captures" 2>/dev/null)
+  printf 'route=%s handshakes=%s h2=%s connections=%s\n' \
+    "$rr_route" "$rr_hs" "$rr_h2" "$rr_conn"
+  tail -n 1 "$rr_err"
   return 0
 }
 
@@ -249,8 +271,8 @@ done
 # evidence.
 LEFT=0
 case "$PLATFORM" in
-  Linux*) certutil -d "sql:$HOME/.pki/nssdb" -L 2>/dev/null | grep -c "$STORE_NICK" > "$OUT/left.txt" || true ;;
-  MINGW*|MSYS*|CYGWIN*|Windows*) certutil -store -user Root 2>/dev/null | grep -c "$STORE_NICK" > "$OUT/left.txt" || true ;;
+  Linux*) store certutil -d "sql:$HOME/.pki/nssdb" -L 2>/dev/null | grep -c "$STORE_NICK" > "$OUT/left.txt" || true ;;
+  MINGW*|MSYS*|CYGWIN*|Windows*) store certutil -store -user Root 2>/dev/null | grep -c "$STORE_NICK" > "$OUT/left.txt" || true ;;
   *) printf '0\n' > "$OUT/left.txt" ;;
 esac
 LEFT=$(tr -d ' \n\r' < "$OUT/left.txt")
