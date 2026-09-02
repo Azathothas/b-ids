@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors"
+COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -238,6 +238,9 @@ compared_directly 'check-formats'      || check_simple 'check-formats'      sh "
 # build that carries it gets a published list with its date. TODO/corpus.md,
 # CORPUS-04.
 compared_directly 'check-trust-anchors' || check_simple 'check-trust-anchors' sh "$HERE/check-trust-anchors.sh"
+# ⛔ ONE GENERATOR, TWO OUTPUTS, so a release body and a changelog entry cannot
+# disagree by construction rather than by discipline. TODO/publish.md, PUB-08.
+compared_directly 'check-notes-generator' || check_simple 'check-notes-generator' sh "$HERE/check-notes-generator.sh"
 
 # Run one check whose 2 means "could not run", and report that as a SKIP.
 # ⛔ NOT AS A PASS. check-changelog's 2 is a pass because a project with no

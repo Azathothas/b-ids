@@ -362,7 +362,7 @@ fails with a message naming all three.
 ## PUB-08. One generator for the release body and the changelog
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** publish, **Priority** P2, **Effort** S, **Status** open
+**Category** publish, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -397,6 +397,81 @@ sh scripts/common/check-notes-generator.sh
 Passing means: the generator is run twice over one corpus change and produces a
 release body and a changelog entry that agree field for field, and a fixture
 where they are generated from different inputs fails.
+
+---
+
+### ⭐ Closed 2026-09-02. One model, two renderers, and the comparison can fail
+
+⛔ **The two cannot disagree by construction rather than by discipline.**
+`b_ids_corpus::notes::model` computes what changed between two corpus states,
+and `release_body` and `changelog_entry` are the only things that turn it into
+text. Neither computes anything of its own.
+
+```text
+$ sh scripts/common/check-notes-generator.sh
+notes generator ok: 6 case(s). The release body and the changelog entry
+  are rendered from one model, they carry every fact it holds, a no-op
+  change renders nothing, and two outputs from different inputs are
+  asserted NOT to agree.
+exit=0
+
+$ sh scripts/common/check-notes-generator.sh --json
+{"schema":"check-notes-generator/1","cases":6,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-notes-generator.ps1 -Json
+{"schema":"check-notes-generator/1","cases":6,"problems":0}
+```
+
+#### What makes "agree" checkable rather than a sentence
+
+⭐ **`notes::facts` returns every fact the model holds**, and the suite asserts
+both renderings contain every one of them. ⛔ That is a function rather than a
+paragraph, so a renderer that quietly dropped a movement fails a test rather
+than passing a review.
+
+| assertion | why it is there |
+| --- | --- |
+| both outputs carry every fact | the entry's requirement, made mechanical |
+| a no-op renders **nothing** | ⛔ silence is the correct output for "the browser did not change". A bot that writes on a schedule trains people to ignore it, and `CI-04` states the same rule |
+| a version move is **field-level** | "updated a browser" is what a reader cannot act on. ⚠ The fields come from `b_ids_validator::diff` rather than a second comparison here |
+| a first profile is an **addition**, not a diff | listing every field of a first profile as changed would be a diff against nothing |
+| two runs produce identical text | a body that diffs on every run is one nobody can review |
+| ⛔ two outputs from **different inputs** do NOT agree | the negative case the acceptance names. A check that only ever sees agreement is one nobody knows works |
+
+#### ⛔ The pair earned itself before it was registered
+
+⚠ **The two halves disagreed the first time they were run against each other**,
+and the cause is one this tree's own conventions warn about:
+
+```text
+$ sh scripts/common/check-notes-generator.sh --json
+{"schema":"check-notes-generator/1","cases":6,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-notes-generator.ps1 -Json
+{"schema":"check-notes-generator/1","cases":0,"problems":0}
+```
+
+⛔ **A backslash was lost crossing a shell**, so the PowerShell half's
+`'^running (\d+) tests'` arrived as `'^running (d+) tests'`, matched nothing and
+reported zero cases.
+[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 1 names
+exactly this: "A backslash escape that survives one hop loses a backslash on the
+next." ⚠ It was written by passing a payload through a shell, which is what that
+section says not to do, and it was found by running both halves rather than by
+reading them.
+
+⭐ **Neither half's answer was wrong about the suite**; they were wrong about
+each other, which is the drift a twin comparison exists to catch and the reason
+`check-notes-generator` has a row in `check-twins` rather than only a gate line.
+
+#### ⚠ What this does not do
+
+⛔ **It writes no release and no changelog entry into the tree.** There is no
+release to write notes for: `PUB-01` is that surface and it does not exist.
+⭐ What exists is the generator both it and `CI-04` will call, proved before
+either of them can be wrong about it.
+
+⚠ **And the model compares two corpus STATES rather than reading git.** A caller
+holding a before and an after gets an answer; deriving those two states from a
+revision range is the caller's job and `CI-04` is where it lands.
 
 ---
 

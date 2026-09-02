@@ -14,9 +14,9 @@ than a document about the project.
 | | |
 | --- | --- |
 | the task | Read the artefacts of capture run 33615327503, then `DRIVER-08`, `TOOL-18`, `HARNESS-15`, `DRIVER-10` and `CORPUS-02`. Session started 2026-09-02T11:22:03Z, unattended. |
-| the resume point | `HARNESS-16`, whose measurement is dispatched as `trust-anchor.yml` run 33647065058 and unread. Then the work order in [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md). |
-| in flight | ⚠ One thing: `trust-anchor.yml` run 33647065058, dispatched to answer `HARNESS-16`. Everything else is closed in place or left open with its blocker named. |
-| the state of the tree | Clean and pushed on `main`. The gate passes 29 checks with `check-twins` skipped by `-Fast`, measured on this Windows host. |
+| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, which starts at `CORPUS-02`. |
+| in flight | ⛔ Nothing. Eight entries closed in place with their acceptance commands run; everything else left open with its blocker named. |
+| the state of the tree | Clean and pushed on `main`. The gate is green in full, `check-twins` included. |
 | the paste | below |
 
 ---

@@ -2245,7 +2245,7 @@ derivation wearing a measurement's label.
 ## HARNESS-16. The trust store a Windows runner can be made to use without a person
 
 **Source** found while closing `HARNESS-14`, 2026-09-02; authored on the operator's ruling
-**Category** harness, **Priority** P2, **Effort** S, **Status** open
+**Category** harness, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -2302,3 +2302,84 @@ comparison with its field counts, or reports which store it tried, what the tool
 said, and that the platform cannot be provisioned unattended.
 
 ---
+
+### ⭐ Closed 2026-09-02. It does not fail. It never answers.
+
+⛔ **`certutil -addstore -user Root` on `windows-latest` returns 124**, which is
+coreutils `timeout`'s verdict: the command was still running when its bound
+expired. [`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 9
+states what 124 means, and it is a different fact from a failure.
+
+```text
+$ cat .tmp/50-trust-anchor/store.log     # windows-latest, run 33647839757
+== certutil -addstore -user Root ==
+Root "Trusted Root Certification Authorities"
+Signature matches Public Key
+== refused by -user Root, exit 124 ==
+== certutil -addstore -user CA ==
+CA "Intermediate Certification Authorities"
+Signature matches Public Key
+Certificate "b-ids capture authority" added to store.
+CertUtil: -addstore command completed successfully.
+== accepted by -user CA, exit 0 ==
+```
+
+⭐ **The asymmetry is the finding.** The same tool, the same certificate, the
+same invocation shape, one store apart: one store takes it in under a second and
+the other never comes back. ⛔ The premise said "why it failed has NOT been read,
+and writing a reason would be the guess this project refuses". It is read now,
+to this depth: **it did not fail.**
+
+⚠ **What is measured is that it does not return. Why it does not return is a
+reading and is labelled as one**: the Windows Root store is the one whose
+addition raises a consent prompt, and a prompt on a machine with no interactive
+session is a wait with no end. ⛔ Nothing here confirms that, and a session that
+wants to confirm it reads the process's window state rather than reasoning from
+the store name.
+
+#### ⛔ The answer `DRIVER-08` needed
+
+⭐ **This platform cannot have a ROOT installed unattended by this route**, and
+the entry says to record that as a result rather than to keep trying. It is now
+recorded, with the exit code and the tool's own output beside it.
+
+⚠ **And the store that DID take it is not a root store.** `-user CA` is the
+Intermediate Certification Authorities store; a self-signed authority placed
+there is not a trust anchor, which is consistent with what the browser then did:
+
+```text
+pin: 8 cold, 0 resumed, 0 with no http2
+trust-store: 0 cold, 0 resumed, 0 with no http2
+
+comparing 8 pin hello(s) against 0 trust-store, resumed connections excluded
+compare-modes: one side carried no ClientHello at all, so nothing was compared
+  teardown  0 root(s) left in the store
+exit=2
+```
+
+⛔ **So `HARNESS-14`'s comparison still has no answer on Windows**, and that is
+now a stated limit rather than an unread failure. ⚠ `HARNESS-10`'s question,
+whether the per-launch pin changed what was captured, is answered on Linux and
+open on Windows. Every `win64` profile in the corpus was taken through a pin
+whose cost on that platform nobody has measured.
+
+#### What changed in the script
+
+| | |
+| --- | --- |
+| ⛔ **the tool's output is kept** | it went to `/dev/null`, so the run that produced this entry could report only that the call returned non-zero. `.tmp/50-trust-anchor/store.log` is uploaded with the artefact. |
+| ⭐ **more than one store is tried**, in the order a browser on Windows is documented to read them | `DRIVER-04` warned that the store a browser reads is not obviously the one `certutil` writes to. Which store took it is part of the answer. |
+| ⛔ **the teardown removes it from the store that took it** | rather than from the one it assumed. `0 root(s) left in the store` is read back, not asserted. |
+| ⛔ **and no store taking it exits 2 with what the tool said** | "this platform cannot be provisioned unattended" is a result, and `DRIVER-08` needs it before it promises a lane. |
+
+#### ⛔ A defect in this entry's own instrumentation, caught by reading its output
+
+⚠ **The first run logged `refused, exit 0`.** `$?` read after an `if` whose
+condition failed is the status of the **if statement**, not of the command
+inside it, so the number was meaningless and would have sent the next reader
+looking for a certutil that returns zero and does nothing.
+
+⭐ **Same class as reading an exit code through a pipe**, which
+[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 2 already
+names. The status is captured from the command now, and 124 is what it actually
+says. ⚠ Two runs were needed for this entry and the first one is why.

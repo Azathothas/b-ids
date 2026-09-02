@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 98  open 28  blocked 0  done 70
+total 98  open 26  blocked 0  done 72
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 6 | 0 | 37 | 43 |
-| P2 | 19 | 0 | 20 | 39 |
+| P2 | 17 | 0 | 22 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **28** | **0** | **70** | **98** |
+| **all** | **26** | **0** | **72** | **98** |
 
 ---
 
@@ -76,7 +76,7 @@ total 98  open 28  blocked 0  done 70
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
 | HARNESS-14 | P2 | M | done | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
 | HARNESS-15 | P0 | M | done | A cold hello is thrown away because its own connection carried no HTTP/2 | [`harness.md`](harness.md) |
-| HARNESS-16 | P2 | S | open | The trust store a Windows runner can be made to use without a person | [`harness.md`](harness.md) |
+| HARNESS-16 | P2 | S | done | The trust store a Windows runner can be made to use without a person | [`harness.md`](harness.md) |
 | LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
 | LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
@@ -87,7 +87,7 @@ total 98  open 28  blocked 0  done 70
 | PUB-05 | P2 | L | open | Language packages that embed the corpus | [`publish.md`](publish.md) |
 | PUB-06 | P3 | M | open | A packet capture per profile | [`publish.md`](publish.md) |
 | PUB-07 | P1 | S | open | The licence stated in three places | [`publish.md`](publish.md) |
-| PUB-08 | P2 | S | open | One generator for the release body and the changelog | [`publish.md`](publish.md) |
+| PUB-08 | P2 | S | done | One generator for the release body and the changelog | [`publish.md`](publish.md) |
 | PUB-09 | P2 | M | open | Signed and attested captures | [`publish.md`](publish.md) |
 | SCHEMA-01 | P0 | M | done | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
 | SCHEMA-02 | P0 | M | done | The TLS half, in wire order, with unknown codepoints kept | [`schema.md`](schema.md) |

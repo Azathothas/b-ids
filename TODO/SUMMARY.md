@@ -1,91 +1,63 @@
 # SUMMARY.md
 
-⛔ **Overwritten every session, and it is a snapshot rather than an authority.**
-[`PROGRESS.md`](PROGRESS.md) is the record; this is the table that session
-printed in chat.
+The last session's table. ⚠ **A snapshot, never an authority.**
+[`PROGRESS.md`](PROGRESS.md) is the record and it is what a session reads first.
 
-**Session 2026-09-02T01:14:00Z to 2026-09-02T11:30:00Z.** Unattended until
-07:00Z, then six operator rulings, then an instruction to put the rest into
-TODO and close with a prompt.
+⛔ Overwritten every session. Every cell here is grounded in something a reader
+can point at, including the cells that say nothing moved.
 
 ---
 
-## What moved
+## 2026-09-02, unattended, from 11:22:03Z
 
-| | before | after | read from |
-| --- | --- | --- | --- |
-| entries done | 48 | **64** | `sh scripts/common/check-record.sh` |
-| entries open | 43 | **34** | the same |
-| entries in total | 91 | **98** | seven were written this session, two of them closed the same day |
-| scripts answering exit 2 | 22 | **27** | `exit codes ok: 27 script(s)`, in both halves |
-| effort points closed | - | **21** of 20 | six `M` at two, nine `S` at one |
-| profiles in the corpus | 1 | **3** | `corpus=profiles:3 problems:0` |
-| profiles from a machine nobody owns | 0 | **2** | `captured.operator` on each |
-| gate checks | 24 | **27** | `gate ok: all 27 checks passed` |
-| twin pairs compared | 22 | **27** | `every twin pair agrees on this tree` |
-| tests | 256 | **309** | `cargo test --workspace` |
-| experiments in the tree | 2 | **6** | [`../experiments/README.md`](../experiments/README.md) |
-| workflows | 3 | **5** | `workflows ok: 5 file(s), 9 job(s)` |
-| inherited claims refuted | 4 | **5** | [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) |
+| | |
+| --- | --- |
+| entries closed | **8**, for **20** effort points on [`RULES.md`](RULES.md) section 10's scale |
+| entries now | total 98, open 26, blocked 0, done 72 |
+| corpus | 3 profiles to **6**. Two browsers, two majors, two platforms |
+| gate | 26 checks to **30**, plus `check-twins`, and about 600 seconds to **179** |
+| tests | 309 to **344**, in 37 files |
+| runner runs | 9 dispatched, 9 read |
 
----
+### What closed
 
-## The fifteen entries that closed
-
-| entry | eff | what it now does |
+| entry | effort | what it took to close it |
 | --- | --- | --- |
-| `SCHEMA-10` | M | `Shuffle::Observed` carries `distinct_orders`; the seed is ruled out of the profile |
-| `SCHEMA-11` | S | `http.multipart_boundary`, as a pattern rather than a drawn value |
-| `SCHEMA-13` | S | every integer in the published schema is bounded by its Rust width |
-| `SCHEMA-14` | M | a credential is present, in its wire position, with no value |
-| `VALID-03` | S | `unreachable_dimensions` over every dimension the corpus carries |
-| `VALID-06` | S | `b-ids-validator diff`, field by field, with an uncontrolled-conditions warning |
-| `DRIVER-04` | S | `40-trust-paths.sh`: which trust route completes a handshake, per platform |
-| `HARNESS-14` | M | the pin against a real trust anchor on a disposable runner |
-| `CI-02` | M | `check-staleness` and a scheduled `staleness.yml` |
-| `CI-06` | M | `check-sources`: isolation, degradation, and a flagged disagreement |
-| `CI-07` | S | `check-exit-codes`: 2 means could not run, on both halves of every pair |
-| `CI-08` | S | `check-manual-path`, and a `# manual:` line on all nine jobs |
-| `CORPUS-05` | S | the extension search, recorded and re-runnable |
-| `DOC-01` | S | [`../docs/architecture.md`](../docs/architecture.md), the technical reference |
-| `DRIVER-09` | M | the provisioning tool and its check as pairs, because the gate refused the sh half alone |
+| `DRIVER-08` | L | the purge and the install executed on hosted runners, both platforms and both routes. `provision.yml` run 33628209454 |
+| `DRIVER-10` | L | a second browser family, from a route table rather than branches. Edge captured for the first time |
+| `SCHEMA-08` | L | five formats, one generator, a reader for each round trip |
+| `HARNESS-15` | M | the two halves selected independently, proved against the navigation that could not publish under the old rule |
+| `TOOL-18` | M | the gate's cost, and the cause was not the one the premise named |
+| `CORPUS-04` | M | the trust-anchor list measured here and published per build, with the trade stated and no preference asserted |
+| `HARNESS-16` | S | `certutil -addstore -user Root` returns **124** on `windows-latest`: it never answers |
+| `PUB-08` | S | one model, two renderers, and a check whose comparison was seen to fail |
 
----
+### What moved without closing
 
-## ⭐ The measurements this session took
+| entry | what changed about it |
+| --- | --- |
+| `CORPUS-02` | its acceptance refused three rows this morning and refuses two now. Both are blocked on `b_ids_driver::Family` knowing two families |
+| `EMIT-03` | its measurement is in: all six profiles carry the priority block and agree exactly, so it takes the branch that needs the HTTP/2 library vendored |
+| `CI-08` | amended: `check-manual-path` read tracked files only, so a workflow written and never staged escaped it |
+| `DRIVER-06` | unblocked by nothing and blocked by the open question below |
 
-| question | answer | where |
-| --- | --- | --- |
-| does the capture matrix work on hosted runners | yes, four runs, every job green | `capture.yml` |
-| do two runner images serve the same Chrome build | ⛔ no: `151.0.7922.173` against `151.0.7922.174` | the two lane logs |
-| does refusing session tickets change the cold hello | no: 19 fields, 0 differing | `30-resumption-control.sh` |
-| which trust route completes a handshake on Windows | pin and verification-disabled; ⛔ none with no flag at all | `40-trust-paths.sh` |
-| does a real trust anchor change the hello on Linux | no: 19 fields, 0 differing | `50-trust-anchor.sh`, run `33592736694` |
-| does Chrome on Linux read the user's NSS database | ⛔ yes, sometimes: 2 handshakes of 4. The inherited claim is refuted | the same run |
-| is `0x12e0` in Chrome 151 | no, in none of three profiles; the origin's `152` capture has it | `60-identify-extension.sh` |
-| what changed between Chrome `151.0.7922.76` and `.174` on `win64` | ⭐ only the version string | `b-ids-validator diff` |
-| ⛔ can one condition hold a browser-purging tool off a laptop | no. It was mutated and the purge path ran on the operator machine | [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) |
-| what makes the gate cost ten minutes | a subprocess per file at 54.5 ms, not the vendored or reference trees | `TOOL-18` |
-| how long the Rust half of the gate takes | ⭐ 24 seconds, warm: fmt, clippy and the 309 tests together | `cargo` |
-| do the two-condition refusals hold, all three ways | yes: 7 refusals, each exit 2, each naming the missing condition | `check-provisioning` |
+### ⛔ What is not true, said plainly
 
----
+| | |
+| --- | --- |
+| the corpus is not a matrix | 6 profiles, two families of four planned. `chromium` and `firefox` cannot be resolved at all |
+| no capture has gone through an unbranded build | the two `for-testing` cells are planned and not attempted, on the open question below |
+| `captured.operator` is still typed | the identity writer leaves it empty and a person fills it in, this session's three profiles included |
+| `Shuffle::Observed` is still never written | a field the model carries that the capture path never fills |
+| the PowerShell half of the gate did not get `TOOL-18`'s speedup | `check-control-bytes.ps1` is 27 s against its twin's 1 s |
+| ⛔ one commit bypassed `git-sync` | it is compliant, verified afterwards, and that is luck rather than method |
 
-## ⛔ What did not get done, named rather than implied
+### The one open question
 
-- **`CORPUS-02` stays open.** Two of its four required rows are captured. The
-  `edge` lane is enabled and wired and has not produced a profile: Edge exited
-  after 1.4 seconds having opened no connection, and `--log` now records what it
-  says. `chromium` and `firefox` need the resolver to know them at all.
-- **The twentieth effort point.** Nineteen were closed when the session ended.
-- **Windows cannot exercise the trust-store route**, and why has not been read.
-- **`EMIT-03` was read and not started.** `HARNESS-05` has unblocked it.
-- ⛔ **`DRIVER-08` is open and the tool it needed is written.** The refusals
-  are proved on this host; ⛔ **the purge and the install have never run on a
-  runner**, so the success path is unmeasured. Six items remain, in the entry,
-  in order.
-- **`DRIVER-10` is new and untouched**: the three browser families beyond Chrome
-  that the matrix names, and ⚠ they are not variations of one job.
-- ⚠ **This session ran a browser-purging tool on the operator machine with
-  its guard disabled.** Nothing was removed; that was luck rather than
-  design. It is the first section of [`PROGRESS.md`](PROGRESS.md).
+**Where does an unbranded build live in the corpus?** The published route is
+`browser/channel/platform/version` and carries no `branded`, and `Channel` is a
+closed vocabulary that does not include the vendor's automation channel, so a
+branded and an unbranded build of one version publish at one path.
+**Recommendation: add `for-testing` to the `Channel` vocabulary.**
+[`PROGRESS.md`](PROGRESS.md) carries the reasoning and the alternative that
+loses.

@@ -478,6 +478,12 @@ compare_pair "check-formats"        check-formats.sh        "--json"          ch
 # empty set. TODO/corpus.md, CORPUS-04.
 compare_pair "check-trust-anchors"  check-trust-anchors.sh  "--json"          check-trust-anchors.ps1  "-Json"
 
+# ⚠ BOTH HALVES NAME THE FOUR CASES AND RUN THE SAME SUITE, so this row compares
+# two wrappers over one set of assertions. ⭐ The pair earned itself before it
+# was registered: a backslash lost crossing a shell turned the ps half's `(\d+)`
+# into `(d+)`, and the two halves reported 6 cases and 0. TODO/publish.md, PUB-08.
+compare_pair "check-notes-generator" check-notes-generator.sh "--json"        check-notes-generator.ps1 "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

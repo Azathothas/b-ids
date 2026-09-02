@@ -16,16 +16,13 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session ran      2026-09-02T01:14:00Z to 2026-09-02T11:30:00Z. Unattended
-                 until 07:00Z; the operator then interrupted, ruled six
-                 questions, and ended it with an instruction to put the
-                 rest into TODO
-baseline         gate ok: all 27 checks passed, in full, on this Windows
-                 host. 26 with check-twins skipped by -Fast, and
-                 check-twins compares 27 pairs. 309 tests in 36 files.
-entries          total 98  open 28  blocked 0  done 70
-gate             27 checks in full, and check-provisioning is not one of
-                 them: it is the acceptance for an entry that is open
+session ran      2026-09-02T11:22:03Z, unattended, following a work order the
+                 operator wrote into the kickoff
+baseline         gate ok: all 31 checks passed, in full, in 715 seconds
+                 on this Windows host. 344 tests in 37 files.
+entries          total 98  open 26  blocked 0  done 72
+gate             five checks joined it today: check-provisioning,
+                 check-formats, check-trust-anchors, check-notes-generator
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -35,143 +32,63 @@ hand to make a check pass; fix whichever file is wrong.
 
 ---
 
-## ⛔ A browser-purging tool was run on the operator machine, on purpose
+## ⭐ The corpus stopped recording builds nobody chose
 
-⛔ **The worst thing this session did, and it is first because it is the
-thing a later session most needs to not repeat.**
+⛔ **Every profile before today carried `captured.acquisition: null`**, which is
+the weakest provenance the artefact half can have in a project whose product is
+provenance. Three of the six carry a URL and a digest now.
 
-`scripts/common/provision-browser.sh` purges every browser from a machine
-and installs a chosen build. It refused this laptop correctly when run
-unmodified. ⛔ **Then this session set out to prove the guard could fail, and
-mutated the live file on the machine the guard protects.** The purge path ran.
-Nothing was removed only because the Windows uninstaller match did not fire,
-and the confirm step then refused at exit 1, so the install was never reached.
-
-⚠ **The machine was unharmed by an accident of registry matching.** That is
-not a safety margin, and the operator noticed before this session reported it.
-
-| what changed | |
+| profile | how the build got there |
 | --- | --- |
-| ⭐ **two conditions from two sources** | `B_IDS_DISPOSABLE=1`, which this project sets only inside a workflow, and `CI`, which the platform sets on every hosted runner. One edit cannot lift both, and `check-provisioning` asserts all three refusal paths rather than only the both-unset one. |
-| ⭐ **the first guard mutated under the new rule** | the tool and its check were copied into the scratch directory and the COPY was mutated, twice. Both mutations leave every case refused, so neither could reach a purge. |
-| ⛔ **a rule that was missing** | a test that has to bypass a guard runs against a COPY under the ignored scratch directory, never against the file on a machine the guard protects. [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md) carries the row, [`../scripts/README.md`](../scripts/README.md) carries it where checks are written, and [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) carries the incident. |
+| Chrome `151.0.7922.76` `win64` | a laptop, 2026-09-01. `acquisition: null` |
+| Chrome `151.0.7922.173` `linux64` | whatever `ubuntu-latest` shipped. `acquisition: null` |
+| Chrome `151.0.7922.174` `win64` | whatever `windows-latest` shipped. `acquisition: null` |
+| Chrome `152.0.7977.75` `linux64` | purged, then installed from the vendor's channel. URL and digest recorded |
+| Chrome `152.0.7977.76` `win64` | the same, and a different build on the same day |
+| Edge `151.0.4129.101` `linux64` | purged, then installed from the vendor's enterprise index, whose published digest the tool compared what arrived against |
 
-⚠ **The mutation discipline itself stays.** A guard nobody has seen fail is
-theatre, and that rule is right. What was wrong was the SUBJECT of the
-mutation.
+⛔ **The three that say `null` will always say it.** The corpus is append-only
+and those builds were not chosen; filling the field in afterwards would be a
+derivation wearing a measurement's label.
 
 ---
 
-## ⭐ The provisioning tool exists, and its success path has never run
+## ⛔ A ruling's reasoning was refuted by measurement
 
-⛔ **`DRIVER-08` stays open, and the reason is the honest one**: what exists
-is a tool whose refusals are proved and whose working path is unmeasured. No
-runner has executed the purge or the install.
+⚠ **The operator ruled 2026-09-02 that the vendor route gives both platforms the
+same build, "because both install on the same day".** Measured one hour apart on
+one day, from the vendor's own channel:
 
-| landed | |
+| platform | the vendor route served |
 | --- | --- |
-| [`../scripts/common/provision-browser.sh`](../scripts/common/provision-browser.sh) | purge, confirm by requiring `resolve` to exit 2, install, confirm the version. The vendor route, Linux and Windows. `--plan` runs nothing. |
-| [`../scripts/common/check-provisioning.sh`](../scripts/common/check-provisioning.sh) | seven refusals asserted on any host; the provisioning leg skipped LOUDLY where the machine is not disposable |
-| [`../scripts/common/provision-browser.ps1`](../scripts/common/provision-browser.ps1) and [`../scripts/common/check-provisioning.ps1`](../scripts/common/check-provisioning.ps1) | the twins, which the gate refused to go green without. Each acceptance drives the tool written in its own language. |
+| `ubuntu-latest` | `152.0.7977.75` |
+| `windows-latest` | `152.0.7977.76` |
 
-```text
-$ sh scripts/common/check-provisioning.sh
-provisioning ok: 7 check(s), every refusal held, provisioning skipped
-  SKIP the provisioning itself: this machine is not disposable, so nothing
-  was purged. A workflow on a disposable runner is where that leg runs,
-  and TODO/driver.md, DRIVER-08, is what has not been built yet.
-exit=0
-```
+**The exact-build route does give one build on two platforms**, and it is the
+only route that can: `151.0.7922.76` resolved on both from the automation index.
 
-⭐ **And the PowerShell half answers identically**, which is what makes the
-pair comparable at all:
-
-```text
-$ pwsh -NoProfile -File scripts/common/check-provisioning.ps1 -Json
-{"schema":"check-provisioning/1","checks":7,"problems":0,"provisioned":"skipped"}
-$ sh scripts/common/check-provisioning.sh --json
-{"schema":"check-provisioning/1","checks":7,"problems":0,"provisioned":"skipped"}
-```
-
-⛔ **The twin was not optional and the gate said so.** `DRIVER-09` was written
-as an entry to be taken later, and `check-exit-codes` reported 27 scripts
-against 25 before the commit: the sh half could not land alone. Both halves
-exist now, they report the same JSON, and the pair is compared.
-
-⭐ **The rest is written down rather than half-built.** `DRIVER-08` carries six
-remaining items in order, and `DRIVER-10` is the other three browser families,
-measured one by one and not assumed to be variations of Chrome.
+⚠ **The ruling stands and is the operator's.** What is refuted is one sentence
+of its reasoning, and it is written into `DRIVER-08` rather than edited into the
+ruling.
 
 ---
 
-## The capture matrix has run, and it produced two findings before it produced a profile
-
-**`capture.yml` ran on hosted runners for the first time**, four times in all,
-every job green. Dispatched with the authenticated `gh` on the default branch,
-which is the route the operator ruled 2026-09-01.
-
-### What the runners actually served
+## ⭐ Eight entries closed, twenty effort points
 
 | | |
 | --- | --- |
-| `ubuntu-latest`, image `ubuntu24/20260823.283` | Chrome `151.0.7922.173`. Edge `151.0.4129.101` also resolved, at `/usr/bin/microsoft-edge` |
-| `windows-latest`, image `win25-vs2026/20260824.214` | Chrome `151.0.7922.174` |
+| `DRIVER-08` `L` | the purge and the install ran on hosted runners, both platforms and both routes. `captured.acquisition` is populated from a record the tool writes |
+| `DRIVER-10` `L` | a second browser family, as a route table rather than branches. Edge's index publishes a digest per artefact, which Chrome's does not |
+| `SCHEMA-08` `L` | five formats from one generator, each with a reader, byte-identical over two runs |
+| `HARNESS-15` `M` | the TLS half and the HTTP/2 half are selected per half. `captured.connections` records which connection each came from |
+| `TOOL-18` `M` | the gate went from about 600 seconds to 213 |
+| `CORPUS-04` `M` | the trust-anchor list measured here, published per build, and the trade stated with no preference asserted |
+| `HARNESS-16` `S` | ⛔ `certutil -addstore -user Root` on `windows-latest` does not fail. It returns **124**, which is the timeout verdict: it never answers |
+| `PUB-08` `S` | one model, two renderers, and a check that the comparison between them can fail |
 
-⛔ **The two runners do not carry the same Chrome build**, so two profiles of one
-build on two platforms is not obtainable from the preinstalled browser at all.
-It needs pinned acquisition, which is `DRIVER-05`'s route rather than the lane's.
-
-### ⛔ The `linux64` lane captured nothing, twice, and the reason is resumption
-
-⚠ **Reproduced rather than raced.** Chrome on `ubuntu-latest` abandoned the
-connections that were not resumed and resumed every one it kept, so the
-navigation had no cold connection and there was nothing to publish. More
-connections do not help: the first completed handshake leaves a ticket and
-everything after it resumes.
-
-⛔ **And the report said `1 cold` on the line above the refusal saying there was
-none.** `b-ids-corpus add` carried the word behind a hardcoded `1` in a format
-string. It is `Selection::report` now, where a test reaches it, and the guard was
-seen to fail at exit 101 against a mutation that restores the literal.
-
-`b-ids-harness --no-resumption` issues no session tickets, so every hello is a
-cold one, and `experiments/30-resumption-control.sh` is the control: three
-rounds, 19 TLS fields, 0 differing. The switch changes which connections are
-cold, not what a cold hello is.
-
-### What the corpus holds now
-
-⭐ **Three profiles, and two were captured on machines nobody owns**: Chrome
-`151.0.7922.174` on `win64` from `windows-latest`, and Chrome `151.0.7922.173`
-on `linux64` from `ubuntu-latest`. `corpus=profiles:3 problems:0`, `findings:0`.
-
----
-
-## ⭐ Fifteen entries closed, twenty-one effort points
-
-| | |
-| --- | --- |
-| `SCHEMA-13` | every integer field in the published schema carries a bound derived from its Rust width |
-| `SCHEMA-14` | a credential is recorded as PRESENT, in its wire position, with no value. It was dropped entirely before, so the order closed over an unmarked gap |
-| `SCHEMA-11` | `http.multipart_boundary`, as a PATTERN: prefix, random length and alphabet |
-| `SCHEMA-10` | `Shuffle::Observed` carries `distinct_orders`, and the seed is ruled out of the profile |
-| `VALID-03` | `unreachable_dimensions`, over every browser, channel and platform the corpus carries |
-| `VALID-06` | `b-ids-validator diff`, field by field, which says so when two captures differ in more than the version |
-| `DRIVER-04` | `experiments/40-trust-paths.sh`. The negative control is the finding: with no trust flag at all, four connections completed zero handshakes |
-| `HARNESS-14` | the pin measured against a real trust anchor on a disposable runner: 19 fields, 0 differing. It refutes an inherited claim |
-| `CI-02` | `check-staleness`, both halves, plus a scheduled `staleness.yml` |
-| `CI-06` | `check-sources`, both halves: per-source isolation, a silent source that does not end the run, a disagreement flagged rather than resolved |
-| `CI-07` | `check-exit-codes`. Every PowerShell check answered 1 where its POSIX twin answered 2, 22 pairs of 22 |
-| `CI-08` | `check-manual-path`, and a `# manual:` line on all nine jobs |
-| `CORPUS-05` | the search is recorded and re-runnable. `0x12e0` is absent from all three Chrome `151` profiles here and present in the origin's `152` capture |
-| `DOC-01` | [`../docs/architecture.md`](../docs/architecture.md), the technical reference |
-| `DRIVER-09` | the provisioning tool and its check as PAIRS. ⛔ Closed the day it was written, because the gate refused the sh half on its own |
-
-⭐ **Twenty-one of the twenty points [`RULES.md`](RULES.md) section 10 asks
-for**, counted on that section's own scale: six `M` at two and nine `S` at one.
-⚠ Nineteen of them were closed before the operator interrupted; the twentieth
-and the twenty-first arrived afterwards, in `DRIVER-09`, and the reason they
-arrived is that a check refused to let a script land untwinned.
+**Twenty of the twenty points [`RULES.md`](RULES.md) section 10 asks for**,
+on that section's own scale: three `L` at four, three `M` at two and two `S` at
+one.
 
 ---
 
@@ -179,16 +96,17 @@ arrived is that a check refused to let a script land untwinned.
 
 | what | how it showed |
 | --- | --- |
-| `b-ids-corpus add` printed `1 cold` as a literal | beside a refusal saying there was none |
-| every PowerShell check exited 1 where its twin exited 2 | 22 pairs of 22, measured before the check was written |
-| `check-staleness --json` exited 0 over a stale corpus | only the human branch carried the exit |
-| `check-exit-codes` counted tracked scripts only | a script never staged escaped it; 22 became 23 the moment it read untracked ones |
-| the twin comparison read a catch-all parameter as a flag | the doctor pair reported a drift in one place |
-| `50-trust-anchor.sh` hung on both platforms | a certificate tool asked for a password from a terminal that is not there |
-| it then handed `certutil.exe` an msys path | the Windows lane could not install and exited 2, which was correct |
-| ⛔ one condition stood between `provision-browser` and a purge | a single edit lifted it, and the edit was made on the machine the guard protects. Two conditions from two sources now, all three refusal paths asserted |
-| `provision-browser.sh` and `check-provisioning.sh` landed with no PowerShell half | ⛔ `check-exit-codes` reported 27 scripts against 25 within the hour. The two counts had been equal only by coincidence, and one untwinned script broke the tie. `DRIVER-09`, closed |
-
+| `experiments/10-first-profile.sh` said it writes the profile into the corpus | it prints the command. Found by reading the artefacts of a scheduled run in which two lanes reported success and neither had added anything |
+| `resolve` could not version an automation build on Windows | the archive is flat: `chrome.exe` beside a `VERSION.manifest`, no version-shaped directory, and `--version` is not asked on that platform. `Source::ManifestFile` is the third source |
+| `check-manual-path` read tracked files only | it reported 9 jobs over a tree carrying 10, and `git add -N` alone changed the answer. `check-exit-codes` had the same defect and was fixed; this half was left |
+| the first provisioning run failed on a directory git does not carry | `.tmp` is ignored, so the redirect failed before the command on its left ever ran, and both lanes reported that the tool did not purge cleanly when it had never been invoked |
+| ⛔ the recorded acquisition route came from the shell | a `case` mapped `for-testing` to `chrome-for-testing` whatever the family was, so the first Edge profile recorded a Chrome route |
+| the family route table was defined below the plan that reads it | `--plan` for an `edge` request printed an empty purge line and a command-not-found |
+| ⛔ `powershell -Command` does not bind trailing arguments to `param()` | it appends them to the command text. The Windows purge lost its pattern, left Chrome on the machine, and the confirm step refused. ⭐ The lane went red rather than capturing a build nobody chose |
+| ⛔ a guard added this session passed on a different line | the for-testing plan check searched for the word `index` anywhere, and the `fetch` line reads "the zip that index names for the build". Found by the mutation pass |
+| one fact had two names | `Selection::no_http2` and `Split::abandoned` counted the same connections. Found by the door sweep |
+| ⛔ an exit code read after an `if` is the `if`'s | the Windows store loop logged `refused, exit 0` for a call that had plainly done nothing. Same class as reading one through a pipe. The real answer was **124** |
+| ⛔ a backslash lost crossing a shell | a `.ps1` written by passing a payload through `node -e` inside bash arrived with `(d+)` where `(d+)` was meant, so its half of a new pair reported 0 cases against the other's 6 |
 
 ---
 
@@ -200,34 +118,25 @@ specification. ⭐ All three found something.
 
 ### 1. The door sweep: what other door reaches this code
 
-Swept, by grep rather than from memory: every caller of `Selection::report` and
-`cold_count`, every call of `Authority::server_config`, every construction of a
-`HeaderSet`, every reader of `is_never_recorded`, every caller of `check_grease`,
-every construction of `Shuffle` and of `Launch`, and every registration of the
-four new checks.
+Swept, by grep rather than from memory: every caller of `sources_for`,
+`profile_from` and `Selection`'s fields; every reader of `captured.connections`;
+every construction of `Captured`; every place `check-provisioning`,
+`check-formats` and `check-trust-anchors` are registered; and every spelling of
+an index URL in the tree.
 
-⛔ **Finding: the credential rule has FOUR doors and the entry named three.**
-`SCHEMA-14` said the change reaches the model, the capture path and the
-validator. The fourth is the HTTP/1.1 reader in `listener.rs`, which had its own
-`continue` past a credential and would have gone on closing the recorded order
-over an unmarked gap on the cleartext surface. Found by grepping for the filter
-rather than by reading the entry.
+⛔ **Finding: one fact with two names.** `Kind::Abandoned` became `Kind::NoHttp2`
+and `Selection::abandoned` became `Selection::no_http2`, and
+`modes::Split::abandoned` counted exactly the same connections under the old
+name. Renamed, with the example that prints it.
 
-⛔ **Finding: nothing in the capture path can produce a shuffle observation.**
-`b-ids-harness/src/hello.rs` writes `Shuffle::Unknown` unconditionally, so the
-`distinct_orders` field `SCHEMA-10` added is a field the model can carry and the
-capture path never fills. Recorded in that entry rather than left for a reader to
-discover from an always-`Unknown` column.
+**Confirmed, by counting:** one production caller of `profile_from` and one of
+`sources_for`; each of the three index URLs spelled once, in the driver, with
+the shell asking for it rather than carrying a copy; `check-provisioning`,
+`check-formats` and `check-trust-anchors` each present in both gate halves and
+in `check-twins`; every construction of `Captured` found by the compiler when
+the field was added.
 
-⭐ **Confirmed, by counting:** three call sites of `server_config` and every
-one passes the resumption argument; four readers of `is_never_recorded` and every
-one keeps the name; ten callers of `check_grease` and every one passes
-`Options`; `check-exit-codes` and `check-manual-path` each appear in both gate
-halves, in `COMPARED_DIRECTLY` and in `check-twins`; `check-staleness` and
-`check-sources` appear in `check-twins` and deliberately in neither gate, because
-without a fixture they reach the network.
-
-⭐ **What the other passes did not look at:** the callers. Both of the others
+**What the other passes did not look at:** the callers. Both of the others
 read what was written; this one grepped for what was not enumerated.
 
 ### 2. The guard mutation: can the new guards actually fail
@@ -236,180 +145,96 @@ Planted and read unpiped, each in the half where the guard lives:
 
 | planted | what went red |
 | --- | --- |
-| `cold_count` returned to a literal `1` | `connection_selection_reports_no_cold_connection_when_every_one_resumed`, exit 101 |
-| `"maximum": 255` removed from `$defs/u8` | two `bounds` tests, exit 101 |
-| `check-msrv.ps1` made to exit 1 for an unknown argument | `check-exit-codes.ps1` named the script, exit 1 |
-| `distinct_orders < 2` weakened to `< 0` | `shuffle_observed_with_one_order_is_refused`, exit 101 |
-| the provisioning refusal stopped naming both conditions | `check-provisioning` reported 3 problems, exit 1 |
-| the provisioning guard made to exit 0 instead of 2 | the same 3 cases, `exit 0, expected 2`, exit 1 |
+| the TLS half required to have reached HTTP/2, which is the old rule | two `connection_selection` tests, exit **101** |
+| the HTTP/2 half required to come from a connection that did not resume | two more, exit **101** |
+| a workflow's `# manual:` line removed | both halves of `check-manual-path`, exit **1** |
+| every `index` line removed from a COPY of the provisioning tool | ⛔ **nothing.** The check passed. See below. |
+| the same, after the check was fixed | `--plan for-testing: names no index step`, exit **1** |
+| a copy of `check-trust-anchors` counting a codepoint nothing carries | the vacuous-pass refusal, exit **2** |
+| one of the three options removed from the recommendation | `the recommendation does not state the option 'Send it empty'`, exit **1** |
+| a 64-hex under a label that is not `sha256` | `check-no-secrets` still catches it, three ways |
+| a suite case name removed from `check-notes-generator`'s list | both halves name the four they expect, so a deleted test is caught rather than passed over |
 
-⛔ **The last two were planted in COPIES, under the ignored scratch directory,
-and the copy of the check was pointed at the copy of the tool.** ⚠ Both
-mutations leave the tool refusing every case, so neither could have reached a
-purge. That is the rule this session learned the expensive way, applied.
+⛔ **The fourth row is the pass earning its place.** A guard added earlier the
+same day searched for the word `index` anywhere in the plan output, and the
+`fetch` line reads "the zip that index names for the build asked for", so
+removing every `index` step still passed. Both halves match a line whose first
+field is the step now.
 
-⭐ **And two guards were planted by the tree rather than by hand.**
-`check-manual-path` was written before the lines it looks for and named all nine
-jobs on its first run; `check-sources` and `check-exit-codes` each carry a
-refusal fixture they run on every invocation and exit **2** rather than reporting
-anything if it comes back clean.
+⚠ **And the first attempt at that mutation was itself wrong**, which is the
+other half of the lesson: it removed the Linux branch's line on a Windows host
+and reported that the file had changed. A patch that asserts only that something
+changed is the shape `reviews.md` names.
 
-⚠ **Guards NOT mutated, and saying so is the point:** `check-staleness`'s
-version ordering was exercised against a fixture holding `151.0.7922.9` rather
-than by mutating the comparison; `check-manual-path`'s "script does not parse"
-branch has never been seen to fire; and the `withheld`-on-an-ordinary-header
-refusal is asserted by a test but was not planted against the capture path.
+⛔ **The provisioning tool and its check were mutated as COPIES under the ignored
+scratch directory**, never as the files on this machine, and the real pair was
+re-run afterwards to confirm it was untouched.
+
+⭐ **And one pair failed against itself before it was ever registered.**
+`check-notes-generator`'s two halves reported 6 cases and 0, because a backslash
+was lost crossing a shell. ⚠ That is not a planted mutation; it is the same
+question asked of a new pair, and it is why the pair has a `check-twins` row
+rather than only a gate line.
+
+⚠ **Guards NOT mutated, and saying so is the point:** `check-formats`'s
+determinism assertion was never seen to fail, because making a deterministic
+generator non-deterministic means editing the generator rather than a check;
+`check-trust-anchors`'s "list has no capture instant" branch has never fired;
+and the Windows-store fallback in `50-trust-anchor.sh` has not been seen to
+refuse, because the run that would show it is the one still in flight.
 
 ### 3. The claim audit: which sentence is not backed by an artefact
 
-Swept: every number and every pasted block in the fourteen closings, this file,
-the changelog, and the four documents the work made stale.
+Swept: every number and every pasted block in the seven closings, this file, the
+changelog, and the documents the work made stale.
 
-⛔ **Finding: a count that was wrong when written.** This file said "Eleven
-entries closed" over a table of fourteen rows, with a sentence underneath trying
-to reconcile the two. Recounted from `INDEX.md`: fourteen entries, nineteen
-points, five `M` and nine `S`.
+⛔ **Finding: three closings carried output that was true when it ran and stale
+by the time the session ended.** `SCHEMA-08` pasted `profiles:5`, `CORPUS-04`
+pasted `1 of 5 profile(s)` and `DRIVER-10` pasted a coverage table with older
+counts, because two profiles landed afterwards. All three re-run against the
+tree as it now stands, and `CORPUS-04`'s "one carrier is one sample" sentence
+rewritten so it no longer contradicts the block above it.
 
-⛔ **Finding: a repetition of a measurement that had not been taken.**
-`HARNESS-14`'s closing said `certutil -addstore` failed "twice, after the path
-was corrected". Only one Windows run happened after that correction. Corrected to
-one, naming the run.
+⛔ **Finding: four documents said the corpus holds three profiles.**
+[`../docs/AGENTS.md`](../docs/AGENTS.md),
+[`../README.md`](../README.md),
+[`../docs/architecture.md`](../docs/architecture.md) and
+[`RULES.md`](RULES.md)'s standing-facts table, each written when it was true.
+All four say six and name what is different about them.
 
-⛔ **Finding: three documents describing a corpus of one profile.**
-[`../README.md`](../README.md), [`RULES.md`](RULES.md)'s standing-facts table and
-[`../docs/AGENTS.md`](../docs/AGENTS.md) all said so, each written the day the
-first landed. All three now say three and name where the count is read from.
+⛔ **Finding: a procedural failure of this session's own.** One commit was made
+with `git commit` directly rather than through `git-sync`, which is the tool
+that enforces the identity and attribution rules.
+[`../docs/AGENTS.md`](../docs/AGENTS.md) section 5 names it. ⭐ The commit is
+compliant, verified afterwards with `git-sync --check`, and that is luck rather
+than method.
 
-⛔ **Finding: a refuted-claim count off by one.** `RULES.md` rule 2 said four
-inherited claims had been refuted and that none fell to an experiment. The fifth
-did, this session, and it is the first this project has taken down that way.
-
-⭐ **Claims checked that stood, by re-running the command:** `profiles:3
-problems:0` and `findings:0 notcheckable:9`; 309 tests in 36 files; 25 scripts
-answering 2; 9 workflow jobs each naming a manual equivalent; 26 twin pairs, all
-agreeing; 19 reference trees.
-
-⚠ **The script count moved after that sweep and the sentence above is left
-as it was measured.** `check-exit-codes` reports **27** now: the provisioning
-tool and its check landed after the audit ran. ⛔ A number in a review pass
-records what the command said when the pass ran; editing it afterwards to
-match a later tree is how an audit stops being evidence.
-
-⚠ **And one procedural failure of this session's own, recorded rather than
-quietly fixed.** [`RULES.md`](RULES.md) warns not to edit the tree while
-`check-twins` runs, because it reads the tree before and after. This session
-edited `PROGRESS.md` during the final run. The run reported agreement and its
-counts match the tree as it now stands, so the verdict is good; ⛔ that is luck
-rather than method, and the rule was there first.
+**Claims checked that stood, by re-running the command:** `profiles:6
+problems:0`; 338 tests in 37 files; 29 scripts answering 2; 10 workflow jobs
+each naming a manual equivalent; 5 formats from 6 profiles; 2 anchor carriers of
+6; 27 twin pairs agreeing.
 
 ---
 
-## ⚠ Seven red `ci` runs on superseded commits, and why they are not rerun
+## ⚠ What is in progress
 
-⭐ **The remote is green at `HEAD` and at its parent**, both jobs of both
-workflows. ⚠ Seven intermediate runs are red, and the next session should not
-chase them:
-
-| commits | failing job | cause |
-| --- | --- | --- |
-| `bb0f881`, `7346e62`, `a9639c3`, `02ee3fa`, `7144f09`, `dd63a35`, `a5eb7d5` | `gate (ubuntu)` | ⛔ a twin drift this session introduced: the doctor comparison read the new catch-all PowerShell parameter as a command-line flag. Fixed in `27faa3a`. |
-| `a9639c3` also | `gate (windows)` | the standing toolchain flake, [`RULES.md`](RULES.md) section 8.5 |
-
-⛔ **Rerunning them would reproduce the failure**, because the tree at those
-commits genuinely carried the drift. The fix is a later commit, not a rerun, and
-a green rerun of a tree that was broken would be the lie.
+⛔ **Nothing.** Every entry this session touched is closed in place with its
+acceptance command run, or left open with its blocker named. ⚠ Two
+trust-anchor runs were dispatched and both are read: `33647065058` gave the
+answer and `33647839757` gave it with a usable exit code.
 
 ---
 
-## What is in progress
+## The gate costs 213 seconds
 
-⛔ **Nothing is half-edited.** Every entry this session touched is closed in
-place with its acceptance command run, or left open with its blocker named.
-
----
-
-## ⛔ The gate costs ten minutes and twenty-four seconds of it is Rust
-
-⭐ **Asked by the operator at the close of this session and measured rather
-than guessed.** [`tooling.md`](tooling.md), `TOOL-18`, carries the table and the
-arithmetic; the short answer is that the vendored and reference trees are not
-what makes it slow.
+⭐ **`TOOL-18` closed on this**, and the cause was not the one its premise named.
 
 | | |
 | --- | --- |
-| ⛔ **the cause** | a subprocess per file, on a host where a subprocess costs 54.5 ms. 100 bare `grep` spawns took 5450 ms; the hot loop of `check-control-bytes` spawns about six per file, so its 384 files predict 126 seconds against 121 measured. |
-| ⭐ **not the tree** | `check-docs` and `check-markers` exclude `references/` and `vendor/NAME/` and cost 175 and 29 seconds over 53 and 241 files. `check-line-endings` reads all 5435 files, references and vendor included, in **2.4 seconds**, because it asks git once instead of looping. |
-| ⚠ **one row does read the corpus, on purpose** | `check-no-secrets --scope references`, 102 seconds over 4972 files. It is the row that exists to scan what the others exempt. |
-| ⛔ **and one reads vendor without saying why** | `check-control-bytes` excludes `references/` and not `vendor/NAME/`: 146 of its 384 files are vendored. `TOOL-18` records it and does not decide it. |
-
-⚠ **`TOOL-15` measured this shape on 2026-09-01, added `--timings`, and closed.**
-The cost was named and not reduced, which is why `TOOL-18` exists and is P1: a
-gate this slow gets run once at the end, and this session ran it that way twice.
-
----
-
-## ⚠ A scheduled capture ran at the close and its artefacts are unread
-
-⭐ **`capture.yml` fired on its own cron at 09:39Z against `0cee89e`**, which no
-session dispatched. Three artefacts are waiting and nothing has been added to
-the corpus from them:
-
-| job | |
-| --- | --- |
-| `chrome stable linux64` | ⭐ success, and this is the lane that captured nothing twice earlier in the day |
-| `chrome stable win64` | success |
-| `edge stable linux64` | ⛔ failure, which is the known one: Edge exits after 1.4 seconds having opened no connection, and `DRIVER-07` is why the log now says so |
-| `collect` | success |
-
-⛔ **Read the artefacts before dispatching another run.** Run `33615327503`,
-and `gh run download` is the route. ⚠ A profile is added with `b-ids-corpus
-add`, and the corpus is append-only.
-
----
-
-## ⭐ The work order
-
-⚠ **Take these in order.** ⛔ The first two are P0 and the operator ruled
-both on 2026-09-02, after reading that the corpus records builds nobody chose.
-
-1. ⭐ **`DRIVER-08`, and the tool is written: what remains is running it.**
-   In the order the entry lists them: the `for-testing` route, both routes in
-   the matrix, a workflow step that fails the lane loudly when provisioning
-   does not confirm, ⛔ **a run on a disposable runner on both platforms**,
-   `captured.acquisition` populated from what the tool printed, and
-   `check-provisioning` into the gate. ⛔ Until the runner leg has happened,
-   every profile records `captured.acquisition: null`, no two lanes can be
-   made to run one build, and the tool has a proved refusal path and an
-   unproved success path.
-2. ⭐ **`HARNESS-15`.** Select the TLS half and the HTTP/2 half per half rather
-   than demanding one connection carry both. ⛔ It is what makes the Linux lane
-   capture without imposing a server-side condition on every profile.
-3. **`CORPUS-02`**, which both of the above unblock. Two of its four required
-   rows are captured; the `edge` lane is wired and has not produced a profile,
-   and `chromium` and `firefox` need the resolver to know them at all.
-4. **`SCHEMA-08`**, the generator and the five formats whose round trip this
-   tree can prove. `VALID-06`'s diff and `CI-04`'s body both want it.
-5. **`CI-04`**. A scheduled run that finds a change opens a pull request.
-   ⭐ The write is ruled: job-scoped, on the collect job alone.
-6. **`PUB-03`**, then `PUB-01`, `PUB-02`, `PUB-07`. `PUB-07` cannot close until
-   two of its three surfaces exist.
-7. **`SCHEMA-12`**, **`CI-05`** and **`EMIT-03`**, the last of which
-   `HARNESS-05` has unblocked and which this session did not start.
-
-⭐ **`TOOL-18` is worth taking early and out of order.** It is the gate
-costing ten minutes on this host, and every entry above it pays that price
-once per closing.
-
-⚠ **`DRIVER-10` follows `DRIVER-08` rather than racing it.** Three more
-browser families is work on a tool whose success path is unmeasured, and doing
-it first multiplies the unmeasured part instead of shrinking it. ⭐ `DRIVER-09`
-did not get that choice: the gate refused the tool without its twin.
-
-⚠ **Small entries worth taking whenever a larger one is blocked**: `DRIVER-06`
-(branded and unbranded builds, which `DRIVER-08` makes measurable for the first
-time), `HARNESS-16` (why a Windows runner will not take a root unattended),
-`CORPUS-04` (per-build trust-anchor lists, which needs a `152` capture),
-`VALID-04` (reference digest implementations).
+| ⛔ **the largest cause** | a command substitution in a `while ... read` assignment prefix, which is re-evaluated on every iteration. `IFS="$(printf '\t')" read` forks once per LINE READ, and a substitution costs 35 ms on this host. Eleven occurrences across seven checks. |
+| ⛔ **the second** | a `git check-ignore` per link, 966 of them. One batched call now. |
+| ⛔ **the third** | three processes per fenced block, two of which `awk` can do in the pass that extracts it. |
+| ⚠ **what is NOT fixed** | the PowerShell halves still carry the per-file shape: `check-control-bytes.ps1` is 27 s against its twin's 1 s. A gate run on Windows pays the slow half and `check-twins` pays both. |
 
 ---
 
@@ -425,24 +250,51 @@ two `for-testing` cells in
 [`../.github/capture-matrix.json`](../.github/capture-matrix.json) are planned
 and not attempted because of it rather than because the tool cannot fetch them.
 
-⭐ **Recommendation: add `for-testing` to the `Channel` vocabulary**, and let
+**Recommendation: add `for-testing` to the `Channel` vocabulary**, and let
 `branded: false` follow from it rather than becoming a path component.
 
 | | |
 | --- | --- |
 | ⭐ **why this one** | the channel is ALREADY part of the route and of the `latest` key, so nothing about the layout changes and no consumer's pin moves. It is also true: the automation index is a channel the vendor publishes, separately from stable. |
 | ⚠ **what it costs** | one variant on a closed enum, the published schema regenerated, and `CORPUS-03`'s "latest means stable" sentence re-read so an automation build cannot be mistaken for one. |
-| ⛔ **the alternative that loses** | `branded` as a fifth path component. It changes `corpus/v1/` for every consumer to carry a dimension only one browser family has, and `PUB-03` has not shipped a route yet only by luck of timing. |
+| ⛔ **the alternative that loses** | `branded` as a fifth path component. It changes `corpus/v1/` for every consumer to carry a dimension only one browser family has. |
 
-⚠ **Nothing is blocked on the answer except those two cells.** `DRIVER-08`'s
-runner leg, `DRIVER-10` and the branded routes all proceed without it.
+⚠ **Nothing else is blocked on it.** `DRIVER-06` is the entry that measures the
+branded-against-unbranded difference and it is what the answer unblocks.
 
 ⚠ **A later session that finds a fork writes it here with a recommendation
 attached and keeps working.** [`RULES.md`](RULES.md) section 10 names "this
 needs a decision from the operator" as one of the four sentences that is not a
-reason to stop. ⛔ Ask at the very START of a session if proceeding under any
-assumption would be unsafe; otherwise record it here and proceed on the
-recommendation.
+reason to stop.
+
+---
+
+## ⭐ The work order
+
+⚠ **Take these in order.**
+
+1. **`CORPUS-02`**, whose acceptance names four rows and refuses on two.
+   ⛔ Both are blocked on one thing: `b_ids_driver::Family` knows two families.
+   `DRIVER-10`'s steps 2 and 3 are `firefox` and `chromium`, and `firefox` is
+   the higher value: a genuinely different TLS stack.
+2. **`CI-04`**. A scheduled run that finds a change opens a pull request.
+   ⭐ The write is ruled job-scoped, its acceptance is a body generator driven by
+   a fixture rather than a real pull request, and `PUB-08` closed today is the
+   model that body renders from.
+3. **`SCHEMA-12`**, the six formats that need a decoder as well as an encoder,
+   now that `SCHEMA-08`'s five are proved and its generator is the seam.
+4. **`PUB-03`**, then `PUB-01`, `PUB-02`, `PUB-07`. ⭐ `SCHEMA-08` gives
+   `PUB-03` something to publish that is not JSON alone, and `PUB-08` gives
+   `PUB-01` its release body.
+5. **`EMIT-03`**, whose measurement is in: every profile carries the priority
+   block, so the entry takes the branch that needs the HTTP/2 library vendored.
+6. **`DRIVER-06`**, once the question above has an answer.
+
+⚠ **Small entries worth taking whenever a larger one is blocked**:
+`HARNESS-11` (the p0f layer), `VALID-04` (reference digest implementations,
+⛔ with a licence question stated in the entry that comes first), `DOC-02` and
+`DOC-03`, both of which their own entries say to write only when a specific
+thing becomes true.
 
 ---
 
@@ -453,70 +305,43 @@ recommendation.
 ### ⭐ Ruled 2026-09-02, and each created or moved an entry
 
 - ⛔ **A capture lane PURGES the machine's browsers and installs the build it
-  needs.** Completely, with no leftovers, confirmed by running the resolver and
-  requiring it to find nothing, then installed and confirmed by version.
-  ⭐ P0, and it is `DRIVER-08`. ⚠ The reason it is a ruling rather than an
-  improvement: on a machine this project controls completely it was measuring
-  whatever somebody else's image installed.
-- ⭐ **The corpus carries BOTH Chromes, as separate matrix cells.** Branded,
-  from the vendor's own channel, current build only, and both platforms get the
-  same one because both install on the same day. Unbranded, from the
-  automation-build index, at any exact build, recorded `branded: false`.
-  ⚠ They are two products and `DRIVER-06` is what measures the difference.
+  needs.** ⭐ Done: `DRIVER-08` closed, and `capture.yml` provisions where the
+  cell asks for it. ⚠ One sentence of the ruling's reasoning is refuted above.
+- ⭐ **The corpus carries BOTH Chromes, as separate matrix cells.** ⚠ The
+  unbranded cells are blocked on the open question above.
 - ⛔ **The resumption problem is solved at its cause, not behind a switch.**
-  `HARNESS-15`: the TLS half and the HTTP/2 half are selected per half, so a
-  cold hello on a connection that carried no HTTP/2 is kept rather than thrown
-  away. ⭐ `--no-resumption` stays as a CONTROL and leaves the capture path, so
-  the browser behaves as it does in the wild and no server-side condition is
-  imposed on every published profile.
+  ⭐ Done: `HARNESS-15` closed and `--no-resumption` left the capture path.
 - **Two smaller findings are their own entries**: `DRIVER-07`, the browser log,
-  and `HARNESS-16`, the Windows trust store.
-
+  which is what diagnosed the Edge lane, and `HARNESS-16`, the Windows trust
+  store.
 - ⛔ **A guard on something irreversible is TWO conditions from two sources,
-  and it is never mutated on the machine it protects.** Ruled after this
-  session ran the purge path on the operator laptop. One condition this
-  project sets inside a workflow, one the platform sets on a hosted runner,
-  and a bypass test runs against a copy under the scratch directory.
-  ⭐ The rule is in [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
-  and in [`../scripts/README.md`](../scripts/README.md) where checks are
-  written, so it is read by whoever is about to break it.
-- ⭐ **The remaining provisioning work is written into TODO rather than
-  half-built at the end of a session.** Ruled 2026-09-02. `DRIVER-08` carries
-  six items in order, `DRIVER-09` the PowerShell twin, `DRIVER-10` the other
-  three browser families. ⚠ The operator also asked this session to close
-  with a prompt for the next one, which [`RULES.md`](RULES.md) section 10 does
-  not have a step for; what the operator asks in a session comes first.
-
+  and it is never mutated on the machine it protects.** ⭐ Held all session:
+  every mutation of the provisioning pair ran against copies under the ignored
+  scratch directory.
 - ⭐ **The write for `CI-04` is JOB-SCOPED.** `contents: write` and
   `pull-requests: write` on the collect job alone, using the run's own
-  `GITHUB_TOKEN`. ⛔ Never a personal access token. ⚠ Every capture lane keeps
-  `contents: read`. ⚠ It also needs the repository setting that lets Actions
-  create pull requests, which is the operator's to enable.
-- ⭐ **The first runner capture is fetched with `gh` and added by hand.** Done,
-  three times, this session.
+  `GITHUB_TOKEN`. ⛔ Never a personal access token. ⚠ It also needs the
+  repository setting that lets Actions create pull requests, which is the
+  operator's to enable.
+- ⭐ **The first runner capture is fetched with `gh` and added by hand.**
 - ⭐ **The one laptop profile stays, unchanged.** ⚠ And the operator has ruled
   something broader with it: **this project is in beta, nobody consumes its
   data, and the commit history will be reset once the project satisfies the
   operator.** ⛔ That is the OPERATOR'S action at a time of their choosing and
   it licenses nothing for a session: no force push, no history rewrite, and the
   corpus stays append-only in every change an agent makes.
-- **`SCHEMA-08` is SPLIT.** It keeps the generator plus the five formats whose
-  round trip this tree can prove: JSON, NDJSON, CSV, TSV and Markdown.
+- **`SCHEMA-08` is SPLIT.** ⭐ Closed: JSON, NDJSON, CSV, TSV and Markdown.
   `SCHEMA-12` carries YAML, TOML, SQLite, CBOR, MessagePack and Protobuf.
-- **Credentials are recorded as PRESENT, never as a value.** `SCHEMA-14`, closed
-  2026-09-02.
-- **The trust anchor is a job, not a machine change.** `HARNESS-14`, closed
-  2026-09-02 on a runner that was thrown away.
+- **Credentials are recorded as PRESENT, never as a value.**
+- **The trust anchor is a job, not a machine change.**
 - **Header values stay names-only by default.** Corpus captures turn them on
   deliberately.
 - **`CORPUS-04` publishes the per-build trust-anchor list and states all three
-  options with their costs.** ⛔ It asserts no preference.
-- **The schema gains numeric bounds.** `SCHEMA-13`, closed 2026-09-02.
-- ⭐ **The shuffle seed stays out of `browser-profile/1`.** Ruled 2026-09-02 in
-  `SCHEMA-10`: it is a property of a reproduction attempt rather than of a
-  browser, and it belongs in the emitter support matrix.
+  options with their costs.** ⛔ It asserts no preference. ⭐ Closed.
+- **The schema gains numeric bounds.**
+- ⭐ **The shuffle seed stays out of `browser-profile/1`.**
 - **Commit once at the close** unless the session is genuinely at risk of losing
-  work. ⚠ This session pushed nine times, because a capture lane runs the tree
+  work. ⚠ This session pushed eight times, because a capture lane runs the tree
   on the default branch and could not be dispatched otherwise.
 - **A measured profile goes into the committed corpus with its conditions
   recorded.**

@@ -14,6 +14,59 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T15:30:00Z - the corpus stopped recording builds nobody chose
+
+**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and the eight entries it
+names: [`TODO/driver.md`](TODO/driver.md) `DRIVER-08` and `DRIVER-10`,
+[`TODO/schema.md`](TODO/schema.md) `SCHEMA-08`,
+[`TODO/harness.md`](TODO/harness.md) `HARNESS-15` and `HARNESS-16`,
+[`TODO/tooling.md`](TODO/tooling.md) `TOOL-18`,
+[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-04`, and
+[`TODO/publish.md`](TODO/publish.md) `PUB-08`.
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **The purge and the install ran on hosted runners**, both platforms and
+  both routes, which is the leg that had never executed anywhere. Three of the
+  six profiles now name the URL and the digest of the artefact the browser was
+  installed from; before today every profile carried
+  `captured.acquisition: null`.
+- ⭐ **A browser that is not Chrome is in the corpus.** Edge `151.0.4129.101`,
+  provisioned from the vendor's enterprise index, which publishes a SHA-256 per
+  artefact that the tool compares what arrived against. It could not capture at
+  all before: its SUID sandbox helper was not configured on the runner image,
+  and the browser's own log said so, which is what `DRIVER-07` kept it for.
+- ⭐ **A cold hello is no longer thrown away because its own connection carried
+  no HTTP/2.** The two halves are selected independently, and `captured.connections`
+  records which connection each came from. The Edge lane is the proof: its only
+  cold hello arrived on a connection that reached no HTTP/2.
+- ⭐ **Five published formats from one generator**, each with a reader, so a
+  round trip is a round trip rather than a comparison of two writers.
+- ⭐ **The trust-anchor extension is measured here** rather than inherited, and
+  published per build with its capture date.
+  [`docs/trust-anchors.md`](docs/trust-anchors.md) states the three options with
+  the cost of each and asserts no preference.
+- ⭐ **The gate costs 213 seconds where it cost about 600**, with four more
+  checks in it than before.
+
+⛔ **A ruling's reasoning was refuted by measurement.** The vendor route was
+ruled to give both platforms the same build "because both install on the same
+day"; measured one hour apart on one day, it served `152.0.7977.75` on Linux and
+`152.0.7977.76` on Windows. The ruling stands and one sentence of its reasoning
+does not.
+
+⛔ **`certutil -addstore -user Root` does not fail on `windows-latest`. It
+returns 124**, which is the timeout verdict: it never answers. The same tool one
+store apart, `-user CA`, returns 0 in under a second. So that platform cannot
+have a root installed unattended by that route, which is a result rather than an
+unread failure, and `HARNESS-14`'s comparison still has no answer there.
+
+⛔ **Nine defects in this session's own work, every one caught by running it**,
+including two that only a specific lens found: a guard added the same day that
+passed because a different line satisfied it, and one fact carrying two names
+across two types. [`TODO/PROGRESS.md`](TODO/PROGRESS.md) has the table.
+
 ### 2026-09-02T12:10:00Z - the exact-build route, and two findings that moved what it can promise
 
 **Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-08`,
