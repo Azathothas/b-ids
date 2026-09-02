@@ -29,6 +29,7 @@ its place, and a role listed here with no file behind it is a defect.
 | ⭐ [`../inherited-claims.md`](../inherited-claims.md) | every value this project carries that was measured somewhere else. **When a document states a fingerprint, a version or a codepoint, this file is where its provenance lives, and when the two disagree this one wins.** |
 | [`../agent-tooling.md`](../agent-tooling.md) | what tool does what job, and where each one lives |
 | [`../containers.md`](../containers.md) | measuring in a machine you throw away afterwards |
+| [`../trust-anchors.md`](../trust-anchors.md) | the extension that carries a snapshot of the browser's own root store, the three things a client can do about it, and the cost of each. ⛔ It asserts no preference. |
 | [`../reference-sweeps/findings.md`](../reference-sweeps/findings.md) | what external projects were read, at which commit, and what was true in them |
 | [`../reference-sweeps/usable.md`](../reference-sweeps/usable.md) | which of those findings this project can actually use, and where each one lands |
 | ⭐ [`../HISTORY/README.md`](../HISTORY/README.md) | **the story.** Superseded wording, reversed decisions, dead ends, review passes. ⛔ Everything above says what is true now; this says what was believed and why that changed. |

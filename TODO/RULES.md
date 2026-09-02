@@ -20,7 +20,7 @@ where it is checked.
 | fact | value | where it is read from |
 | --- | --- | --- |
 | visibility and licence | public, 0BSD | [`../LICENSE`](../LICENSE) |
-| what it publishes | three profiles, on the default branch, under `corpus/v1/`, each with its bytes under `raw/v1/`. ⛔ No release and no data branch yet: `PUB-01` and `PUB-02` are those two surfaces. | `b-ids-corpus verify`, whose last line is a fixed count |
+| what it publishes | five profiles, on the default branch, under `corpus/v1/`, each with its bytes under `raw/v1/`. ⛔ No release and no data branch yet: `PUB-01` and `PUB-02` are those two surfaces. | `b-ids-corpus verify`, whose last line is a fixed count |
 | work model | todo | [`../docs/methodology/work-todo.md`](../docs/methodology/work-todo.md) |
 | push policy | commit and push, to this repository's own remote only, on the working branch | [`../docs/conventions/git.md`](../docs/conventions/git.md) section 2 |
 | the local gate | `sh scripts/common/check-gate.sh --fast`, or its `.ps1` twin | [`../scripts/README.md`](../scripts/README.md) |

@@ -191,7 +191,17 @@ sends.
 
 ⭐ **Publishing per-build trust-anchor lists with their capture dates, and a
 documented recommendation, is a service nobody currently provides.** `CORPUS-04`
-is the entry.
+is the entry and [`trust-anchors.md`](trust-anchors.md) is what it produced:
+the three options with the cost of each, and no preference asserted.
+
+⭐ **`0xca34` is MEASURED HERE now**, in Chrome `152.0.7977.75` on `linux64` and
+`152.0.7977.76` on `win64`, both 2026-09-02. The length matches the row above at
+206 bytes on both. ⛔ The body decodes to **32** identifiers where this row's
+source records 24, and both can be right: the list is a snapshot of a root store
+and it changes per build. ⛔ **The two platforms carry the same 32 identifiers in
+a completely different order**, all 32 positions differing, which
+[`trust-anchors.md`](trust-anchors.md) states as a second decision for anybody
+copying a list. ⚠ The name is still inferred and none of this settles it.
 
 ---
 

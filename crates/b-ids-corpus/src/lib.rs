@@ -28,8 +28,10 @@ pub mod capture;
 pub mod formats;
 pub mod route;
 pub mod store;
+pub mod trust;
 
 pub use capture::{Identity, Refusal, profile_from};
 pub use formats::{FLAT_COLUMNS, Format, flat_row, read_back, read_flat, render};
 pub use route::{CORPUS_DIR, LAYOUT, NoRoute, RAW_DIR, Route, route};
 pub use store::{Added, Index, IndexEntry, Pointers, Published, STABLE, Store};
+pub use trust::{AnchorList, NotAList, TRUST_ANCHORS, anchor_list, anchor_lists};

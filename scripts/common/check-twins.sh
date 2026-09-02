@@ -472,6 +472,12 @@ compare_pair "check-provisioning"   check-provisioning.sh   "--json"          ch
 # moved. TODO/schema.md, SCHEMA-08.
 compare_pair "check-formats"        check-formats.sh        "--json"          check-formats.ps1        "-Json"
 
+# ⚠ EACH HALF COUNTS THE CARRIERS ITSELF, in jq and in ConvertFrom-Json, so this
+# row compares two readings of the corpus rather than two wrappers over one.
+# ⛔ Both refuse a corpus with no carrier at exit 2 rather than passing over an
+# empty set. TODO/corpus.md, CORPUS-04.
+compare_pair "check-trust-anchors"  check-trust-anchors.sh  "--json"          check-trust-anchors.ps1  "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

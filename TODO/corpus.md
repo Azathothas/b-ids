@@ -669,7 +669,7 @@ written twice.
 ## CORPUS-04. Per-build trust-anchor lists, and a recommendation
 
 **Source** the founding brief; the two codepoints are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3
-**Category** corpus, **Priority** P2, **Effort** M, **Status** open
+**Category** corpus, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -716,6 +716,128 @@ sh scripts/common/check-trust-anchors.sh
 Passing means: every profile carrying that extension has a corresponding
 published list with a capture date, and the published document states all three
 options with the cost of each.
+
+---
+
+### ⭐ Closed 2026-09-02. Measured here, published per build, and the trade stated
+
+⛔ **The premise said this was measured elsewhere and inherited.** It is measured
+here now: Chrome `152.0.7977.75` on `linux64`, captured on a hosted runner
+2026-09-02, carries codepoint `0xca34` at 206 bytes.
+
+```text
+$ sh scripts/common/check-trust-anchors.sh
+trust anchors ok: 1 of 5 profile(s) carry codepoint 0xca34, and every one has a
+  published list with its capture instant. The recommendation states all three
+  options and asserts no preference.
+exit=0
+
+$ sh scripts/common/check-trust-anchors.sh --json
+{"schema":"check-trust-anchors/1","carriers":1,"lists":1,"profiles":5,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-trust-anchors.ps1 -Json
+{"schema":"check-trust-anchors/1","carriers":1,"lists":1,"profiles":5,"problems":0}
+```
+
+#### ⛔ What the measurement changed about the inherited claim
+
+| | inherited | measured here |
+| --- | --- | --- |
+| codepoint | `0xca34` | ⭐ the same |
+| length | 206 bytes | ⭐ the same |
+| shape | a length-prefixed list of identifiers | ⭐ the same: a two-byte big-endian outer length, then one-byte-length-prefixed items |
+| **count** | 24 identifiers | ⛔ **32**, of 4, 5 and 8 bytes |
+| the name | inferred from `draft-ietf-tls-trust-anchor-ids` | ⚠ **still inferred.** No specification was read against these bytes and this entry does not pretend otherwise |
+
+⭐ **The count differing is the entry's premise confirmed rather than a
+contradiction.** The body is a snapshot of a root store, a root store changes,
+and the two numbers come from two builds. ⛔ Publishing per build with the
+capture date is the only honest way to carry it, which is what this does.
+
+⚠ **And `0x12e0` is absent from this project's own `152`**, where the origin's
+`152` capture carries it. `CORPUS-05` recorded it absent from every `151` here;
+that now extends to a `152`. [`../docs/inherited-claims.md`](../docs/inherited-claims.md)
+section 3 carries both.
+
+#### The two deliverables
+
+| | |
+| --- | --- |
+| ⭐ **the list, per build, beside the corpus** | `b-ids-corpus anchors --out DIR` writes one file per carrying build: the profile it came from, the capture instant, the declared length and every identifier **in the browser's own order**. ⛔ The order is part of what was measured and sorting it would publish a list no browser sent. |
+| ⭐ **the recommendation** | [`../docs/trust-anchors.md`](../docs/trust-anchors.md), stating all three options with the cost of each and asserting no preference: omit it and be one extension short; carry a captured list and be honest the day it was captured and a fingerprint of that day afterwards; send it empty and produce a shape no browser sends. |
+
+```text
+$ cargo run -q -p b-ids-corpus -- anchors --root . --out dist/anchors
+wrote dist/anchors/chrome-152.0.7977.75-linux64.json (32 identifier(s), captured 2026-09-02T14:08:20Z)
+corpus=anchors lists:1 profiles:5
+```
+
+#### ⛔ The check refuses a vacuous pass, and that was proved
+
+⚠ **Every assertion this check makes is satisfiable by an empty set.** A corpus
+in which no profile carries the extension would pass rule 1 by having nothing to
+check, which is the "acceptance command that cannot fail" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+⭐ So the no-carrier case exits **2** and says why, and it was seen to:
+
+```text
+$ sh COPY-OF-THE-CHECK-COUNTING-A-CODEPOINT-NOTHING-CARRIES
+check-trust-anchors: no profile in this corpus carries codepoint 0xca34, so
+  there is nothing to publish and nothing this check can verify. That is a
+  fact about the builds captured, not a pass. TODO/corpus.md, CORPUS-04.
+exit=2
+```
+
+⭐ **And the recommendation's three options are asserted rather than assumed.**
+With one option's heading removed from the live document:
+
+```text
+trust-anchor check failed, 1 problem(s):
+
+  the recommendation does not state the option 'Send it empty'
+exit=1
+```
+
+#### ⚠ What this leaves open, named rather than left
+
+⛔ **The name is still inferred**, and settling it is one reading of
+`draft-ietf-tls-trust-anchor-ids` against these bytes.
+[`../docs/trust-anchors.md`](../docs/trust-anchors.md) says what would settle it
+and [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3 is
+where its status lives. ⚠ That reading is not this entry's acceptance and was
+not done here.
+
+⚠ **One carrier is one sample.** The shape above is measured on one build, one
+platform, one day. A second carrier would say whether the identifier lengths and
+the outer encoding hold, and the matrix is where more carriers come from.
+
+#### ⭐ Amended 2026-09-02: a second carrier arrived within the hour, and the order is not the set
+
+⚠ **The paragraph above says one carrier is one sample.** A second landed the
+same day: Chrome `152.0.7977.76` on `win64`, from the same vendor route on a
+hosted runner. ⛔ What it says is sharper than "the shape holds".
+
+| | |
+| --- | --- |
+| ⭐ **the same 32 identifiers** | the SET is identical between `linux64` and `win64`. Nothing is on one platform and not the other. |
+| ⭐ **the same length** | 206 bytes on both, with the same 4, 5 and 8-byte identifier lengths |
+| ⛔ **and a completely different ORDER** | **all 32 positions differ.** The two bodies are not the same bytes. |
+
+⛔ **So a client copying a captured list has a second decision the entry did not
+name: whether to copy the ORDER.** A fixed order copied from one capture is a
+constant, and if the order is per connection then a constant is exactly the
+thing that makes a client distinguishable.
+
+⚠ **This project cannot yet say which it is.** One capture per platform
+distinguishes "the order is per platform" from "the order is per connection"
+not at all, and asserting either would be a conclusion from a single sample per
+side. ⭐ What would settle it is two connections of ONE navigation on ONE
+platform, which is a comparison
+[`../docs/trust-anchors.md`](../docs/trust-anchors.md) now names and nothing has
+run.
+
+⭐ **The published lists carry the order they arrived in**, so whichever answer
+comes back, the evidence is already on disk rather than needing a re-capture.
+
 
 ---
 

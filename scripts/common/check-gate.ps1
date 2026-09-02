@@ -232,6 +232,7 @@ $ComparedDirectly = @(
     'check-manual-path',
     'check-provisioning',
     'check-formats',
+    'check-trust-anchors',
     'check-changelog',
     'check-workflows',
     'check-coverage'
@@ -421,6 +422,11 @@ Invoke-PsCheck -Name 'check-provisioning' -Script 'scripts/common/check-provisio
 # ⛔ ONE GENERATOR, CANONICAL JSON IN, EVERY FORMAT OUT, and the round trip is
 # what says a format has a reader as well as a writer. TODO/schema.md, SCHEMA-08.
 Invoke-PsCheck -Name 'check-formats' -Script 'scripts/common/check-formats.ps1'
+
+# ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
+# build that carries it gets a published list with its date. TODO/corpus.md,
+# CORPUS-04.
+Invoke-PsCheck -Name 'check-trust-anchors' -Script 'scripts/common/check-trust-anchors.ps1'
 
 # -- the published route files, and the one byte a consumer should not have to
 # strip. 2 is "there is no route tree yet, or it holds no single-value file",

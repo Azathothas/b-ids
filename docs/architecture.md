@@ -113,9 +113,11 @@ three surfaces. [`../TODO/publish.md`](../TODO/publish.md).
 
 ## 5. ⛔ The limits, stated rather than discovered
 
-- **The corpus holds three profiles.** One from a laptop and two from hosted
-  runners, all Chrome 151. [`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`,
-  is the matrix.
+- **The corpus holds five profiles.** Four Chrome and one Edge, majors 151 and
+  152, on two platforms. ⚠ Three of them were taken through whatever build the
+  runner image shipped and record `captured.acquisition: null`; two name the URL
+  and the digest they were installed from.
+  [`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`, is the matrix.
 - **No digest is computed.** `digests` is empty on every profile and will stay
   empty until a reference implementation is verified against published vectors.
 - **Every capture went through a per-launch key pin**, and on ONE platform that

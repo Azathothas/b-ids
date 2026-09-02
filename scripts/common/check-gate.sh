@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats"
+COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -234,6 +234,10 @@ compared_directly 'check-provisioning' || check_simple 'check-provisioning' sh "
 # ⛔ ONE GENERATOR, CANONICAL JSON IN, EVERY FORMAT OUT, and the round trip is
 # what says a format has a reader as well as a writer. TODO/schema.md, SCHEMA-08.
 compared_directly 'check-formats'      || check_simple 'check-formats'      sh "$HERE/check-formats.sh"
+# ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
+# build that carries it gets a published list with its date. TODO/corpus.md,
+# CORPUS-04.
+compared_directly 'check-trust-anchors' || check_simple 'check-trust-anchors' sh "$HERE/check-trust-anchors.sh"
 
 # Run one check whose 2 means "could not run", and report that as a SKIP.
 # ⛔ NOT AS A PASS. check-changelog's 2 is a pass because a project with no

@@ -3,11 +3,14 @@
 A dated, provenance-carrying corpus of what real browsers put on a wire: TLS
 `ClientHello` bytes, HTTP/2 settings and framing, and header sets in order.
 
-⭐ **The corpus holds three profiles**, and every one is real: Chrome
-`151.0.7922.76` on Windows captured 2026-09-01 on a laptop, and Chrome
+⭐ **The corpus holds five profiles**, and every one is real: Chrome
+`151.0.7922.76` on Windows captured 2026-09-01 on a laptop, Chrome
 `151.0.7922.174` and `151.0.7922.173` captured 2026-09-02 on hosted runners on
-Windows and Linux, each with the `ClientHello` bytes it was read from published
-beside it. Around them are
+Windows and Linux, and two more from 2026-09-02 whose builds this project chose
+rather than inherited: Chrome `152.0.7977.75` on Linux from the vendor's own
+channel, and Edge `151.0.4129.101` on Linux from the vendor's enterprise index,
+each naming the URL and the digest it was installed from. Every profile carries
+the `ClientHello` bytes it was read from, published beside it. Around them are
 the profile schema, a validator that refuses a combination no browser could
 send, a capture oracle that terminates a TLS handshake and reads a browser's
 HTTP/2 off the socket behind it, the methodology, the tooling and a reading of

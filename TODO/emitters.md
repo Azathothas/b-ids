@@ -174,6 +174,44 @@ frame length is correct across a continuation split.
 
 ---
 
+
+### ⭐ 2026-09-02: the measurement is in, and it takes the first branch
+
+⛔ **Browsers send the block.** Every profile in this corpus carries it, and they
+agree exactly:
+
+| profile | `http2.stream_priority` |
+| --- | --- |
+| Chrome `151.0.7922.76` `win64` | `exclusive: true, stream_dependency: 0, weight_wire: 255` |
+| Chrome `151.0.7922.173` `linux64` | the same |
+| Chrome `151.0.7922.174` `win64` | the same |
+| Chrome `152.0.7977.75` `linux64` | the same |
+| Chrome `152.0.7977.76` `win64` | the same |
+| Edge `151.0.4129.101` `linux64` | the same |
+
+⭐ **Six profiles, two browsers, two majors, two platforms, one value.** The
+inherited reading in [`../docs/inherited-claims.md`](../docs/inherited-claims.md)
+section 5 was taken off frame bytes on two Chrome versions in another
+repository; this agrees with it and is measured here.
+
+⛔ **So the approach's second branch is closed and the first one is open.** There
+is no negative result to publish: the entry does not close on "browsers do not
+send it". What remains is the work the first branch names, and it is not the
+five bytes:
+
+| | |
+| --- | --- |
+| ⛔ **the HTTP/2 library has to be vendored first** | this tree vendors one library today, the TLS terminator, and `VENDOR-01` is what it cost. A second vendored tree is a second reconciliation, a second provenance file and a second `check-vendor` subject. |
+| ⚠ **and the patch is read rather than copied** | its tree is MIT and this one's output is 0BSD. [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) is the rule. |
+| ⭐ **the seam is confirmed** | [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 4, at a named commit: the encode function takes a closure that runs after the frame head and before the header block, and the push-promise path already writes a stream identifier through it. |
+
+⚠ **The effort estimate stands at `S` and it was estimated for the branch that
+did not happen.** ⛔ Left as it is rather than edited, per
+[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md): the
+estimate is what was believed, and this paragraph is what is true.
+
+---
+
 ## EMIT-04. Emitters for the stacks a consumer already uses
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.

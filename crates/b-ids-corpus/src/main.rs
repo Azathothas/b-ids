@@ -25,6 +25,7 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
        b-ids-corpus latest --assert-stable [--root DIR]
        b-ids-corpus index --write [--root DIR]
        b-ids-corpus formats --out DIR [--root DIR]
+       b-ids-corpus anchors --out DIR [--root DIR]
 
   add              turn the cold connection of a navigation into a profile and
                    publish it, with its ClientHello beside it and the index
@@ -54,7 +55,13 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    generated file: the generator has lost if you do, and
                    scripts/common/check-formats is what says so. Its LAST line
                    is a fixed `corpus=formats files:N profiles:N`.
-  --out DIR        where the generated formats are written.
+  anchors          publish every build's trust-anchor list as its own artefact,
+                   with the capture date and the identifiers in the browser's
+                   own order. ⚠ Most profiles do not carry the extension and
+                   that is a fact about the builds; a body that IS there and
+                   does not decode is a refusal. Its LAST line is a fixed
+                   `corpus=anchors lists:N profiles:N`.
+  --out DIR        where the generated formats or lists are written.
   --captures FILE  what `b-ids-harness --json` printed. Its first line is the
                    base URL and is not a capture; every other line is one.
   --identity FILE  what the subject was and under what conditions it was
@@ -423,6 +430,85 @@ fn formats(root: &str, out_dir: &str) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+/// Publish every build's trust-anchor list as its own artefact.
+///
+/// ⛔ **Beside the corpus rather than inside a profile.** The list is a snapshot
+/// of the browser's own root store and it changes on a different schedule from
+/// everything else a profile carries, so a consumer that wants it should not
+/// have to fetch a whole profile, and a consumer that does not want it should
+/// not be handed it. `TODO/corpus.md`, `CORPUS-04`.
+///
+/// ⛔ **The last line is a fixed `corpus=anchors lists:N profiles:N`**, which is
+/// what `scripts/common/check-trust-anchors` reads.
+fn anchors(root: &str, out_dir: &str) -> ExitCode {
+    let store = Store::at(root);
+    if !store.exists() {
+        eprintln!("b-ids-corpus: there is no corpus under {root}, so there is nothing to publish");
+        return ExitCode::from(2);
+    }
+    let profiles: Vec<Profile> = match store.profiles() {
+        Ok(found) => found.into_iter().map(|(_, profile)| profile).collect(),
+        Err(why) => {
+            eprintln!("b-ids-corpus: {why}");
+            return ExitCode::from(1);
+        }
+    };
+
+    // ⛔ A MALFORMED BODY IS A REFUSAL, never a skip. `anchor_lists` skips the
+    // profiles that do not carry the extension, which is the ordinary case;
+    // this loop is what separates that from a body that is there and does not
+    // decode, because the second is a defect and the first is not.
+    let mut lists = Vec::new();
+    for profile in &profiles {
+        match b_ids_corpus::anchor_list(profile) {
+            Ok(list) => lists.push(list),
+            Err(b_ids_corpus::NotAList::Absent) => {}
+            Err(why) => {
+                eprintln!("b-ids-corpus: {}: {why}", profile.id);
+                return ExitCode::from(1);
+            }
+        }
+    }
+
+    if let Err(why) = std::fs::create_dir_all(out_dir) {
+        eprintln!("b-ids-corpus: cannot create {out_dir}: {why}");
+        return ExitCode::from(2);
+    }
+
+    for list in &lists {
+        let path = std::path::Path::new(out_dir).join(format!(
+            "{}-{}-{}.json",
+            list.browser.to_ascii_lowercase(),
+            list.version,
+            list.platform
+        ));
+        let text = match serde_json::to_string_pretty(list) {
+            Ok(text) => format!("{text}\n"),
+            Err(err) => {
+                eprintln!("b-ids-corpus: serialising {}: {err}", list.profile_id);
+                return ExitCode::from(1);
+            }
+        };
+        if let Err(why) = std::fs::write(&path, text.as_bytes()) {
+            eprintln!("b-ids-corpus: {}: {why}", path.display());
+            return ExitCode::from(1);
+        }
+        println!(
+            "wrote {} ({} identifier(s), captured {})",
+            path.display(),
+            list.identifiers.len(),
+            list.captured_at
+        );
+    }
+
+    println!(
+        "corpus=anchors lists:{} profiles:{}",
+        lists.len(),
+        profiles.len()
+    );
+    ExitCode::SUCCESS
+}
+
 fn main() -> ExitCode {
     let mut argv = std::env::args().skip(1);
     let Some(command) = argv.next() else {
@@ -475,6 +561,12 @@ fn main() -> ExitCode {
                 return fail("formats needs --out, the directory to generate into");
             };
             formats(&root, &out_dir)
+        }
+        "anchors" => {
+            let Some(out_dir) = out_dir else {
+                return fail("anchors needs --out, the directory to publish into");
+            };
+            anchors(&root, &out_dir)
         }
         "verify" => verify(&root),
         "validate" => validate_corpus(&root),

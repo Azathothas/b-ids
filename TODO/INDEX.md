@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 98  open 29  blocked 0  done 69
+total 98  open 28  blocked 0  done 70
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 6 | 0 | 37 | 43 |
-| P2 | 20 | 0 | 19 | 39 |
+| P2 | 19 | 0 | 20 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **29** | **0** | **69** | **98** |
+| **all** | **28** | **0** | **70** | **98** |
 
 ---
 
@@ -41,7 +41,7 @@ total 98  open 29  blocked 0  done 69
 | CORPUS-01 | P1 | M | done | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
 | CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
 | CORPUS-03 | P2 | S | done | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
-| CORPUS-04 | P2 | M | open | Per-build trust-anchor lists, and a recommendation | [`corpus.md`](corpus.md) |
+| CORPUS-04 | P2 | M | done | Per-build trust-anchor lists, and a recommendation | [`corpus.md`](corpus.md) |
 | CORPUS-05 | P3 | S | done | Name the unidentified extension | [`corpus.md`](corpus.md) |
 | DOC-01 | P2 | S | done | There is no technical reference, and one document is pretending not to notice | [`docs.md`](docs.md) |
 | DOC-02 | P2 | S | open | The operator's side is unwritten because there is nothing to operate | [`docs.md`](docs.md) |
