@@ -1045,10 +1045,10 @@ can purge a browser has already changed the machine the capture is about to
 measure.
 
 ⚠ **And the shape is the one this project rejects everywhere else.** The tool
-is a single script with per-platform branches, which is the arrangement
+was a single script with per-platform branches, which is the arrangement
 [`../scripts/README.md`](../scripts/README.md) argues against at length in the
-section listing what does not have a twin and why. It is listed there as a debt
-now, which is honest and is not a fix.
+section listing what does not have a twin and why. It was entered there as a
+debt, which was honest and was not a fix.
 
 ### Premise
 
@@ -1063,10 +1063,14 @@ Write `provision-browser.ps1` and `check-provisioning.ps1`, then register the
 pairs in `check-twins.sh` so the `--json` answer and the exit code of each half
 are compared on one tree, exactly as the other twenty-six pairs are.
 
-⭐ **The split is per platform and it makes both halves smaller.** The sh half
-keeps the package-manager and vendor-uninstaller routes for Linux; the
-PowerShell half keeps the registry uninstaller and the per-user install paths
-for Windows. Neither carries a branch for a platform it will never run on.
+⛔ **A per-platform split was planned here and is NOT what was built.** The
+plan was for the sh half to keep the Linux routes and the PowerShell half the
+Windows ones, so that neither carried a branch for a platform it will never run
+on. ⚠ Both halves carry both platforms instead: `sh` runs under a POSIX layer on
+Windows and `pwsh` runs on Linux, so a half that dropped a platform would refuse
+on a host where the other half is the one that is missing. ⭐ The plan stays on
+the page because the comparison is only meaningful while both halves answer the
+same question on the same host, and splitting them would end that.
 
 ⛔ **The two-condition guard is duplicated deliberately, and both halves are
 asserted.** A guard implemented once and called from two places is one guard;

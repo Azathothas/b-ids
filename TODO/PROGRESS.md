@@ -23,7 +23,7 @@ session ran      2026-09-02T01:14:00Z to 2026-09-02T11:30:00Z. Unattended
 baseline         gate ok: all 27 checks passed, in full, on this Windows
                  host. 26 with check-twins skipped by -Fast, and
                  check-twins compares 27 pairs. 309 tests in 36 files.
-entries          total 97  open 33  blocked 0  done 64
+entries          total 98  open 34  blocked 0  done 64
 gate             27 checks in full, and check-provisioning is not one of
                  them: it is the acceptance for an entry that is open
 ```
@@ -328,6 +328,45 @@ place with its acceptance command run, or left open with its blocker named.
 
 ---
 
+## ⛔ The gate costs ten minutes and twenty-four seconds of it is Rust
+
+⭐ **Asked by the operator at the close of this session and measured rather
+than guessed.** [`tooling.md`](tooling.md), `TOOL-18`, carries the table and the
+arithmetic; the short answer is that the vendored and reference trees are not
+what makes it slow.
+
+| | |
+| --- | --- |
+| ⛔ **the cause** | a subprocess per file, on a host where a subprocess costs 54.5 ms. 100 bare `grep` spawns took 5450 ms; the hot loop of `check-control-bytes` spawns about six per file, so its 384 files predict 126 seconds against 121 measured. |
+| ⭐ **not the tree** | `check-docs` and `check-markers` exclude `references/` and `vendor/NAME/` and cost 175 and 29 seconds over 53 and 241 files. `check-line-endings` reads all 5435 files, references and vendor included, in **2.4 seconds**, because it asks git once instead of looping. |
+| ⚠ **one row does read the corpus, on purpose** | `check-no-secrets --scope references`, 102 seconds over 4972 files. It is the row that exists to scan what the others exempt. |
+| ⛔ **and one reads vendor without saying why** | `check-control-bytes` excludes `references/` and not `vendor/NAME/`: 146 of its 384 files are vendored. `TOOL-18` records it and does not decide it. |
+
+⚠ **`TOOL-15` measured this shape on 2026-09-01, added `--timings`, and closed.**
+The cost was named and not reduced, which is why `TOOL-18` exists and is P1: a
+gate this slow gets run once at the end, and this session ran it that way twice.
+
+---
+
+## ⚠ A scheduled capture ran at the close and its artefacts are unread
+
+⭐ **`capture.yml` fired on its own cron at 09:39Z against `0cee89e`**, which no
+session dispatched. Three artefacts are waiting and nothing has been added to
+the corpus from them:
+
+| job | |
+| --- | --- |
+| `chrome stable linux64` | ⭐ success, and this is the lane that captured nothing twice earlier in the day |
+| `chrome stable win64` | success |
+| `edge stable linux64` | ⛔ failure, which is the known one: Edge exits after 1.4 seconds having opened no connection, and `DRIVER-07` is why the log now says so |
+| `collect` | success |
+
+⛔ **Read the artefacts before dispatching another run.** Run `33615327503`,
+and `gh run download` is the route. ⚠ A profile is added with `b-ids-corpus
+add`, and the corpus is append-only.
+
+---
+
 ## ⭐ The work order
 
 ⚠ **Take these in order.** ⛔ The first two are P0 and the operator ruled
@@ -356,6 +395,10 @@ both on 2026-09-02, after reading that the corpus records builds nobody chose.
    two of its three surfaces exist.
 7. **`SCHEMA-12`**, **`CI-05`** and **`EMIT-03`**, the last of which
    `HARNESS-05` has unblocked and which this session did not start.
+
+⭐ **`TOOL-18` is worth taking early and out of order.** It is the gate
+costing ten minutes on this host, and every entry above it pays that price
+once per closing.
 
 ⚠ **`DRIVER-10` follows `DRIVER-08` rather than racing it.** Three more
 browser families is work on a tool whose success path is unmeasured, and doing

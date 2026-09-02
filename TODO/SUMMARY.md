@@ -15,8 +15,8 @@ TODO and close with a prompt.
 | | before | after | read from |
 | --- | --- | --- | --- |
 | entries done | 48 | **64** | `sh scripts/common/check-record.sh` |
-| entries open | 43 | **33** | the same |
-| entries in total | 91 | **97** | six were written this session, two of them closed the same day |
+| entries open | 43 | **34** | the same |
+| entries in total | 91 | **98** | seven were written this session, two of them closed the same day |
 | scripts answering exit 2 | 22 | **27** | `exit codes ok: 27 script(s)`, in both halves |
 | effort points closed | - | **21** of 20 | six `M` at two, nine `S` at one |
 | profiles in the corpus | 1 | **3** | `corpus=profiles:3 problems:0` |
@@ -65,6 +65,8 @@ TODO and close with a prompt.
 | is `0x12e0` in Chrome 151 | no, in none of three profiles; the origin's `152` capture has it | `60-identify-extension.sh` |
 | what changed between Chrome `151.0.7922.76` and `.174` on `win64` | ⭐ only the version string | `b-ids-validator diff` |
 | ⛔ can one condition hold a browser-purging tool off a laptop | no. It was mutated and the purge path ran on the operator machine | [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) |
+| what makes the gate cost ten minutes | a subprocess per file at 54.5 ms, not the vendored or reference trees | `TOOL-18` |
+| how long the Rust half of the gate takes | ⭐ 24 seconds, warm: fmt, clippy and the 309 tests together | `cargo` |
 | do the two-condition refusals hold, all three ways | yes: 7 refusals, each exit 2, each naming the missing condition | `check-provisioning` |
 
 ---

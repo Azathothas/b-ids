@@ -2110,3 +2110,90 @@ purpose. Every one is a `.ps1` declaring `eol=crlf`, and 66 of those are inside
 mined tree brought with it. ⛔ A rule matching `*.ps1` would have been a second
 answer to a question git already answers, and it would have got those 66 from
 the wrong file.
+
+## TOOL-18. The gate is slow because of how it reads files, not because of what it reads
+
+**Source** the operator, 2026-09-02: why do the checks take so long, and are they
+reading the vendored and reference trees
+**Category** tooling, **Priority** P1, **Effort** M, **Status** open
+
+### Problem
+
+⛔ **The full gate costs about ten minutes on this Windows host and the Rust
+work in it is twenty-four seconds.** `TOOL-15` measured the same shape on
+2026-09-01, added `--timings`, and closed: the cost was named and not reduced.
+⚠ A gate that costs ten minutes gets run once at the end, which is what
+happened twice in the session that filed this.
+
+### Premise
+
+⭐ **Measured on 2026-09-02, warm, on one Windows 11 Pro 26200 host with Git
+Bash, sh halves only.** ⛔ These are seconds for the sh half alone;
+`check-twins` runs both halves of all 27 pairs, so the full gate pays roughly
+this twice.
+
+| check | seconds | what it reads | references or vendor |
+| --- | --- | --- | --- |
+| `check-docs` | 175 | 53 documents, 959 links | ⭐ neither. Both excluded by `grep -vE '^(references\|vendor/[^/]+)/'` |
+| `check-control-bytes` | 121 | 384 files | ⛔ **vendor yes**, 146 of the 384. `references/` excluded, `vendor/NAME/` not |
+| `check-no-secrets --scope references` | 102 | 4972 files | ⭐ yes, and that is the entire point of the row |
+| `check-record` | 34 | 97 entries | neither |
+| `check-markers` | 29 | 241 files | ⭐ neither, same exclusion as `check-docs` |
+| the other thirteen | 28 together | | |
+| `cargo fmt`, `clippy`, `test` | 24 together | the workspace | |
+
+⛔ **The cause is a subprocess per file, on a host where a subprocess costs
+54.5 milliseconds.** Measured: 100 bare `grep` spawns took 5450 ms. The hot
+loop of `check-control-bytes` spawns roughly six per file, so 384 files cost
+about 126 seconds, against 121 measured. ⚠ The arithmetic accounts for the
+whole of it, which is what says the cause is the loop rather than the data.
+
+⭐ **And the counter-example is in the same gate.** `check-line-endings` reads
+every one of the 5435 tracked files, references and vendor included, in **2.4
+seconds**, because it asks `git ls-files --eol` once instead of looping.
+
+### Approach
+
+⭐ **One pass per check, not one pass per file.** Every slow check already has
+a scoped file list; feed the whole list to one `grep`, one `awk`, or one
+`git` invocation and read filenames out of the output, rather than spawning a
+pipeline per name.
+
+⛔ **Nothing about what is checked may change.** `TOOL-15` states it as a rule
+and it stands: never change what is compared in order to change how long it
+takes. The file lists, the exclusions and the reported counts are identical
+before and after, and that is the acceptance below.
+
+⚠ **`check-control-bytes` reading `vendor/NAME/` is a separate question from
+the speed one.** Every other prose check and the secret scan exempt it by
+directory, because it is somebody else's source at a recorded commit. This
+entry does not decide that: it records that 146 of the 384 files are vendored,
+so a reader can see what an exemption would and would not buy.
+
+Must not: run the halves of a pair concurrently, or wrap a half in a timeout.
+`TOOL-15` refuses both by name, and `TOOL-16` is the false drift they cause.
+
+Must not: cache a half's answer. A second thing to invalidate correctly, over a
+check whose whole job is to be believed.
+
+### Consumers
+
+Nothing is published yet, so there are no consumers to break. ⚠ Every one of
+these scripts is meant to be copied into other projects, so a per-file loop
+copied out of here is a slow gate somewhere else as well.
+
+### Prove
+
+⛔ **The acceptance, and it is a command.**
+
+```bash
+sh scripts/common/check-twins.sh --timings
+```
+
+Passing means: exit 0; every pair listed before this entry is still listed
+after it; each rewritten check reports the identical `--json` payload it
+reported before, file counts included; and the per-pair seconds for
+`check-docs` and `check-control-bytes` are materially under the 175 and 121 in
+the premise, on a host whose conditions are recorded beside the figure.
+
+---

@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 97  open 33  blocked 0  done 64
+total 98  open 34  blocked 0  done 64
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 2 | 0 | 9 | 11 |
-| P1 | 8 | 0 | 34 | 42 |
+| P1 | 9 | 0 | 34 | 43 |
 | P2 | 20 | 0 | 19 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **33** | **0** | **64** | **97** |
+| **all** | **34** | **0** | **64** | **98** |
 
 ---
 
@@ -120,6 +120,7 @@ total 97  open 33  blocked 0  done 64
 | TOOL-15 | P2 | M | done | The twin comparison costs a thousand seconds, and half of it is one row | [`tooling.md`](tooling.md) |
 | TOOL-16 | P1 | S | done | A tree that moved under the comparison reads as a drift | [`tooling.md`](tooling.md) |
 | TOOL-17 | P1 | S | done | The gate's line-endings filter cannot see the working tree | [`tooling.md`](tooling.md) |
+| TOOL-18 | P1 | M | open | The gate is slow because of how it reads files, not because of what it reads | [`tooling.md`](tooling.md) |
 | VALID-01 | P0 | M | done | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
 | VALID-02 | P1 | S | done | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | done | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |
