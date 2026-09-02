@@ -52,6 +52,7 @@
 # Usage:
 #   sh experiments/10-first-profile.sh
 #   sh experiments/10-first-profile.sh --headless
+#   sh experiments/10-first-profile.sh --browser edge
 #
 # Exit codes: 0 the measurement ran and a profile was written,
 #             1 it ran and something refused,
@@ -60,9 +61,13 @@
 set -u
 
 HEADLESS=""
+# ⛔ EMPTY MEANS "the first family that resolved", never "chrome". A default
+# spelled here would be a second place the resolver's order is decided.
+BROWSER=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --headless) HEADLESS="--headless" ;;
+    --browser) shift; BROWSER="${1:-}" ;;
     -h|--help) awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print } else exit }' "$0"; exit 0 ;;
     *) printf '10-first-profile: unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -76,6 +81,14 @@ cd "$ROOT" || exit 2
 
 command -v cargo >/dev/null 2>&1 || { printf '10-first-profile: cargo not found\n' >&2; exit 2; }
 command -v timeout >/dev/null 2>&1 || { printf '10-first-profile: timeout not found\n' >&2; exit 2; }
+
+# ⛔ PASSED THROUGH, never interpreted here. The driver owns which families
+# exist and refuses a name it has no branch for; a second list in this script
+# would be a value in two places with no check that they agree.
+BROWSER_FLAG=""
+if [ -n "$BROWSER" ]; then
+  BROWSER_FLAG="--browser $BROWSER"
+fi
 
 OUT="$ROOT/.tmp/10-first-profile"
 mkdir -p "$OUT" || exit 2
@@ -99,7 +112,8 @@ done
 
 # -- what is installed, read rather than assumed -----------------------------
 printf '\nresolving a browser\n'
-"$DRIVER" resolve --json > "$OUT/resolved.jsonl" 2>"$OUT/resolve.err" || {
+# shellcheck disable=SC2086 # BROWSER_FLAG is a flag and its value, or empty
+"$DRIVER" resolve $BROWSER_FLAG --json > "$OUT/resolved.jsonl" 2>"$OUT/resolve.err" || {
   printf '10-first-profile: nothing resolved. %s\n' "$(cat "$OUT/resolve.err")" >&2
   exit 2
 }
@@ -143,7 +157,8 @@ printf 'harness at %s\n' "$BASE"
 
 # -- the browser, in the foreground, which is the hold -----------------------
 printf '\nlaunching the browser at it\n'
-"$DRIVER" drive --url "$BASE" --pin "$PIN" --timeout-ms 45000 $HEADLESS \
+# shellcheck disable=SC2086 # both are a flag and its value, or empty
+"$DRIVER" drive --url "$BASE" --pin "$PIN" --timeout-ms 45000 $HEADLESS $BROWSER_FLAG \
   > "$OUT/driven.txt" 2>&1
 DRIVER_RC=$?
 cat "$OUT/driven.txt"
@@ -195,20 +210,29 @@ printf '  switches  %s\n' "$(wc -l < "$OUT/switches.txt" | tr -d ' ')"
 # nothing in the bytes could contradict it. Found by the door sweep at the end
 # of the session that added the field.
 #
-# ⚠ What is still typed is the browser NAME, the channel and whether the build
-# is branded. Those are labels on the subject rather than readings off this run,
-# and `DRIVER-06` is the entry that measures the last of them.
+# ⚠ What is still typed is the channel, whether the build is branded, and the
+# operator. Those are labels on the subject rather than readings off this run,
+# and `DRIVER-06` is the entry that measures the second of them. ⭐ The NAME
+# stopped being typed on 2026-09-02: the driver reports it, because the corpus
+# derives a route by lower-casing it and an `edge` lane that wrote `Chrome`
+# would publish one browser under another one's route.
 IDENTITY="$OUT/identity.json"
 node -e '
 const fs = require("fs");
 const [resolvedPath, switchesPath, out, headless, resumption] = process.argv.slice(1);
 const resolved = fs.readFileSync(resolvedPath, "utf8").split(/\r?\n/)
   .filter(Boolean).map((l) => JSON.parse(l));
-const chrome = resolved.find((r) => r.family === "chrome");
-if (!chrome) { throw new Error("chrome did not resolve"); }
+// ⛔ THE FIRST LINE, whatever family it is. The driver was given the same
+// --browser flag, so this file holds the family this run actually drove; a
+// find() for a hardcoded family here would label an Edge capture Chrome.
+const subject = resolved[0];
+if (!subject) { throw new Error("nothing resolved"); }
 fs.writeFileSync(out, JSON.stringify({
-  name: "Chrome",
-  version: chrome.version,
+  // ⛔ Read from what the driver reported. The corpus derives a route by
+  // lower-casing this, so a name typed here would be a second copy of a value
+  // b_ids_driver::Family::vendor_name already owns.
+  name: subject.name,
+  version: subject.version,
   channel: "stable",
   branded: true,
   os: process.platform === "win32" ? "windows" : "linux",
@@ -239,7 +263,7 @@ printf '\nleft in %s\n' "$OUT"
 printf '  captures.jsonl  every connection the navigation opened\n'
 printf '  driven.txt      what the driver reported, switches included\n'
 printf '  harness.err     the pin, and the sampling shortfall if there was one\n'
-printf '  identity.json   ⚠ the operator fills in name, channel, branded and\n'
+printf '  identity.json   ⚠ the operator fills in the channel, branded and the\n'
 printf '                  operator; everything else is read from this run\n'
 printf '\nWrite the profile with:\n'
 printf '  %s add --captures %s --identity %s --root .\n' "$CORPUS" "$CAPTURES" "$IDENTITY"

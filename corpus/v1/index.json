@@ -3,6 +3,27 @@
   "layout": "v1",
   "profiles": [
     {
+      "id": "chrome-151.0.7922.173-linux64-stable",
+      "browser": "Chrome",
+      "version": "151.0.7922.173",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-09-02T02:23:31Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/linux64/151.0.7922.173.json",
+        "sha256": "809e4341817f57d168ed2c884c0dc4eae3d0d6fa0ad3f7e1cfc40f31243a6664",
+        "bytes": 15837
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/linux64/151.0.7922.173.hello.hex",
+        "sha256": "694f3dee9b080ff17232e0a6c13dda790fa11307dd9550069599eecd9fbb0888",
+        "bytes": 3606
+      }
+    },
+    {
       "id": "chrome-151.0.7922.174-win64-stable",
       "browser": "Chrome",
       "version": "151.0.7922.174",

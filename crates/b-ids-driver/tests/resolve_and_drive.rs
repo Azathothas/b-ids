@@ -183,3 +183,112 @@ fn resolve_and_drive_completes_a_capture_against_the_harness() {
         terminated.len()
     );
 }
+
+/// The compiled command, which is what a switch test has to drive.
+///
+/// ⚠ Driving the LIBRARY would prove the library. A switch is a property of the
+/// command, and the two have been seen to disagree in other projects: a flag
+/// documented, parsed and never passed through.
+fn driver_bin() -> std::path::PathBuf {
+    let mut path = std::env::current_exe().expect("the test binary has a path");
+    path.pop();
+    if path.ends_with("deps") {
+        path.pop();
+    }
+    path.join(format!("b-ids-driver{}", std::env::consts::EXE_SUFFIX))
+}
+
+#[test]
+fn resolve_and_drive_the_vendor_name_is_what_the_corpus_routes_by() {
+    // ⛔ THE ROUTE IS DERIVED BY LOWER-CASING THIS. `b_ids_corpus::route` builds
+    // `corpus/v1/<browser>/...` from `browser.name`, and the capture matrix
+    // spells its `browser` column in that lower case. A vendor name that did not
+    // lower-case to the family would publish one browser under another's route.
+    for family in b_ids_driver::Family::all() {
+        assert_eq!(
+            family.vendor_name().to_ascii_lowercase(),
+            family.as_str(),
+            "{family}"
+        );
+    }
+}
+
+#[test]
+fn resolve_and_drive_a_family_name_round_trips() {
+    for family in b_ids_driver::Family::all() {
+        assert_eq!(b_ids_driver::Family::parse(family.as_str()), Some(family));
+    }
+    // ⛔ NONE rather than a default. A caller naming a family this resolver has
+    // no branch for is asking for something that cannot be produced, and
+    // answering with Chrome would capture one browser and label it another.
+    assert_eq!(b_ids_driver::Family::parse("firefox"), None);
+    assert_eq!(b_ids_driver::Family::parse("Chrome"), None);
+    assert_eq!(b_ids_driver::Family::parse(""), None);
+}
+
+#[test]
+fn resolve_and_drive_browser_refuses_a_family_the_resolver_cannot_produce() {
+    // ⛔ REFUSED WITH THE LIST, not silently ignored. A lane asking for a family
+    // that has no branch would otherwise capture whatever resolved first and
+    // label it with the name it asked for, which is the corpus's worst outcome:
+    // a profile that is wrong in a way nothing notices.
+    let output = std::process::Command::new(driver_bin())
+        .args(["resolve", "--browser", "firefox"])
+        .output()
+        .expect("the driver command runs");
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("no branch for that family"),
+        "the refusal names the problem: {stderr}"
+    );
+    assert!(
+        stderr.contains("chrome, edge"),
+        "the refusal names what it does know: {stderr}"
+    );
+}
+
+#[test]
+fn resolve_and_drive_browser_with_no_value_is_refused() {
+    let output = std::process::Command::new(driver_bin())
+        .args(["resolve", "--browser"])
+        .output()
+        .expect("the driver command runs");
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("--browser needs a family"), "{stderr}");
+}
+
+#[test]
+fn resolve_and_drive_browser_reports_only_the_family_it_names() {
+    // ⭐ THE ONE PROPERTY THE CAPTURE MATRIX NEEDS. Every lane passes its own
+    // `browser` column, and `experiments/10-first-profile.sh` takes the FIRST
+    // line of this output to describe what it drove, so a run that reported a
+    // second family would label the capture with the wrong one.
+    let Some(found) = browsers() else { return };
+    for family in b_ids_driver::Family::all() {
+        let output = std::process::Command::new(driver_bin())
+            .args(["resolve", "--browser", family.as_str(), "--json"])
+            .output()
+            .expect("the driver command runs");
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if !found.iter().any(|b| b.family == family) {
+            // ⛔ 2, not 1: this machine has no such browser, which is not a
+            // failure of the tree. The capture lane distinguishes them.
+            assert_eq!(output.status.code(), Some(2), "{family}: {stdout}");
+            println!("resolve_and_drive: {family} is not on this host, exit 2");
+            continue;
+        }
+        assert_eq!(output.status.code(), Some(0), "{family}: {stdout}");
+        let lines: Vec<&str> = stdout.lines().filter(|l| !l.is_empty()).collect();
+        assert_eq!(lines.len(), 1, "{family}: {stdout}");
+        let reported: serde_json::Value =
+            serde_json::from_str(lines[0]).expect("the driver printed JSON");
+        assert_eq!(reported["family"], family.as_str(), "{stdout}");
+        assert_eq!(reported["name"], family.vendor_name(), "{stdout}");
+        println!(
+            "resolve_and_drive: --browser {family} reported {} {}",
+            reported["name"], reported["version"]
+        );
+    }
+}

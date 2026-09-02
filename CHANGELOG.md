@@ -14,6 +14,38 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T02:45:00Z - the linux64 profile lands, and the matrix column reaches the driver
+
+**Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02`,
+[`TODO/driver.md`](TODO/driver.md) `DRIVER-01`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **The corpus holds three profiles**, two of them captured on machines
+  nobody owns. `chrome/stable/linux64/151.0.7922.173` from `ubuntu-latest` is
+  the first, and the run that produced it reported `1 cold, 0 resumed,
+  6 further cold, 1 abandoned` where the two runs before the resumption fix
+  reported `0 cold`.
+- ⛔ **The capture matrix's `browser` column reached nothing.**
+  `b-ids-driver drive` took the first family that resolved, and the capture
+  script wrote the literal `Chrome` into every identity file, so an `edge` lane
+  would have published Chrome under Chrome's route inside an artefact called
+  `edge`.
+- ⭐ **`b-ids-driver --browser NAME`**, for `resolve` and for `drive`. A name
+  with no branch is refused and names what it knows; a family this machine
+  lacks exits 2, because no browser here and the capture failed are different
+  facts.
+- ⭐ **`Family::vendor_name`, reported as `Resolved.name`**, so the capture
+  script reads the spelling a profile records instead of carrying its own
+  table. A test asserts it lower-cases to the family, which is what the corpus
+  route is built from.
+- **`edge/stable/linux64` is enabled and required** in the plan, with the
+  measurement that unblocked it written into its `why`: the driver resolved
+  Edge `151.0.4129.101` at `/usr/bin/microsoft-edge` on the `ubuntu-latest`
+  image.
+
 ### 2026-09-02T02:20:00Z - the capture matrix runs, and a lane that captured nothing says why
 
 **Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02`,

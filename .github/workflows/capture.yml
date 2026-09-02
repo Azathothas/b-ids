@@ -127,12 +127,17 @@ jobs:
       # has no browser" and "the capture failed" are different facts, and a lane
       # that returned 1 for both would make an absent browser look like a
       # regression. CI-07.
+      # ⛔ THE LANE NAMES ITS FAMILY, and it is the plan's value rather than a
+      # constant here. Before 2026-09-02 the driver took whichever family
+      # resolved first, so an `edge` lane would have driven Chrome and labelled
+      # it Chrome: a matrix column that reached nothing. TODO/corpus.md,
+      # CORPUS-02.
       - name: what browser this runner has
         id: resolve
         shell: bash
         run: |
           set +e
-          cargo run -q -p b-ids-driver -- resolve --json > resolved.jsonl 2> resolve.err
+          cargo run -q -p b-ids-driver -- resolve --browser "${{ matrix.browser }}" --json > resolved.jsonl 2> resolve.err
           rc=$?
           set -e
           cat resolve.err || true
@@ -146,7 +151,7 @@ jobs:
       - name: capture
         if: steps.resolve.outputs.rc == '0'
         shell: bash
-        run: sh experiments/10-first-profile.sh --headless
+        run: sh experiments/10-first-profile.sh --headless --browser "${{ matrix.browser }}"
 
       # ⭐ THE CAPTURE PATH IS THE ONE A PERSON RUNS. experiments/10-first-profile.sh
       # is the manual equivalent CI-08 requires, so the lane runs it rather than

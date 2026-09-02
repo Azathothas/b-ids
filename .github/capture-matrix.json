@@ -43,9 +43,9 @@
       "channel": "stable",
       "platform": "linux64",
       "os": "ubuntu-latest",
-      "enabled": false,
-      "required": false,
-      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. Waiting on the driver resolving Edge on a runner image."
+      "enabled": true,
+      "required": true,
+      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. Enabled 2026-09-02: the driver resolved Edge 151.0.4129.101 at /usr/bin/microsoft-edge on the ubuntu-latest image in capture.yml run 33579619515, and b-ids-driver drive takes a --browser switch now, so the lane drives the family this row names."
     },
     {
       "browser": "chrome",

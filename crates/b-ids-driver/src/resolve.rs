@@ -47,6 +47,42 @@ impl Family {
             Self::Edge => "edge",
         }
     }
+
+    /// The vendor's own spelling, which is what a profile records.
+    ///
+    /// ⛔ **Derived here rather than typed where a profile is built.** The
+    /// corpus derives a route from `browser.name` by lower-casing it, so a name
+    /// somebody typed is a second copy of this value with nothing checking that
+    /// the two agree. `TODO/corpus.md`, `CORPUS-02`.
+    #[must_use]
+    pub fn vendor_name(self) -> &'static str {
+        match self {
+            Self::Chrome => "Chrome",
+            Self::Edge => "Edge",
+        }
+    }
+
+    /// Read a family from the name a caller wrote.
+    ///
+    /// ⛔ **An unknown name is `None` rather than a default.** A caller naming a
+    /// family this resolver has no branch for is asking for something that
+    /// cannot be produced, and answering with Chrome would capture one browser
+    /// and label it another. `TODO/validator.md`, `VALID-03`, is the check that
+    /// says the same thing from the corpus side.
+    #[must_use]
+    pub fn parse(name: &str) -> Option<Self> {
+        Self::all().into_iter().find(|f| f.as_str() == name)
+    }
+
+    /// Every family's name, for a message that has to say what is available.
+    #[must_use]
+    pub fn names() -> String {
+        Self::all()
+            .iter()
+            .map(|f| f.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
 }
 
 impl core::fmt::Display for Family {
@@ -88,6 +124,13 @@ impl Source {
 pub struct Resolved {
     /// Which family it is.
     pub family: Family,
+    /// The vendor's own spelling of the name, which is what a profile records.
+    ///
+    /// ⛔ **Reported rather than left for a caller to map.**
+    /// `experiments/10-first-profile.sh` writes the identity file this ends up
+    /// in, and a shell script carrying its own family-to-name table would be
+    /// the same value in two places with no check that they agree.
+    pub name: &'static str,
     /// Where the executable is.
     pub path: PathBuf,
     /// The build, as the sources agreed on it.
@@ -239,6 +282,7 @@ pub fn resolve() -> Result<Vec<Resolved>, NotResolved> {
             let disagreement = answers.iter().any(|(_, v)| *v != version);
             out.push(Resolved {
                 family,
+                name: family.vendor_name(),
                 path,
                 version,
                 answers,

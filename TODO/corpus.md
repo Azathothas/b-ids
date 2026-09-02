@@ -466,21 +466,54 @@ cold hello is**, which is the claim the code makes about itself.
 
 #### What the corpus holds now
 
-⭐ **The `win64` runner profile is published**: `151.0.7922.174`, captured on
-`windows-latest` by the same script a person runs. ⚠ It is a real second source
-and it is not a second capture of the same build as the laptop's
-`151.0.7922.76`.
+⭐ **Three profiles, and two of them were captured on machines nobody owns.**
+
+| route | where it came from | `captured.resumption` |
+| --- | --- | --- |
+| `chrome/stable/win64/151.0.7922.76` | a laptop, 2026-09-01 | absent: the field did not exist |
+| `chrome/stable/win64/151.0.7922.174` | `windows-latest`, run `33579619515` | ⚠ absent: that run predates the switch, and the harness reported nothing to read back. ⛔ Not filled in afterwards; a condition nobody read is not a condition somebody measured. |
+| `chrome/stable/linux64/151.0.7922.173` | `ubuntu-latest`, run `33582975294` | `refused` |
+
+```text
+$ cargo run -q -p b-ids-corpus -- verify --root .
+corpus=profiles:3 problems:0
+
+$ cargo run -q -p b-ids-corpus -- validate --root .
+corpus=validate profiles:3 findings:0 notcheckable:9
+```
+
+⭐ **The `linux64` lane publishes now**, and the run that did it reported
+`1 cold, 0 resumed, 6 further cold, 1 abandoned` where the two runs before it
+reported `0 cold`.
+
+#### ⭐ The matrix's `browser` column reaches the driver now
+
+⛔ **It reached nothing until 2026-09-02.** `b-ids-driver drive` took
+`browsers.first()`, so an `edge` lane would have driven Chrome, and the capture
+script wrote the literal `"Chrome"` into every identity file it produced. The
+corpus derives a route by lower-casing that name, so the lane would have
+published Chrome under Chrome's route while the artefact was called `edge`.
+
+⭐ What changed, in one direction each so nothing is decided twice:
+
+| | |
+| --- | --- |
+| `b-ids-driver --browser NAME` | selects the family for `resolve` and for `drive`. ⛔ A name with no branch is refused and names what it knows; a family this machine lacks exits **2**, because "no browser here" and "the capture failed" are different facts. |
+| `Family::vendor_name` | the spelling a profile records, derived rather than typed. A test asserts it lower-cases to the family, which is what the route is built from. |
+| `Resolved.name` | reported in the driver's JSON, so the capture script reads it instead of carrying its own table. |
+| `capture.yml` | both the resolve step and the capture step pass `${{ matrix.browser }}`. |
+| the plan file | `edge/stable/linux64` is **enabled and required**, with the measurement that unblocked it written into its `why`. |
 
 #### ⛔ What still blocks this entry
 
-The acceptance command names four rows and two of them cannot be reached at all:
+The acceptance command names four rows:
 
-| row | why it has no capture |
+| row | state |
 | --- | --- |
-| `chrome` | ⭐ captured, on `win64` from a runner and on `win64` from a laptop |
-| `edge` | ⛔ **the matrix's `browser` column reaches nothing.** `b-ids-driver drive` takes `browsers.first()` and has no switch for choosing a family, so an `edge` lane would drive Chrome and label it Edge. ⚠ The blocker the plan file records, the driver resolving Edge on a runner image, is measured as REMOVED. |
-| `chromium` | `b_ids_driver::Family` has two variants, `Chrome` and `Edge`. Nothing can resolve Chromium. |
-| `firefox` | the same. `VALID-03` is the check that would say so from the corpus side. |
+| `chrome` | ⭐ captured, on `linux64` and `win64`, from runners |
+| `edge` | ⚠ the lane is enabled and wired and has not run yet |
+| `chromium` | ⛔ `b_ids_driver::Family` has two variants, `Chrome` and `Edge`. Nothing can resolve Chromium, so no lane can produce it. |
+| `firefox` | ⛔ the same. `VALID-03` is the check that says so from the corpus side. |
 
 ---
 

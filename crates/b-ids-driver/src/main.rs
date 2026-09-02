@@ -9,11 +9,12 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
-use b_ids_driver::{Launch, drive, resolve};
+use b_ids_driver::{Family, Launch, drive, resolve};
 
 const USAGE: &str = "\
-usage: b-ids-driver resolve [--json]
-       b-ids-driver drive --url URL [--pin PIN] [--headless] [--timeout-ms N]
+usage: b-ids-driver resolve [--browser NAME] [--json]
+       b-ids-driver drive --url URL [--browser NAME] [--pin PIN] [--headless]
+                          [--timeout-ms N]
        b-ids-driver versions [--channel CH] [--json]
 
   resolve          find a browser on this machine and report its build, with
@@ -29,6 +30,12 @@ usage: b-ids-driver resolve [--json]
   --pin PIN        the base64 SHA-256 of the one subject public key to trust.
                    b-ids-harness --ca-out prints it on stderr as `pin: VALUE`.
                    It is not a change to any trust store.
+  --browser NAME   which family to resolve or drive: chrome or edge. Without
+                   it, the first family that resolved is taken, which is the
+                   order the resolver reports. ⛔ A NAME THAT IS NOT A
+                   FAMILY IS REFUSED, and a family this machine does not have
+                   exits 2: no browser here, and the capture failed, are
+                   different facts.
   --headless       run headless. Off by default, because headless changes the
                    product token the browser announces.
   --timeout-ms N   the ceiling on the launch. Sixty seconds by default.
@@ -96,12 +103,28 @@ fn main() -> ExitCode {
     };
 
     let mut json = false;
+    // ⛔ NONE IS "the first that resolved", never "chrome". A default family
+    // written here would be a second place the resolver's order is decided.
+    let mut wanted: Option<Family> = None;
     let mut channel = "stable".to_owned();
     let mut launch = Launch::default();
     while let Some(arg) = argv.next() {
         match arg.as_str() {
             "--json" => json = true,
             "--headless" => launch.headless = true,
+            "--browser" => {
+                let Some(value) = argv.next() else {
+                    return fail("--browser needs a family");
+                };
+                let Some(family) = Family::parse(&value) else {
+                    return fail(&format!(
+                        "--browser {value}: this resolver has no branch for that family. \
+                         It knows {}",
+                        Family::names()
+                    ));
+                };
+                wanted = Some(family);
+            }
             "--channel" => {
                 let Some(value) = argv.next() else {
                     return fail("--channel needs a value");
@@ -151,6 +174,27 @@ fn main() -> ExitCode {
             // ⛔ 2, not 1. A host with no browser verified nothing.
             eprintln!("b-ids-driver: {why}");
             return ExitCode::from(2);
+        }
+    };
+
+    // ⛔ THE FILTER IS APPLIED ONCE, for both commands. A `drive` that chose a
+    // family and a `resolve` that reported every one would be two answers to
+    // "which browser is this run about", and `experiments/10-first-profile.sh`
+    // reads the second to describe what the first captured.
+    // ⚠ 2, not 1: a machine without the named family has no browser, which is
+    // not a failure of this tree. The capture lane distinguishes them.
+    let browsers: Vec<_> = match wanted {
+        None => browsers,
+        Some(family) => {
+            let kept: Vec<_> = browsers
+                .into_iter()
+                .filter(|b| b.family == family)
+                .collect();
+            if kept.is_empty() {
+                eprintln!("b-ids-driver: {family} did not resolve on this machine");
+                return ExitCode::from(2);
+            }
+            kept
         }
     };
 

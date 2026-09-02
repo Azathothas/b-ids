@@ -83,9 +83,19 @@ So the switch changes which connections are cold, not what a cold hello is.
 
 ### What the corpus holds now
 
-⭐ **Two profiles**, and the second is the first this project has taken on a
-machine nobody owns: Chrome `151.0.7922.174` on `win64`, captured on
-`windows-latest` by the same script a person runs.
+⭐ **Three profiles, and two were captured on machines nobody owns**: Chrome
+`151.0.7922.174` on `win64` from `windows-latest`, and Chrome
+`151.0.7922.173` on `linux64` from `ubuntu-latest`, both by the same script a
+person runs. `corpus=profiles:3 problems:0`, `findings:0`.
+
+### ⭐ The matrix's `browser` column reaches the driver now
+
+⛔ **It reached nothing before.** `b-ids-driver drive` took the first family
+that resolved and the capture script wrote the literal `Chrome` into every
+identity file, so an `edge` lane would have published Chrome under Chrome's
+route inside an artefact called `edge`. The driver takes `--browser NAME` now,
+reports the vendor spelling the corpus routes by, and the `edge/stable/linux64`
+cell is enabled and required.
 
 ---
 
@@ -101,14 +111,9 @@ acceptance command requires.
 
 ⚠ **Take these in order.**
 
-1. **`CORPUS-02`**, continued. In this sub-order, because each unblocks the next:
-   - **the driver takes a `--browser` switch.** ⛔ `b-ids-driver drive` takes
-     `browsers.first()` today, so the matrix's `browser` column reaches nothing
-     and an `edge` lane would drive Chrome and label it Edge. The plan file's
-     stated blocker for that cell, the driver resolving Edge on a runner, is
-     measured as removed.
-   - **the `linux64` lane, re-run** with the resumption fix on the default
-     branch, and its profile added.
+1. **`CORPUS-02`**, continued. Two of its four required rows are captured:
+   - **the `edge` lane**, which is enabled and wired and has not run. One
+     dispatch of `capture.yml`, the artefact added with `b-ids-corpus add`.
    - **`chromium` and `firefox`** need `b_ids_driver::Family` to have branches
      for them at all. `VALID-03` is the check that says so from the corpus side.
 2. **`DRIVER-04`**, then **`HARNESS-14`**. The root store a browser actually
