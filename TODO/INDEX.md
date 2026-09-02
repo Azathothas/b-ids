@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 91  open 34  blocked 0  done 57
+total 91  open 32  blocked 0  done 59
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
 | P1 | 7 | 0 | 33 | 40 |
-| P2 | 24 | 0 | 13 | 37 |
+| P2 | 22 | 0 | 15 | 37 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **34** | **0** | **57** | **91** |
+| **all** | **32** | **0** | **59** | **91** |
 
 ---
 
@@ -70,7 +70,7 @@ total 91  open 34  blocked 0  done 57
 | HARNESS-11 | P2 | M | open | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
 | HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
-| HARNESS-14 | P2 | M | open | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
+| HARNESS-14 | P2 | M | done | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
 | LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
 | LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
@@ -92,7 +92,7 @@ total 91  open 34  blocked 0  done 57
 | SCHEMA-07 | P1 | S | done | What must never be in the model | [`schema.md`](schema.md) |
 | SCHEMA-08 | P1 | L | open | Every generated format, from one generator, round-tripped | [`schema.md`](schema.md) |
 | SCHEMA-09 | P1 | S | done | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
-| SCHEMA-10 | P2 | M | open | Record the shuffle as a property, and consider recording its seed | [`schema.md`](schema.md) |
+| SCHEMA-10 | P2 | M | done | Record the shuffle as a property, and consider recording its seed | [`schema.md`](schema.md) |
 | SCHEMA-11 | P2 | S | done | The multipart boundary, which is a per-browser surface nobody listed | [`schema.md`](schema.md) |
 | SCHEMA-12 | P2 | L | open | The six formats that need a decoder as well as an encoder | [`schema.md`](schema.md) |
 | SCHEMA-13 | P1 | S | done | The published schema accepts 999 for a byte | [`schema.md`](schema.md) |

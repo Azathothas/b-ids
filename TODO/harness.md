@@ -1856,7 +1856,7 @@ tests stayed green.
 ## HARNESS-14. The pin against a real trust anchor, on a machine that is thrown away
 
 **Source** ruled by the operator 2026-09-01. It is the half `HARNESS-10` measured around.
-**Category** harness, **Priority** P2, **Effort** M, **Status** open
+**Category** harness, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -1908,10 +1908,158 @@ not a switch flip.
 ### Prove
 
 ```bash
-sh experiments/30-trust-anchor.sh --json
+sh experiments/50-trust-anchor.sh --json
 ```
 
 Passing means: the script reports which trust route each capture used, the count
 of TLS fields that agree, differ and could not be compared, and refuses to
 report a comparison at all when only one of the two routes completed a
 handshake.
+
+### ⚠ The acceptance names `50-` rather than `30-`
+
+⛔ **`30-` was taken** by
+[`../experiments/30-resumption-control.sh`](../experiments/30-resumption-control.sh).
+[`corpus.md`](corpus.md), `CORPUS-05`, states the renumbering rule and why the
+Prove block is corrected rather than the file renamed; the script here is
+[`../experiments/50-trust-anchor.sh`](../experiments/50-trust-anchor.sh).
+
+### Closing
+
+**Closed 2026-09-02T05:30:00Z.** The comparison ran on a machine that was thrown
+away, and the pin and a real trust anchor produced hellos that agree on every
+comparable TLS field.
+
+```text
+$ sh experiments/50-trust-anchor.sh --headless --browser chrome --rounds 2
+   (.github/workflows/trust-anchor.yml, run 33592736694, ubuntu-latest)
+
+== round 1 of 2 ==
+route=pin handshakes=3 h2=3 connections=4
+route=trust-store handshakes=2 h2=2 connections=4
+
+== round 2 of 2 ==
+route=pin handshakes=1 h2=1 connections=4
+route=trust-store handshakes=0 h2=0 connections=0
+
+roots left in the store afterwards: 0
+
+pin: 4 cold, 0 resumed, 4 abandoned
+trust-store: 2 cold, 0 resumed, 2 abandoned
+
+comparing 8 pin hello(s) against 4 trust-store, resumed connections excluded
+  agrees        tls.record_version  0x0301
+  agrees        tls.legacy_version  0x0303
+  agrees        tls.session_id_len  32
+  not comparable tls.cipher_suites
+      pin  5 distinct value(s) within the run
+      trust-store  4 distinct value(s) within the run
+  agrees        tls.cipher_suites.no_grease  0x1301,0x1302,0x1303,0xc02b,0xc02f,0xc02c,0xc030,0xcca9,0xcca8,0xc013,0xc014,0x009c,0x009d,0x002f,0x0035
+  agrees        tls.compression_methods  0
+  not comparable tls.extensions.order
+      pin  8 distinct value(s) within the run
+      trust-store  4 distinct value(s) within the run
+  agrees        tls.extensions.set.no_grease  0x0005,0x000a,0x000b,0x000d,0x0010,0x0012,0x0017,0x001b,0x0023,0x002b,0x002d,0x0033,0x44cd,0xfe0d,0xff01
+  agrees        tls.extensions.count  17
+  agrees        tls.key_exchange_groups.no_grease  0x11ec,0x001d,0x0017,0x0018
+  agrees        tls.key_shares.groups.no_grease  0x11ec,0x001d
+  agrees        tls.key_shares.lengths  1216,32
+  agrees        tls.signature_algorithms  0x0904,0x0905,0x0906,0x0403,0x0804,0x0401,0x0503,0x0805,0x0501,0x0806,0x0601
+  agrees        tls.signature_algorithms_cert  absent
+  agrees        tls.alpn  h2,http/1.1
+  agrees        tls.ech  0/0x0001
+  agrees        tls.padding_len  absent
+  agrees        tls.grease.count  2
+  agrees        tls.grease.positions  0,16
+
+modes=agree differing:0 not_comparable:2 fields:19
+
+conditions
+  host      Linux 6.17.0-1022-azure
+  browser   Chrome 151.0.7922.173
+  taken     2026-09-02T05:00:42Z
+  headless  --headless
+  rounds    2, each one pinned run then one trust-store run
+  teardown  0 root(s) left in the store
+exit=0
+```
+
+### ⭐ The answer, and what it is worth
+
+⭐ **19 TLS fields compared, 0 differing, 2 not comparable.** The two not
+comparable are `tls.cipher_suites` and `tls.extensions.order`, both of which
+carry a per-connection GREASE draw or shuffle, and `b_ids_harness::modes` reports
+those as not comparable rather than as findings.
+
+⛔ **So on this platform, with this build, the per-launch key pin did not change
+what the browser put on the wire against a root in the store it reads.** ⚠ That
+is one platform, one build, one day. It does not generalise and the entry's own
+rule says so: if the two ever disagree, that is a finding about a platform and it
+needs the matrix rather than a switch flip.
+
+### ⛔ An inherited claim is refuted here, and the wording is kept
+
+[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 carried:
+**"Chrome on Linux does not read the user's NSS database for server
+authentication"**, with `certutil -t "C,,"` reported as still producing
+`CertificateUnknown`.
+
+⭐ **Measured otherwise.** The trust-store route completed **2 handshakes and 2
+HTTP/2 connections** on `ubuntu-latest` with Chrome `151.0.7922.173`, through a
+root added with exactly that command into `~/.pki/nssdb`.
+
+⚠ **And it is not reliable.** Round 2's trust-store leg accepted **no connection
+at all**, so the route works sometimes and not always on this runner. ⛔ The
+honest statement is that the claim as written does not hold here, not that the
+NSS route is a good way to capture. [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md)
+carries the original wording with this measurement under it.
+
+### ⛔ The teardown is counted, not remembered
+
+`roots left in the store afterwards: 0`, read back with `certutil -L` rather
+than assumed, and a root left behind fails the run whatever the comparison said.
+⭐ The removal is why this can run at all: the operator's 2026-09-01 ruling is
+that installing a root belongs on a machine that is reclaimed, and the script
+refuses to install one unless `B_IDS_DISPOSABLE=1` says the machine is one.
+
+### ⛔ Two defects in this session's own new code, both found by running it
+
+| what | how it showed |
+| --- | --- |
+| **every store command could hang** | the first dispatch, run `33590621046`, was cancelled at its 25-minute limit on BOTH platforms with the measurement already taken and the comparison never printed. A certificate tool that asks for a password reads a terminal that is not there. ⭐ Every store command goes through one bounded helper now: `timeout 60` and stdin closed. |
+| **a native tool got an msys path** | run `33592736694`'s Windows lane handed `certutil.exe` a path like `/d/a/b-ids/...`. ⭐ The path is converted with `cygpath` now. |
+
+⚠ **And the first run printed nothing between the round header and the
+comparison**, so the report it uploaded said only which round it had reached.
+The script prints one fixed line per route as it goes.
+
+
+### ⛔ Windows is UNMEASURED, and the script says so rather than inventing a comparison
+
+Run `33594293802`, `windows-latest`, Chrome `151.0.7922.174`: the pinned route
+completed 2 handshakes of 4, the trust-store route could not be set up at all,
+and the script **exited 2**.
+
+```text
+== round 1 of 2 ==
+route=pin handshakes=2 h2=2 connections=4
+b-ids-harness: 2 of 4 handshake(s) completed, from 4 accepted connection(s)
+exit=2
+```
+
+⭐ **That refusal is the entry's own requirement working.** The acceptance asks
+the script to refuse a comparison when only one route completed a handshake, and
+it refused rather than reporting one side against nothing.
+
+⚠ **The remaining cause is named and not guessed at.** `certutil -addstore
+-user Root` returned non-zero under the bounded helper with its stdin closed,
+once, in run `33594293802`, which is the only Windows run taken after the path
+was corrected. ⛔ What this project has MEASURED is that the command did not
+succeed non-interactively on that runner in that run; why it did not is a
+reading nobody here has taken, and writing one would be the guess this project
+refuses.
+
+⛔ **So the answer is recorded for Linux and left open for Windows**, which is
+what `DRIVER-04` warned about in as many words: on Windows the store a browser
+reads is not obviously the one `certutil` writes to, and measuring against the
+wrong store gives a confident wrong answer.

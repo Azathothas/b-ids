@@ -864,6 +864,25 @@ impl Profile {
             }
         }
 
+        // ⛔ A SHUFFLE STATE THAT DENIES ITSELF. `Observed` says the order
+        // differed between draws; reporting fewer than two distinct orders
+        // beside it is a claim its own field contradicts, and a consumer
+        // reading the state alone would take one draw for the shape.
+        // `TODO/schema.md`, `SCHEMA-10`.
+        if let crate::tls::Shuffle::Observed {
+            distinct_orders, ..
+        } = self.tls.shuffled
+            && distinct_orders < 2
+        {
+            defects.push(Defect::ConnectionStateInIdentity {
+                field: "tls.shuffled".to_owned(),
+                what: format!(
+                    "state observed with {distinct_orders} distinct order(s), and a \
+                     shuffle nobody saw twice is not one that was observed"
+                ),
+            });
+        }
+
         // ⚠ PRESENCE of these codepoints is identity: a browser sends
         // session_ticket empty on a cold connection, and the extension being
         // there at all is part of the fingerprint. ⛔ Their CONTENTS are

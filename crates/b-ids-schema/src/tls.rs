@@ -107,6 +107,22 @@ pub enum Shuffle {
     Observed {
         /// How many handshakes were compared.
         draws: u32,
+        /// How many DISTINCT orders those draws produced.
+        ///
+        /// ⛔ **A count, never the orders themselves.** A profile is ONE
+        /// connection, and carrying the other connections' orders inside it
+        /// would fold a set of captures into one the way
+        /// `docs/inherited-claims.md` section 8 says never to.
+        ///
+        /// ⛔ **Fewer than two is a contradiction and
+        /// [`crate::Profile::check`] refuses it.** A state that says the order
+        /// differed while reporting one order is a claim its own field denies.
+        /// `TODO/schema.md`, `SCHEMA-10`.
+        ///
+        /// ⚠ Defaulted on the way in so a profile written before the field
+        /// existed still reads, and 0 then means "not recorded".
+        #[serde(default)]
+        distinct_orders: u32,
     },
     /// The order was the same in every draw taken.
     Fixed {

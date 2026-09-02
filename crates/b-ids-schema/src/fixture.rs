@@ -174,7 +174,10 @@ pub fn tls() -> TlsHalf {
             kem_id: 0x0020,
         }),
         padding_len: Some(147),
-        shuffled: Shuffle::Observed { draws: 8 },
+        shuffled: Shuffle::Observed {
+            draws: 8,
+            distinct_orders: 7,
+        },
         grease: Grease {
             extension_positions: vec![0, 3],
             values: vec![0x0a0a, 0x5a5a],

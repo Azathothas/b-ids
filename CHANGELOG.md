@@ -14,6 +14,48 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T05:55:00Z - the shuffle is a property, and the seed stays out of the profile
+
+**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-10` and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`Shuffle::Observed` carries `distinct_orders`**, a COUNT rather than
+  the orders themselves: a profile is one connection, and carrying the others
+  would fold a set of captures into one.
+- ⛔ **Fewer than two distinct orders beside `observed` is refused.** A state
+  that says the order differed while reporting one order is a claim its own
+  field denies.
+- ⭐ **`Options.expects_shuffle`**, so eight draws of one order is a finding
+  for a family the caller says shuffles and passes for one nobody described.
+  Whether a family shuffles is a fact about a browser, not about a connection.
+- **The seed is ruled out of `browser-profile/1`** and belongs in the emitter
+  support matrix: it is a property of a reproduction attempt rather than of a
+  browser.
+
+### 2026-09-02T05:30:00Z - the pin measured against a real trust anchor, and a claim refuted
+
+**Record:** [`TODO/harness.md`](TODO/harness.md) `HARNESS-14`,
+[`docs/HISTORY/README.md`](docs/HISTORY/README.md), and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **The per-launch key pin does not change what the browser sends.** On
+  `ubuntu-latest` with Chrome `151.0.7922.173`: 19 TLS fields compared against a
+  root installed in the store the browser reads, 0 differing, 2 not comparable
+  because they carry a per-connection draw. ⚠ One platform, one build, one day.
+- ⛔ **An inherited claim is refuted.** "Chrome on Linux does not read the
+  user's NSS database for server authentication" was carried since 2026-08-31;
+  a root added there completed 2 handshakes and 2 HTTP/2 connections. ⚠ And it
+  is not reliable: a second round accepted no connection at all.
+- ⛔ **Windows is unmeasured and the script says so**, exiting 2 rather than
+  reporting a comparison with one side missing.
+- **0 roots left in the store afterwards**, read back rather than assumed.
+
 ### 2026-09-02T04:45:00Z - the technical reference exists, and the conflict rule names it
 
 **Record:** [`TODO/docs.md`](TODO/docs.md) `DOC-01` and

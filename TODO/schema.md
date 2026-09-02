@@ -1036,7 +1036,7 @@ asserts the two entries agree about it rather than leaving that to a reading.
 ## SCHEMA-10. Record the shuffle as a property, and consider recording its seed
 
 **Source** the founding brief; the ceiling is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 5
-**Category** schema, **Priority** P2, **Effort** M, **Status** open
+**Category** schema, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -1082,12 +1082,96 @@ something the browser sent.
 ### Prove
 
 ```bash
-cargo test -p b-ids-schema shuffle -- --nocapture
+cargo test --workspace shuffle -- --nocapture
 ```
 
 Passing means: a profile marked `shuffled` with exactly one observed order fails
 validation, and a fixture of eight captures of one binary that shows a single
 order fails with a message saying so.
+
+### Decision, ruled 2026-09-02
+
+**The seed is left out of `browser-profile/1`.** The recommendation above is
+taken: it is a property of a reproduction attempt rather than of a browser, and
+a consumer finding it in a profile would read it as something the browser sent.
+⭐ It belongs in the emitter support matrix, where a stack whose order is
+seed-derived can say so; `EMIT-01` is that entry.
+
+⚠ **The ceiling stays worth stating wherever the seed does go**: at most 65,536
+orders are reachable from a sixteen-bit seed, out of the factorial of the
+extension count, so "reproducible in 65,536 tries" is the property, not
+"reproducible".
+
+### ⚠ The acceptance runs the workspace, and the reason is a dependency edge
+
+⛔ **Half of this entry is a refusal in the model and half is a finding in the
+validator**, and `b-ids-schema` cannot depend on `b-ids-validator` because the
+validator depends on it. The tests live in both crates and the acceptance runs
+both:
+
+```bash
+cargo test --workspace shuffle -- --nocapture
+```
+
+### Closing
+
+**Closed 2026-09-02T05:55:00Z.**
+
+```text
+$ cargo test --workspace shuffle -- --nocapture
+     Running tests\shuffle.rs (target\debug\deps\shuffle-661855613b6c1cc1.exe)
+test shuffle_a_profile_written_before_the_field_existed_still_reads ... ok
+test shuffle_observed_with_two_orders_is_accepted ... ok
+test shuffle_observed_with_one_order_is_refused ... ok
+test shuffle_the_published_schema_carries_the_count ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\shuffle.rs (target\debug\deps\shuffle-ceefb44b54bbb71e.exe)
+test shuffle_the_same_profile_is_clean_when_nobody_stated_the_family_shuffles ... ok
+test shuffle_eight_draws_of_one_order_is_a_finding_for_a_family_that_shuffles ... ok
+test shuffle_one_draw_says_nothing_whatever_the_state_claims ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+#### What the model records now
+
+`Shuffle::Observed` carries `distinct_orders` beside `draws`.
+
+⛔ **A COUNT, never the orders themselves.** A profile is one connection, and
+carrying the other connections' orders inside it would fold a set of captures
+into one, which [`../docs/inherited-claims.md`](../docs/inherited-claims.md)
+section 8 says never to do.
+
+⛔ **Fewer than two is a contradiction and `Profile::check` refuses it.** A state
+that says the order differed while reporting one order is a claim its own field
+denies, and a consumer reading the state alone would take one draw for the shape.
+
+⚠ **Defaulted on the way in**, so a profile written before the field existed
+still reads, and 0 then means "not recorded". ⛔ Such a profile claiming
+`observed` is still refused: an absent count cannot support the claim either.
+
+#### ⛔ The second half is a finding, not a defect, and the caller supplies the fact
+
+Eight captures of one binary that produced a single order is a reason to doubt
+the capture. ⚠ But whether a FAMILY shuffles is a fact about a browser rather
+than about one connection, so `Options.expects_shuffle` carries it and a check
+that assumed it would report every non-shuffling browser as broken.
+
+| what the caller says | what the check does with `Fixed { draws: 8 }` |
+| --- | --- |
+| nothing | ⭐ passes. Not stated is not false. |
+| `Some(false)` | passes |
+| `Some(true)` | ⛔ a finding naming the draw count and saying a shuffling browser that never moved is a reason to doubt the capture |
+
+#### ⚠ What is not asserted, and it is the interesting part
+
+⛔ **No profile in this corpus records a shuffle observation yet.** The harness
+writes `Shuffle::Unknown` at `crates/b-ids-harness/src/hello.rs`, because it
+parses one hello at a time and the comparison across a run's connections is not
+wired into the capture path. ⭐ The model can now say what a sample showed; the
+capture path has not yet been asked to fill it in, and that is one connection's
+worth of work in `b_ids_corpus::profile_from` rather than a design question.
 
 ---
 

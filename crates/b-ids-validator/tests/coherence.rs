@@ -206,11 +206,14 @@ fn handshake_a_hello_with_no_extensions_is_refused_outright() {
 
 #[test]
 fn grease_a_position_list_that_disagrees_with_the_hello_is_refused() {
-    assert_eq!(check_grease(&fixture::profile()), Outcome::Passed);
+    assert_eq!(
+        check_grease(&fixture::profile(), &Options::default()),
+        Outcome::Passed
+    );
 
     let mut profile = fixture::profile();
     profile.tls.grease.extension_positions = vec![0];
-    let message = failure_message(&check_grease(&profile));
+    let message = failure_message(&check_grease(&profile, &Options::default()));
     assert!(
         message.contains("tls.grease.extension_positions"),
         "{message}"
@@ -230,7 +233,7 @@ fn grease_one_draw_reused_across_two_slots_is_refused() {
     };
     profile.tls.grease.values = vec![0x0a0a, 0x0a0a];
     profile.tls.grease.distinct = false;
-    let message = failure_message(&check_grease(&profile));
+    let message = failure_message(&check_grease(&profile, &Options::default()));
     assert!(message.contains("reuses one draw"), "{message}");
 }
 
@@ -240,7 +243,7 @@ fn grease_a_shuffle_state_claimed_from_one_draw_is_refused() {
     // of a finding rather than a finding.
     let mut profile = fixture::profile();
     profile.tls.shuffled = Shuffle::Fixed { draws: 1 };
-    let message = failure_message(&check_grease(&profile));
+    let message = failure_message(&check_grease(&profile, &Options::default()));
     assert!(message.contains("tls.shuffled"), "{message}");
     assert!(message.contains("not a sample"), "{message}");
 }

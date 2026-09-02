@@ -305,6 +305,10 @@
             },
             "draws": {
               "$ref": "#/$defs/u32"
+            },
+            "distinct_orders": {
+              "$ref": "#/$defs/u32",
+              "description": "How many DISTINCT orders those draws produced. A count, never the orders themselves: a profile is one connection, and carrying other connections orders inside it would fold a set of captures into one. Fewer than two beside state observed is refused, because a shuffle nobody saw twice is not one that was observed. Absent means not recorded."
             }
           }
         },

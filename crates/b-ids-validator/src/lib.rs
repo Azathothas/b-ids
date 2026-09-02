@@ -150,6 +150,14 @@ pub struct Options {
     pub decodes: BTreeSet<String>,
     /// What the target stack can emit.
     pub target: Option<EmitterCapabilities>,
+    /// Whether this browser family is known to shuffle its extension order.
+    ///
+    /// ⚠ `None` means "not stated", which makes the shuffle check report that
+    /// it could not run. A profile cannot carry this: whether a FAMILY shuffles
+    /// is a fact about a browser rather than about one connection, and a check
+    /// that assumed it would report every non-shuffling browser as broken.
+    /// `TODO/schema.md`, `SCHEMA-10`.
+    pub expects_shuffle: Option<bool>,
 }
 
 /// What a stack this profile might be emitted through can and cannot do.
@@ -232,7 +240,7 @@ pub fn validate(profile: &Profile, options: &Options) -> Report {
     results.insert(Check::Platform, check_platform(profile));
     results.insert(Check::Brand, check_brand(profile));
     results.insert(Check::Handshake, check_handshake(profile));
-    results.insert(Check::Grease, check_grease(profile));
+    results.insert(Check::Grease, check_grease(profile, options));
     results.insert(Check::Encoding, check_encoding(profile, options));
     results.insert(Check::Absence, check_absence(profile, options));
     results.insert(Check::Provenance, check_provenance(profile, options));
@@ -483,7 +491,7 @@ pub fn shared_handshakes(profiles: &[Profile]) -> Vec<Finding> {
 /// Check 5. The shuffle is recorded, and GREASE is drawn the way the hello
 /// shows.
 #[must_use]
-pub fn check_grease(profile: &Profile) -> Outcome {
+pub fn check_grease(profile: &Profile, options: &Options) -> Outcome {
     let tls = &profile.tls;
     let mut findings = Vec::new();
 
@@ -569,13 +577,36 @@ pub fn check_grease(profile: &Profile) -> Outcome {
         ));
     }
 
-    if let Shuffle::Observed { draws } | Shuffle::Fixed { draws } = tls.shuffled
+    if let Shuffle::Observed { draws, .. } | Shuffle::Fixed { draws } = tls.shuffled
         && draws < 2
     {
         findings.push(finding(
             Check::Grease,
             "tls.shuffled",
             format!("claims a shuffle state from {draws} draw(s), and one draw is not a sample"),
+        ));
+    }
+
+    // ⛔ A BROWSER THE CALLER SAYS SHUFFLES, THAT DID NOT. The profile cannot
+    // carry this: whether a FAMILY shuffles is a fact about a browser rather
+    // than about one connection, so the caller states it and a check that
+    // assumed it would report every non-shuffling browser as broken.
+    // ⚠ `Unknown` and one draw are handled above; this is the case where the
+    // sample WAS big enough and the order never moved. `TODO/schema.md`,
+    // `SCHEMA-10`, and `docs/inherited-claims.md` section 2 is why: reproducing
+    // a recorded order exactly is a reason to doubt the capture.
+    if options.expects_shuffle == Some(true)
+        && let Shuffle::Fixed { draws } = tls.shuffled
+        && draws >= 2
+    {
+        findings.push(finding(
+            Check::Grease,
+            "tls.shuffled",
+            format!(
+                "{draws} draw(s) of a family the caller says shuffles produced one \
+                 order, and a shuffling browser that never moved is a reason to \
+                 doubt the capture"
+            ),
         ));
     }
 

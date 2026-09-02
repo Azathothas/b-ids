@@ -19,7 +19,7 @@ the entries themselves. Do not add a "previous sessions" section.
 session ran      2026-09-02T01:14:00Z, unattended, in progress
 baseline         the gate passes: 25 checks on this Windows host with
                  check-twins skipped by -Fast.
-entries          total 91  open 34  blocked 0  done 57
+entries          total 91  open 32  blocked 0  done 59
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by

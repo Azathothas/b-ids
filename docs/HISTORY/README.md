@@ -165,3 +165,34 @@ conflict has somewhere to be settled.
 is deliberate rather than leftover. Each names a document that is nearer the
 thing measured than a reference page can be: a value this project did not
 measure, a term, and a reading of somebody else's code at a named commit. `DOC-01`.
+
+---
+
+## 2026-09-02: "Chrome on Linux does not read the user's NSS database", refuted
+
+⚠ **The claim below was inherited, carried in
+[`../inherited-claims.md`](../inherited-claims.md) section 8 from 2026-08-31,
+and it is kept here in its original wording** because a refuted claim that
+disappears is a claim somebody re-derives:
+
+> ⛔ **Chrome on Linux does not read the user's NSS database for server
+> authentication.** Adding a harness authority with `certutil -t "C,,"` and
+> confirming it with `certutil -L` still produces `CertificateUnknown`, because
+> the browser uses its own root store there.
+
+⛔ **Measured otherwise on 2026-09-02.**
+[`../../.github/workflows/trust-anchor.yml`](../../.github/workflows/trust-anchor.yml)
+run `33592736694`, `ubuntu-latest`, Chrome `151.0.7922.173`, headless: a root
+added into `~/.pki/nssdb` with exactly `certutil -A -t "C,,"` let the browser
+complete **2 handshakes and 2 HTTP/2 connections** out of four accepted.
+
+⚠ **And it is not a recommendation.** A second round of the same run accepted no
+connection at all, so the route works sometimes and not always on that runner.
+⛔ What is refuted is the claim as written: the browser did read that database.
+What is not established is that it is a good way to take a capture.
+
+⭐ **The route the project actually uses is unchanged**, and this run is what
+says the choice costs nothing: 19 TLS fields compared between the per-launch pin
+and the installed root, 0 differing, 2 not comparable because they carry a
+per-connection draw. [`../../TODO/harness.md`](../../TODO/harness.md),
+`HARNESS-14`.
