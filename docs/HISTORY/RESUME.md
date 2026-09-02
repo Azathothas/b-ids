@@ -13,50 +13,54 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session began 2026-09-02T01:14:00Z, unattended. |
-| the resume point | `CORPUS-02`. Two runner captures exist; the `linux64` one had no cold connection and a second run is out. |
-| in flight | The `win64` runner profile is added and uncommitted. Two driver defects are being fixed under `CORPUS-02`. |
-| the state of the tree | ⚠ Dirty: `corpus/v1/chrome/stable/win64/151.0.7922.174.json` and its hello are new, `index.json` and `latest.json` rewritten. The gate was green at the session's start, 24 passed with `check-twins` skipped by `-Fast`. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, closing entries in place with their acceptance commands run. Session ran 2026-09-02T01:14:00Z to 2026-09-02T07:00:00Z, unattended, ended by operator interrupt. |
+| the resume point | The work order's item 1, **`CORPUS-02`**, continued: the `edge` lane is enabled and wired and has not produced a profile. |
+| in flight | ⛔ Nothing. Fourteen entries closed in place with their acceptance commands run; `CORPUS-02` left open with its blocker named. |
+| the state of the tree | Clean and pushed on `main`. The gate passes 26 checks with `check-twins` alongside, and all 26 pairs agree. |
 | the paste | below |
 
 ---
 
-## ⭐ What this session has established so far
+## ⭐ What changed about this project on 2026-09-02
 
-⭐ **`capture.yml` has run on hosted runners, and it works.** Run 33579619515,
-dispatched with the authenticated `gh` on the default branch, completed with all
-five jobs green: the plan job, both browser lanes, the fuzz lane and the collect
-job. That is the first time the capture matrix has ever run.
+**The capture matrix stopped being apparatus and started producing data.**
+`capture.yml` ran on hosted runners four times, every job green, and the corpus
+went from one profile to three. Two of the three were captured on machines
+nobody owns.
 
-⛔ **The two runners do not carry the same Chrome build.** `ubuntu-latest`
-served `151.0.7922.173` and `windows-latest` served `151.0.7922.174`, so one
-build on two platforms is not obtainable from the preinstalled browser and needs
-pinned acquisition instead.
+⛔ **Two findings came before the first runner profile did.** The two runner
+images do not serve the same Chrome build, so one build on two platforms needs
+pinned acquisition rather than the preinstalled browser. And the Linux lane
+captured nothing twice, because Chrome abandoned the connections that were not
+resumed: the harness refuses session tickets now, and a control says that
+changes which connections are cold rather than what a cold hello is.
 
-⛔ **`b-ids-corpus add` prints `1 cold` as a literal**, so its report claims a
-cold connection on a run that had none. It is beside a refusal that says the
-opposite in the same output.
+⭐ **An inherited claim fell to an experiment, which had not happened here
+before.** "Chrome on Linux does not read the user's NSS database for server
+authentication" is refuted: a root added there let the browser complete two
+handshakes on a runner that was then thrown away.
 
-⛔ **The `linux64` capture had no cold connection at all.** Both of its first
-two connections were abandoned after the handshake and every later one resumed,
-so nothing was publishable from it. The `win64` capture had one and is added.
-
-⛔ **The matrix's `browser` column reaches nothing.** `b-ids-driver drive`
-takes the first resolved family and has no switch for choosing one, so an `edge`
-lane would drive Chrome. ⚠ The driver DID resolve Edge on the runner at
-`/usr/bin/microsoft-edge`, which is the blocker that cell records.
+⭐ **And the pin costs nothing, on one platform.** 19 TLS fields compared
+between a per-launch key pin and a real trust anchor, 0 differing. ⚠ One
+platform, one build, one day.
 
 ---
 
 ## The conditions this session leaves
 
-⚠ **Every capture still goes through a per-launch key pin** rather than a real
-trust anchor, recorded per profile in `captured.trust`. `HARNESS-14` is the job
-that measures whether it mattered, and `DRIVER-04` lands first.
+⚠ **The corpus holds three profiles, all Chrome 151.** Not a matrix.
+`CORPUS-02` is the entry, and two of its four required rows are captured.
 
-⚠ **Nothing is published.** The canonical corpus is on the default branch
-deliberately. The data branch, the generated formats and the fetchable routes
-are `PUB-02`, `SCHEMA-08` and `PUB-03`.
+⚠ **Every profile written from here records `captured.resumption: refused`.**
+The harness issues no session tickets during a corpus capture, because without
+that the Linux lane cannot produce a cold handshake at all.
+
+⚠ **Nothing is published outside this repository.** The canonical corpus is on
+the default branch deliberately. The data branch, the generated formats and the
+fetchable routes are `PUB-02`, `SCHEMA-08` and `PUB-03`.
+
+⚠ **Windows cannot exercise the trust-store route**, and nobody has read why.
+`50-trust-anchor.sh` exits 2 there rather than reporting a one-sided comparison.
 
 ---
 

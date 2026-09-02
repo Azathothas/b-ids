@@ -48,6 +48,7 @@ concurrency:
 jobs:
   # -- the POSIX half, plus the twin comparison ------------------------------
   checks:
+    # manual: sh scripts/common/check-gate.sh --strict
     name: gate (ubuntu)
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -144,6 +145,7 @@ jobs:
   # its `sort` is an alias for a cmdlet that succeeds and answers differently.
   # ⛔ Running the twins on ubuntu under pwsh would prove nothing about that.
   windows:
+    # manual: pwsh -NoProfile -File scripts/common/check-gate.ps1
     name: gate (windows)
     runs-on: windows-latest
     timeout-minutes: 20

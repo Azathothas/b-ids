@@ -18,10 +18,14 @@ use b_ids_validator::{Options, Outcome, validate};
 
 fn usage() -> &'static str {
     "usage: b-ids-validator [--publishing] [--decodes LIST] PROFILE.json...\n\
+            b-ids-validator diff BEFORE.json AFTER.json\n\
             b-ids-validator import DIR --report\n\
      \n\
        --publishing   refuse a vendor-provenance field, which a draft may carry\n\
        --decodes LIST comma-separated content encodings the consumer can decode\n\
+       diff A B       what changed between two profiles, field by field.\n\
+                      ⛔ It says so when the two differ in more than the\n\
+                      version, because nothing can then be attributed to it.\n\
        import DIR     read the reference corpus at DIR and report what the\n\
                       coherence checks say about the tables in it\n\
        --report       print that report. Required by import, because a run\n\
@@ -62,10 +66,15 @@ fn main() -> ExitCode {
     let mut paths: Vec<String> = Vec::new();
     let mut import_dir: Option<String> = None;
     let mut report = false;
+    let mut diffing = false;
     let mut args = std::env::args().skip(1);
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            // ⭐ "What changed between these two versions" is the most useful
+            // artefact for anybody maintaining a client, and it is free once two
+            // profiles exist. TODO/validator.md, VALID-06.
+            "diff" => diffing = true,
             "import" => {
                 let Some(dir) = args.next() else {
                     eprintln!("b-ids-validator: import needs a directory\n{}", usage());
@@ -100,6 +109,47 @@ fn main() -> ExitCode {
 
     if let Some(dir) = import_dir {
         return import(&dir, report);
+    }
+
+    if diffing {
+        // ⛔ EXACTLY TWO. A diff of three profiles is three diffs, and a
+        // command that guessed which pair was meant would be guessing about
+        // the only thing the caller had to say.
+        let [before, after] = paths.as_slice() else {
+            eprintln!(
+                "b-ids-validator: diff needs exactly two profiles, given {}\n{}",
+                paths.len(),
+                usage()
+            );
+            return ExitCode::from(2);
+        };
+        let mut loaded = Vec::new();
+        for path in [before, after] {
+            let text = match std::fs::read_to_string(path) {
+                Ok(text) => text,
+                Err(err) => {
+                    eprintln!("{path}: {err}");
+                    return ExitCode::from(2);
+                }
+            };
+            match serde_json::from_str::<Profile>(&text) {
+                Ok(profile) => loaded.push(profile),
+                Err(err) => {
+                    eprintln!("{path}: not a profile: {err}");
+                    return ExitCode::from(2);
+                }
+            }
+        }
+        let report = b_ids_validator::diff(&loaded[0], &loaded[1]);
+        print!(
+            "{}",
+            b_ids_validator::render_diff(&loaded[0], &loaded[1], &report)
+        );
+        // ⚠ 0 WHATEVER IT FOUND. A diff is a report rather than a verdict:
+        // two versions differing is what versions do, and a command that
+        // exited 1 for it would make every pipeline treat a normal release
+        // as a failure.
+        return ExitCode::SUCCESS;
     }
 
     if paths.is_empty() {

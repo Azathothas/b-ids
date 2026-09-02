@@ -20,7 +20,7 @@ where it is checked.
 | fact | value | where it is read from |
 | --- | --- | --- |
 | visibility and licence | public, 0BSD | [`../LICENSE`](../LICENSE) |
-| what it publishes | one profile, on the default branch, under `corpus/v1/`, with its bytes under `raw/v1/`. ⛔ No release and no data branch yet: `PUB-01` and `PUB-02` are those two surfaces. | [`INDEX.md`](INDEX.md) |
+| what it publishes | three profiles, on the default branch, under `corpus/v1/`, each with its bytes under `raw/v1/`. ⛔ No release and no data branch yet: `PUB-01` and `PUB-02` are those two surfaces. | `b-ids-corpus verify`, whose last line is a fixed count |
 | work model | todo | [`../docs/methodology/work-todo.md`](../docs/methodology/work-todo.md) |
 | push policy | commit and push, to this repository's own remote only, on the working branch | [`../docs/conventions/git.md`](../docs/conventions/git.md) section 2 |
 | the local gate | `sh scripts/common/check-gate.sh --fast`, or its `.ps1` twin | [`../scripts/README.md`](../scripts/README.md) |
@@ -58,14 +58,21 @@ corpus.
 
 ## 2. A claim in this tree names its provenance or it is a defect
 
-⛔ **Four claims inherited from this project's founding brief have been
-refuted**, none of them by an experiment.
-[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) lists them.
+⛔ **Five inherited claims have been refuted**, and the fifth is the first one
+an experiment took down. [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md)
+lists them, each in its original wording with what refuted it underneath.
 
 That is the ratio to expect from a document nobody has checked, and it is why
 every number in this tree carries a source tag and a status rather than a
 citation. ⚠ A citation says where a claim came from; a status says whether
 anybody has checked it, and those are different questions.
+
+⭐ **The fifth is worth its own sentence.** "Chrome on Linux does not read the
+user's NSS database for server authentication" was carried from 2026-08-31 and
+read as settled; a root added there on a hosted runner let the browser complete
+two handshakes. `HARNESS-14` is the run. ⚠ Four claims fell to READING and one
+to a MEASUREMENT, which is the first time this project has been able to take
+one down that way at all.
 
 **What it cost.** One would have sent a session looking for GREASE values inside
 a digest that strips them. One would have made the raw capture look like a

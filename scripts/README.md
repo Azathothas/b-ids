@@ -472,6 +472,51 @@ repository with an empty list, so both halves reported ok over zero files.
 
 ⛔ **It reports, it does not strip.** The generator is what gets fixed.
 
+### `common/check-manual-path.sh`
+
+Does every automated job name the command a person runs instead, and does that
+command resolve on this host?
+
+⛔ **A project whose only path to a capture is one provider's automation
+degrades to nothing when that provider does.**
+[`../TODO/ci.md`](../TODO/ci.md), `CI-08`.
+
+⭐ **The declaration is a `# manual:` comment inside the job block**, beside
+the job rather than in a table somewhere else: a list of equivalents in a second
+file is a value in two places, and the copy that goes stale is the one nobody is
+reading when the platform is down. ⚠ Both halves read the indentation rather
+than grepping, because the marker appearing anywhere in a file says nothing
+about which job carries it.
+
+⚠ **It resolves each command rather than running it**, and that is a
+correction to the entry with the reason recorded there: one job of the nine is a
+fuzz lane that runs a hundred thousand cases and two launch a browser, so a
+check that executed them is a check nobody runs.
+
+⛔ **A command naming a script this tree does not have is a failure**, not a
+skip. That is the rot the entry exists to catch.
+
+### `common/check-sources.sh`
+
+Does every external question get asked more than one way, and is a
+disagreement reported rather than resolved?
+
+⭐ **Two sources that disagree are the most valuable signal this project
+produces**, and one instance is already measured:
+[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7.
+[`../TODO/ci.md`](../TODO/ci.md), `CI-06`.
+
+It asserts three things over what `b-ids-driver versions` reported: every source
+carries its own answer or its own reason; a source that answered nothing does
+not end the run; and two different answers set the disagreement flag rather
+than one being preferred silently.
+
+⛔ **It does not decide which source is right.** That is a reading, and a check
+that picked would be the failure the entry forbids by name.
+
+⭐ **Two refusal fixtures run on every invocation**, one per clause, and the
+check exits 2 rather than reporting anything if either reads as clean.
+
 ### `common/check-staleness.sh`
 
 Is the corpus behind the build the vendor is serving, and what would replace it?

@@ -45,6 +45,7 @@ concurrency:
 
 jobs:
   ask:
+    # manual: sh scripts/common/check-staleness.sh
     name: what is serving, and what does the corpus hold
     runs-on: ubuntu-latest
     timeout-minutes: 15

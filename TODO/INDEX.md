@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 91  open 32  blocked 0  done 59
+total 91  open 29  blocked 0  done 62
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
 | P1 | 7 | 0 | 33 | 40 |
-| P2 | 22 | 0 | 15 | 37 |
+| P2 | 19 | 0 | 18 | 37 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **32** | **0** | **59** | **91** |
+| **all** | **29** | **0** | **62** | **91** |
 
 ---
 
@@ -35,9 +35,9 @@ total 91  open 32  blocked 0  done 59
 | CI-03 | P1 | L | done | The capture matrix, fanned out, with every lane allowed to fail alone | [`ci.md`](ci.md) |
 | CI-04 | P1 | M | open | A scheduled run that finds a change opens a pull request, not an issue | [`ci.md`](ci.md) |
 | CI-05 | P2 | M | open | The cold-start job, which is the only thing that catches rot | [`ci.md`](ci.md) |
-| CI-06 | P2 | M | open | No single source of any fact | [`ci.md`](ci.md) |
+| CI-06 | P2 | M | done | No single source of any fact | [`ci.md`](ci.md) |
 | CI-07 | P2 | S | done | Exit 2 means could not run, and it is not a failure | [`ci.md`](ci.md) |
-| CI-08 | P2 | S | open | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
+| CI-08 | P2 | S | done | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
 | CORPUS-01 | P1 | M | done | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
 | CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
 | CORPUS-03 | P2 | S | done | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
@@ -119,7 +119,7 @@ total 91  open 32  blocked 0  done 59
 | VALID-03 | P2 | S | done | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |
 | VALID-04 | P2 | M | open | Reference digest implementations, with published test vectors | [`validator.md`](validator.md) |
 | VALID-05 | P2 | L | open | A conformance suite for impersonating clients | [`validator.md`](validator.md) |
-| VALID-06 | P2 | S | open | Diffs between adjacent versions | [`validator.md`](validator.md) |
+| VALID-06 | P2 | S | done | Diffs between adjacent versions | [`validator.md`](validator.md) |
 | VENDOR-01 | P1 | L | done | The vendored tree, and the four things that keep it honest | [`vendor.md`](vendor.md) |
 
 ---

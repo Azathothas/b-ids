@@ -117,11 +117,13 @@ three surfaces. [`../TODO/publish.md`](../TODO/publish.md).
   is the matrix.
 - **No digest is computed.** `digests` is empty on every profile and will stay
   empty until a reference implementation is verified against published vectors.
-- **Every capture went through a per-launch key pin.** Whether a real trust
-  anchor changes the hello is measured by
-  [`../experiments/50-trust-anchor.sh`](../experiments/50-trust-anchor.sh) on a
-  machine that is thrown away, and until that has run on a platform the answer
-  for that platform is unknown.
+- **Every capture went through a per-launch key pin**, and on ONE platform that
+  is now measured to cost nothing: on `ubuntu-latest` with Chrome `151`, 19 TLS
+  fields compared against a root in the store the browser reads, 0 differing.
+  ⚠ Windows is unmeasured, because the install could not be made to succeed
+  there non-interactively.
+  [`../experiments/50-trust-anchor.sh`](../experiments/50-trust-anchor.sh) is the
+  run and `HARNESS-14` is the entry.
 - **The resolver knows two families.** `chrome` and `edge`. A corpus dimension no
   resolver can produce is reported by `b_ids_validator::unreachable_dimensions`.
 - **The HTTP half is one variant.** A capture records the navigation; a

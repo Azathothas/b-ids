@@ -14,6 +14,29 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T06:50:00Z - more than one source, a manual path for every job, and a diff
+
+**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-06` and `CI-08`,
+[`TODO/validator.md`](TODO/validator.md) `VALID-06`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`check-sources`, both halves**, asserting that every source carries its
+  own answer or its own reason, that a silent source does not end the run, and
+  that two different answers set the disagreement flag rather than one being
+  preferred silently. ⛔ It does not decide which source is right.
+- ⭐ **`check-manual-path`, both halves**, and a `# manual:` line on all nine
+  jobs. Its first run named every one of the nine as having none, which is the
+  guard seen to fail against the real tree rather than a fixture.
+- ⭐ **`b-ids-validator diff`**, field by field, naming a header that moved and
+  its two positions. ⛔ It says so above the list when the two captures differ
+  in more than the version.
+- ⭐ **The first published fact about a version change**: between Chrome
+  `151.0.7922.76` and `151.0.7922.174` on `win64`, only the version string
+  moved.
+
 ### 2026-09-02T05:55:00Z - the shuffle is a property, and the seed stays out of the profile
 
 **Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-10` and

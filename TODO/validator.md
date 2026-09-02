@@ -560,7 +560,7 @@ report names that field and nothing else, and exits non-zero.
 ## VALID-06. Diffs between adjacent versions
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** validator, **Priority** P2, **Effort** S, **Status** open
+**Category** validator, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -596,3 +596,93 @@ cargo run -p b-ids-validator -- diff PROFILE_A PROFILE_B
 
 Passing means: the diff of two profiles differing in exactly one header position
 names that header and its two positions, and reports no other change.
+
+### Closing
+
+**Closed 2026-09-02T06:50:00Z.** `b-ids-validator diff` reports what changed
+between two profiles field by field, and says so when the two differ in more
+than the version.
+
+```text
+$ cargo run -p b-ids-validator -- diff corpus/v1/chrome/stable/win64/151.0.7922.76.json \
+    corpus/v1/chrome/stable/win64/151.0.7922.174.json
+chrome-151.0.7922.76-win64-stable -> chrome-151.0.7922.174-win64-stable
+
+1 field(s) differ:
+  browser.version: 151.0.7922.76 -> 151.0.7922.174
+exit=0
+```
+
+⭐ **That is a real result and it is the first this project can publish about a
+version change.** Between Chrome `151.0.7922.76` and `151.0.7922.174` on
+`win64`, every TLS field this diff compares and every header position is
+identical: the only thing that moved is the version string.
+
+```text
+$ cargo run -p b-ids-validator -- diff corpus/v1/chrome/stable/win64/151.0.7922.174.json \
+    corpus/v1/chrome/stable/linux64/151.0.7922.173.json
+chrome-151.0.7922.174-win64-stable -> chrome-151.0.7922.173-linux64-stable
+
+⛔ these two captures do not differ only in version, so nothing below can be
+   attributed to the version alone:
+     platform: win64 against linux64
+     captured.resumption: not recorded against refused
+
+1 field(s) differ:
+  browser.version: 151.0.7922.174 -> 151.0.7922.173
+exit=0
+```
+
+⛔ **The "must not" of this entry, working.** Two captures differing in version
+AND platform AND resumption configuration cannot isolate anything, and the
+warning is rendered ABOVE the change list because a reader who sees it after has
+already attributed the list.
+
+⚠ **What that pair does show, with the caveat attached**: the TLS half and the
+header order of Chrome `151` are identical across `win64` and `linux64`. ⛔ Two
+builds and two platforms moved at once, so it is a data point for `CORPUS-02`'s
+question rather than an answer to it.
+
+```text
+$ cargo test -p b-ids-validator --test version_diff
+running 5 tests
+test version_diff_ignores_a_grease_draw ... ok
+test version_diff_names_the_header_and_its_two_positions ... ok
+test version_diff_says_when_more_than_the_version_moved ... ok
+test version_diff_of_a_profile_with_itself_is_empty ... ok
+test version_diff_reports_a_header_that_appeared_or_left ... ok
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+#### ⭐ It names the change, not the digest
+
+`http.headers.user-agent: position 1 -> position 2` is something a client author
+can act on. ⛔ A header that MOVED is the kind of change only a capture finds,
+and the acceptance's own case asserts the diff names the header and both
+positions and reports nothing else.
+
+| what it compares | how |
+| --- | --- |
+| `browser.version` | verbatim |
+| `tls.cipher_suites` | ⛔ GREASE removed. It is drawn per connection, so reporting it would report a draw as a change on every pair ever taken. |
+| `tls.extensions.set` | sorted, so an order shuffle is not reported as an appearance |
+| `tls.key_exchange_groups`, `tls.alpn` | GREASE removed |
+| every header | ⭐ by POSITION, and a header that appeared or left is reported in both directions |
+
+#### ⚠ Exit 0 whatever it finds
+
+A diff is a report rather than a verdict: two versions differing is what
+versions do, and a command that exited 1 for it would make every pipeline treat
+a normal release as a failure. ⛔ 2 is still "could not run": a path that is not
+a profile, or a call that named other than exactly two.
+
+#### ⚠ What is NOT here, and both are named rather than implied
+
+- ⛔ **Nothing generates a diff for every adjacent pair in the corpus.** That is
+  a published format and it belongs to `SCHEMA-08`'s generator, which does not
+  exist.
+- ⛔ **Nothing puts it in a pull-request body.** `CI-04` is that entry, and the
+  point of putting the diff in a library is that the two cannot disagree when it
+  does.
+

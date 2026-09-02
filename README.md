@@ -3,15 +3,18 @@
 A dated, provenance-carrying corpus of what real browsers put on a wire: TLS
 `ClientHello` bytes, HTTP/2 settings and framing, and header sets in order.
 
-⭐ **The corpus holds one profile**, and it is a real one: Chrome
-`151.0.7922.76` on Windows, captured 2026-09-01 by this project's own harness,
-with the `ClientHello` bytes it was read from published beside it. Around it are
+⭐ **The corpus holds three profiles**, and every one is real: Chrome
+`151.0.7922.76` on Windows captured 2026-09-01 on a laptop, and Chrome
+`151.0.7922.174` and `151.0.7922.173` captured 2026-09-02 on hosted runners on
+Windows and Linux, each with the `ClientHello` bytes it was read from published
+beside it. Around them are
 the profile schema, a validator that refuses a combination no browser could
 send, a capture oracle that terminates a TLS handshake and reads a browser's
 HTTP/2 off the socket behind it, the methodology, the tooling and a reading of
 the prior art.
 
-⚠ **One profile is not a matrix**, and nothing here pretends otherwise. Every
+⚠ **Three profiles of one major are not a matrix**, and nothing here pretends
+otherwise. Every
 other value in the tree is a fixture or an inherited claim: a fixture is shaped
 like a capture and is not one, and an inherited value was measured somewhere
 else and is recorded with its source. ⛔ Neither may be written into the corpus.

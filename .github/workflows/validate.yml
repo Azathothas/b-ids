@@ -53,6 +53,7 @@ concurrency:
 
 jobs:
   corpus:
+    # manual: sh scripts/common/check-corpus.sh
     name: corpus (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20

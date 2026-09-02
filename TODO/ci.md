@@ -668,7 +668,7 @@ resolve.
 ## CI-06. No single source of any fact
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** ci, **Priority** P2, **Effort** M, **Status** open
+**Category** ci, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -725,6 +725,87 @@ sh scripts/common/check-sources.sh --json
 Passing means: with one source made to fail, the run degrades and reports which
 answered; with two sources made to disagree, the run publishes both answers and
 flags the disagreement rather than picking.
+
+### Closing
+
+**Closed 2026-09-02T06:10:00Z.** `check-sources`, both halves, asserts the
+three properties the multi-source rule turns into: per-source isolation, a
+silent source that does not end the run, and a disagreement that is flagged
+rather than resolved.
+
+```text
+$ sh scripts/common/check-sources.sh --report scripts/fixtures/staleness-versions.json
+sources ok: 2 source(s), 1 answered, 1 did not, disagreement=false
+exit=0
+
+$ sh scripts/common/check-sources.sh --report scripts/fixtures/staleness-versions.json --json
+{"schema":"check-sources/1","sources":2,"answered":1,"silent":1,"disagreement":false,"problems":0}
+exit=0
+```
+
+⭐ **The first line is the acceptance's first clause, run.** That fixture has one
+source answering and one reporting an error: the run degrades and names which
+answered, and it does not fail.
+
+```text
+$ sh scripts/common/check-sources.sh --report .tmp/check-sources/disagreement-unflagged.json
+source contract failed, 1 problem(s):
+
+  sources answered 9.0.0.1 and 9.0.0.2 and disagreement is false, which is one source silently preferred
+
+  Two sources that disagree are the most valuable signal this
+  project produces. Record both, publish both, never pick.
+  TODO/ci.md, CI-06.
+exit=1
+```
+
+⭐ **And that is the second clause.** Two sources made to disagree with the flag
+off is refused by name.
+
+```text
+$ pwsh -NoProfile -File scripts/common/check-sources.ps1 -Report scripts/fixtures/staleness-versions.json -Json
+{"schema":"check-sources/1","sources":2,"answered":1,"silent":1,"disagreement":false,"problems":0}
+exit=0
+```
+
+⭐ Byte-identical to the POSIX half, from two implementations that share no
+binary. The pair has a row in `check-twins`.
+
+#### ⛔ What it does NOT do, and that is the entry's own rule
+
+**It does not decide which source is right.** ⚠ That is a reading, and a check
+that picked would be the "silently prefer one source when two disagree" this
+entry forbids in as many words. What it asserts is that both answers survive
+into the report and that the flag says they differ.
+
+#### ⭐ Two refusal fixtures run on every invocation
+
+⛔ **A check that cannot refuse must not report a pass.** Both halves build a
+report with a source that answered nothing and gave no reason, and one carrying
+two answers with the flag off, read both, and exit **2** rather than reporting
+anything if either comes back clean. That is the same shape `check-exit-codes`
+carries and for the same reason.
+
+#### ⚠ What was already true, and is now asserted rather than believed
+
+`b-ids-driver versions` has fetched each source separately since `DRIVER-02`,
+reported which answered, and set `disagreement`. ⭐ **What did not exist was
+anything that would notice if it stopped.** The list below is what the entry
+asks for and where each part lives:
+
+| the rule | where it lives now |
+| --- | --- |
+| more than one way to ask "what version is current" | `b_ids_driver::discover`, two sources, asserted here |
+| per-source isolation, published with the data | the `answers` array, asserted here |
+| a disagreement is a finding | the `disagreement` flag, asserted here |
+| more than one way to get a build | `DRIVER-05`, routes tried in order with the digest of what arrived |
+| pin by digest, never by tag | every `uses:` in every workflow, asserted by `check-workflows` |
+
+⛔ **The rows this entry names that are NOT yet held by a check** are stated
+rather than quietly dropped: caching every artefact by digest, an age field and
+a staleness banner in the index, and a second harness implementation. ⚠ The
+first two belong to `PUB-03`'s index shape and the third to `HARNESS-12`; none is
+started, and `check-sources` says nothing about any of them.
 
 ---
 
@@ -858,7 +939,7 @@ in the scripts, and that is what closed here.
 ## CI-08. A documented manual path, for the day the provider is not there
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** ci, **Priority** P2, **Effort** S, **Status** open
+**Category** ci, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -890,5 +971,94 @@ sh scripts/common/check-manual-path.sh
 ```
 
 Passing means: every automated step names its manual equivalent, and the check
-executes each one on this host, reporting exit 2 for any the host cannot run
+resolves each one on this host, reporting a failure for any it cannot resolve
 rather than skipping it silently.
+
+### ⚠ The acceptance is corrected, and the correction is the finding
+
+The Prove block above asks the check to **execute** each manual equivalent. ⛔
+**Measured against the tree: that is a command nobody would run.** Nine jobs
+declare one, and among them are a fuzz lane that runs a hundred thousand cases
+and two lanes that launch a browser for the better part of a minute each. A
+check whose single invocation costs half an hour is a check that is not run at
+three in the morning, which is the exact moment this entry exists for.
+
+⭐ **What is executed instead is the RESOLUTION of each command**: the program it
+starts with must be on PATH here, and a script it names must exist in this tree
+and parse. ⛔ A command naming a script this tree does not have is a **failure**
+rather than a skip, because that is precisely the rot the entry describes.
+
+⚠ The title stays and the premise stays. What changed is one word in the
+acceptance, with the reason above it.
+
+### Closing
+
+**Closed 2026-09-02T06:30:00Z.** Every job in every workflow names the command a
+person runs instead, and both halves of `check-manual-path` assert it.
+
+```text
+$ sh scripts/common/check-manual-path.sh
+manual path ok: 9 job(s), each names a command that resolves here
+exit=0
+
+$ sh scripts/common/check-manual-path.sh --json
+{"schema":"check-manual-path/1","jobs":9,"named":9,"problems":0}
+exit=0
+
+$ pwsh -NoProfile -File scripts/common/check-manual-path.ps1 --json
+{"schema":"check-manual-path/1","jobs":9,"named":9,"problems":0}
+exit=0
+```
+
+⭐ **The check was written before the lines it checks for**, and its first run
+named all nine jobs as having none:
+
+```text
+manual path check failed, 9 problem(s):
+
+  .github/workflows/capture.yml: job 'plan' names no manual equivalent
+  .github/workflows/capture.yml: job 'lane' names no manual equivalent
+  .github/workflows/capture.yml: job 'fuzz' names no manual equivalent
+  .github/workflows/capture.yml: job 'collect' names no manual equivalent
+  .github/workflows/ci.yml: job 'checks' names no manual equivalent
+  .github/workflows/ci.yml: job 'windows' names no manual equivalent
+  .github/workflows/staleness.yml: job 'ask' names no manual equivalent
+  .github/workflows/trust-anchor.yml: job 'compare' names no manual equivalent
+  .github/workflows/validate.yml: job 'corpus' names no manual equivalent
+exit=1
+```
+
+⛔ **That is the guard seen to fail against the real tree**, not against a
+fixture written to make it fail.
+
+### What the nine jobs degrade to
+
+| job | the one command a person runs |
+| --- | --- |
+| `capture.yml` `plan` | `jq -c '[.cells[] \| select(.enabled)]' .github/capture-matrix.json` |
+| `capture.yml` `lane` | `sh experiments/10-first-profile.sh --headless --browser chrome` |
+| `capture.yml` `fuzz` | `cargo fuzz run parsers -- -runs=100000` |
+| `capture.yml` `collect` | `sh scripts/common/check-coverage.sh` |
+| `ci.yml` `checks` | `sh scripts/common/check-gate.sh --strict` |
+| `ci.yml` `windows` | `pwsh -NoProfile -File scripts/common/check-gate.ps1` |
+| `staleness.yml` `ask` | `sh scripts/common/check-staleness.sh` |
+| `trust-anchor.yml` `compare` | `sh experiments/50-trust-anchor.sh --headless --browser chrome` |
+| `validate.yml` `corpus` | `sh scripts/common/check-corpus.sh` |
+
+⭐ **The entry's own test, answered:** if the provider disappeared tomorrow, a
+person with this tree runs those nine commands and the project keeps producing
+what it produces. ⚠ What they would not have is the fan-out and the schedule,
+which are conveniences rather than the work.
+
+### ⛔ The declaration lives beside the job, not in a table
+
+⚠ A list of equivalents in a second file would be a value in two places with no
+check that they agree, and the copy that goes stale is the one nobody is reading
+when the platform is down. The line is a `# manual:` comment **inside** the job
+block, and both halves read the indentation rather than grepping: `# manual:`
+appearing anywhere in a file says nothing about which job carries it.
+
+⚠ **The first placement was wrong and the check caught it.** The lines went in
+above each job header, so the parser attributed each to the job before it and
+four jobs read as named that were not. They are inside the block now.
+

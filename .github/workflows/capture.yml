@@ -86,6 +86,7 @@ jobs:
   # success, which is the "step that exits 0 having done nothing it was asked to
   # do" row in docs/conventions/forbidden-patterns.md.
   plan:
+    # manual: jq -c '[.cells[] | select(.enabled)]' .github/capture-matrix.json
     name: read the capture matrix
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -104,6 +105,7 @@ jobs:
           echo "lanes=$lanes" >> "$GITHUB_OUTPUT"
 
   lane:
+    # manual: sh experiments/10-first-profile.sh --headless --browser chrome
     name: ${{ matrix.browser }} ${{ matrix.channel }} ${{ matrix.platform }}
     needs: [plan]
     runs-on: ${{ matrix.os }}
@@ -176,6 +178,7 @@ jobs:
   # alone like every other lane, it needs no browser, and it is the one job in
   # this repository that must override the pinned toolchain.
   fuzz:
+    # manual: cargo fuzz run parsers -- -runs=100000
     name: fuzz the parsers
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -206,6 +209,7 @@ jobs:
   # that only runs when every lane passed publishes nothing on the nights it
   # matters most.
   collect:
+    # manual: sh scripts/common/check-coverage.sh
     name: collect
     needs: [plan, lane, fuzz]
     if: always()

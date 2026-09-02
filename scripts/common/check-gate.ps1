@@ -229,6 +229,7 @@ $ComparedDirectly = @(
     'check-line-endings',
     'check-routes',
     'check-exit-codes',
+    'check-manual-path',
     'check-changelog',
     'check-workflows',
     'check-coverage'
@@ -402,6 +403,10 @@ Invoke-PsCheck -Name 'check-coverage' -Script 'scripts/common/check-coverage.ps1
 # script that returned 1 for the second is one somebody disables the day a
 # runner has no browser. TODO/ci.md, CI-07.
 Invoke-PsCheck -Name 'check-exit-codes' -Script 'scripts/common/check-exit-codes.ps1'
+
+# ⛔ An automated step nobody can do by hand is a step that stops existing
+# when the platform does. TODO/ci.md, CI-08.
+Invoke-PsCheck -Name 'check-manual-path' -Script 'scripts/common/check-manual-path.ps1'
 
 # -- the published route files, and the one byte a consumer should not have to
 # strip. 2 is "there is no route tree yet, or it holds no single-value file",

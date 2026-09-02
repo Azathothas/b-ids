@@ -436,6 +436,19 @@ compare_pair "check-exit-codes"     check-exit-codes.sh     "--json"          ch
 compare_pair "check-staleness"      check-staleness.sh      "--versions scripts/fixtures/staleness-versions.json --json" \
                                     check-staleness.ps1     "-Versions scripts/fixtures/staleness-versions.json -Json"
 
+# ⚠ AGAINST THE SAME TRACKED FIXTURE, and for the same reason: without a
+# report this pair asks a vendor, and a comparison whose answer depends on a
+# remote reports the host rather than the pair. ⭐ Both halves also run their
+# own refusal fixtures on every invocation, so a half that stopped being able to
+# refuse fails before it reports anything.
+compare_pair "check-sources"        check-sources.sh        "--report scripts/fixtures/staleness-versions.json --json" \
+                                    check-sources.ps1       "-Report scripts/fixtures/staleness-versions.json -Json"
+
+# ⚠ BOTH HALVES READ THE INDENTATION OF EVERY WORKFLOW THEMSELVES, in awk
+# and in PowerShell, so this pair is a genuine two-implementation comparison of
+# a parse rather than two wrappers over one answer.
+compare_pair "check-manual-path"    check-manual-path.sh    "--json"          check-manual-path.ps1    "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

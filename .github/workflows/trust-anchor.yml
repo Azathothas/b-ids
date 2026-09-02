@@ -43,6 +43,7 @@ concurrency:
 
 jobs:
   compare:
+    # manual: sh experiments/50-trust-anchor.sh --headless --browser chrome
     name: ${{ matrix.platform }} pin against trust store
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
