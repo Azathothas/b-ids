@@ -44,6 +44,13 @@
 
 set -u
 
+# ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
+# `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
+# '\t')" read ...` forks once per line. Measured 2026-09-02: a command
+# substitution costs 35 ms on this host, and check-docs.sh reads about 1100
+# lines that way. TODO/tooling.md, TOOL-18.
+TAB=$(printf '\t')
+
 JSON=0
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -114,7 +121,7 @@ for workflow in $WORKFLOWS; do
     printf '%s\n' "$pair"
   done > "$REPO_ROOT/.tmp/manual-pairs.txt"
 
-  while IFS="$(printf '\t')" read -r job manual; do
+  while IFS="$TAB" read -r job manual; do
     [ -n "$job" ] || continue
     JOBS=$((JOBS + 1))
     if [ -z "$manual" ]; then

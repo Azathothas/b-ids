@@ -46,15 +46,34 @@ pub enum Route {
     Installed,
     /// A copy this project already fetched, kept under its digest.
     Cache,
+    /// The vendor's own release channel, which serves the CURRENT build.
+    ///
+    /// ⛔ **Not offered by [`plan`], and that is the difference between this
+    /// route and the others.** The channel serves whatever is current and
+    /// cannot be asked for a build, so a plan keyed by version has nothing to
+    /// ask it. `scripts/common/provision-browser.sh --route vendor` is what
+    /// uses it, and a profile taken through it records this name.
+    Vendor,
     /// The vendor's automation-build index, which serves an exact build.
     ChromeForTesting,
 }
 
 impl Route {
-    /// Every route, in the order [`plan`] tries them.
+    /// Every route a profile may record, in the order the vocabulary is
+    /// written down.
+    ///
+    /// ⛔ **Kept identical to `b_ids_schema::ACQUISITION_ROUTES` and to the
+    /// published schema's enum**, and a test asserts the first two agree.
+    /// ⚠ It is NOT the order [`plan`] tries, and it never was a promise that
+    /// it would be: [`Route::Vendor`] is not a plannable route at all.
     #[must_use]
-    pub fn all() -> [Self; 3] {
-        [Self::Installed, Self::Cache, Self::ChromeForTesting]
+    pub fn all() -> [Self; 4] {
+        [
+            Self::Installed,
+            Self::Cache,
+            Self::Vendor,
+            Self::ChromeForTesting,
+        ]
     }
 
     /// The route's name, as a report and a profile spell it.
@@ -63,6 +82,7 @@ impl Route {
         match self {
             Self::Installed => "installed",
             Self::Cache => "cache",
+            Self::Vendor => "vendor",
             Self::ChromeForTesting => "chrome-for-testing",
         }
     }

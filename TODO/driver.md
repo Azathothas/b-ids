@@ -860,7 +860,7 @@ carries what Edge said. `CORPUS-02` is where that gets read.
 ## DRIVER-08. Purge the machine's browsers, install the build the cell names
 
 **Source** the operator, 2026-09-02, on reading that the corpus records builds nobody chose
-**Category** driver, **Priority** P0, **Effort** L, **Status** open
+**Category** driver, **Priority** P0, **Effort** L, **Status** done
 
 ### Problem
 
@@ -953,10 +953,11 @@ named family and `resolve` then exits 2; it installs the named build and
 behind, and an install that produces a different version than was asked for, are
 both refused with a message naming what was found.
 
-### ⚠ Open, with what exists and what remains. Landed 2026-09-02
+### ⭐ What exists, and what it was before the runner run
 
-⭐ **The tool and its acceptance exist; no lane uses either yet, and nothing has
-run on a runner.** The entry stays open rather than closing on machinery.
+⚠ **The tool and its acceptance existed for a day before either had run
+anywhere.** What follows is what landed first; the closing below is what a
+runner then proved about it.
 
 | what exists now | |
 | --- | --- |
@@ -1002,38 +1003,143 @@ file on a machine the guard protects.
 carries the row and [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) the
 incident.
 
-#### ⛔ What remains, in order. Three of six landed 2026-09-02
+### ⭐ Closed 2026-09-02. The purge and the install ran on hosted runners
 
-⭐ **The route, the matrix and the workflow exist; the run on a runner is what
-turns the rest from machinery into a measurement.**
+⛔ **Until this run, everything about this tool was a claim.** Its seven
+refusals were proved on a laptop and its success path had never executed
+anywhere. `.github/workflows/provision.yml` run `33628209454` executed it on
+`ubuntu-latest` and `windows-latest`, both routes on each, and every step
+confirmed itself.
 
-1. ⭐ **The `for-testing` route. Landed.** `b-ids-driver acquire` reads the
-   automation-build index and names the archive URL for one exact build on one
-   platform, and `provision-browser` fetches, unpacks and installs it where
-   `resolve` looks. ⛔ The index URL is asked for with `acquire --index-url`
-   rather than spelled in the shell, because a fetcher carrying its own copy is
-   a value in two places with no check that they agree.
-2. ⭐ **The matrix carries the routes. Landed.** Every cell in
-   [`../.github/capture-matrix.json`](../.github/capture-matrix.json) names a
-   `route`, a `branded` and a `build`, and two `for-testing` cells are planned
-   and not attempted. ⚠ The reason they are not attempted is below and it is
-   not the provisioning tool.
-3. ⭐ **A provisioning workflow. Landed**, as
-   [`../.github/workflows/provision.yml`](../.github/workflows/provision.yml)
-   rather than as a step in `capture.yml`. ⛔ The capture lanes work and produce
-   the corpus, so an unproved purge does not go in front of them;
-   `trust-anchor.yml` is the precedent for proving a machine-changing leg on its
-   own first. ⚠ Moving it into `capture.yml` is what item 4 unblocks.
-4. ⛔ **A run on a disposable runner**, both platforms, which is the only place
-   the purge and the install have ever been executed.
-5. **`captured.acquisition` populated** from what the tool printed: the route,
-   the URL, the sha256 and the byte count. `b_ids_driver::acquire` has the shape
-   and `provision-browser` prints all four; nothing reads them into a profile
-   yet.
-6. **`check-provisioning` into the gate**, once the work above lands. ⚠ It is
-   deliberately out of the gate today: it is the acceptance for an entry that is
-   not finished, and `check-staleness` and `check-sources` are the precedent for
-   a check that lives outside it.
+```text
+$ cat .tmp/provisioned.txt          # ubuntu-latest, the vendor route
+-- purging every chrome on this machine --
+before  151.0.7922.173
+after   nothing resolves, resolve exits 2
+
+-- installing chrome via vendor --
+url     https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sha256  a0b7a64f768ffc0ff5ccc9260ad9ebb53fd16f7a131e2e36994da58b82d913df
+bytes   140834800
+version 152.0.7977.75
+
+provisioned  chrome 152.0.7977.75 via vendor on linux
+```
+
+```text
+$ cat .tmp/acquired.txt             # ubuntu-latest, the exact-build route
+-- purging every chrome on this machine --
+before  152.0.7977.75
+after   nothing resolves, resolve exits 2
+
+-- installing chrome via for-testing --
+index   https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json
+sandbox root:root 4755 /opt/google/chrome/chrome-sandbox
+url     https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.76/linux64/chrome-linux64.zip
+sha256  d9e4c5916f77e737f22056cab47cd8abb7d39ebec559500ffc2d6f3e02106a7e
+bytes   193284800
+version 151.0.7922.76
+
+provisioned  chrome 151.0.7922.76 via for-testing on linux
+```
+
+⭐ **And the Windows lane, which is where the new resolver source earns its
+place.** The `after` line is read by `b-ids-driver resolve`, independently of
+the tool's own confirm:
+
+```text
+$ cat after.jsonl                   # windows-latest, after the for-testing route
+{"family":"chrome","name":"Chrome","path":"C:\\Program Files\\Google/Chrome/Application/chrome.exe","version":"151.0.7922.76","answers":[["manifest-file","151.0.7922.76"]],"disagreement":false}
+```
+
+`manifest-file` is the source that did not exist this morning. Without it the
+`answers` list is empty, `resolve` skips an executable it cannot version, and
+the confirm step refuses a correct install.
+
+#### ⛔ The measured finding that refutes a premise of the ruling
+
+⚠ **The operator ruled on 2026-09-02 that the vendor route gives both platforms
+the same build, "because both install on the same day".** ⛔ Measured on one
+day, one hour apart, from the vendor's own channel:
+
+| platform | the vendor route served |
+| --- | --- |
+| `ubuntu-latest` | `152.0.7977.75` |
+| `windows-latest` | `152.0.7977.76` |
+
+⛔ **Two builds, not one.** The reasoning behind the ruling does not hold: the
+vendor's channel does not serve one build across platforms on a given day.
+⭐ **The exact-build route does**, and this is the same run:
+
+| platform | the for-testing route served |
+| --- | --- |
+| `ubuntu-latest` | `151.0.7922.76` |
+| `windows-latest` | `151.0.7922.76` |
+
+⭐ **So one build on two platforms, which is the single highest-value capture
+available and has been unobtainable since the first runner capture, is
+obtainable only through the automation route.** ⚠ That route is UNBRANDED, so
+the pair it produces answers "is the TLS half platform-independent" and not "is
+branded Chrome platform-independent". `DRIVER-06` is the entry that measures the
+difference, and `CORPUS-02` is where the pair lands.
+
+⚠ **The ruling itself stands and is the operator's.** What is refuted is one
+sentence of its reasoning, and it is written here rather than edited into the
+ruling.
+
+#### What the tool records now
+
+⭐ **`captured.acquisition` is populated from what the tool wrote**, which was
+the last of the six items. `provision-browser` writes
+`.tmp/provision-browser/acquisition.json`; `experiments/10-first-profile.sh`
+reads it into the identity; `b_ids_corpus::capture` copies it onto the profile.
+⚠ Absent stays absent: a build already on the machine was not fetched by this
+project and has no route or digest, which is a different fact from a fetch that
+failed.
+
+```text
+$ target/debug/b-ids-corpus.exe add --captures CAPTURES --identity IDENTITY --root SCRATCH
+8 connection(s): 1 cold, 0 resumed, 6 further cold, 1 abandoned
+wrote SCRATCH\corpus\v1\chrome/stable/linux64\151.0.7922.173.json
+chrome-151.0.7922.173-linux64-stable
+$ node -e "console.log(require('SCRATCH/corpus/v1/chrome/stable/linux64/151.0.7922.173.json').captured.acquisition.route)"
+chrome-for-testing
+```
+
+⛔ **The route vocabulary gained `vendor`, because it had no name for the route
+the tool's own vendor path uses.** `b_ids_schema::ACQUISITION_ROUTES` would have
+refused every profile taken through it. Three copies of that list exist, in the
+driver's enum, in the schema's constant and in the published JSON schema, and
+two tests now assert that all three agree.
+
+#### The six items, and where each one landed
+
+| | |
+| --- | --- |
+| 1. the `for-testing` route | `b-ids-driver acquire` reads the index, `provision-browser` fetches, unpacks and installs. Both platforms, proved on runners. |
+| 2. the matrix carries the routes | every cell names a `route`, a `branded` and a `build`. ⚠ The two unbranded cells stay `enabled: false` on a question that is not this entry's: the corpus route carries no `branded` and `Channel` has no automation channel, so a branded and an unbranded build of one version publish at one path. [`PROGRESS.md`](PROGRESS.md) carries it with a recommendation. |
+| 3. a provisioning workflow | [`../.github/workflows/provision.yml`](../.github/workflows/provision.yml), dispatch only, each platform running the acceptance in its own language |
+| 4. a run on a disposable runner | run `33628209454`, both platforms, both routes, green |
+| 5. `captured.acquisition` populated | from the record the tool writes, never retyped |
+| 6. `check-provisioning` into the gate | it is a gate check now, in both halves, and `check-twins` compares the pair as before |
+
+#### ⚠ What this entry did NOT settle
+
+⛔ **No capture has been taken through a provisioned browser yet.** The
+provisioning leg and the capture leg are two workflows, and joining them is
+moving the step into `capture.yml`, which is `CORPUS-02`'s business now rather
+than this entry's. Every profile in the corpus today still records
+`captured.acquisition: null` and will continue to: the corpus is append-only and
+those profiles were taken through builds nobody chose.
+
+⛔ **And the first run failed, for a reason worth keeping.** Run `33627230086`
+failed both lanes before anything was purged: `.tmp` is ignored by git, so a
+fresh checkout does not have it, and the redirect into `.tmp/provisioned.txt`
+failed before the command on its left ever ran. Both lanes then reported that
+the tool "did not purge and install cleanly" when the tool had never been
+invoked. ⭐ It failed safe and it failed loudly, which is what the workflow is
+for; the message was the part that was wrong, and both halves name the exit code
+and the output file now.
 
 #### ⛔ Two findings that changed what this entry can promise
 

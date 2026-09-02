@@ -582,14 +582,19 @@ invokes it the same way, and refuses to report a result at all if that reads as
 Does the tool that PURGES BROWSERS refuse every machine it must, and does it
 provision what it promises where it is allowed to run?
 
-⛔ **It is not in the gate, and that is deliberate.** It is the acceptance for
-[`../TODO/driver.md`](../TODO/driver.md), `DRIVER-08`, which is open:
-`check-staleness` and `check-sources` are the precedent for a check that lives
-outside the gate. ⭐ It is compared by `check-twins` all the same, so the two
-halves cannot drift while the entry they serve is unfinished.
+⭐ **It is in the gate as of 2026-09-02**, and it was outside it until then. The
+grounds for keeping it out were that a check is not a gate until the thing it
+accepts works: the purge and the install had never run anywhere.
+`.github/workflows/provision.yml` ran them on hosted runners on 2026-09-02, both
+platforms and both routes, so the grounds are gone.
+[`../TODO/driver.md`](../TODO/driver.md), `DRIVER-08`.
 
-⭐ **Seven refusals are asserted on every host**, and each half asserts them
-against the tool written in its own language: a machine
+⚠ **On a machine that is not disposable it asserts the refusals and reports the
+provisioning itself as a SKIP**, loudly, on its own line. That is what it does
+on every developer host and in every gate run outside a provisioning workflow.
+
+⭐ **Eight checks are asserted on every host, seven of them refusals**, and each
+half asserts them against the tool written in its own language: a machine
 that is not disposable, a route that is not one of the two, a `--version` the
 vendor channel cannot honour, a `for-testing` run with no build to look up, and
 the three ways the two-condition guard can be half-satisfied. Each one is read

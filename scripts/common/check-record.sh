@@ -36,6 +36,13 @@
 
 set -u
 
+# ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
+# `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
+# '\t')" read ...` forks once per line. Measured 2026-09-02: a command
+# substitution costs 35 ms on this host, and check-docs.sh reads about 1100
+# lines that way. TODO/tooling.md, TOOL-18.
+TAB=$(printf '\t')
+
 JSON=0
 DIR="TODO"
 
@@ -121,7 +128,7 @@ done
 # pri and eff are read only to consume their positions in the row, so that st
 # and file land in the right variables. The priority table is checked in awk
 # further down, which is the only place those two columns are used.
-while IFS="$(printf '\t')" read -r id pri eff st file; do
+while IFS="$TAB" read -r id pri eff st file; do
   [ -n "${id:-}" ] || continue
   hit=$(awk -F'\t' -v I="$id" '$1 == I { print $2 }' "$TMP/entries" | head -1)
   if [ -z "$hit" ]; then
@@ -148,7 +155,7 @@ while IFS="$(printf '\t')" read -r id pri eff st file; do
 done < "$TMP/rows"
 
 # -- every entry has a row ---------------------------------------------------
-while IFS="$(printf '\t')" read -r id file; do
+while IFS="$TAB" read -r id file; do
   [ -n "${id:-}" ] || continue
   if ! awk -F'\t' -v I="$id" '$1 == I { found = 1 } END { exit !found }' "$TMP/rows"; then
     report "$file: entry '$id' has no row in $INDEX"

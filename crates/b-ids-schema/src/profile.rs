@@ -348,7 +348,7 @@ pub struct Captured {
 /// for it to drift, and the two that can be compared are compared: a profile
 /// carrying a route outside this list is refused here, and the schema refuses
 /// it to a consumer.
-pub const ACQUISITION_ROUTES: [&str; 3] = ["installed", "cache", "chrome-for-testing"];
+pub const ACQUISITION_ROUTES: [&str; 4] = ["installed", "cache", "vendor", "chrome-for-testing"];
 
 /// Where a build came from, and the digest of what arrived.
 ///
@@ -357,7 +357,7 @@ pub const ACQUISITION_ROUTES: [&str; 3] = ["installed", "cache", "chrome-for-tes
 /// binary is the vendor's to serve. `TODO/driver.md`, `DRIVER-05`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Acquisition {
-    /// Which route answered: `installed`, `cache` or `chrome-for-testing`.
+    /// Which route answered, from [`ACQUISITION_ROUTES`].
     pub route: String,
     /// The URL it answered from, where there was one.
     ///

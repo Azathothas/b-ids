@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 98  open 34  blocked 0  done 64
+total 98  open 33  blocked 0  done 65
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
-| P0 | 2 | 0 | 9 | 11 |
+| P0 | 1 | 0 | 10 | 11 |
 | P1 | 9 | 0 | 34 | 43 |
 | P2 | 20 | 0 | 19 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **34** | **0** | **64** | **98** |
+| **all** | **33** | **0** | **65** | **98** |
 
 ---
 
@@ -54,7 +54,7 @@ total 98  open 34  blocked 0  done 64
 | DRIVER-05 | P2 | M | done | Acquisition, with more than one way to get a build | [`driver.md`](driver.md) |
 | DRIVER-06 | P2 | M | open | Branded and unbranded builds are different products | [`driver.md`](driver.md) |
 | DRIVER-07 | P2 | S | done | The browser's own output is discarded, so a lane that captured nothing says nothing | [`driver.md`](driver.md) |
-| DRIVER-08 | P0 | L | open | Purge the machine's browsers, install the build the cell names | [`driver.md`](driver.md) |
+| DRIVER-08 | P0 | L | done | Purge the machine's browsers, install the build the cell names | [`driver.md`](driver.md) |
 | DRIVER-09 | P1 | M | done | The most dangerous script in the tree is the one with no twin | [`driver.md`](driver.md) |
 | DRIVER-10 | P1 | L | open | Provisioning is written for one family and the matrix names four | [`driver.md`](driver.md) |
 | EMIT-01 | P2 | L | open | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |

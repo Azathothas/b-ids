@@ -230,6 +230,7 @@ $ComparedDirectly = @(
     'check-routes',
     'check-exit-codes',
     'check-manual-path',
+    'check-provisioning',
     'check-changelog',
     'check-workflows',
     'check-coverage'
@@ -407,6 +408,14 @@ Invoke-PsCheck -Name 'check-exit-codes' -Script 'scripts/common/check-exit-codes
 # ⛔ An automated step nobody can do by hand is a step that stops existing
 # when the platform does. TODO/ci.md, CI-08.
 Invoke-PsCheck -Name 'check-manual-path' -Script 'scripts/common/check-manual-path.ps1'
+
+# ⛔ THE REFUSALS THAT STAND BETWEEN A MACHINE AND LOSING ITS BROWSER. It was
+# outside the gate while DRIVER-08 was unfinished, on the grounds that a check
+# is not a gate until the thing it accepts works. The purge and the install ran
+# on hosted runners on 2026-09-02, both platforms and both routes, so it is a
+# gate now. ⚠ On any machine that is not disposable it asserts the eight checks
+# and reports the provisioning itself as a SKIP.
+Invoke-PsCheck -Name 'check-provisioning' -Script 'scripts/common/check-provisioning.ps1'
 
 # -- the published route files, and the one byte a consumer should not have to
 # strip. 2 is "there is no route tree yet, or it holds no single-value file",

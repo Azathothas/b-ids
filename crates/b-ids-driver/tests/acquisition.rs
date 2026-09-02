@@ -277,3 +277,48 @@ fn the_platform_names_are_the_indexs_own_spellings() {
     assert_eq!(Platform::parse("macos-arm64"), None);
     assert_eq!(Platform::parse("linux64"), Some(Platform::Linux64));
 }
+
+#[test]
+fn the_route_vocabulary_is_one_list_and_the_driver_agrees_with_the_schema() {
+    // ⛔ THREE COPIES OF ONE LIST IS TWO CHANCES FOR IT TO DRIFT, and this is
+    // the pair that can be compared in code: the driver's enum and the
+    // schema's constant. The third is the published JSON schema, and
+    // `the_published_schema_carries_the_same_route_vocabulary` below reads it.
+    //
+    // ⚠ The drift this catches is real rather than hypothetical: `vendor` was
+    // added to the driver on 2026-09-02 because `provision-browser --route
+    // vendor` had no name a profile could record, and the schema would have
+    // refused every profile taken through it.
+    let from_driver: Vec<&str> = Route::all().iter().map(|r| r.as_str()).collect();
+    assert_eq!(
+        from_driver,
+        b_ids_schema::ACQUISITION_ROUTES.to_vec(),
+        "the driver's routes and the schema's accepted routes are one vocabulary"
+    );
+}
+
+#[test]
+fn the_published_schema_carries_the_same_route_vocabulary() {
+    // ⛔ READ FROM THE FILE A CONSUMER FETCHES, not from a copy of it. A
+    // profile the model accepts and the published schema refuses is a profile
+    // nobody downstream can validate.
+    let text = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../b-ids-schema/schema/browser-profile-1.schema.json"
+    ))
+    .expect("the published schema is in the tree");
+    let schema: serde_json::Value = serde_json::from_str(&text).expect("it parses");
+    let published = schema["$defs"]["captured"]["properties"]["acquisition"]["properties"]["route"]
+        ["enum"]
+        .as_array()
+        .expect("$defs/captured/properties/acquisition/properties/route/enum");
+    let published: Vec<&str> = published
+        .iter()
+        .map(|v| v.as_str().expect("every route is a string"))
+        .collect();
+    assert_eq!(
+        published,
+        b_ids_schema::ACQUISITION_ROUTES.to_vec(),
+        "the published schema and the model accept the same routes"
+    );
+}

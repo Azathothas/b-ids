@@ -213,6 +213,7 @@
               "enum": [
                 "installed",
                 "cache",
+                "vendor",
                 "chrome-for-testing"
               ]
             },

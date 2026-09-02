@@ -429,6 +429,27 @@ if (Test-Path -LiteralPath $archive) {
     Write-Output ('url     ' + $url)
     Write-Output ('sha256  ' + $sha)
     Write-Output ('bytes   ' + $bytes)
+
+    # ⭐ WRITTEN WHERE A CAPTURE CAN READ IT, not only printed. Every profile
+    # this project has published carries captured.acquisition null, which is the
+    # weakest provenance the artefact half can have in a project whose product
+    # is provenance. TODO/driver.md, DRIVER-08.
+    #
+    # ⚠ THE ROUTE NAME IS THE PROFILE'S VOCABULARY, not this script's flag. The
+    # flag is for-testing and the recorded route is chrome-for-testing, which is
+    # what b_ids_schema::ACQUISITION_ROUTES accepts.
+    $recordedRoute = if ($Route -eq 'for-testing') { 'chrome-for-testing' } else { $Route }
+    $record = [ordered]@{
+        route  = $recordedRoute
+        url    = $url
+        sha256 = $sha
+        bytes  = $bytes
+    }
+    $recordPath = Join-Path $out 'acquisition.json'
+    # ⚠ -Depth, because ConvertTo-Json defaults to 2 and renders anything
+    # deeper as the literal text System.Collections.Hashtable.
+    Set-Content -LiteralPath $recordPath -Value (ConvertTo-Json $record -Depth 5) -Encoding utf8
+    Write-Output ('record  ' + $recordPath)
 }
 
 # -- 4. confirm the install ---------------------------------------------------

@@ -339,8 +339,15 @@ if [ "$PUBLIC" = "1" ]; then
   # ⛔ Mutation-proved: a credential-shaped value planted inside a corpus
   # profile under a different field name is still refused. TODO/corpus.md,
   # CORPUS-01, carries the run.
+  # ⚠ AND THE DIGEST LINE THE PROVISIONING TOOL PRINTS, which is a label and a
+  # hash and nothing else. `provision-browser` prints `sha256  HEX` for the
+  # archive it fetched, and an entry that pastes that output is pasting a
+  # measurement rather than a credential. ⛔ Narrowed to that exact shape: a
+  # label, whitespace, 64 hex, end of line. A hex run with anything else beside
+  # it is still refused. TODO/driver.md, DRIVER-08.
   _hex_out=$(printf '%s\n' "$_hex_out" \
     | grep -vE '"sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' \
+    | grep -vE ':[0-9]+:sha256[[:space:]]+[0-9a-f]{64}$' \
     | grep -vE '^(corpus|raw)/[^:]*:[0-9]+:[[:space:]]*"[0-9a-f]+",?$' || true)
 
   [ -n "$_hex_out" ] && hit "a long hex identifier" "$_hex_out"

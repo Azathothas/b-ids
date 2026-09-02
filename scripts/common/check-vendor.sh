@@ -37,6 +37,13 @@
 
 set -u
 
+# ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
+# `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
+# '\t')" read ...` forks once per line. Measured 2026-09-02: a command
+# substitution costs 35 ms on this host, and check-docs.sh reads about 1100
+# lines that way. TODO/tooling.md, TOOL-18.
+TAB=$(printf '\t')
+
 JSON=0
 UPSTREAM=0
 
@@ -121,7 +128,7 @@ for name in $NAMES; do
       [ -e "$dir/$ex" ] && printf 'EXCLUDED\t%s\t%s\n' "$name" "$ex"
       :
     done > .check-vendor-excluded.$$
-  while IFS="$(printf '\t')" read -r _kind n ex; do
+  while IFS="$TAB" read -r _kind n ex; do
     [ -n "${ex:-}" ] || continue
     report "$n: $ex is listed as excluded and is present in $dir"
   done < .check-vendor-excluded.$$
@@ -131,7 +138,7 @@ for name in $NAMES; do
   # something nobody can depend on.
   jq -r --arg n "$name" '.upstreams[] | select(.name == $n) | .crates // {} | to_entries[] | .key + "\t" + .value' "$MANIFEST" | tr -d '\r' \
     > .check-vendor-crates.$$
-  while IFS="$(printf '\t')" read -r crate path; do
+  while IFS="$TAB" read -r crate path; do
     [ -n "${crate:-}" ] || continue
     NCRATES=$((NCRATES + 1))
     manifest_path="$dir/$path/Cargo.toml"

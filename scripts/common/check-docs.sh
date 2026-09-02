@@ -44,6 +44,13 @@
 
 set -u
 
+# ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
+# `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
+# '\t')" read ...` forks once per line. Measured 2026-09-02: a command
+# substitution costs 35 ms on this host, and check-docs.sh reads about 1100
+# lines that way. TODO/tooling.md, TOOL-18.
+TAB=$(printf '\t')
+
 JSON=0
 SCOPE=""
 
@@ -166,9 +173,16 @@ NBLOCKS=0
 report() { PROBLEMS="$PROBLEMS  $1
 "; COUNT=$((COUNT + 1)); }
 
+# ⭐ EVERY LINK TARGET THAT EXISTS IS COLLECTED HERE AND ASKED ABOUT ONCE, after
+# the loop. TODO/tooling.md, TOOL-18: this was a `git check-ignore` per link,
+# 966 of them, and a subprocess costs 54.5 ms on the host that measured it.
+: > "$TMP/linktargets"
+
 for f in $FILES; do
   NFILES=$((NFILES + 1))
-  dir=$(dirname "$f")
+  # ⚠ Parameter expansion rather than `dirname`, which was a process per file.
+  dir=${f%/*}
+  [ "$dir" = "$f" ] && dir="."
 
   # -- one pass: strip fences and code spans, then emit every finding --------
   # ⚠ Stripping code spans is why `[int](2.65)` inside backticks is not
@@ -244,7 +258,7 @@ for f in $FILES; do
     }
   ' "$f" > "$TMP/find" 2>/dev/null || true
 
-  while IFS="$(printf '\t')" read -r kind ln detail; do
+  while IFS="$TAB" read -r kind ln detail; do
     case "${kind:-}" in
       LINK)
         case "$detail" in http://*|https://*|mailto:*|'') continue ;; esac
@@ -252,17 +266,13 @@ for f in $FILES; do
         target=${detail%%#*}
         [ -z "$target" ] && continue
         if [ -e "$dir/$target" ]; then
-          # ⛔ ON DISK IS NOT THE SAME AS IN THE REPOSITORY, and the difference
-          # is invisible until somebody else clones. A link to a file this tree
-          # does not commit resolves on the machine that wrote it and 404s
-          # everywhere else, which is the "green locally, red in CI" shape.
-          # Measured: a mined reference tree brought its OWN .gitignore, git
-          # honoured it, and 92 files of a corpus this repository states it
-          # keeps were on disk and in no commit. One of them was a primary
-          # evidence artefact cited twice.
-          if git check-ignore -q "$dir/$target" 2>/dev/null; then
-            report "$f:$ln link target is on disk and NOT COMMITTED -> $detail"
-          fi
+          # ⚠ Recorded rather than asked about here. The question is the one
+          # below the loop, and asking it once is TOOL-18.
+          # ⚠ TO STDOUT, and the whole loop is redirected once at its `done`.
+          # An append per link opened and closed the file 966 times, and on the
+          # host that measured it that cost 39 of the check's 70 seconds: more
+          # than every subprocess in it put together. TOOL-18.
+          printf '%s\t%s:%s\t%s\n' "$dir/$target" "$f" "$ln" "$detail"
         else
           report "$f:$ln broken link -> $detail"
         fi ;;
@@ -279,7 +289,7 @@ for f in $FILES; do
       VOCAB)
         report "$f:$ln banned vocabulary: $detail. docs/conventions/prose.md" ;;
     esac
-  done < "$TMP/find"
+  done < "$TMP/find" >> "$TMP/linktargets"
 
   # ⚠ THE CONTROL-BYTE RULE MOVED, IT WAS NOT DROPPED. It used to live here and
   # scanned markdown only, which left every .ts, .py, .rs, .sh and .yml in the
@@ -289,26 +299,65 @@ for f in $FILES; do
   # does it. ⛔ Run both: this one for documents, that one for the whole tree.
 
   # -- fenced shell blocks: extracted in one pass, then checked -------------
-  rm -f "$TMP"/blk.*
+  # ⭐ ONE awk PER FILE INSTEAD OF THREE PROCESSES PER BLOCK. TOOL-18. The
+  # carriage returns are stripped as each block is written and the placeholder
+  # is matched in the same pass, so only `sh -n` still needs a process of its
+  # own: it is the parse itself rather than a search.
+  # ⚠ `rm -f` is gone and it used to cost a process per file. The loop below is
+  # driven by what THIS awk reported, and awk truncates each block file the
+  # first time it writes to it, so a stale block from a longer file is never
+  # read.
   awk -v D="$TMP" '
-    /^[ \t]*```(bash|sh)[ \t]*$/ { inb = 1; n++; start[n] = NR; next }
+    /^[ \t]*```(bash|sh)[ \t]*$/ { inb = 1; n++; start[n] = NR; ph[n] = 0; next }
     inb && /^[ \t]*```/          { inb = 0; next }
-    inb                          { print $0 > (D "/blk." n) }
-    END { for (i = 1; i <= n; i++) print i "\t" start[i] }
+    inb {
+      line = $0
+      sub(/\r$/, "", line)
+      if (line ~ /<[a-z][a-z0-9-]*>/) ph[n] = 1
+      print line > (D "/blk." n)
+    }
+    END { for (i = 1; i <= n; i++) print i "\t" start[i] "\t" ph[i] }
   ' "$f" > "$TMP/blocks" 2>/dev/null || true
 
-  while IFS="$(printf '\t')" read -r idx bstart; do
+  while IFS="$TAB" read -r idx bstart hasph; do
     [ -z "${idx:-}" ] && continue
     blk="$TMP/blk.$idx"
     [ -f "$blk" ] || continue
     NBLOCKS=$((NBLOCKS + 1))
-    tr -d '\r' < "$blk" > "$blk.clean"
-    sh -n "$blk.clean" 2>/dev/null || report "$f:$bstart shell block does not parse"
-    if grep -qE '<[a-z][a-z0-9-]*>' "$blk.clean" 2>/dev/null; then
+    sh -n "$blk" 2>/dev/null || report "$f:$bstart shell block does not parse"
+    if [ "${hasph:-0}" = "1" ]; then
       report "$f:$bstart shell-unsafe placeholder. bash reads it as a redirect; use UPPER_SNAKE"
     fi
   done < "$TMP/blocks"
 done
+
+# -- the one question about link targets, asked once -------------------------
+#
+# ⛔ ON DISK IS NOT THE SAME AS IN THE REPOSITORY, and the difference is
+# invisible until somebody else clones. A link to a file this tree does not
+# commit resolves on the machine that wrote it and 404s everywhere else, which
+# is the "green locally, red in CI" shape. Measured: a mined reference tree
+# brought its OWN .gitignore, git honoured it, and 92 files of a corpus this
+# repository states it keeps were on disk and in no commit. One of them was a
+# primary evidence artefact cited twice.
+#
+# ⚠ `git check-ignore --stdin` exits 1 when nothing it was given is ignored,
+# which is the clean answer rather than an error.
+if [ -s "$TMP/linktargets" ]; then
+  cut -f1 "$TMP/linktargets" | sort -u > "$TMP/lt.paths"
+  git check-ignore --stdin < "$TMP/lt.paths" > "$TMP/lt.ignored" 2>/dev/null || true
+  # ⚠ The inner scan runs only when something IS ignored, which is the failing
+  # path. A clean tree pays one `git` and one `cut`.
+  if [ -s "$TMP/lt.ignored" ]; then
+    while IFS= read -r ignored; do
+      [ -n "$ignored" ] || continue
+      while IFS="$TAB" read -r lt_path lt_where lt_detail; do
+        [ "$lt_path" = "$ignored" ] || continue
+        report "$lt_where link target is on disk and NOT COMMITTED -> $lt_detail"
+      done < "$TMP/linktargets"
+    done < "$TMP/lt.ignored"
+  fi
+fi
 
 # -- a page nothing links to -------------------------------------------------
 # ⛔ AN UNLINKED PAGE IS NOT READ, SO IT IS NOT CORRECTED, and that is the state

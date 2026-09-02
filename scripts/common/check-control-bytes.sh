@@ -119,30 +119,75 @@ COUNT=0
 NFILES=0
 REPORT=""
 
+# ⭐ ONE PASS OVER THE WHOLE LIST, NOT ONE PASS PER FILE. TODO/tooling.md,
+# TOOL-18. The loop this replaced spawned about six subprocesses per file, and a
+# subprocess costs 54.5 ms on the host that measured it, so 384 files cost 126
+# seconds. ⛔ NOTHING ABOUT WHAT IS CHECKED CHANGED: the same file list, the same
+# class, the same two questions, the same counts.
+#
+# ⚠ The existence test stays per file and costs nothing: it is a shell builtin,
+# and it is what skips a path git still tracks after a delete.
+KEPT=""
 for f in $FILES; do
   [ -f "$f" ] || continue          # tracked but deleted; git reports that itself
   NFILES=$((NFILES + 1))
-
-  hit=$(LC_ALL=C grep -n "$CTRL_CLASS" "$f" 2>/dev/null | head -3 || true)
-  if [ -n "$hit" ]; then
-    COUNT=$((COUNT + 1))
-    line=$(printf '%s' "$hit" | head -1 | cut -d: -f1)
-    REPORT="$REPORT  $f:$line a C0 control byte
+  KEPT="$KEPT$f
 "
-    continue
-  fi
-
-  # ⚠ NUL IS A SEPARATE TEST. It cannot be put in the class above, and it is
-  # the single commonest offender: it is what somebody reaches for as a
-  # composite-key separator.
-  n_all=$(wc -c < "$f" 2>/dev/null || echo 0)
-  n_strip=$(LC_ALL=C tr -d '\000' < "$f" 2>/dev/null | wc -c || echo 0)
-  if [ "$n_all" != "$n_strip" ]; then
-    COUNT=$((COUNT + 1))
-    REPORT="$REPORT  $f a NUL byte
-"
-  fi
 done
+
+# ⚠ /dev/null IS APPENDED SO grep ALWAYS PREFIXES THE FILENAME. Given exactly
+# one file, grep prints `LINE:text` with no path, and the parse below would read
+# the line number as a filename. A second argument that can never match removes
+# the special case.
+#
+# ⛔ THE FIRST HIT PER FILE, which is what the per-file version reported. awk
+# holds the seen set rather than a `sort -u` reading a stream somebody has to
+# order first.
+C0_HITS=$(
+  # shellcheck disable=SC2086 # deliberate word splitting: one grep over the list
+  LC_ALL=C grep -n "$CTRL_CLASS" $KEPT /dev/null 2>/dev/null |
+    awk -F: '!seen[$1]++ { print $1 ":" $2 }' || true
+)
+if [ -n "$C0_HITS" ]; then
+  OLDIFS=$IFS
+  IFS='
+'
+  for hit in $C0_HITS; do
+    COUNT=$((COUNT + 1))
+    REPORT="$REPORT  $hit a C0 control byte
+"
+  done
+  IFS=$OLDIFS
+fi
+
+# ⚠ NUL IS A SEPARATE TEST. It cannot be put in the class above, because a NUL
+# cannot live in a shell variable at all, so the class is built without one.
+#
+# ⭐ THE FAST PATH ASKS ONE QUESTION OF THE WHOLE LIST: do the bytes change when
+# NULs are removed? Only when they DO does this fall back to naming which file,
+# and that is the failing path, where the time does not matter. A clean tree
+# pays three subprocesses instead of three per file.
+# shellcheck disable=SC2086 # deliberate word splitting: one cat over the list
+N_ALL=$(cat $KEPT 2>/dev/null | wc -c)
+# shellcheck disable=SC2086 # the same list, the same splitting
+N_STRIP=$(cat $KEPT 2>/dev/null | LC_ALL=C tr -d '\000' | wc -c)
+if [ "$N_ALL" != "$N_STRIP" ]; then
+  for f in $KEPT; do
+    # ⛔ A file already reported for a C0 byte is not counted twice, which is
+    # what the per-file version's `continue` did.
+    case "$C0_HITS" in
+      "$f:"*|*"
+$f:"*) continue ;;
+    esac
+    n_all=$(wc -c < "$f" 2>/dev/null || echo 0)
+    n_strip=$(LC_ALL=C tr -d '\000' < "$f" 2>/dev/null | wc -c || echo 0)
+    if [ "$n_all" != "$n_strip" ]; then
+      COUNT=$((COUNT + 1))
+      REPORT="$REPORT  $f a NUL byte
+"
+    fi
+  done
+fi
 
 if [ "$JSON" = "1" ]; then
   printf '{"schema":"check-control-bytes/1","problems":%s,"files":%s}\n' "$COUNT" "$NFILES"

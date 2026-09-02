@@ -47,6 +47,13 @@
 
 set -u
 
+# ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
+# `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
+# '\t')" read ...` forks once per line. Measured 2026-09-02: a command
+# substitution costs 35 ms on this host, and check-docs.sh reads about 1100
+# lines that way. TODO/tooling.md, TOOL-18.
+TAB=$(printf '\t')
+
 JSON=0
 REQUIRE=""
 
@@ -113,7 +120,7 @@ NL="
 "
 printf '%s\n' "$CAPTURED" > "${TMPDIR:-/tmp}/.coverage.$$"
 # shellcheck disable=SC2016
-while IFS="$(printf '\t')" read -r key enabled required; do
+while IFS="$TAB" read -r key enabled required; do
   [ -n "$key" ] || continue
   n=$(awk -v k="$key" '$0 == k { c++ } END { print c + 0 }' "${TMPDIR:-/tmp}/.coverage.$$")
   if [ "$n" -gt 0 ]; then

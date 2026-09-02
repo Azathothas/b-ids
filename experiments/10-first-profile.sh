@@ -12,9 +12,18 @@
 #   1. mints a per-run authority and binds the terminating harness on loopback;
 #   2. launches the resolved browser at it, trusting that ONE key for that ONE
 #      launch, into a profile directory nobody keeps;
-#   3. selects the cold connection out of the navigation and writes it into the
-#      corpus, with its ClientHello beside it and the index rewritten;
-#   4. prints the conditions the measurement was taken under.
+#   3. writes the identity the capture was taken under, including where the
+#      build came from when this project fetched it;
+#   4. prints the conditions the measurement was taken under, and PRINTS THE
+#      COMMAND that writes the profile.
+#
+# ⛔ IT DOES NOT WRITE INTO THE CORPUS, and this header said it did until
+# 2026-09-02. The corpus is append-only and a profile in it is permanent, so
+# the write is a deliberate act by whoever read the conditions above it, not a
+# side effect of taking a measurement. `b-ids-corpus add` is the command, and
+# the last thing this script prints is that command with its arguments filled
+# in. Found by reading the artefacts of capture.yml run 33615327503, where two
+# lanes reported success and neither had added anything.
 #
 # -- ⚠ THE CONDITIONS, WHICH ARE PART OF THE RESULT --------------------------
 #
@@ -55,7 +64,7 @@
 #   sh experiments/10-first-profile.sh --headless
 #   sh experiments/10-first-profile.sh --browser edge
 #
-# Exit codes: 0 the measurement ran and a profile was written,
+# Exit codes: 0 the measurement ran and the evidence is on disk,
 #             1 it ran and something refused,
 #             2 it could not run.
 
@@ -223,10 +232,21 @@ printf '  switches  %s\n' "$(wc -l < "$OUT/switches.txt" | tr -d ' ')"
 # stopped being typed on 2026-09-02: the driver reports it, because the corpus
 # derives a route by lower-casing it and an `edge` lane that wrote `Chrome`
 # would publish one browser under another one's route.
+# ⭐ WHERE THE BUILD CAME FROM, when this project fetched it. Written by
+# scripts/common/provision-browser.sh into its own scratch directory, and read
+# here rather than retyped. ⚠ ABSENT IS THE NORMAL CASE AND IT IS NOT AN ERROR:
+# a build already installed on the machine was not obtained by this project and
+# has no route or digest to record, which is a different fact from an
+# acquisition that failed. TODO/driver.md, DRIVER-08.
+ACQUISITION="$ROOT/.tmp/provision-browser/acquisition.json"
+[ -f "$ACQUISITION" ] || ACQUISITION=""
+printf '  acquisition %s\n' "${ACQUISITION:-none, this build was already on the machine}"
+
 IDENTITY="$OUT/identity.json"
 node -e '
 const fs = require("fs");
-const [resolvedPath, switchesPath, out, headless, resumption] = process.argv.slice(1);
+const [resolvedPath, switchesPath, out, headless, resumption, acquisitionPath] =
+  process.argv.slice(1);
 const resolved = fs.readFileSync(resolvedPath, "utf8").split(/\r?\n/)
   .filter(Boolean).map((l) => JSON.parse(l));
 // ⛔ THE FIRST LINE, whatever family it is. The driver was given the same
@@ -259,8 +279,16 @@ fs.writeFileSync(out, JSON.stringify({
   // so nothing in the bytes could contradict it.
   resumption: resumption || null,
   headless: headless === "--headless",
+  // ⛔ READ FROM WHAT THE PROVISIONING TOOL WROTE, never composed here. The
+  // route, the URL, the digest and the byte count are facts about a fetch this
+  // script did not perform, and a value typed here would be a claim.
+  // ⚠ null where nothing was fetched, which the schema serialises as absent.
+  acquisition: acquisitionPath
+    ? JSON.parse(fs.readFileSync(acquisitionPath, "utf8"))
+    : null,
 }, null, 2) + "\n");
-' "$OUT/resolved.jsonl" "$OUT/switches.txt" "$IDENTITY" "${HEADLESS:-}" "$RESUMPTION" || {
+' "$OUT/resolved.jsonl" "$OUT/switches.txt" "$IDENTITY" "${HEADLESS:-}" "$RESUMPTION" \
+  "$ACQUISITION" || {
   printf '10-first-profile: could not write the identity file\n' >&2
   exit 1
 }

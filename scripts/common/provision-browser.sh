@@ -452,6 +452,36 @@ if [ -f "$ARCHIVE" ]; then
   printf 'url     %s\n' "$URL"
   printf 'sha256  %s\n' "${SHA:-unknown}"
   printf 'bytes   %s\n' "${BYTES:-unknown}"
+
+  # ⭐ WRITTEN WHERE A CAPTURE CAN READ IT, not only printed. Every profile this
+  # project has published carries `captured.acquisition: null`, which is the
+  # weakest provenance the artefact half can have in a project whose product is
+  # provenance. experiments/10-first-profile.sh reads this file into the
+  # identity, and b_ids_corpus::capture copies it onto the profile.
+  # TODO/driver.md, DRIVER-08.
+  #
+  # ⛔ SERIALISED BY node, never by a format string. A URL carrying a character
+  # that has to be escaped would otherwise emit JSON that does not parse, and it
+  # would be indistinguishable from a surviving template placeholder to the
+  # check that looks for one.
+  #
+  # ⚠ THE ROUTE NAME IS THE PROFILE'S VOCABULARY, not this script's flag. They
+  # agree for `vendor` and differ for the other one: the flag is `for-testing`
+  # and the recorded route is `chrome-for-testing`, which is what
+  # b_ids_schema::ACQUISITION_ROUTES accepts.
+  case "$ROUTE" in
+    for-testing) RECORDED_ROUTE="chrome-for-testing" ;;
+    *) RECORDED_ROUTE="$ROUTE" ;;
+  esac
+  node -e '
+    const fs = require("fs");
+    const [out, route, url, sha256, bytes] = process.argv.slice(1);
+    fs.writeFileSync(out, JSON.stringify({ route, url, sha256, bytes: Number(bytes) }, null, 2) + "\n");
+  ' "$OUT/acquisition.json" "$RECORDED_ROUTE" "$URL" "${SHA:-}" "${BYTES:-0}" || {
+    printf 'provision-browser: could not write the acquisition record\n' >&2
+    exit 1
+  }
+  printf 'record  %s\n' "$OUT/acquisition.json"
 fi
 
 # -- 4. confirm the install ---------------------------------------------------
