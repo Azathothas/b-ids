@@ -214,6 +214,23 @@ rather than method, and the rule was there first.
 
 ---
 
+## ⚠ Seven red `ci` runs on superseded commits, and why they are not rerun
+
+⭐ **The remote is green at `HEAD` and at its parent**, both jobs of both
+workflows. ⚠ Seven intermediate runs are red, and the next session should not
+chase them:
+
+| commits | failing job | cause |
+| --- | --- | --- |
+| `bb0f881`, `7346e62`, `a9639c3`, `02ee3fa`, `7144f09`, `dd63a35`, `a5eb7d5` | `gate (ubuntu)` | ⛔ a twin drift this session introduced: the doctor comparison read the new catch-all PowerShell parameter as a command-line flag. Fixed in `27faa3a`. |
+| `a9639c3` also | `gate (windows)` | the standing toolchain flake, [`RULES.md`](RULES.md) section 8.5 |
+
+⛔ **Rerunning them would reproduce the failure**, because the tree at those
+commits genuinely carried the drift. The fix is a later commit, not a rerun, and
+a green rerun of a tree that was broken would be the lie.
+
+---
+
 ## What is in progress
 
 ⛔ **Nothing is half-edited.** Every entry this session touched is closed in
