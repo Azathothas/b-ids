@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 98  open 30  blocked 0  done 68
+total 98  open 29  blocked 0  done 69
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
-| P1 | 7 | 0 | 36 | 43 |
+| P1 | 6 | 0 | 37 | 43 |
 | P2 | 20 | 0 | 19 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **30** | **0** | **68** | **98** |
+| **all** | **29** | **0** | **69** | **98** |
 
 ---
 
@@ -96,7 +96,7 @@ total 98  open 30  blocked 0  done 68
 | SCHEMA-05 | P0 | S | done | Provenance is per field, with four kinds and no more | [`schema.md`](schema.md) |
 | SCHEMA-06 | P1 | M | done | Record everything the wire carried, from the first commit | [`schema.md`](schema.md) |
 | SCHEMA-07 | P1 | S | done | What must never be in the model | [`schema.md`](schema.md) |
-| SCHEMA-08 | P1 | L | open | Every generated format, from one generator, round-tripped | [`schema.md`](schema.md) |
+| SCHEMA-08 | P1 | L | done | Every generated format, from one generator, round-tripped | [`schema.md`](schema.md) |
 | SCHEMA-09 | P1 | S | done | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
 | SCHEMA-10 | P2 | M | done | Record the shuffle as a property, and consider recording its seed | [`schema.md`](schema.md) |
 | SCHEMA-11 | P2 | S | done | The multipart boundary, which is a per-browser surface nobody listed | [`schema.md`](schema.md) |

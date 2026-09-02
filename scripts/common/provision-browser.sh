@@ -365,12 +365,27 @@ purge_windows() {
   pw_dir=$(vendor_dir_for "$BROWSER")
   # ⚠ EVERY INSTALL, not the first one found: an image may carry a machine-wide
   # install and a per-user one, and removing one leaves the other for `resolve`.
-  # ⚠ The two values are passed as ARGUMENTS rather than interpolated into the
-  # payload, so the shell never has to quote anything inside it.
+  #
+  # ⛔ THE TWO VALUES CROSS THROUGH THE ENVIRONMENT, and this is the second
+  # spelling because the first one did not work. `powershell -Command` does NOT
+  # bind trailing arguments to a `param()` block: it appends them to the command
+  # TEXT. So the pattern arrived null, an empty pattern matched every uninstall
+  # entry, and the directory removal was skipped entirely because `if ($Dir)`
+  # was false.
+  #
+  # ⚠ MEASURED, capture.yml run 33639884645: the win64 lane reported "the purge
+  # left a browser behind. resolve exited 0 and reports 151.0.7922.174" and went
+  # red. ⭐ That is the confirm step doing its job. A purge that reported success
+  # over a browser still on the machine is the "reporting a result the code never
+  # read" row of docs/conventions/forbidden-patterns.md, and the lane would have
+  # captured a build nobody chose.
+  #
   # shellcheck disable=SC2016 # the payload is PowerShell and the shell must not
   # expand anything in it. docs/conventions/shell.md section 1.
-  powershell -NoProfile -Command '
-    param($Match, $Dir)
+  B_IDS_PURGE_MATCH="$pw_match" B_IDS_PURGE_DIR="$pw_dir" powershell -NoProfile -Command '
+    $Match = $env:B_IDS_PURGE_MATCH
+    $Dir = $env:B_IDS_PURGE_DIR
+    if (-not $Match) { exit 3 }
     $ErrorActionPreference = "SilentlyContinue"
     $roots = @(
       "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
@@ -394,7 +409,7 @@ purge_windows() {
       Remove-Item -Recurse -Force (Join-Path ${env:ProgramFiles(x86)} $Dir) 2>$null
       Remove-Item -Recurse -Force (Join-Path $env:LOCALAPPDATA $Dir) 2>$null
     }
-  ' "$pw_match" "$pw_dir" >/dev/null 2>&1
+  ' >/dev/null 2>&1
 }
 
 case "$OS" in

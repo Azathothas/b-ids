@@ -24,6 +24,27 @@
       }
     },
     {
+      "id": "chrome-152.0.7977.75-linux64-stable",
+      "browser": "Chrome",
+      "version": "152.0.7977.75",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-09-02T14:08:20Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/linux64/152.0.7977.75.json",
+        "sha256": "bdb6c5ce822054ed85f2955c08d0829ca7ecf3ad1e84d511945b4a6ba593adc9",
+        "bytes": 16945
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/linux64/152.0.7977.75.hello.hex",
+        "sha256": "c68b4adad9c4220aa7025e1e88d1447cd703d04ca600af3b319860eb7177c10a",
+        "bytes": 3966
+      }
+    },
+    {
       "id": "chrome-151.0.7922.174-win64-stable",
       "browser": "Chrome",
       "version": "151.0.7922.174",

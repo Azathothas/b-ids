@@ -862,7 +862,7 @@ here so that entry does not have to rediscover it.
 ## SCHEMA-08. Every generated format, from one generator, round-tripped
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** schema, **Priority** P1, **Effort** L, **Status** open
+**Category** schema, **Priority** P1, **Effort** L, **Status** done
 
 ### Problem
 
@@ -919,6 +919,81 @@ sh scripts/common/check-formats.sh
 Passing means: every format is regenerated from the canonical corpus, each
 lossless format round-trips to byte-identical canonical JSON, and two runs of
 the generator produce byte-identical output.
+
+---
+
+### ⭐ Closed 2026-09-02. Five formats, one generator, and a reader for each round trip
+
+⛔ **A format with a writer and no reader can only be checked against the thing
+that wrote it**, which is the shape this entry was re-scoped to avoid. Every
+lossless format here reads back into profiles and re-renders to byte-identical
+canonical JSON; every lossy one reads back into the documented subset and
+refuses to become a profile at all.
+
+```text
+$ sh scripts/common/check-formats.sh
+formats ok: 5 file(s) from 5 profile(s), byte-identical over two runs,
+  every lossless format round-trips to canonical JSON and every lossy one
+  carries the documented subset.
+exit=0
+
+$ sh scripts/common/check-formats.sh --json
+{"schema":"check-formats/1","files":5,"profiles":5,"problems":0}
+
+$ pwsh -NoProfile -File scripts/common/check-formats.ps1 -Json
+{"schema":"check-formats/1","files":5,"profiles":5,"problems":0}
+```
+
+```text
+$ cargo test -q -p b-ids-corpus --test formats
+running 7 tests
+.......
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+```
+
+#### What each format is, and what the lossy ones leave out
+
+| format | lossless | round trip |
+| --- | --- | --- |
+| `corpus.json` | ⭐ canonical. Every other format is generated from it. | itself |
+| `corpus.ndjson` | yes | reads back into profiles and re-renders to byte-identical canonical JSON |
+| `corpus.csv` | ⚠ no | the eight columns of `FLAT_COLUMNS`, read back and compared row by row |
+| `corpus.tsv` | ⚠ no | the same |
+| `corpus.md` | ⚠ no | ⛔ its own header says it is generated and where the rest of a profile is, because a reader arriving at a rendered table on the web has nothing else to read |
+
+⛔ **`FLAT_COLUMNS` IS the documented subset**, rather than a sentence in a
+comment. `read_flat` checks the header row against it, so a column added to the
+writer without a reader beside it is a refusal rather than a quiet widening.
+
+```text
+id,browser,version,channel,branded,os,arch,captured_at
+chrome-151.0.7922.173-linux64-stable,Chrome,151.0.7922.173,stable,true,linux,x86_64,2026-09-02T02:23:31Z
+chrome-152.0.7977.75-linux64-stable,Chrome,152.0.7977.75,stable,true,linux,x86_64,2026-09-02T14:23:16Z
+edge-151.0.4129.101-linux64-stable,Edge,151.0.4129.101,stable,true,linux,x86_64,2026-09-02T13:52:53Z
+```
+
+#### ⛔ Determinism is asserted rather than assumed
+
+⚠ **A generator that read a clock, a hash seed or a directory order would
+produce a diff on every run**, and a published artefact that diffs on every run
+is one nobody can tell a real change from. The acceptance generates twice into
+two directories and compares the bytes; the suite renders twice and compares the
+strings. ⭐ The profile order is the store's route order, which is sorted, so it
+does not depend on which host walked the tree.
+
+#### ⚠ What this deliberately does not do
+
+| | |
+| --- | --- |
+| ⛔ **it writes nothing into the tree** | the acceptance generates into `.tmp` and nothing in this repository publishes generated formats yet. `PUB-02` and `PUB-03` are the surfaces that will, and this exists before them so the generator is proved before anything depends on it |
+| ⚠ **the six that need a decoder are `SCHEMA-12`'s** | YAML, TOML, SQLite, CBOR, MessagePack and Protobuf each need an encoder AND a decoder, which is a dependency or a parser this project owns. The re-scope above is the ruling and it stands |
+| ⚠ **a lossy format cannot be read back into a profile, and says so** | `read_back` on a CSV returns a refusal naming the column count rather than a profile built from eight fields. A profile assembled from a spreadsheet row would be a fabricated one wearing a measurement's label |
+
+⭐ **`check-formats` is in the gate and in `check-twins`**, both halves, so the
+two acceptance wrappers cannot drift. ⚠ The row compares two wrappers over one
+generator rather than two implementations of the round trip, and that is
+deliberate: a round trip written twice would be two readers of five formats,
+disagreeing the first time either moved.
 
 ---
 

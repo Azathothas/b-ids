@@ -231,6 +231,7 @@ $ComparedDirectly = @(
     'check-exit-codes',
     'check-manual-path',
     'check-provisioning',
+    'check-formats',
     'check-changelog',
     'check-workflows',
     'check-coverage'
@@ -416,6 +417,10 @@ Invoke-PsCheck -Name 'check-manual-path' -Script 'scripts/common/check-manual-pa
 # gate now. ⚠ On any machine that is not disposable it asserts the eight checks
 # and reports the provisioning itself as a SKIP.
 Invoke-PsCheck -Name 'check-provisioning' -Script 'scripts/common/check-provisioning.ps1'
+
+# ⛔ ONE GENERATOR, CANONICAL JSON IN, EVERY FORMAT OUT, and the round trip is
+# what says a format has a reader as well as a writer. TODO/schema.md, SCHEMA-08.
+Invoke-PsCheck -Name 'check-formats' -Script 'scripts/common/check-formats.ps1'
 
 # -- the published route files, and the one byte a consumer should not have to
 # strip. 2 is "there is no route tree yet, or it holds no single-value file",

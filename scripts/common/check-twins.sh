@@ -465,6 +465,13 @@ compare_pair "check-manual-path"    check-manual-path.sh    "--json"          ch
 # reports it skipped.
 compare_pair "check-provisioning"   check-provisioning.sh   "--json"          check-provisioning.ps1   "-Json"
 
+# ⚠ BOTH HALVES DRIVE THE SAME GENERATOR AND THE SAME SUITE, so what this row
+# compares is the two acceptance wrappers rather than two implementations of the
+# round trip. ⭐ That is deliberate: a round trip written twice would be two
+# readers of five formats, and the pair would disagree the first time either
+# moved. TODO/schema.md, SCHEMA-08.
+compare_pair "check-formats"        check-formats.sh        "--json"          check-formats.ps1        "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

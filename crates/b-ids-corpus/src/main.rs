@@ -14,8 +14,9 @@
 
 use std::process::ExitCode;
 
-use b_ids_corpus::{Identity, Store, profile_from};
+use b_ids_corpus::{Format, Identity, Store, profile_from, render};
 use b_ids_harness::Capture;
+use b_ids_schema::Profile;
 
 const USAGE: &str = "\
 usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
@@ -23,6 +24,7 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
        b-ids-corpus validate [--root DIR]
        b-ids-corpus latest --assert-stable [--root DIR]
        b-ids-corpus index --write [--root DIR]
+       b-ids-corpus formats --out DIR [--root DIR]
 
   add              turn the cold connection of a navigation into a profile and
                    publish it, with its ClientHello beside it and the index
@@ -46,6 +48,13 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    did the job.
   index --write    rewrite the index and the pointer file from the tree. The
                    only writer of either.
+  formats          generate every published format from the canonical JSON:
+                   json, ndjson, csv, tsv and md. ⚠ The last three are LOSSY
+                   and each says so in its own header. ⛔ Never hand-edit a
+                   generated file: the generator has lost if you do, and
+                   scripts/common/check-formats is what says so. Its LAST line
+                   is a fixed `corpus=formats files:N profiles:N`.
+  --out DIR        where the generated formats are written.
   --captures FILE  what `b-ids-harness --json` printed. Its first line is the
                    base URL and is not a capture; every other line is one.
   --identity FILE  what the subject was and under what conditions it was
@@ -362,6 +371,58 @@ fn index(root: &str) -> ExitCode {
     }
 }
 
+/// Generate every published format from the canonical corpus.
+///
+/// ⛔ **ONE GENERATOR AND ONE READ OF THE TREE.** Every format comes out of the
+/// same `Vec<Profile>`, in the same route order the index uses, so two formats
+/// cannot disagree about what the corpus holds. `TODO/schema.md`, `SCHEMA-08`.
+///
+/// ⛔ **The last line is a fixed `corpus=formats files:N profiles:N`**, which is
+/// what `scripts/common/check-formats` reads. Parse that, never the prose above
+/// it.
+fn formats(root: &str, out_dir: &str) -> ExitCode {
+    let store = Store::at(root);
+    if !store.exists() {
+        // ⛔ 2, not 0. A tree with no corpus has generated nothing, which is a
+        // different fact from a corpus that generated cleanly.
+        eprintln!("b-ids-corpus: there is no corpus under {root}, so there is nothing to generate");
+        return ExitCode::from(2);
+    }
+    let profiles: Vec<Profile> = match store.profiles() {
+        Ok(found) => found.into_iter().map(|(_, profile)| profile).collect(),
+        Err(why) => {
+            eprintln!("b-ids-corpus: {why}");
+            return ExitCode::from(1);
+        }
+    };
+
+    if let Err(why) = std::fs::create_dir_all(out_dir) {
+        eprintln!("b-ids-corpus: cannot create {out_dir}: {why}");
+        return ExitCode::from(2);
+    }
+
+    let mut written = 0_usize;
+    for format in Format::all() {
+        let text = match render(format, &profiles) {
+            Ok(text) => text,
+            Err(why) => {
+                eprintln!("b-ids-corpus: {format}: {why}");
+                return ExitCode::from(1);
+            }
+        };
+        let path = std::path::Path::new(out_dir).join(format.file_name());
+        if let Err(why) = std::fs::write(&path, text.as_bytes()) {
+            eprintln!("b-ids-corpus: {}: {why}", path.display());
+            return ExitCode::from(1);
+        }
+        println!("wrote {} ({} bytes)", path.display(), text.len());
+        written += 1;
+    }
+
+    println!("corpus=formats files:{written} profiles:{}", profiles.len());
+    ExitCode::SUCCESS
+}
+
 fn main() -> ExitCode {
     let mut argv = std::env::args().skip(1);
     let Some(command) = argv.next() else {
@@ -373,6 +434,7 @@ fn main() -> ExitCode {
     let mut identity = None;
     let mut write = false;
     let mut assert_stable = false;
+    let mut out_dir: Option<String> = None;
     while let Some(arg) = argv.next() {
         match arg.as_str() {
             "--write" => write = true,
@@ -380,6 +442,10 @@ fn main() -> ExitCode {
             "--root" => match argv.next() {
                 Some(value) => root = value,
                 None => return fail("--root needs a directory"),
+            },
+            "--out" => match argv.next() {
+                Some(value) => out_dir = Some(value),
+                None => return fail("--out needs a directory"),
             },
             "--captures" => match argv.next() {
                 Some(value) => captures = Some(value),
@@ -403,6 +469,12 @@ fn main() -> ExitCode {
                 return fail("add needs --captures and --identity");
             };
             add(&root, &captures, &identity)
+        }
+        "formats" => {
+            let Some(out_dir) = out_dir else {
+                return fail("formats needs --out, the directory to generate into");
+            };
+            formats(&root, &out_dir)
         }
         "verify" => verify(&root),
         "validate" => validate_corpus(&root),
