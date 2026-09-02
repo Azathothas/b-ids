@@ -9,13 +9,16 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
-use b_ids_driver::{Family, Launch, drive, resolve};
+use b_ids_driver::acquire::{Platform, Route, download_url};
+use b_ids_driver::{Family, Launch, drive, plan, resolve};
 
 const USAGE: &str = "\
 usage: b-ids-driver resolve [--browser NAME] [--json]
        b-ids-driver drive --url URL [--browser NAME] [--pin PIN] [--headless]
                           [--timeout-ms N] [--log PATH] [--disable-verification]
        b-ids-driver versions [--channel CH] [--json]
+       b-ids-driver acquire --browser NAME --version V --index PATH
+                            [--platform P] [--json]
 
   resolve          find a browser on this machine and report its build, with
                    what each source answered and whether they disagreed
@@ -25,6 +28,23 @@ usage: b-ids-driver resolve [--browser NAME] [--json]
                    with its rollout fraction, the highest build and ITS
                    fraction, and any disagreement.
   --channel CH     the release channel to ask about. stable by default.
+  acquire          read the automation-build index and print the archive URL
+                   for one exact build on one platform. ⛔ IT FETCHES
+                   NOTHING and touches no machine: it reads an index a caller
+                   already has and names a URL. ⚠ The index publishes a
+                   SUBSET of builds, so a build the vendor shipped may not be
+                   in it, and the refusal says so and names the nearest.
+  --index PATH     the automation-build index, as JSON, already on disk.
+  --index-url      print the URL that index is served at and exit, so a caller
+                   can fetch it with whatever tool the platform has. ⛔ IT IS
+                   ASKED FOR RATHER THAN SPELLED TWICE: a fetcher carrying its
+                   own copy is a value in two places with no check.
+  --version V      the exact build to look up. Required: the index is keyed
+                   by build and there is no nearest-match.
+  --platform P     which archive: linux64, win64, win32, mac-arm64, mac-x64.
+                   The host's own platform by default. ⚠ These are the
+                   INDEX's spellings and the corpus spells one of them
+                   differently.
   drive            launch it into a throwaway profile, point it at URL, and
                    wait for it with a hard time limit
   --pin PIN        the base64 SHA-256 of the one subject public key to trust.
@@ -107,6 +127,124 @@ fn versions(channel: &str, json: bool) -> ExitCode {
     }
 }
 
+/// Name the archive one exact build is published at, from an index on disk.
+///
+/// ⛔ **It reads and it does not fetch.** Keeping the network out of this
+/// command is what lets `provision-browser` fetch with the one tool a platform
+/// already has, and what lets this be tested without a day the network agrees.
+///
+/// ⛔ **Exit 1 is the index answering no, and exit 2 is not being able to
+/// ask.** A build the index does not publish is a fact about the vendor's
+/// catalogue; a missing index file is a fact about this run, and a caller that
+/// could not tell them apart would retry the wrong one.
+fn acquire(
+    family: Option<Family>,
+    version: Option<&str>,
+    platform: Option<Platform>,
+    index: Option<&std::path::Path>,
+    index_url: bool,
+    json: bool,
+) -> ExitCode {
+    let Some(family) = family else {
+        return fail(&format!(
+            "acquire needs --browser. It knows {}",
+            Family::names()
+        ));
+    };
+    // ⛔ ASKED FOR RATHER THAN SPELLED TWICE. A caller has to FETCH the index
+    // before it can be read, and a fetcher that carried its own copy of the URL
+    // would be a value in two places with no check that they agree. The version
+    // is not needed to name the index, so it is not required here.
+    if index_url {
+        let Some(candidate) = plan(family, Some("0.0.0.0"))
+            .into_iter()
+            .find(|c| c.route == Route::ChromeForTesting)
+        else {
+            eprintln!(
+                "b-ids-driver: there is no automation-build route for {family}, so there is \
+                 no index to fetch."
+            );
+            return ExitCode::from(2);
+        };
+        match candidate.url {
+            Some(url) => {
+                println!("{url}");
+                return ExitCode::SUCCESS;
+            }
+            // ⛔ Unreachable through `plan` today and refused rather than
+            // unwrapped: a route offered with no URL is a defect in the plan,
+            // and a panic here would report it as a crash.
+            None => return fail("the automation-build route was planned with no index URL"),
+        }
+    }
+    let Some(version) = version else {
+        return fail("acquire needs --version: the index is keyed by build");
+    };
+    let Some(index) = index else {
+        return fail("acquire needs --index, the automation index as JSON on disk");
+    };
+
+    // ⛔ THE PLAN DECIDES WHETHER THE ROUTE EXISTS, rather than this command
+    // knowing which families have an automation index. A second answer here
+    // would be a copy of `plan`'s branch with nothing checking that they agree.
+    let Some(candidate) = plan(family, Some(version))
+        .into_iter()
+        .find(|c| c.route == Route::ChromeForTesting)
+    else {
+        eprintln!(
+            "b-ids-driver: there is no automation-build route for {family}. \
+             It is the one route that serves an exact build, and it is Chrome only."
+        );
+        return ExitCode::from(2);
+    };
+
+    let Some(platform) = platform.or_else(Platform::host) else {
+        return fail(&format!(
+            "acquire could not name this host's platform, so --platform is needed. \
+             The index publishes {}",
+            Platform::names()
+        ));
+    };
+
+    let text = match std::fs::read_to_string(index) {
+        Ok(text) => text,
+        Err(err) => {
+            eprintln!("b-ids-driver: could not read {}: {err}", index.display());
+            return ExitCode::from(2);
+        }
+    };
+
+    match download_url(&text, version, platform) {
+        Ok(url) => {
+            if json {
+                // ⛔ SERIALISED, never formatted. A URL carrying a character
+                // that has to be escaped would otherwise emit JSON that does
+                // not parse.
+                let object = serde_json::json!({
+                    "schema": "acquire/1",
+                    "route": candidate.route.as_str(),
+                    "index": candidate.url,
+                    "browser": family.as_str(),
+                    "version": version,
+                    "platform": platform.as_str(),
+                    "url": url,
+                });
+                match serde_json::to_string(&object) {
+                    Ok(line) => println!("{line}"),
+                    Err(err) => return fail(&format!("could not serialise: {err}")),
+                }
+            } else {
+                println!("{url}");
+            }
+            ExitCode::SUCCESS
+        }
+        Err(refusal) => {
+            eprintln!("b-ids-driver: {refusal}");
+            ExitCode::from(1)
+        }
+    }
+}
+
 fn main() -> ExitCode {
     let mut argv = std::env::args().skip(1);
     let Some(command) = argv.next() else {
@@ -118,6 +256,13 @@ fn main() -> ExitCode {
     // written here would be a second place the resolver's order is decided.
     let mut wanted: Option<Family> = None;
     let mut channel = "stable".to_owned();
+    let mut version: Option<String> = None;
+    let mut index: Option<std::path::PathBuf> = None;
+    let mut index_url = false;
+    // ⛔ NONE IS "this host's platform", resolved at the point of use rather
+    // than here, so a host the index does not publish for is refused with a
+    // message instead of silently taking the nearest.
+    let mut platform: Option<Platform> = None;
     let mut launch = Launch::default();
     while let Some(arg) = argv.next() {
         match arg.as_str() {
@@ -141,6 +286,32 @@ fn main() -> ExitCode {
                     return fail("--channel needs a value");
                 };
                 channel = value;
+            }
+            "--version" => {
+                let Some(value) = argv.next() else {
+                    return fail("--version needs a build");
+                };
+                version = Some(value);
+            }
+            "--index-url" => index_url = true,
+            "--index" => {
+                let Some(value) = argv.next() else {
+                    return fail("--index needs a path");
+                };
+                index = Some(std::path::PathBuf::from(value));
+            }
+            "--platform" => {
+                let Some(value) = argv.next() else {
+                    return fail("--platform needs a name");
+                };
+                let Some(parsed) = Platform::parse(&value) else {
+                    return fail(&format!(
+                        "--platform {value}: the automation index has no branch for that. \
+                         It publishes {}",
+                        Platform::names()
+                    ));
+                };
+                platform = Some(parsed);
             }
             "--url" => {
                 let Some(value) = argv.next() else {
@@ -184,6 +355,22 @@ fn main() -> ExitCode {
     // fact about the host as a fact about the channel.
     if command == "versions" {
         return versions(&channel, json);
+    }
+
+    // ⛔ ALSO BEFORE THE RESOLVER, and for a sharper reason than `versions`
+    // has. This command is what a provisioning run calls immediately AFTER
+    // purging every browser off the machine, so routing it through a resolver
+    // that exits 2 when nothing is installed would refuse it exactly when it is
+    // needed. TODO/driver.md, DRIVER-08.
+    if command == "acquire" {
+        return acquire(
+            wanted,
+            version.as_deref(),
+            platform,
+            index.as_deref(),
+            index_url,
+            json,
+        );
     }
 
     let browsers = match resolve() {

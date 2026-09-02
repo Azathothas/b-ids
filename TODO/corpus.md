@@ -353,7 +353,7 @@ closing on machinery.
 
 | what exists now | |
 | --- | --- |
-| ⭐ [`../.github/capture-matrix.json`](../.github/capture-matrix.json) | six planned cells, two enabled, each with the reason it is or is not attempted yet. It is the ONE place the plan lives. |
+| ⭐ [`../.github/capture-matrix.json`](../.github/capture-matrix.json) | eight planned cells, three enabled, each with the reason it is or is not attempted yet, and each naming the `route` it gets its browser by. It is the ONE place the plan lives. |
 | ⭐ `check-coverage`, both halves | every planned cell reported as `captured`, `absent` or `not-attempted`, with `--require-rows` for the caller's own assertion |
 | ⭐ [`../.github/workflows/capture.yml`](../.github/workflows/capture.yml) | the fan-out, from `CI-03`, reading the plan above through `fromJSON` |
 

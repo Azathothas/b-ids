@@ -1031,7 +1031,7 @@ exit=1
 ⛔ **That is the guard seen to fail against the real tree**, not against a
 fixture written to make it fail.
 
-### What the nine jobs degrade to
+### What the ten jobs degrade to
 
 | job | the one command a person runs |
 | --- | --- |
@@ -1043,10 +1043,11 @@ fixture written to make it fail.
 | `ci.yml` `windows` | `pwsh -NoProfile -File scripts/common/check-gate.ps1` |
 | `staleness.yml` `ask` | `sh scripts/common/check-staleness.sh` |
 | `trust-anchor.yml` `compare` | `sh experiments/50-trust-anchor.sh --headless --browser chrome` |
+| `provision.yml` `provision` | `sh scripts/common/check-provisioning.sh` |
 | `validate.yml` `corpus` | `sh scripts/common/check-corpus.sh` |
 
 ⭐ **The entry's own test, answered:** if the provider disappeared tomorrow, a
-person with this tree runs those nine commands and the project keeps producing
+person with this tree runs those ten commands and the project keeps producing
 what it produces. ⚠ What they would not have is the fan-out and the schedule,
 which are conveniences rather than the work.
 
@@ -1061,4 +1062,38 @@ appearing anywhere in a file says nothing about which job carries it.
 ⚠ **The first placement was wrong and the check caught it.** The lines went in
 above each job header, so the parser attributed each to the job before it and
 four jobs read as named that were not. They are inside the block now.
+
+### ⛔ Amended 2026-09-02: the check read tracked files only
+
+⛔ **A workflow that was written and never staged escaped this check entirely**,
+which is the one moment a new job's manual line is most likely to be missing.
+Found by adding [`../.github/workflows/provision.yml`](../.github/workflows/provision.yml)
+for `DRIVER-08`: `check-workflows` reported ten jobs and this reported nine, and
+`git add -N` on that one file alone changed the answer to ten.
+
+⚠ **`check-exit-codes` had the same defect and was fixed on 2026-09-01**, for
+the same reason and in the same words: a script never staged escaped it. This
+half of the shape was left, and a check that is right only about files somebody
+remembered to stage is a check with a hole exactly where new work is.
+
+⭐ **Both halves read tracked and untracked now**, and both were seen to fail
+against the real tree with one `# manual:` line removed:
+
+```text
+$ sh scripts/common/check-manual-path.sh
+manual path check failed, 1 problem(s):
+
+  .github/workflows/provision.yml: job 'provision' names no manual equivalent
+
+Every automated job names the command a person runs instead, as a
+`# manual:` comment inside the job. TODO/ci.md, CI-08.
+exit=1
+```
+
+```text
+$ sh scripts/common/check-manual-path.sh --json
+{"schema":"check-manual-path/1","jobs":10,"named":10,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-manual-path.ps1 -Json
+{"schema":"check-manual-path/1","jobs":10,"named":10,"problems":0}
+```
 

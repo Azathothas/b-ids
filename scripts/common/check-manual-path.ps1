@@ -51,7 +51,13 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 }
 Set-Location -LiteralPath $root
 
-$workflows = @(& git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml' | Sort-Object)
+# ⛔ TRACKED AND UNTRACKED BOTH. A workflow that was written and never staged
+# escaped this check entirely, so the one moment a new job's manual line is
+# missing is the one moment nothing looked. Measured 2026-09-02: this reported
+# 9 jobs over a tree carrying 10.
+$tracked = & git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml'
+$untracked = & git ls-files --others --exclude-standard -- '.github/workflows/*.yml' '.github/workflows/*.yaml'
+$workflows = @(@($tracked) + @($untracked) | Where-Object { $_ } | Sort-Object -Unique)
 if ($workflows.Count -eq 0) {
     [Console]::Error.WriteLine('check-manual-path: no workflows, so nothing was checked')
     exit 2

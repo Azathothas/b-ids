@@ -47,7 +47,7 @@
 #
 # Usage:
 #   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Browser chrome -Route vendor
-#   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Browser chrome -Route for-testing -Version 151.0.7922.173
+#   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Browser chrome -Route for-testing -Version 151.0.7922.76
 #   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Plan -Browser chrome -Route vendor
 #
 # Exit codes: 0 provisioned and confirmed,
@@ -132,11 +132,26 @@ function Write-Plan {
             Write-Output 'fetch   https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi'
             Write-Output 'install msiexec /qn, which is the silent unattended mode'
         }
+        'linux/for-testing' {
+            Write-Output 'purge   as for the vendor route on this platform'
+            Write-Output 'index   the automation-build index, whose URL b_ids_driver::acquire owns.'
+            Write-Output '        it publishes a SUBSET of builds, so an exact build may not be in it'
+            Write-Output 'fetch   the chrome-linux64.zip that index names for the build asked for'
+            Write-Output 'install unzip into /opt/google/chrome, link /usr/bin/google-chrome at it,'
+            Write-Output '        and give chrome_sandbox root ownership and mode 4755'
+        }
+        'windows/for-testing' {
+            Write-Output 'purge   as for the vendor route on this platform'
+            Write-Output 'index   the automation-build index, whose URL b_ids_driver::acquire owns.'
+            Write-Output '        it publishes a SUBSET of builds, so an exact build may not be in it'
+            Write-Output 'fetch   the chrome-win64.zip that index names for the build asked for'
+            Write-Output 'install expand into the Chrome Application directory. The archive is FLAT:'
+            Write-Output '        chrome.exe sits beside the manifest resolve reads the build from'
+        }
         default {
             if ($Route -eq 'for-testing') {
                 Write-Output 'purge   as for the vendor route on this platform'
-                Write-Output 'fetch   the zip the automation-build index names for this exact build'
-                Write-Output 'install unzip into a directory this project owns, and link it where resolve looks'
+                Write-Output ('no unpack layout is recorded for ' + $os)
             } else {
                 Write-Output ('no plan is recorded for ' + $Route + ' on this platform')
             }
@@ -310,6 +325,95 @@ if ($key -eq 'linux/vendor') {
         exit 1
     }
     & msiexec.exe /i $archive /qn /norestart | Out-Null
+} elseif ($Route -eq 'for-testing' -and ($os -eq 'linux' -or $os -eq 'windows')) {
+    # ⛔ THE INDEX IS READ BY THE DRIVER AND SO IS THE URL IT LIVES AT. A second
+    # spelling in this file would 404 on its own the day the vendor moves the
+    # file, and nothing would compare the two.
+    #
+    # ⚠ THE INDEX PUBLISHES A SUBSET OF BUILDS. Measured 2026-09-02: it carried
+    # 67 builds of Chrome 151, and neither 151.0.7922.173 nor 151.0.7922.174,
+    # which are the two the hosted runner images served.
+    $indexLines = & $driver acquire --index-url --browser $Browser 2>$null
+    $indexRc = $LASTEXITCODE
+    $indexUrl = if ($indexLines) { [string]@($indexLines)[0] } else { '' }
+    if ($indexRc -ne 0 -or -not $indexUrl) {
+        [Console]::Error.WriteLine('provision-browser: the driver named no automation index for ' + $Browser)
+        exit 2
+    }
+    Write-Output ('index   ' + $indexUrl)
+    $indexPath = Join-Path $out 'index.json'
+    try { Invoke-WebRequest -Uri $indexUrl -OutFile $indexPath -UseBasicParsing } catch {
+        [Console]::Error.WriteLine('provision-browser: the automation index did not fetch')
+        exit 1
+    }
+
+    # ⛔ READ UNPIPED, and 1 is the index answering no while 2 is not being able
+    # to ask. A caller that could not tell them apart would retry the wrong one.
+    $urlLines = & $driver acquire --browser $Browser --version $Version --index $indexPath 2>$null
+    $acquireRc = $LASTEXITCODE
+    if ($acquireRc -ne 0) {
+        [Console]::Error.WriteLine('provision-browser: the index named no archive for ' + $Browser + ' ' + $Version)
+        & $driver acquire --browser $Browser --version $Version --index $indexPath | Out-Null
+        exit $acquireRc
+    }
+    $url = [string]@($urlLines)[0]
+    $archive = Join-Path $out ([System.IO.Path]::GetFileName($url))
+    try { Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing } catch {
+        [Console]::Error.WriteLine('provision-browser: the archive did not fetch from ' + $url)
+        exit 1
+    }
+
+    $unpacked = Join-Path $out 'unpacked'
+    if (Test-Path -LiteralPath $unpacked) { Remove-Item -Recurse -Force -LiteralPath $unpacked }
+    New-Item -ItemType Directory -Force -Path $unpacked | Out-Null
+    try { Expand-Archive -LiteralPath $archive -DestinationPath $unpacked -Force } catch {
+        [Console]::Error.WriteLine('provision-browser: the archive did not unpack')
+        exit 1
+    }
+
+    if ($os -eq 'linux') {
+        # ⛔ THE SUID SANDBOX HELPER IS SET UP, AND SKIPPING IT IS A LANE THAT
+        # CAPTURES NOTHING. Measured 2026-09-02 in capture.yml run 33615327503:
+        # the edge lane on ubuntu-latest exited after 2.4 seconds having opened
+        # no connection, and its own log said the helper was found and not
+        # configured correctly, naming the ownership and mode it needs.
+        # ⚠ TWO NAMES: the official build's compiled-in path uses a hyphen and
+        # the archive ships an underscore.
+        $src = Join-Path $unpacked 'chrome-linux64'
+        if (-not (Test-Path -LiteralPath (Join-Path $src 'chrome'))) {
+            [Console]::Error.WriteLine('provision-browser: no chrome in ' + $src + ' after unpacking')
+            exit 1
+        }
+        & sudo rm -rf /opt/google/chrome
+        & sudo mkdir -p /opt/google/chrome
+        & sudo cp -a ($src + '/.') /opt/google/chrome/
+        & sudo ln -sf /opt/google/chrome/chrome /usr/bin/google-chrome
+        if (Test-Path -LiteralPath '/opt/google/chrome/chrome_sandbox') {
+            & sudo cp -a /opt/google/chrome/chrome_sandbox /opt/google/chrome/chrome-sandbox
+            foreach ($helper in @('/opt/google/chrome/chrome_sandbox', '/opt/google/chrome/chrome-sandbox')) {
+                & sudo chown root:root $helper
+                & sudo chmod 4755 $helper
+            }
+            Write-Output ('sandbox ' + (& stat -c '%U:%G %a %n' /opt/google/chrome/chrome-sandbox))
+        } else {
+            [Console]::Error.WriteLine('provision-browser: the archive carried no chrome_sandbox')
+        }
+    } else {
+        # ⚠ THE ARCHIVE IS FLAT AND THAT IS WHY THIS WORKS AT ALL. Read from its
+        # central directory 2026-09-02: chrome.exe sits beside a
+        # VERSION.manifest and there is no version-shaped DIRECTORY, so
+        # b_ids_driver::resolve reads the build from the manifest.
+        $src = Join-Path $unpacked 'chrome-win64'
+        if (-not (Test-Path -LiteralPath (Join-Path $src 'chrome.exe'))) {
+            [Console]::Error.WriteLine('provision-browser: no chrome.exe in ' + $src + ' after unpacking')
+            exit 1
+        }
+        $dest = Join-Path $env:ProgramFiles 'Google\Chrome\Application'
+        if (Test-Path -LiteralPath $dest) { Remove-Item -Recurse -Force -LiteralPath $dest }
+        New-Item -ItemType Directory -Force -Path $dest | Out-Null
+        Copy-Item -Path (Join-Path $src '*') -Destination $dest -Recurse -Force
+        Write-Output ('installed ' + (Join-Path $dest 'chrome.exe'))
+    }
 } else {
     [Console]::Error.WriteLine('provision-browser: the ' + $Route + ' route on ' + $os + ' is not implemented yet')
     [Console]::Error.WriteLine('  Run with -Plan to read what it would do. TODO/driver.md, DRIVER-08.')

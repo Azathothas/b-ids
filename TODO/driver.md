@@ -961,15 +961,17 @@ run on a runner.** The entry stays open rather than closing on machinery.
 | what exists now | |
 | --- | --- |
 | ⭐ [`../scripts/common/provision-browser.sh`](../scripts/common/provision-browser.sh) | purge, confirm the purge by requiring `resolve` to exit 2, install, confirm the version. The vendor route is implemented for Linux and Windows. |
-| ⭐ [`../scripts/common/check-provisioning.sh`](../scripts/common/check-provisioning.sh) | the acceptance: seven refusals asserted on any host, and the provisioning itself only where the machine is disposable |
+| ⭐ [`../scripts/common/check-provisioning.sh`](../scripts/common/check-provisioning.sh) | the acceptance: eight checks on any host, seven of them refusals, and the provisioning itself only where the machine is disposable |
 | the `--plan` mode | prints what the tool would do, per platform and route, and runs nothing. It is what a person reads before letting this near a machine. |
 
 ```text
 $ sh scripts/common/check-provisioning.sh
-provisioning ok: 7 check(s), every refusal held, provisioning skipped
+provisioning ok: 8 check(s), every refusal held, provisioning skipped
   SKIP the provisioning itself: this machine is not disposable, so nothing
   was purged. A workflow on a disposable runner is where that leg runs,
-  and TODO/driver.md, DRIVER-08, is what has not been built yet.
+  and .github/workflows/provision.yml is what runs it.
+  SKIP the exact-build route: it runs with --build on a disposable
+  machine, and the build is named by the matrix cell rather than here.
 exit=0
 ```
 
@@ -1000,33 +1002,80 @@ file on a machine the guard protects.
 carries the row and [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) the
 incident.
 
-#### ⛔ What remains, in order
+#### ⛔ What remains, in order. Three of six landed 2026-09-02
 
-1. **The `for-testing` route.** Read the automation-build index, pick the entry
-   for the exact build and platform, fetch the zip, unpack it where `resolve`
-   looks. ⚠ It is the route that makes an exact version reachable at all, and it
-   is the unbranded product.
-2. **The matrix carries both routes.** Each cell in
-   [`../.github/capture-matrix.json`](../.github/capture-matrix.json) names its
-   route, and a `for-testing` cell records `branded: false`.
-3. **A provisioning workflow, or a step in `capture.yml`**, that runs
-   the tool before the resolve step and fails the lane loudly when provisioning
-   does not confirm.
+⭐ **The route, the matrix and the workflow exist; the run on a runner is what
+turns the rest from machinery into a measurement.**
+
+1. ⭐ **The `for-testing` route. Landed.** `b-ids-driver acquire` reads the
+   automation-build index and names the archive URL for one exact build on one
+   platform, and `provision-browser` fetches, unpacks and installs it where
+   `resolve` looks. ⛔ The index URL is asked for with `acquire --index-url`
+   rather than spelled in the shell, because a fetcher carrying its own copy is
+   a value in two places with no check that they agree.
+2. ⭐ **The matrix carries the routes. Landed.** Every cell in
+   [`../.github/capture-matrix.json`](../.github/capture-matrix.json) names a
+   `route`, a `branded` and a `build`, and two `for-testing` cells are planned
+   and not attempted. ⚠ The reason they are not attempted is below and it is
+   not the provisioning tool.
+3. ⭐ **A provisioning workflow. Landed**, as
+   [`../.github/workflows/provision.yml`](../.github/workflows/provision.yml)
+   rather than as a step in `capture.yml`. ⛔ The capture lanes work and produce
+   the corpus, so an unproved purge does not go in front of them;
+   `trust-anchor.yml` is the precedent for proving a machine-changing leg on its
+   own first. ⚠ Moving it into `capture.yml` is what item 4 unblocks.
 4. ⛔ **A run on a disposable runner**, both platforms, which is the only place
-   the purge and the install have ever been executed. Until that has happened,
-   nothing here is measured: what exists is a tool whose refusals are proved and
-   whose success path is not.
+   the purge and the install have ever been executed.
 5. **`captured.acquisition` populated** from what the tool printed: the route,
-   the URL, the sha256 and the byte count. `b_ids_driver::acquire` already has
-   the shape and still has no caller.
+   the URL, the sha256 and the byte count. `b_ids_driver::acquire` has the shape
+   and `provision-browser` prints all four; nothing reads them into a profile
+   yet.
 6. **`check-provisioning` into the gate**, once the work above lands. ⚠ It is
    deliberately out of the gate today: it is the acceptance for an entry that is
    not finished, and `check-staleness` and `check-sources` are the precedent for
-   a check that lives outside it. ⭐ Its PowerShell twin is not on this list any
-   more: `DRIVER-09` closed on 2026-09-02, because the gate refused the sh half
-   on its own.
+   a check that lives outside it.
 
+#### ⛔ Two findings that changed what this entry can promise
 
+⚠ **Both were measured on 2026-09-02 while the route was being written, and
+each one moves a claim the entry made before them.**
+
+| the finding | what it changes |
+| --- | --- |
+| ⛔ **The automation index publishes a SUBSET of builds.** It carried 2497 builds in all and 67 of Chrome `151`, and **neither `151.0.7922.173` nor `151.0.7922.174`**, which are the two the runner images served. | "an exact build, any version" is wrong. The route serves an exact build **from the set the index publishes**, and the two builds the corpus captured on runners cannot be reproduced through it. ⭐ `151.0.7922.76`, which is the corpus's own first profile, IS published, on both platforms. |
+| ⛔ **`resolve` could not version an automation build on Windows at all.** The archive is FLAT: read from the central directory of `chrome-win64.zip` for `151.0.7922.76`, `chrome.exe` sits beside `151.0.7922.76.manifest` and there is no version-shaped DIRECTORY. `Source::SiblingDirectory` answered nothing and `Source::VersionFlag` is not asked on Windows. | the confirm step in step 4 of the tool could not have passed on Windows. `Source::ManifestFile` is the third source and `b_ids_driver::sources_for` is the one reader all three go through. |
+
+⛔ **And a third finding is not this entry's to fix.** The corpus route is
+`browser/channel/platform/version` and carries no `branded`, and `Channel` is a
+closed vocabulary of six that does not include the automation channel. So a
+branded and an unbranded build of one version publish at one path. That is why
+the two `for-testing` cells are planned and not attempted, and
+[`PROGRESS.md`](PROGRESS.md) carries the question with a recommendation.
+`DRIVER-06` owns the difference between the two products.
+
+```text
+$ target/debug/b-ids-driver.exe acquire --browser chrome --version 151.0.7922.76 --platform linux64 --index .tmp/cft-known-good.json --json
+{"browser":"chrome","index":"https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json","platform":"linux64","route":"chrome-for-testing","schema":"acquire/1","url":"https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.76/linux64/chrome-linux64.zip","version":"151.0.7922.76"}
+exit=0
+$ target/debug/b-ids-driver.exe acquire --browser chrome --version 151.0.7922.173 --platform linux64 --index .tmp/cft-known-good.json
+b-ids-driver: the automation index does not publish 151.0.7922.173. It carries 2497 build(s), and it publishes a subset rather than every build the vendor ships. Nearest in the same line: 151.0.7922.2, 151.0.7922.3, 151.0.7922.4, 151.0.7922.5, 151.0.7922.10, 151.0.7922.19, 151.0.7922.34, 151.0.7922.47, 151.0.7922.71, 151.0.7922.76, 151.0.7922.77, 151.0.7922.138
+exit=1
+$ target/debug/b-ids-driver.exe acquire --browser edge --version 151.0.4129.101 --index .tmp/cft-known-good.json
+b-ids-driver: there is no automation-build route for edge. It is the one route that serves an exact build, and it is Chrome only.
+exit=2
+```
+
+⭐ **The acceptance grew from seven refusals to eight checks, and both halves
+answer identically.** The eighth is that the `for-testing` plan names an index
+step where the vendor plan does not: two routes described identically is a plan
+nobody could use to tell them apart.
+
+```text
+$ sh scripts/common/check-provisioning.sh --json
+{"schema":"check-provisioning/2","checks":8,"problems":0,"provisioned":"skipped","acquired":"skipped"}
+$ pwsh -NoProfile -File scripts/common/check-provisioning.ps1 -Json
+{"schema":"check-provisioning/2","checks":8,"problems":0,"provisioned":"skipped","acquired":"skipped"}
+```
 ---
 
 ## DRIVER-09. The most dangerous script in the tree is the one with no twin

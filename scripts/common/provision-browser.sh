@@ -46,7 +46,7 @@
 #
 # Usage:
 #   B_IDS_DISPOSABLE=1 sh scripts/common/provision-browser.sh --browser chrome --route vendor
-#   B_IDS_DISPOSABLE=1 sh scripts/common/provision-browser.sh --browser chrome --route for-testing --version 151.0.7922.173
+#   B_IDS_DISPOSABLE=1 sh scripts/common/provision-browser.sh --browser chrome --route for-testing --version 151.0.7922.76
 #   sh scripts/common/provision-browser.sh --plan --browser chrome --route vendor
 #
 # Exit codes: 0 provisioned and confirmed,
@@ -123,10 +123,25 @@ plan_for() {
       printf 'fetch   https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi\n'
       printf 'install msiexec /qn, which is the silent unattended mode\n'
       ;;
+    linux/for-testing)
+      printf 'purge   as for the vendor route on this platform\n'
+      printf 'index   the automation-build index, whose URL b_ids_driver::acquire owns.\n'
+      printf '        it publishes a SUBSET of builds, so an exact build may not be in it\n'
+      printf 'fetch   the chrome-linux64.zip that index names for the build asked for\n'
+      printf 'install unzip into /opt/google/chrome, link /usr/bin/google-chrome at it,\n'
+      printf '        and give chrome_sandbox root ownership and mode 4755\n'
+      ;;
+    windows/for-testing)
+      printf 'purge   as for the vendor route on this platform\n'
+      printf 'index   the automation-build index, whose URL b_ids_driver::acquire owns.\n'
+      printf '        it publishes a SUBSET of builds, so an exact build may not be in it\n'
+      printf 'fetch   the chrome-win64.zip that index names for the build asked for\n'
+      printf 'install expand into the Chrome Application directory. The archive is FLAT:\n'
+      printf '        chrome.exe sits beside the manifest resolve reads the build from\n'
+      ;;
     */for-testing)
       printf 'purge   as for the vendor route on this platform\n'
-      printf 'fetch   the zip the automation-build index names for this exact build\n'
-      printf 'install unzip into a directory this project owns, and link it where resolve looks\n'
+      printf 'no unpack layout is recorded for %s\n' "$OS"
       ;;
     *)
       printf 'no plan is recorded for %s on this platform\n' "$ROUTE"
@@ -247,6 +262,139 @@ case "$OS" in
   mac) sudo rm -rf "/Applications/Google Chrome.app" >/dev/null 2>&1 ;;
 esac
 
+# -- the automation-build route ----------------------------------------------
+#
+# ⛔ THE INDEX IS READ BY THE DRIVER AND SO IS THE URL IT LIVES AT. A second
+# spelling in this file would 404 on its own the day the vendor moves the file,
+# and nothing would compare the two. b_ids_driver::acquire owns both, and
+# `acquire --index-url` is how this asks.
+#
+# ⚠ THE INDEX PUBLISHES A SUBSET OF BUILDS. Measured 2026-09-02: it carried 67
+# builds of Chrome 151, and neither 151.0.7922.173 nor 151.0.7922.174, which are
+# the two the hosted runner images served. The driver's refusal names the
+# nearest builds in the same line, so a caller that asked for an unpublished
+# build is told what it could have asked for instead.
+#
+# Sets URL and ARCHIVE for the digest step, and leaves the unpacked tree in
+# $OUT/unpacked. Exits nonzero rather than setting a flag: a fetch that half
+# worked must not reach the install.
+for_testing_fetch() {
+  command -v curl >/dev/null 2>&1 || {
+    printf 'provision-browser: curl not found, and the index has to be fetched\n' >&2
+    return 2
+  }
+
+  index_url=$("$DRIVER" acquire --index-url --browser "$BROWSER")
+  rc=$?
+  if [ "$rc" != 0 ] || [ -z "$index_url" ]; then
+    printf 'provision-browser: the driver named no automation index for %s\n' "$BROWSER" >&2
+    return 2
+  fi
+
+  printf 'index   %s\n' "$index_url"
+  curl -fsSL -o "$OUT/index.json" "$index_url" || {
+    printf 'provision-browser: the automation index did not fetch\n' >&2
+    return 1
+  }
+
+  # ⛔ READ UNPIPED. A guard on the left of a pipe reports the pipeline's
+  # status, and this one distinguishes "the index does not publish that build"
+  # at 1 from "could not ask" at 2.
+  URL=$("$DRIVER" acquire --browser "$BROWSER" --version "$VERSION" --index "$OUT/index.json")
+  rc=$?
+  if [ "$rc" != 0 ]; then
+    printf 'provision-browser: the index named no archive for %s %s\n' "$BROWSER" "$VERSION" >&2
+    "$DRIVER" acquire --browser "$BROWSER" --version "$VERSION" --index "$OUT/index.json" >/dev/null
+    return "$rc"
+  fi
+
+  ARCHIVE="$OUT/$(basename "$URL")"
+  curl -fsSL -o "$ARCHIVE" "$URL" || {
+    printf 'provision-browser: the archive did not fetch from %s\n' "$URL" >&2
+    return 1
+  }
+
+  rm -rf "$OUT/unpacked"
+  mkdir -p "$OUT/unpacked" || return 1
+  if command -v unzip >/dev/null 2>&1; then
+    unzip -q -o "$ARCHIVE" -d "$OUT/unpacked" || {
+      printf 'provision-browser: the archive did not unpack\n' >&2
+      return 1
+    }
+  elif [ "$OS" = windows ]; then
+    # ⚠ Expand-Archive is built in, and unzip is not on a Windows runner. Both
+    # arguments are converted to native paths first: Git Bash hands a POSIX path
+    # to a Windows process unchanged, and PowerShell cannot open it.
+    native_archive=$(cygpath -w "$ARCHIVE" 2>/dev/null || printf '%s' "$ARCHIVE")
+    native_out=$(cygpath -w "$OUT/unpacked" 2>/dev/null || printf '%s' "$OUT/unpacked")
+    powershell -NoProfile -Command \
+      "Expand-Archive -LiteralPath '$native_archive' -DestinationPath '$native_out' -Force" || {
+      printf 'provision-browser: Expand-Archive refused the archive\n' >&2
+      return 1
+    }
+  else
+    printf 'provision-browser: no unzip on this machine and no built-in to fall back to\n' >&2
+    return 2
+  fi
+  return 0
+}
+
+# ⛔ THE SUID SANDBOX HELPER IS SET UP, AND SKIPPING IT IS A LANE THAT CAPTURES
+# NOTHING. Measured 2026-09-02 in capture.yml run 33615327503: the edge lane on
+# ubuntu-latest exited after 2.4 seconds having opened no connection, and its
+# own log said the helper "was found, but is not configured correctly" and named
+# the ownership and mode it needs. An unpacked archive carries neither.
+#
+# ⚠ TWO NAMES, because the official build's compiled-in path uses a hyphen and
+# the archive ships an underscore. Installing both costs a copy and removes a
+# whole class of "it launched and opened nothing".
+install_for_testing_linux() {
+  src="$OUT/unpacked/chrome-linux64"
+  [ -x "$src/chrome" ] || {
+    printf 'provision-browser: no chrome in %s after unpacking\n' "$src" >&2
+    ls -la "$OUT/unpacked" >&2
+    return 1
+  }
+  sudo rm -rf /opt/google/chrome || return 1
+  sudo mkdir -p /opt/google/chrome || return 1
+  sudo cp -a "$src/." /opt/google/chrome/ || return 1
+  sudo ln -sf /opt/google/chrome/chrome /usr/bin/google-chrome || return 1
+  if [ -f /opt/google/chrome/chrome_sandbox ]; then
+    sudo cp -a /opt/google/chrome/chrome_sandbox /opt/google/chrome/chrome-sandbox || return 1
+    for helper in /opt/google/chrome/chrome_sandbox /opt/google/chrome/chrome-sandbox; do
+      sudo chown root:root "$helper" || return 1
+      sudo chmod 4755 "$helper" || return 1
+    done
+    printf 'sandbox %s\n' "$(stat -c '%U:%G %a %n' /opt/google/chrome/chrome-sandbox)"
+  else
+    printf 'provision-browser: the archive carried no chrome_sandbox\n' >&2
+  fi
+  return 0
+}
+
+# ⚠ THE ARCHIVE IS FLAT AND THAT IS WHY THIS WORKS AT ALL. Read from the
+# archive's central directory 2026-09-02: chrome.exe sits beside a
+# VERSION.manifest file and there is no version-shaped DIRECTORY, so
+# b_ids_driver::resolve reads the build from the manifest. Before that source
+# existed the confirm step below could not name what it had installed.
+install_for_testing_windows() {
+  src="$OUT/unpacked/chrome-win64"
+  [ -f "$src/chrome.exe" ] || {
+    printf 'provision-browser: no chrome.exe in %s after unpacking\n' "$src" >&2
+    ls -la "$OUT/unpacked" >&2
+    return 1
+  }
+  # ⚠ Read from the environment. A program files directory is not the same
+  # string on every Windows install and nobody's to hardcode.
+  root=$(cygpath -u "${PROGRAMFILES:-C:\\Program Files}" 2>/dev/null || printf '/c/Program Files')
+  dest="$root/Google/Chrome/Application"
+  rm -rf "$dest"
+  mkdir -p "$dest" || return 1
+  cp -a "$src/." "$dest/" || return 1
+  printf 'installed %s\n' "$dest/chrome.exe"
+  return 0
+}
+
 # -- 2. confirm the purge -----------------------------------------------------
 #
 # ⛔ READ FROM THE RESOLVER, not from the exit code of a package manager. A
@@ -280,6 +428,13 @@ case "$OS/$ROUTE" in
     curl -fsSL -o "$ARCHIVE" "$URL" || { printf 'provision-browser: fetch failed\n' >&2; exit 1; }
     native=$(cygpath -w "$ARCHIVE" 2>/dev/null || printf '%s' "$ARCHIVE")
     msiexec //i "$native" //qn //norestart >/dev/null 2>&1
+    ;;
+  linux/for-testing|windows/for-testing)
+    for_testing_fetch || exit $?
+    case "$OS" in
+      linux) install_for_testing_linux || exit 1 ;;
+      windows) install_for_testing_windows || exit 1 ;;
+    esac
     ;;
   *)
     printf 'provision-browser: the %s route on %s is not implemented yet\n' "$ROUTE" "$OS" >&2

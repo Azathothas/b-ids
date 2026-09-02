@@ -199,3 +199,242 @@ where
     }
     Err(refusals)
 }
+
+/// A platform the automation-build index publishes for.
+///
+/// ⛔ **These are the index's own spellings, read from it rather than chosen.**
+/// The corpus spells the third one `macos-arm64` and the index spells it
+/// `mac-arm64`, so a caller crossing the two translates deliberately instead of
+/// discovering the difference from a 404.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Platform {
+    /// 64-bit Linux.
+    Linux64,
+    /// 64-bit Windows.
+    Win64,
+    /// 32-bit Windows.
+    Win32,
+    /// Apple silicon.
+    MacArm64,
+    /// 64-bit Intel macOS.
+    MacX64,
+}
+
+impl Platform {
+    /// Every platform the index is known to publish for.
+    #[must_use]
+    pub fn all() -> [Self; 5] {
+        [
+            Self::Linux64,
+            Self::Win64,
+            Self::Win32,
+            Self::MacArm64,
+            Self::MacX64,
+        ]
+    }
+
+    /// The index's own spelling.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Linux64 => "linux64",
+            Self::Win64 => "win64",
+            Self::Win32 => "win32",
+            Self::MacArm64 => "mac-arm64",
+            Self::MacX64 => "mac-x64",
+        }
+    }
+
+    /// Read a platform from the name a caller wrote.
+    ///
+    /// ⛔ **An unknown name is `None` rather than a default.** A caller asking
+    /// for a platform this index has no branch for is asking for something that
+    /// cannot be produced, and answering with the host's own would provision one
+    /// machine with another machine's build.
+    #[must_use]
+    pub fn parse(name: &str) -> Option<Self> {
+        Self::all().into_iter().find(|p| p.as_str() == name)
+    }
+
+    /// Every platform's name, for a message that has to say what is available.
+    #[must_use]
+    pub fn names() -> String {
+        Self::all()
+            .iter()
+            .map(|p| p.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+
+    /// The platform this binary is running on, where the index publishes one.
+    ///
+    /// ⚠ `None` on a target the index does not serve, which is an answer rather
+    /// than an error: the caller then has to name a platform, and being told so
+    /// is better than being given the nearest one.
+    #[must_use]
+    pub fn host() -> Option<Self> {
+        match (std::env::consts::OS, std::env::consts::ARCH) {
+            ("linux", "x86_64") => Some(Self::Linux64),
+            ("windows", "x86_64") => Some(Self::Win64),
+            ("windows", "x86") => Some(Self::Win32),
+            ("macos", "aarch64") => Some(Self::MacArm64),
+            ("macos", "x86_64") => Some(Self::MacX64),
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for Platform {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+/// Why the index could not name a download.
+///
+/// ⛔ **Three facts, kept apart.** "The index did not parse", "the index does
+/// not publish that build" and "that build has no archive for this platform"
+/// send a caller to three different places, and a single string saying the
+/// download was not found sends them to none of them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum IndexRefusal {
+    /// The bytes were not the index this reader knows.
+    Unparsable(String),
+    /// The index parsed and does not carry that build.
+    ///
+    /// ⚠ **The common case, and it is not an error in this tree.** The
+    /// automation index publishes a SUBSET of builds: measured 2026-09-02, it
+    /// carried 67 builds of Chrome `151` and neither `151.0.7922.173` nor
+    /// `151.0.7922.174`, which are the two the hosted runner images served.
+    NoSuchBuild {
+        /// What was asked for.
+        version: String,
+        /// How many builds the index does carry.
+        known: usize,
+        /// The nearest builds it carries, in the index's order.
+        nearest: Vec<String>,
+    },
+    /// The build is published and not for this platform.
+    NoDownloadForPlatform {
+        /// What was asked for.
+        version: String,
+        /// The platform asked for.
+        platform: Platform,
+        /// The platforms that build does have.
+        had: Vec<String>,
+    },
+}
+
+impl fmt::Display for IndexRefusal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Unparsable(why) => write!(f, "the automation index did not parse: {why}"),
+            Self::NoSuchBuild {
+                version,
+                known,
+                nearest,
+            } => write!(
+                f,
+                "the automation index does not publish {version}. It carries {known} build(s), \
+                 and it publishes a subset rather than every build the vendor ships. \
+                 Nearest in the same line: {}",
+                if nearest.is_empty() {
+                    "none".to_owned()
+                } else {
+                    nearest.join(", ")
+                }
+            ),
+            Self::NoDownloadForPlatform {
+                version,
+                platform,
+                had,
+            } => write!(
+                f,
+                "the automation index publishes {version} and not for {platform}. It has {}",
+                had.join(", ")
+            ),
+        }
+    }
+}
+
+/// The archive URL the automation index names for one build on one platform.
+///
+/// ⛔ **The index is read, never constructed.** The URL is predictable enough
+/// to spell out, and a spelled-out URL is a second copy of a value the vendor
+/// owns: the day the layout moves, a constructed URL 404s and a read one does
+/// not. `DRIVER-05`.
+///
+/// ⚠ **It selects by name at every level.** The index is a list rather than a
+/// map, so the build is found by its `version` field and the archive by its
+/// `platform` field, never by position.
+///
+/// # Errors
+///
+/// [`IndexRefusal`], which distinguishes bytes that did not parse from a build
+/// the index does not carry from a build with no archive for this platform.
+pub fn download_url(
+    index_json: &str,
+    version: &str,
+    platform: Platform,
+) -> Result<String, IndexRefusal> {
+    let parsed: serde_json::Value = serde_json::from_str(index_json)
+        .map_err(|err| IndexRefusal::Unparsable(err.to_string()))?;
+    let versions = parsed
+        .get("versions")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| {
+            IndexRefusal::Unparsable("no `versions` array at the top level".to_owned())
+        })?;
+
+    let Some(entry) = versions
+        .iter()
+        .find(|e| e.get("version").and_then(serde_json::Value::as_str) == Some(version))
+    else {
+        // ⚠ The near misses, because "not published" is nearly always answered
+        // by picking a build that is. A caller shown only a refusal has to
+        // fetch five megabytes again to find out what it could have asked for.
+        let line = version.rsplit_once('.').map_or(version, |(head, _)| head);
+        let nearest: Vec<String> = versions
+            .iter()
+            .filter_map(|e| e.get("version").and_then(serde_json::Value::as_str))
+            .filter(|v| v.starts_with(line))
+            .map(str::to_owned)
+            .collect();
+        return Err(IndexRefusal::NoSuchBuild {
+            version: version.to_owned(),
+            known: versions.len(),
+            nearest,
+        });
+    };
+
+    let downloads = entry
+        .get("downloads")
+        .and_then(|d| d.get("chrome"))
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| {
+            IndexRefusal::Unparsable(format!("{version} carries no `downloads.chrome` array"))
+        })?;
+
+    for download in downloads {
+        if download.get("platform").and_then(serde_json::Value::as_str) == Some(platform.as_str()) {
+            let url = download
+                .get("url")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| {
+                    IndexRefusal::Unparsable(format!("{version} on {platform} carries no `url`"))
+                })?;
+            return Ok(url.to_owned());
+        }
+    }
+
+    Err(IndexRefusal::NoDownloadForPlatform {
+        version: version.to_owned(),
+        platform,
+        had: downloads
+            .iter()
+            .filter_map(|d| d.get("platform").and_then(serde_json::Value::as_str))
+            .map(str::to_owned)
+            .collect(),
+    })
+}

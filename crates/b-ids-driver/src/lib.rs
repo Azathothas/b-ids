@@ -30,8 +30,10 @@ pub mod headless;
 pub mod resolve;
 pub mod versions;
 
-pub use acquire::{Acquired, Candidate, Refusal, Route, acquire_with, plan};
+pub use acquire::{
+    Acquired, Candidate, IndexRefusal, Platform, Refusal, Route, acquire_with, download_url, plan,
+};
 pub use drive::{Driven, Launch, drive};
 pub use headless::{Normalisation, normalise, normalise_user_agent};
-pub use resolve::{Family, NotResolved, Resolved, Source, resolve};
+pub use resolve::{Family, NotResolved, Resolved, Source, resolve, sources_for};
 pub use versions::{Chosen, Release, Report, discover};

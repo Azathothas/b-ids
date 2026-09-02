@@ -1,0 +1,164 @@
+# The provisioning leg, on a machine that is thrown away. TODO/driver.md,
+# DRIVER-08.
+#
+# ⛔ THIS WORKFLOW PURGES EVERY BROWSER FROM THE RUNNER IT RUNS ON. That is what
+# it is for: on a machine this project controls completely, every capture so far
+# measured whatever somebody else's image installed, so every published profile
+# carries `captured.acquisition: null`.
+#
+# ⛔ IT IS DISPATCH ONLY AND IT IS NEVER SCHEDULED. A purge that fires on a cron
+# is a purge nobody chose to run.
+#
+# ⭐ IT IS ITS OWN WORKFLOW RATHER THAN A STEP IN capture.yml, and that is the
+# decision rather than an accident. capture.yml produces the corpus, its lanes
+# work today, and wiring an unproved purge in front of them would risk the one
+# pipeline that is producing data. trust-anchor.yml is the precedent: a leg that
+# changes a machine gets proved on its own before it joins the lane that matters.
+# ⚠ Moving it into capture.yml is DRIVER-08's next step and it happens after
+# this workflow has been green on both platforms.
+#
+# ⛔ B_IDS_DISPOSABLE IS SET HERE AND IN trust-anchor.yml AND NOWHERE ELSE. The
+# tool needs it AND the platform's own CI marker, from two sources, because one
+# edit lifting one condition is how the purge path reached a developer laptop on
+# 2026-09-02. docs/HISTORY/README.md carries that incident.
+#
+# ⛔ NOTHING HERE WRITES TO THE REPOSITORY. It publishes what the tool printed as
+# an artefact and the session that reads it writes the entry.
+#
+# ⛔ FAIL-FAST OFF. The two lanes answer about two platforms and one failing says
+# nothing about the other.
+#
+# ⭐ EACH PLATFORM RUNS THE ACCEPTANCE IN ITS OWN LANGUAGE. The Linux lane runs
+# the POSIX half and the Windows lane runs the PowerShell half, so a run of this
+# workflow is also the one place both halves of the pair drive the real purge
+# rather than reporting it skipped.
+#
+# ⛔ THIRD-PARTY ACTIONS ARE PINNED TO A COMMIT, NOT A TAG. The pins are the ones
+# capture.yml already carries.
+#
+# ⚠ NOTHING HERE NAMES AN OWNER OR A REPOSITORY.
+
+name: provision
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provision-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provision:
+    # manual: sh scripts/common/check-provisioning.sh
+    name: ${{ matrix.platform }} purge and install
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux64
+          - os: windows-latest
+            platform: win64
+    env:
+      # ⛔ THE ONE PLACE THIS IS SET, besides trust-anchor.yml. A runner is
+      # reclaimed when the job ends, so the machine this changes stops existing.
+      B_IDS_DISPOSABLE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: the pinned Rust toolchain
+        shell: bash
+        run: |
+          rustup show active-toolchain
+          cargo --version
+
+      # ⭐ WHAT THE IMAGE SHIPPED, READ BEFORE ANYTHING IS PURGED. It is the
+      # measurement this entry exists because of: the corpus records builds
+      # nobody chose, and this is the line that says which ones they were.
+      # ⚠ Exit 2 is "this runner has no browser", which is not a failure.
+      - name: what this image shipped, before the purge
+        shell: bash
+        run: |
+          set +e
+          cargo run -q -p b-ids-driver -- resolve --json > before.jsonl 2>&1
+          rc=$?
+          set -e
+          cat before.jsonl || true
+          echo "resolve before the purge exit=$rc"
+          [ "$rc" = 0 ] || [ "$rc" = 2 ]
+
+      # ⭐ THE BUILD COMES FROM THE MATRIX, never from a constant here. A build
+      # spelled in a workflow is a second copy of a value
+      # .github/capture-matrix.json owns, and the copy that goes stale is the one
+      # nobody is reading.
+      # ⚠ EMPTY IS A VALID ANSWER and it means the exact-build leg is skipped
+      # rather than run against a build nobody chose.
+      - name: the build the matrix names for this platform
+        id: cell
+        shell: bash
+        run: |
+          build=$(jq -r --arg p "${{ matrix.platform }}" \
+            '[.cells[] | select(.route == "for-testing" and .platform == $p)][0].build // ""' \
+            .github/capture-matrix.json)
+          echo "the matrix names build: ${build:-none}"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
+      # ⛔ THE ACCEPTANCE DRIVES THE TOOL, and this step failing IS the lane
+      # failing. The check exits 1 when a refusal did not hold or when the purge
+      # and install did not confirm, and nothing here swallows that.
+      # ⛔ READ FROM THE PROCESS, UNPIPED. A guard on the left of a pipe reports
+      # the pipeline's status, so one that failed reads as green.
+      - name: purge, install and confirm
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          if [ -n "${{ steps.cell.outputs.build }}" ]; then
+            sh scripts/common/check-provisioning.sh --build "${{ steps.cell.outputs.build }}"
+          else
+            sh scripts/common/check-provisioning.sh
+          fi
+
+      # ⭐ THE POWERSHELL HALF, on the platform it exists for. DRIVER-09 forced
+      # the twin into existence and this is where it drives a real purge.
+      - name: purge, install and confirm
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          if [ -n "${{ steps.cell.outputs.build }}" ]; then
+            pwsh -NoProfile -File scripts/common/check-provisioning.ps1 -Build "${{ steps.cell.outputs.build }}"
+          else
+            pwsh -NoProfile -File scripts/common/check-provisioning.ps1
+          fi
+
+      # ⛔ CONFIRMED AGAIN, INDEPENDENTLY OF THE TOOL. The tool checks its own
+      # install and that is the tool grading itself; this asks the resolver
+      # afterwards and prints what it says.
+      - name: what resolves now
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          cargo run -q -p b-ids-driver -- resolve --json > after.jsonl 2>&1
+          rc=$?
+          set -e
+          cat after.jsonl || true
+          echo "resolve after the install exit=$rc"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: provision-${{ matrix.platform }}
+          path: |
+            before.jsonl
+            after.jsonl
+            .tmp/provisioned.txt
+            .tmp/acquired.txt
+          if-no-files-found: warn
+          retention-days: 14

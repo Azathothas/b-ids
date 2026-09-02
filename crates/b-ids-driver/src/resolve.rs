@@ -98,6 +98,18 @@ pub enum Source {
     /// A version-shaped directory beside the executable, which is how the
     /// Chromium installers lay a build out on Windows.
     SiblingDirectory,
+    /// A version-shaped `NAME.manifest` file beside the executable.
+    ///
+    /// ⛔ **Measured, and it is the only source an automation build has on
+    /// Windows.** The archive the automation index serves is FLAT: read from
+    /// the central directory of `chrome-win64.zip` for `151.0.7922.76` on
+    /// 2026-09-02, `chrome.exe` sits beside `151.0.7922.76.manifest` and there
+    /// is no version-shaped DIRECTORY at all. [`Source::SiblingDirectory`]
+    /// therefore answers nothing for that layout, and
+    /// [`Source::VersionFlag`] is not asked on Windows, so without this an
+    /// automation build would resolve as an executable nobody could version
+    /// and be skipped. `TODO/driver.md`, `DRIVER-08`.
+    ManifestFile,
     /// The executable's own `--version` output.
     ///
     /// ⛔ **Not asked on Windows at all, and that was measured here.** Running
@@ -114,6 +126,7 @@ impl Source {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::SiblingDirectory => "sibling-directory",
+            Self::ManifestFile => "manifest-file",
             Self::VersionFlag => "version-flag",
         }
     }
@@ -232,6 +245,36 @@ fn from_sibling(path: &Path) -> Option<String> {
     found.pop()
 }
 
+/// The build from a version-shaped `NAME.manifest` file beside the executable.
+///
+/// ⛔ **A FILE, where [`from_sibling`] wants a DIRECTORY, and the difference is
+/// the whole reason this exists.** The branded installers lay a build out in a
+/// version-named directory; the automation archive is flat and names the build
+/// in a manifest file instead. A reader that looked for one shape found nothing
+/// in the other and reported an executable it could not version.
+///
+/// ⚠ **Highest wins, for the same reason as [`from_sibling`].** Nothing stops
+/// two manifests sitting in one directory after an unpack over an older build,
+/// and the comparison is of parsed components rather than of text so that
+/// `7922.9` sorts below `7922.76`.
+fn from_manifest(path: &Path) -> Option<String> {
+    let dir = path.parent()?;
+    let mut found: Vec<String> = std::fs::read_dir(dir)
+        .ok()?
+        .filter_map(Result::ok)
+        .filter(|e| e.path().is_file())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .filter_map(|n| n.strip_suffix(".manifest").map(str::to_owned))
+        .filter(|stem| version_shaped(stem))
+        .collect();
+    found.sort_by_key(|n| {
+        n.split('.')
+            .map(|p| p.parse::<u64>().unwrap_or(0))
+            .collect::<Vec<u64>>()
+    });
+    found.pop()
+}
+
 /// The build from the executable's own `--version`.
 ///
 /// ⛔ **Windows is excluded by platform rather than by timeout.** Measured on
@@ -250,6 +293,35 @@ fn from_flag(path: &Path) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// What every source answers about the executable at one path, in the order
+/// they are asked.
+///
+/// ⭐ **One reader of "which build is this", and [`resolve`] is a caller rather
+/// than a second copy.** Three sources answer three different layouts and the
+/// order between them is a decision; a second place that asked two of them
+/// would disagree with this one the first time a layout moved.
+///
+/// ⚠ **Empty means no source could version it**, which [`resolve`] treats as
+/// not a browser: a capture whose subject cannot be named is not a capture.
+#[must_use]
+pub fn sources_for(path: &Path) -> Vec<(Source, String)> {
+    let mut answers = Vec::new();
+    if let Some(version) = from_sibling(path) {
+        answers.push((Source::SiblingDirectory, version));
+    }
+    // ⚠ After the directory and before the flag, which is the order of
+    // decreasing authority for a BRANDED install: a staged update creates the
+    // new directory before the manifest beside it moves. For an automation
+    // build it is the only source on Windows.
+    if let Some(version) = from_manifest(path) {
+        answers.push((Source::ManifestFile, version));
+    }
+    if let Some(version) = from_flag(path) {
+        answers.push((Source::VersionFlag, version));
+    }
+    answers
+}
+
 /// Find every browser this resolver knows how to look for.
 ///
 /// # Errors
@@ -266,13 +338,7 @@ pub fn resolve() -> Result<Vec<Resolved>, NotResolved> {
             if !path.is_file() {
                 continue;
             }
-            let mut answers = Vec::new();
-            if let Some(version) = from_sibling(&path) {
-                answers.push((Source::SiblingDirectory, version));
-            }
-            if let Some(version) = from_flag(&path) {
-                answers.push((Source::VersionFlag, version));
-            }
+            let answers = sources_for(&path);
             let Some((_, version)) = answers.first().cloned() else {
                 // ⛔ An executable no source could version is reported as
                 // nothing rather than as a browser with an unknown build. A

@@ -62,7 +62,15 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-manual-path: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
-WORKFLOWS=$(git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml' | LC_ALL=C sort)
+# ⛔ TRACKED AND UNTRACKED BOTH. A workflow that was written and never staged
+# escaped this check entirely, so the one moment a new job's manual line is
+# missing is the one moment nothing looked. Measured 2026-09-02: this reported
+# 9 jobs over a tree carrying 10, and `git add -N` alone changed the answer.
+# ⚠ check-exit-codes had this exact defect and was fixed on 2026-09-02; this
+# half of the same shape was left. TODO/ci.md, CI-08.
+WORKFLOWS=$({ git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml';
+  git ls-files --others --exclude-standard -- '.github/workflows/*.yml' '.github/workflows/*.yaml';
+} | LC_ALL=C sort -u)
 [ -n "$WORKFLOWS" ] || {
   printf 'check-manual-path: no workflows, so nothing was checked\n' >&2
   exit 2

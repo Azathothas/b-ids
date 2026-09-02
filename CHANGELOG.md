@@ -14,6 +14,50 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T12:10:00Z - the exact-build route, and two findings that moved what it can promise
+
+**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-08`,
+[`TODO/ci.md`](TODO/ci.md) `CI-08`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`b-ids-driver acquire`**: reads the automation-build index and names the
+  archive URL for one exact build on one platform. It fetches nothing and
+  touches no machine, which is what lets `provision-browser` fetch with the one
+  tool each platform already has. ⛔ It runs BEFORE the resolver, like
+  `versions` does, because a provisioning run calls it immediately after
+  purging every browser off the machine.
+- ⭐ **`Source::ManifestFile`**, a third way to read which build an executable
+  is. The automation archive is flat: `chrome.exe` sits beside a
+  `VERSION.manifest` and there is no version-shaped directory, so on Windows,
+  where `--version` is not asked, nothing could version an automation build at
+  all. `b_ids_driver::sources_for` is now the one reader all three sources go
+  through and `resolve` is a caller of it.
+- ⭐ **`.github/workflows/provision.yml`**, dispatch only, two platforms, each
+  running the acceptance in its own language. ⛔ Its own workflow rather than a
+  step in `capture.yml`: the capture lanes produce the corpus today and an
+  unproved purge does not go in front of them. `trust-anchor.yml` is the
+  precedent.
+- **The capture matrix names its routes.** Every cell carries `route`,
+  `branded` and `build`, and two unbranded cells are planned and not attempted.
+
+⛔ **Two findings, each one moving a claim the entry made before it.** The
+automation index publishes a SUBSET of builds: 2497 in all, 67 of Chrome `151`,
+and neither of the two builds the hosted runner images served, so those two
+cannot be reproduced through the exact-build route at all. And `resolve` could
+not version an automation build on Windows, which would have made the
+provisioning tool's own confirm step unpassable there.
+
+⛔ **And one defect in a check, of a shape this project had already fixed
+once.** `check-manual-path` read tracked files only, so a workflow that was
+written and never staged escaped it: it reported 9 jobs over a tree carrying 10,
+and `git add -N` alone changed the answer. `check-exit-codes` had the same
+defect and was fixed on 2026-09-01; this half of the shape was left. Both halves
+read untracked files now, and both were seen to fail at exit 1 against a
+workflow with its `# manual:` line removed.
+
 ### 2026-09-02T11:25:00Z - a tool that purges browsers, and the guard it needed twice
 
 **Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-08`, `DRIVER-09` and

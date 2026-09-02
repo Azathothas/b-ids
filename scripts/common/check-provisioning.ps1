@@ -22,18 +22,26 @@
 #   4. -Route for-testing with no -Version is refused, because the index is
 #      keyed by build;
 #   5. -Plan names a purge, a fetch, an install and a confirm for this platform
-#      and RUNS NOTHING.
+#      and RUNS NOTHING;
+#   6. -Plan for the for-testing route names an index step as well, because
+#      that route reads one and the vendor route does not.
 #
 # -- ⛔ WHAT IS CHECKED ONLY ON A DISPOSABLE MACHINE -------------------------
 #
-#   6. the tool purges, `resolve` then exits 2, it installs, and `resolve` then
+#   7. the tool purges, `resolve` then exits 2, it installs, and `resolve` then
 #      reports a version. ⚠ Skipped loudly elsewhere, never silently: a check
 #      that quietly passed where it could not run is the shape that makes a
 #      green suite mean nothing.
+#   8. with -Build, the same for the for-testing route at an EXACT build, and
+#      `resolve` must then report that build and no other. ⛔ Skipped loudly
+#      without -Build rather than run against a version spelled here: a build
+#      hardcoded in a check goes stale, and the matrix cell is where a build is
+#      named.
 #
 # Usage:
 #   pwsh -NoProfile -File scripts/common/check-provisioning.ps1
 #   pwsh -NoProfile -File scripts/common/check-provisioning.ps1 -Json
+#   pwsh -NoProfile -File scripts/common/check-provisioning.ps1 -Build 151.0.7922.76
 #
 # Exit codes: 0 every refusal held, 1 one did not, 2 could not run.
 #
@@ -42,6 +50,7 @@
 [CmdletBinding(PositionalBinding = $false)]
 param(
     [switch]$Json,
+    [string]$Build = '',
     # ⛔ EVERY UNBOUND ARGUMENT LANDS HERE, so an unknown one exits 2. CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
@@ -168,7 +177,33 @@ if ($planRc -ne 0) {
     }
 }
 
-# 6. ⚠ THE PROVISIONING ITSELF, only where the machine is thrown away.
+# 6. ⛔ THE for-testing PLAN NAMES AN INDEX STEP, and the vendor plan does not.
+# The two routes differ by where the build comes from, so a plan that described
+# them identically would be a plan nobody could use to tell them apart.
+$checked = $checked + 1
+$keptDisposable = $env:B_IDS_DISPOSABLE
+$keptCi = $env:CI
+$env:B_IDS_DISPOSABLE = ''
+$env:CI = ''
+try {
+    $ftPlan = (& $pwshExe -NoProfile -File $tool -Plan -Browser chrome -Route for-testing `
+        -Version 151.0.7922.76 2>&1 | Out-String)
+    $ftPlanRc = $LASTEXITCODE
+} finally {
+    $env:B_IDS_DISPOSABLE = $keptDisposable
+    $env:CI = $keptCi
+}
+if ($ftPlanRc -ne 0) {
+    $problems += ('  -Plan for-testing: exit ' + $ftPlanRc + ', expected 0')
+} else {
+    foreach ($word in @('purge', 'index', 'fetch', 'install', 'confirm')) {
+        if ($ftPlan -notlike ('*' + $word + '*')) {
+            $problems += ('  -Plan for-testing: names no ' + $word + ' step for this platform')
+        }
+    }
+}
+
+# 7. ⚠ THE PROVISIONING ITSELF, only where the machine is thrown away.
 $provisioned = 'skipped'
 if ($env:B_IDS_DISPOSABLE -eq '1' -and -not [string]::IsNullOrEmpty($env:CI)) {
     $checked = $checked + 1
@@ -182,16 +217,36 @@ if ($env:B_IDS_DISPOSABLE -eq '1' -and -not [string]::IsNullOrEmpty($env:CI)) {
     }
 }
 
+# 8. ⛔ THE EXACT-BUILD ROUTE, which is the one that can be asked for a build
+# and answer with a different one. The confirm step inside the tool is what
+# refuses that, and this is where it is exercised.
+$acquired = 'skipped'
+if ($Build -and $env:B_IDS_DISPOSABLE -eq '1' -and -not [string]::IsNullOrEmpty($env:CI)) {
+    $checked = $checked + 1
+    & $pwshExe -NoProfile -File $tool -Browser chrome -Route for-testing -Version $Build `
+        > (Join-Path $root '.tmp' | Join-Path -ChildPath 'acquired.txt') 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $acquired = 'ok'
+    } else {
+        $acquired = 'failed'
+        $problems += ('  for-testing: the tool did not acquire and confirm ' + $Build)
+    }
+}
+
 $count = $problems.Count
 
 if ($Json) {
-    Write-Output ('{"schema":"check-provisioning/1","checks":' + $checked + ',"problems":' + $count + ',"provisioned":"' + $provisioned + '"}')
+    Write-Output ('{"schema":"check-provisioning/2","checks":' + $checked + ',"problems":' + $count + ',"provisioned":"' + $provisioned + '","acquired":"' + $acquired + '"}')
 } elseif ($count -eq 0) {
     Write-Output ('provisioning ok: ' + $checked + ' check(s), every refusal held, provisioning ' + $provisioned)
     if ($provisioned -eq 'skipped') {
         Write-Output '  SKIP the provisioning itself: this machine is not disposable, so nothing'
         Write-Output '  was purged. A workflow on a disposable runner is where that leg runs,'
-        Write-Output '  and TODO/driver.md, DRIVER-08, is what has not been built yet.'
+        Write-Output '  and .github/workflows/provision.yml is what runs it.'
+    }
+    if ($acquired -eq 'skipped') {
+        Write-Output '  SKIP the exact-build route: it runs with -Build on a disposable'
+        Write-Output '  machine, and the build is named by the matrix cell rather than here.'
     }
 } else {
     [Console]::Error.WriteLine('provisioning check failed, ' + $count + ' problem(s):')

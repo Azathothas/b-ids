@@ -29,7 +29,7 @@
 use std::net::IpAddr;
 use std::time::Duration;
 
-use b_ids_driver::{Launch, drive, resolve};
+use b_ids_driver::{Launch, Source, drive, resolve};
 
 /// Whether this host has a browser at all.
 ///
@@ -374,4 +374,105 @@ fn resolve_and_drive_log_refuses_a_path_it_cannot_write() {
         refused.contains("browser.log"),
         "the refusal names the path: {refused}"
     );
+}
+
+// -- the two layouts a Chrome build arrives in, and what versions each ------
+
+/// A directory nobody keeps, named for this process so two runs cannot collide.
+fn layout_dir(name: &str) -> std::path::PathBuf {
+    let dir =
+        std::env::temp_dir().join(format!("b-ids-driver-layout-{name}-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).expect("a directory under the system temp");
+    dir
+}
+
+#[test]
+fn an_automation_build_is_versioned_from_the_manifest_beside_the_executable() {
+    // ⛔ MEASURED FROM THE ARCHIVE, not assumed. Read on 2026-09-02 from the
+    // central directory of the automation index's chrome-win64.zip for
+    // 151.0.7922.76: the archive is FLAT. chrome.exe sits beside
+    // 151.0.7922.76.manifest and there is no version-shaped DIRECTORY at all.
+    // Before this source existed, that layout resolved as an executable no
+    // source could version, so the resolver skipped it and a provisioning run
+    // could not confirm its own install on Windows. TODO/driver.md, DRIVER-08.
+    let dir = layout_dir("automation");
+    let exe = dir.join("chrome.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    std::fs::write(dir.join("151.0.7922.76.manifest"), b"").expect("write the manifest");
+
+    let answers = b_ids_driver::sources_for(&exe);
+    assert!(
+        answers.contains(&(Source::ManifestFile, "151.0.7922.76".to_owned())),
+        "the manifest is the only source this layout has: {answers:?}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn a_branded_install_is_versioned_from_the_directory_and_that_source_stays_first() {
+    // ⚠ THE ORDER IS A DECISION AND IT IS ASSERTED. resolve() takes the FIRST
+    // answer as the build, so a manifest sorting ahead of the version-shaped
+    // directory would change which build a branded install reports.
+    let dir = layout_dir("branded");
+    let exe = dir.join("chrome.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    std::fs::create_dir_all(dir.join("151.0.7922.174")).expect("the versioned directory");
+    std::fs::write(dir.join("151.0.7922.174.manifest"), b"").expect("write the manifest");
+
+    let answers = b_ids_driver::sources_for(&exe);
+    assert_eq!(
+        answers.first().map(|(source, _)| *source),
+        Some(Source::SiblingDirectory),
+        "{answers:?}"
+    );
+    assert!(
+        answers.contains(&(Source::ManifestFile, "151.0.7922.174".to_owned())),
+        "{answers:?}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn the_highest_manifest_wins_when_an_unpack_left_an_older_one_behind() {
+    // ⚠ Unpacking a newer archive over an older one leaves both manifests, and
+    // the comparison is of parsed components rather than of text: as text,
+    // "151.0.7922.9" sorts above "151.0.7922.76".
+    let dir = layout_dir("two-manifests");
+    let exe = dir.join("chrome.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    std::fs::write(dir.join("151.0.7922.9.manifest"), b"").expect("the older manifest");
+    std::fs::write(dir.join("151.0.7922.76.manifest"), b"").expect("the newer manifest");
+
+    let answers = b_ids_driver::sources_for(&exe);
+    assert!(
+        answers.contains(&(Source::ManifestFile, "151.0.7922.76".to_owned())),
+        "76 is higher than 9 as a build and lower as text: {answers:?}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn a_file_that_is_not_version_shaped_is_not_read_as_a_build() {
+    // ⛔ An executable no source can version is reported as nothing rather than
+    // as a browser with an unknown build. A capture whose subject cannot be
+    // named is not a capture.
+    let dir = layout_dir("junk");
+    let exe = dir.join("chrome.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    std::fs::write(dir.join("chrome.VisualElementsManifest.xml"), b"").expect("a decoy");
+    std::fs::write(dir.join("latest.manifest"), b"").expect("another decoy");
+
+    let answers = b_ids_driver::sources_for(&exe);
+    assert!(
+        !answers
+            .iter()
+            .any(|(source, _)| *source == Source::ManifestFile),
+        "{answers:?}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
 }

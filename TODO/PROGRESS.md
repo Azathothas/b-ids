@@ -415,11 +415,27 @@ time), `HARNESS-16` (why a Windows runner will not take a root unattended),
 
 ## Open questions for the operator
 
-⭐ **None. Six went to the operator interactively on 2026-09-02 and all six
-were answered**: the four on provisioning, the two Chromes, resumption and the
-small entries, then two more after the operator saw a purge tool run on their
-own machine. The rulings are in the section below and in the entries they
-created.
+### ⛔ One, and it blocks the two unbranded matrix cells
+
+**Where does an unbranded build live in the corpus?** The published route is
+`browser/channel/platform/version` and carries no `branded`, and `Channel` is a
+closed vocabulary of six that does not include the vendor's automation channel.
+So a branded and an unbranded build of one version publish at one path, and the
+two `for-testing` cells in
+[`../.github/capture-matrix.json`](../.github/capture-matrix.json) are planned
+and not attempted because of it rather than because the tool cannot fetch them.
+
+⭐ **Recommendation: add `for-testing` to the `Channel` vocabulary**, and let
+`branded: false` follow from it rather than becoming a path component.
+
+| | |
+| --- | --- |
+| ⭐ **why this one** | the channel is ALREADY part of the route and of the `latest` key, so nothing about the layout changes and no consumer's pin moves. It is also true: the automation index is a channel the vendor publishes, separately from stable. |
+| ⚠ **what it costs** | one variant on a closed enum, the published schema regenerated, and `CORPUS-03`'s "latest means stable" sentence re-read so an automation build cannot be mistaken for one. |
+| ⛔ **the alternative that loses** | `branded` as a fifth path component. It changes `corpus/v1/` for every consumer to carry a dimension only one browser family has, and `PUB-03` has not shipped a route yet only by luck of timing. |
+
+⚠ **Nothing is blocked on the answer except those two cells.** `DRIVER-08`'s
+runner leg, `DRIVER-10` and the branded routes all proceed without it.
 
 ⚠ **A later session that finds a fork writes it here with a recommendation
 attached and keeps working.** [`RULES.md`](RULES.md) section 10 names "this
