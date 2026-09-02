@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 91  open 39  blocked 0  done 52
+total 91  open 38  blocked 0  done 53
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
 | P1 | 8 | 0 | 32 | 40 |
-| P2 | 27 | 0 | 10 | 37 |
+| P2 | 26 | 0 | 11 | 37 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **39** | **0** | **52** | **91** |
+| **all** | **38** | **0** | **53** | **91** |
 
 ---
 
@@ -36,7 +36,7 @@ total 91  open 39  blocked 0  done 52
 | CI-04 | P1 | M | open | A scheduled run that finds a change opens a pull request, not an issue | [`ci.md`](ci.md) |
 | CI-05 | P2 | M | open | The cold-start job, which is the only thing that catches rot | [`ci.md`](ci.md) |
 | CI-06 | P2 | M | open | No single source of any fact | [`ci.md`](ci.md) |
-| CI-07 | P2 | S | open | Exit 2 means could not run, and it is not a failure | [`ci.md`](ci.md) |
+| CI-07 | P2 | S | done | Exit 2 means could not run, and it is not a failure | [`ci.md`](ci.md) |
 | CI-08 | P2 | S | open | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
 | CORPUS-01 | P1 | M | done | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
 | CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |

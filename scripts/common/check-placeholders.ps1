@@ -22,8 +22,20 @@
 
 [CmdletBinding()]
 param(
-    [switch]$Json
+    [switch]$Json,
+    # ⛔ EVERY UNBOUND ARGUMENT LANDS HERE, so an unknown one exits 2 rather
+    # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
+    # this project's code for "it ran and the thing failed"; the POSIX twin
+    # exits 2 for the same input. Measured across every pair 2026-09-02:
+    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$UnboundArguments = @()
 )
+
+if ($UnboundArguments.Count -gt 0) {
+    [Console]::Error.WriteLine('check-placeholders: unknown argument: ' + $UnboundArguments[0])
+    exit 2
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'

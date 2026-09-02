@@ -415,6 +415,12 @@ compare_pair "check-coverage"       check-coverage.sh       "--json"          ch
 # rather than two wrappers over one answer.
 compare_pair "check-routes"         check-routes.sh         "--json"          check-routes.ps1         "-Json"
 
+# ⚠ THE PAIR THAT FOUND ITS OWN DEFECT. Every POSIX half answered 2 for an
+# argument it cannot act on and every PowerShell half answered 1, 22 of 22, and
+# the comparison could not see it because it compares runs that SUCCEED.
+# TODO/ci.md, CI-07.
+compare_pair "check-exit-codes"     check-exit-codes.sh     "--json"          check-exit-codes.ps1     "-Json"
+
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
 # in this tree with no comparison at all, and it was left out because fetching
 # needs the network and a gate check must not. ⭐ Its self-test does not: it

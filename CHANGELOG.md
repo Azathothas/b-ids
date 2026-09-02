@@ -14,6 +14,24 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T03:45:00Z - every script answers 2 for a state it cannot act on
+
+**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-07` and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⛔ **Every PowerShell check answered 1 where its POSIX twin answered 2**,
+  22 pairs of 22. `pwsh -File` reports a parameter-binding failure as 1, and 1
+  is this code base's "it ran and the thing failed". Every `param()` block
+  carries a remaining-arguments parameter now.
+- ⭐ **`check-exit-codes`, both halves**, registered in both gate halves and
+  with a row in the twin comparison. The gate runs 25 checks rather than 24.
+- ⚠ **`$Rest` collided with a local `$rest`** in `check-markers.ps1` and took
+  it from a clean run to a type-conversion error. The parameter is
+  `$UnboundArguments`, checked by grep across every script.
+
 ### 2026-09-02T03:20:00Z - four entries close: bounds, credentials, reachability and trust routes
 
 **Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-13` and `SCHEMA-14`,

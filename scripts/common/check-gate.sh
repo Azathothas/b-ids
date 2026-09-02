@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage"
+COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -217,6 +217,10 @@ compared_directly 'check-placeholders'  || check_simple 'check-placeholders'  sh
 compared_directly 'check-control-bytes' || check_simple 'check-control-bytes' sh "$HERE/check-control-bytes.sh"
 compared_directly 'check-record'        || check_simple 'check-record'        sh "$HERE/check-record.sh"
 compared_directly 'check-no-secrets'    || check_simple 'check-no-secrets'    sh "$HERE/check-no-secrets.sh" --public
+# ⛔ 1 is "it ran and the thing failed" and 2 is "it could not run", and a
+# script that returned 1 for the second is one somebody disables the day a
+# runner has no browser. TODO/ci.md, CI-07.
+compared_directly 'check-exit-codes'    || check_simple 'check-exit-codes'    sh "$HERE/check-exit-codes.sh"
 
 # Run one check whose 2 means "could not run", and report that as a SKIP.
 # ⛔ NOT AS A PASS. check-changelog's 2 is a pass because a project with no

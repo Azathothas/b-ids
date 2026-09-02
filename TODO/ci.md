@@ -640,7 +640,7 @@ flags the disagreement rather than picking.
 ## CI-07. Exit 2 means could not run, and it is not a failure
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** ci, **Priority** P2, **Effort** S, **Status** open
+**Category** ci, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -673,6 +673,94 @@ sh scripts/common/check-exit-codes.sh
 Passing means: every script in the tree that can fail to run is invoked in a
 state where it cannot, and each returns 2; a script that returns 1 for that
 state fails the check.
+
+### Closing
+
+**Closed 2026-09-02T03:40:00Z.** Both halves of `check-exit-codes` invoke every
+script in the tree with an argument no script accepts and assert the answer is
+**2**, and 22 PowerShell scripts were fixed to give it.
+
+```text
+$ sh scripts/common/check-exit-codes.sh
+exit codes ok: 22 script(s), each answers 2 for an argument it cannot act on
+exit=0
+
+$ pwsh -NoProfile -File scripts/common/check-exit-codes.ps1
+exit codes ok: 22 script(s), each answers 2 for an argument it cannot act on
+exit=0
+```
+
+### ⛔ The finding: every PowerShell half answered 1, 22 pairs of 22
+
+⚠ **Measured before the check was written, and it is why the check exists.**
+Every POSIX half returned 2 for an argument it cannot act on. Every PowerShell
+half returned **1**, because `pwsh -File` reports a parameter-binding failure as
+1 and PowerShell rejects an unknown parameter in `param()` before a line of the
+script body runs.
+
+⛔ **1 is this project's code for "it ran and the thing failed".** So both halves
+of every pair disagreed about whether a state is a failure, which is the exact
+defect this entry is about. ⚠ **And `check-twins` could not see it**, because it
+compares the JSON of runs that SUCCEED: a pair that differs only in how it
+refuses is invisible to it. That pair has a row now.
+
+⭐ **The fix is a remaining-arguments parameter** in every `param()` block, which
+catches what would otherwise fail to bind, plus four lines that report and exit
+2.
+
+### ⚠ The name of that parameter cost one clean run
+
+⛔ **`$Rest` collided.** PowerShell variables are case-insensitive and
+`check-markers.ps1` already used a local `$rest` thirteen times; the parameter
+shadowed it and took the script from a clean run to `Cannot convert value "{" to
+type "System.Int32"`. ⭐ Renamed to `$UnboundArguments`, which nothing in the
+tree uses, checked by grep across every script rather than by looking at one.
+
+### Why an unknown argument is the input
+
+⛔ **It is the one state EVERY script can be put into from outside**, with no
+missing tool, no missing browser and no network. ⚠ A check that needed a real
+unrunnable condition per script would have as many special cases as scripts, and
+the ones it could not construct would go unchecked.
+
+⛔ **0 is not accepted either.** A script that ignored an argument it does not
+understand and ran anyway is worse than one that refused: it did something other
+than what it was asked to do and reported success.
+
+### ⛔ The guard was seen to fail, twice
+
+**Planted**, in `check-msrv.ps1`, one character changed:
+
+```text
+exit code check failed, 1 script(s) did not answer 2:
+
+  scripts/common/check-msrv.ps1: exit 1, and could-not-run is 2
+
+Exit 2 is could-not-run. 1 is it ran and the thing failed, and 0 is it ran
+and passed. TODO/ci.md, CI-07.
+exit=1
+```
+
+Restored, and the same command answered 0.
+
+⭐ **And the check carries its own fixture leg**, run on every invocation.
+[`../scripts/README.md`](../scripts/README.md) describes what it plants and why
+the check refuses to report at all when that leg comes back wrong.
+
+### ⚠ What each half covers, and it is not the same set
+
+⛔ **The `.sh` half checks the `.sh` scripts and the `.ps1` half checks the
+`.ps1` scripts.** A POSIX half that shelled out to `pwsh` would report a green
+half of a pair as the whole pair on a host without it, and
+[`../scripts/README.md`](../scripts/README.md) is the contract that says
+`check-twins` runs both halves on one machine.
+
+### The lane half of this entry was already true
+
+`capture.yml`'s resolve step already reads `rc` and accepts `0` or `2`, so a
+runner with no browser does not fail the build, and the collect job already
+names the lanes that produced nothing. ⭐ What was missing was the rule holding
+in the scripts, and that is what closed here.
 
 ---
 

@@ -17,10 +17,9 @@ the entries themselves. Do not add a "previous sessions" section.
 
 ```text
 session ran      2026-09-02T01:14:00Z, unattended, in progress
-baseline         the gate passes: 24 checks on this Windows host with
-                 check-twins skipped by -Fast. 265 tests in 29 files across
-                 the 5 crates that have a tests directory.
-entries          total 91  open 39  blocked 0  done 52
+baseline         the gate passes: 25 checks on this Windows host with
+                 check-twins skipped by -Fast.
+entries          total 91  open 38  blocked 0  done 53
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -107,6 +106,7 @@ cell is enabled and required.
 | ⭐ `SCHEMA-14` | a credential is recorded as PRESENT, in its wire position, with no value. It was dropped entirely before, so the order closed over an unmarked gap. Three refusals added, no way to record a value |
 | ⭐ `VALID-03` | `unreachable_dimensions`, over every browser, channel and platform the corpus carries, reading `Family::all` rather than a list of its own |
 | ⭐ `DRIVER-04` | `experiments/40-trust-paths.sh`. ⛔ The negative control is the finding: with no trust flag at all, four connections completed zero handshakes |
+| ⭐ `CI-07` | `check-exit-codes`, both halves. ⛔ Every PowerShell check answered 1 where its POSIX twin answered 2, 22 pairs of 22, and the twin comparison could not see it because it compares runs that succeed |
 
 ⚠ **Seven tests changed their assertions and none changed its title.** Each
 asserted that a credential NAME was gone; each now asserts the name is there and

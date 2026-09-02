@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Does vendor/upstream.json still describe the vendored trees, and has upstream moved past what it
@@ -35,8 +35,20 @@
 [CmdletBinding()]
 param(
     [switch]$Json,
-    [switch]$Upstream
+    [switch]$Upstream,
+    # ⛔ EVERY UNBOUND ARGUMENT LANDS HERE, so an unknown one exits 2 rather
+    # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
+    # this project's code for "it ran and the thing failed"; the POSIX twin
+    # exits 2 for the same input. Measured across every pair 2026-09-02:
+    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$UnboundArguments = @()
 )
+
+if ($UnboundArguments.Count -gt 0) {
+    [Console]::Error.WriteLine('check-vendor: unknown argument: ' + $UnboundArguments[0])
+    exit 2
+}
 
 $ErrorActionPreference = 'Stop'
 

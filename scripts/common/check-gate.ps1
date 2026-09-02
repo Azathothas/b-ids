@@ -106,8 +106,20 @@
 param(
     [switch]$Json,
     [switch]$Fast,
-    [switch]$Strict
+    [switch]$Strict,
+    # ⛔ EVERY UNBOUND ARGUMENT LANDS HERE, so an unknown one exits 2 rather
+    # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
+    # this project's code for "it ran and the thing failed"; the POSIX twin
+    # exits 2 for the same input. Measured across every pair 2026-09-02:
+    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$UnboundArguments = @()
 )
+
+if ($UnboundArguments.Count -gt 0) {
+    [Console]::Error.WriteLine('check-gate: unknown argument: ' + $UnboundArguments[0])
+    exit 2
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -216,6 +228,7 @@ $ComparedDirectly = @(
     'check-validate',
     'check-line-endings',
     'check-routes',
+    'check-exit-codes',
     'check-changelog',
     'check-workflows',
     'check-coverage'
@@ -382,6 +395,13 @@ Invoke-PsCheck -Name 'check-workflows' -Script 'scripts/common/check-workflows.p
 # capture workflow is where --require-rows is passed.
 Invoke-PsCheck -Name 'check-coverage' -Script 'scripts/common/check-coverage.ps1' `
     -SkipCodes @(2) -SkipReason 'there is no capture matrix'
+
+# -- every script answers 2 for a state it cannot act on ----------------------
+#
+# ⛔ 1 is "it ran and the thing failed" and 2 is "it could not run", and a
+# script that returned 1 for the second is one somebody disables the day a
+# runner has no browser. TODO/ci.md, CI-07.
+Invoke-PsCheck -Name 'check-exit-codes' -Script 'scripts/common/check-exit-codes.ps1'
 
 # -- the published route files, and the one byte a consumer should not have to
 # strip. 2 is "there is no route tree yet, or it holds no single-value file",

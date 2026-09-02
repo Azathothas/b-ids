@@ -472,6 +472,34 @@ repository with an empty list, so both halves reported ok over zero files.
 
 ⛔ **It reports, it does not strip.** The generator is what gets fixed.
 
+### `common/check-exit-codes.sh`
+
+Does every script in this tree report "could not run" as **2**, on both halves
+of every pair?
+
+⛔ **1 is "it ran and the thing failed" and 2 is "it could not run."** A check
+that returned 1 for the second is a check somebody disables the day a runner has
+no browser, and a capture job on a machine without one must not fail the build.
+[`../TODO/ci.md`](../TODO/ci.md), `CI-07`.
+
+⭐ **The input is an argument no script accepts**, because that is the one
+state every script can be put into from outside with no missing tool, no missing
+browser and no network. ⚠ A check needing a real unrunnable condition per
+script would have as many special cases as scripts, and the ones it could not
+construct would go unchecked.
+
+⛔ **0 is refused as well as 1.** A script that ignored an argument it does not
+understand and ran anyway did something other than what it was asked to do and
+reported success.
+
+⚠ **Each half checks its own language**, and that is the contract above rather
+than a shortcut: a POSIX half shelling out to `pwsh` would report a green half
+of a pair as the whole pair on a host without it.
+
+⭐ **It carries a fixture leg on every run**: it plants a script that exits 1,
+invokes it the same way, and refuses to report a result at all if that reads as
+2. A check that could not tell the two apart would pass over everything.
+
 ### `common/check-gate.sh`
 
 ⭐ **Run every local gate this host can run, in one command.** Part (a) of
