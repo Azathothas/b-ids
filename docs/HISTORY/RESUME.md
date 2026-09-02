@@ -13,70 +13,62 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Read the artefacts of capture run 33615327503, then work `DRIVER-08` and specifically the leg that has never run, then `TOOL-18`, `HARNESS-15`, `DRIVER-10` and `CORPUS-02`. Session started 2026-09-02T11:22:03Z, unattended. |
-| the resume point | `DRIVER-08`'s six remaining items, in the entry's own order. The purge and the install have never executed on a runner. |
-| in flight | Nothing yet. The three artefacts are read and downloaded to `.tmp/run-33615327503/`. |
-| the state of the tree | Clean on `main`. The gate passes 26 checks with `check-twins` skipped by `-Fast`, measured at 11:20Z on this Windows host. |
+| the task | Read the artefacts of capture run 33615327503, then `DRIVER-08`, `TOOL-18`, `HARNESS-15`, `DRIVER-10` and `CORPUS-02`. Session started 2026-09-02T11:22:03Z, unattended. |
+| the resume point | `HARNESS-16`, whose measurement is dispatched as `trust-anchor.yml` run 33647065058 and unread. Then the work order in [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md). |
+| in flight | ⚠ One thing: `trust-anchor.yml` run 33647065058, dispatched to answer `HARNESS-16`. Everything else is closed in place or left open with its blocker named. |
+| the state of the tree | Clean and pushed on `main`. The gate passes 29 checks with `check-twins` skipped by `-Fast`, measured on this Windows host. |
 | the paste | below |
 
 ---
 
-## ⛔ What the scheduled run's three artefacts say
+## ⭐ What changed about this project today
 
-**Run 33615327503 fired on cron at 09:39Z against `0cee89e` and nobody
-dispatched it.** All three artefacts are read.
+**The corpus stopped recording builds nobody chose.** Six profiles now, two
+browsers, two majors, two platforms, and three of them name the URL and the
+digest of the artefact the browser was installed from. Before today every
+profile carried `captured.acquisition: null`.
 
-⛔ **No lane wrote a profile, and no lane was ever going to.**
-`experiments/10-first-profile.sh` ends by PRINTING the `b-ids-corpus add`
-command rather than running it. Its own header says step 3 "selects the cold
-connection out of the navigation and writes it into the corpus" and that exit 0
-means "a profile was written". Neither is true of the script under it. The
-corpus tree inside all three artefacts is byte-identical to the committed one.
+⭐ **The purge and the install ran on hosted runners**, both platforms and both
+routes, which is the leg that had never executed anywhere.
 
-⭐ **The `linux64` lane captured, which is the lane that captured nothing
-twice.** Eight connections, seven of eight handshakes completed, every one cold
-because the harness refuses session tickets. The `win64` lane captured six.
+⭐ **A browser that is not Chrome is in the corpus.** Edge `151.0.4129.101`,
+provisioned from the vendor's enterprise index, which publishes a SHA-256 per
+artefact that the tool checks what arrived against. It could not capture at all
+before: its SUID sandbox helper was not configured on the runner image, and the
+browser's own log said so.
 
-⚠ **Both lanes captured a build the corpus already holds**, `151.0.7922.173` on
-`linux64` and `151.0.7922.174` on `win64`, so neither artefact carries a profile
-the corpus is missing.
+⭐ **A cold hello is no longer thrown away because its own connection carried no
+HTTP/2.** The two halves are selected independently now, and the Edge lane is
+the proof: its only cold hello arrived on a connection that reached no HTTP/2,
+so under the old rule that navigation published nothing.
 
-⛔ **The `edge` lane's failure has a cause now, and it is not the one the
-record named.** `browser.log` carries it, which is what `DRIVER-07` was built
-for:
-
-```text
-FATAL:sandbox/linux/suid/client/setuid_sandbox_host.cc:166] The SUID sandbox
-helper binary was found, but is not configured correctly. Rather than run
-without sandboxing I'm aborting now. You need to make sure that
-/opt/microsoft/msedge/msedge-sandbox is owned by root and has mode 4755.
-```
-
-The record said Edge "exits after 1.4 seconds having opened no connection",
-which is the symptom. The cause is the `ubuntu-latest` image's Edge package,
-and Chrome on the same runner in the same run is unaffected.
+⭐ **The gate costs 213 seconds where it cost about 600.** Three causes, and the
+largest was not a per-file loop: a command substitution in a `while read`
+assignment prefix is re-evaluated once per line read.
 
 ---
 
-## The conditions this session inherits
+## The conditions this session leaves
 
-⚠ **The corpus holds three profiles, all Chrome 151.** Not a matrix.
-`CORPUS-02` is the entry, and two of its four required rows are captured.
+⚠ **Two matrix cells are blocked on a question the operator has**, and it is the
+only open question: an unbranded build and a branded build of one version
+publish at one path, because the corpus route carries no `branded` and `Channel`
+is a closed vocabulary. [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)
+carries it with a recommendation.
 
-⚠ **Every profile written from here records `captured.resumption: refused`.**
-The harness issues no session tickets during a corpus capture, because without
-that the Linux lane cannot produce a cold handshake at all. `HARNESS-15` is the
-entry that removes the condition rather than the switch.
+⚠ **`captured.operator` is still typed.** The identity writer leaves it empty
+and it is filled in by hand for every runner profile, this session's two
+included.
 
-⚠ **Nothing is published outside this repository.** The canonical corpus is on
-the default branch deliberately. The data branch, the generated formats and the
-fetchable routes are `PUB-02`, `SCHEMA-08` and `PUB-03`.
+⚠ **`Shuffle::Observed` is still never written.** Nothing in the capture path
+produces a shuffle observation, so a field the model carries is one the capture
+path never fills.
 
-⛔ **A tool that purges browsers lives in `scripts/common/` and its success
-path has never run.** It refuses any machine that is not both marked disposable
-by this project and running on a hosted runner. ⛔ Run it with `--plan` and
-nothing else on a machine you keep, and do not lift a condition to see what
-happens.
+⛔ **A tool that purges browsers lives in `scripts/common/` and its success path
+is measured now.** It still refuses any machine that is not both marked
+disposable by this project and running on a hosted runner. ⛔ Run it with
+`--plan` and nothing else on a machine you keep, and do not lift a condition to
+see what happens.
 
 ---
 

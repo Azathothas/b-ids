@@ -727,15 +727,15 @@ here now: Chrome `152.0.7977.75` on `linux64`, captured on a hosted runner
 
 ```text
 $ sh scripts/common/check-trust-anchors.sh
-trust anchors ok: 1 of 5 profile(s) carry codepoint 0xca34, and every one has a
+trust anchors ok: 2 of 6 profile(s) carry codepoint 0xca34, and every one has a
   published list with its capture instant. The recommendation states all three
   options and asserts no preference.
 exit=0
 
 $ sh scripts/common/check-trust-anchors.sh --json
-{"schema":"check-trust-anchors/1","carriers":1,"lists":1,"profiles":5,"problems":0}
+{"schema":"check-trust-anchors/1","carriers":2,"lists":2,"profiles":6,"problems":0}
 $ pwsh -NoProfile -File scripts/common/check-trust-anchors.ps1 -Json
-{"schema":"check-trust-anchors/1","carriers":1,"lists":1,"profiles":5,"problems":0}
+{"schema":"check-trust-anchors/1","carriers":2,"lists":2,"profiles":6,"problems":0}
 ```
 
 #### ⛔ What the measurement changed about the inherited claim
@@ -768,7 +768,8 @@ section 3 carries both.
 ```text
 $ cargo run -q -p b-ids-corpus -- anchors --root . --out dist/anchors
 wrote dist/anchors/chrome-152.0.7977.75-linux64.json (32 identifier(s), captured 2026-09-02T14:08:20Z)
-corpus=anchors lists:1 profiles:5
+wrote dist/anchors/chrome-152.0.7977.76-win64.json (32 identifier(s), captured 2026-09-02T14:53:12Z)
+corpus=anchors lists:2 profiles:6
 ```
 
 #### ⛔ The check refuses a vacuous pass, and that was proved
@@ -806,9 +807,10 @@ and [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3 is
 where its status lives. ⚠ That reading is not this entry's acceptance and was
 not done here.
 
-⚠ **One carrier is one sample.** The shape above is measured on one build, one
-platform, one day. A second carrier would say whether the identifier lengths and
-the outer encoding hold, and the matrix is where more carriers come from.
+⚠ **This closed on one carrier, which was one sample**, measured on one build,
+one platform, one day. ⭐ A second arrived the same day and the amendment below
+is what it said. The blocks above are re-run against the tree as it now stands
+and therefore count both.
 
 #### ⭐ Amended 2026-09-02: a second carrier arrived within the hour, and the order is not the set
 

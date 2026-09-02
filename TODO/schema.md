@@ -932,16 +932,16 @@ refuses to become a profile at all.
 
 ```text
 $ sh scripts/common/check-formats.sh
-formats ok: 5 file(s) from 5 profile(s), byte-identical over two runs,
+formats ok: 5 file(s) from 6 profile(s), byte-identical over two runs,
   every lossless format round-trips to canonical JSON and every lossy one
   carries the documented subset.
 exit=0
 
 $ sh scripts/common/check-formats.sh --json
-{"schema":"check-formats/1","files":5,"profiles":5,"problems":0}
+{"schema":"check-formats/1","files":5,"profiles":6,"problems":0}
 
 $ pwsh -NoProfile -File scripts/common/check-formats.ps1 -Json
-{"schema":"check-formats/1","files":5,"profiles":5,"problems":0}
+{"schema":"check-formats/1","files":5,"profiles":6,"problems":0}
 ```
 
 ```text

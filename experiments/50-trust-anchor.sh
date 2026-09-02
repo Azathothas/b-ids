@@ -189,13 +189,21 @@ install_root() {
       WINDOWS_STORE=""
       for ir_store in "-user Root" "-user CA" "Root"; do
         printf '== certutil -addstore %s ==\n' "$ir_store" >> "$OUT/store.log"
+        # ⛔ THE STATUS IS CAPTURED FROM THE COMMAND, not read after an `if`.
+        # ⚠ Measured 2026-09-02, trust-anchor.yml run 33647065058: the log said
+        # `refused, exit 0`, because `$?` after an `if` whose condition failed is
+        # the status of the IF STATEMENT rather than of the command inside it.
+        # That is the same class as reading an exit code through a pipe, and the
+        # number it produced was meaningless. docs/conventions/shell.md section 2.
         # shellcheck disable=SC2086 # ir_store is a flag and its value, deliberately split
-        if store certutil -addstore $ir_store "$ir_native" >> "$OUT/store.log" 2>&1; then
+        store certutil -addstore $ir_store "$ir_native" >> "$OUT/store.log" 2>&1
+        ir_rc=$?
+        if [ "$ir_rc" = 0 ]; then
           WINDOWS_STORE="$ir_store"
-          printf '== accepted by %s ==\n' "$ir_store" >> "$OUT/store.log"
+          printf '== accepted by %s, exit 0 ==\n' "$ir_store" >> "$OUT/store.log"
           break
         fi
-        printf '== refused, exit %s ==\n' "$?" >> "$OUT/store.log"
+        printf '== refused by %s, exit %s ==\n' "$ir_store" "$ir_rc" >> "$OUT/store.log"
       done
       if [ -z "$WINDOWS_STORE" ]; then
         # ⛔ "THIS PLATFORM CANNOT BE PROVISIONED UNATTENDED" IS AN ANSWER, and

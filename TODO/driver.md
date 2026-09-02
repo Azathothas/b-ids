@@ -1382,8 +1382,8 @@ checked against the publisher rather than only recorded.
 $ sh scripts/common/check-coverage.sh --require-rows chrome,edge
 coverage over 8 planned cell(s):
 
-  captured       chrome/stable/linux64              1 profile(s) required
-  captured       chrome/stable/win64                2 profile(s) required
+  captured       chrome/stable/linux64              2 profile(s) required
+  captured       chrome/stable/win64                3 profile(s) required
   captured       edge/stable/linux64                1 profile(s) required
   not-attempted  chrome/for-testing/linux64         0 profile(s)
   not-attempted  chrome/for-testing/win64           0 profile(s)
