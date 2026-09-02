@@ -102,12 +102,12 @@ fn main() -> ExitCode {
     let raw_split = b_ids_harness::resumption_split(&raw);
     let terminated_split = b_ids_harness::resumption_split(&terminated);
     println!(
-        "{label_a}: {} cold, {} resumed, {} abandoned",
-        raw_split.cold, raw_split.resumed, raw_split.abandoned
+        "{label_a}: {} cold, {} resumed, {} with no http2",
+        raw_split.cold, raw_split.resumed, raw_split.no_http2
     );
     println!(
-        "{label_b}: {} cold, {} resumed, {} abandoned",
-        terminated_split.cold, terminated_split.resumed, terminated_split.abandoned
+        "{label_b}: {} cold, {} resumed, {} with no http2",
+        terminated_split.cold, terminated_split.resumed, terminated_split.no_http2
     );
     // ⭐ A finding in its own right, and it belongs above the field list rather
     // than inside it: only a surface that completes a handshake can produce a

@@ -170,8 +170,13 @@ try {
 if ($planRc -ne 0) {
     $problems += ('  -Plan: exit ' + $planRc + ', expected 0')
 } else {
+    # ⛔ A LINE WHOSE FIRST FIELD IS THE STEP, never the word anywhere in the
+    # output. ⚠ Measured 2026-09-02 by planting the defect: with every index
+    # line removed from a COPY of the tool, a substring search still passed,
+    # because the fetch line reads "the zip that index names for the build".
+    $planLines = $plan -split "`r?`n"
     foreach ($word in @('purge', 'fetch', 'install', 'confirm')) {
-        if ($plan -notlike ('*' + $word + '*')) {
+        if (-not ($planLines | Where-Object { ($_ -split '\s+')[0] -ceq $word })) {
             $problems += ('  -Plan: names no ' + $word + ' step for this platform')
         }
     }
@@ -196,8 +201,9 @@ try {
 if ($ftPlanRc -ne 0) {
     $problems += ('  -Plan for-testing: exit ' + $ftPlanRc + ', expected 0')
 } else {
+    $ftPlanLines = $ftPlan -split "`r?`n"
     foreach ($word in @('purge', 'index', 'fetch', 'install', 'confirm')) {
-        if ($ftPlan -notlike ('*' + $word + '*')) {
+        if (-not ($ftPlanLines | Where-Object { ($_ -split '\s+')[0] -ceq $word })) {
             $problems += ('  -Plan for-testing: names no ' + $word + ' step for this platform')
         }
     }

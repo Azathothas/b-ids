@@ -265,6 +265,8 @@ if ($Public) {
         # ⛔ Keep this identical to the sh twin. TODO/corpus.md, CORPUS-01.
         Where-Object { $_ -cnotmatch '"sha256"\s*:\s*"[0-9a-f]{64}"' } |
         Where-Object { $_ -cnotmatch ':[0-9]+:sha256\s+[0-9a-f]{64}$' } |
+        Where-Object { $_ -cnotmatch '"published_sha256":"[0-9a-f]{64}"' } |
+        Where-Object { $_ -cnotmatch ':[0-9]+:verified [0-9a-f]{64} matches the digest' } |
         Where-Object { $_ -cnotmatch '^(corpus|raw)/[^:]*:[0-9]+:\s*"[0-9a-f]+",?$' })
     Add-Hit 'a long hex identifier' $hex
 

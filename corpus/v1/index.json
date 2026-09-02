@@ -64,6 +64,27 @@
         "sha256": "5b9f1e59306496cf737da03c4ca520d98a3177029637c0b484941d7ab72a1355",
         "bytes": 3542
       }
+    },
+    {
+      "id": "edge-151.0.4129.101-linux64-stable",
+      "browser": "Edge",
+      "version": "151.0.4129.101",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-09-02T13:52:53Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/edge/stable/linux64/151.0.4129.101.json",
+        "sha256": "02c1ad7c2936db983656f6fe0434c749b02829ef26360d8da2ff485de41d8dea",
+        "bytes": 15990
+      },
+      "hello": {
+        "path": "raw/v1/edge/stable/linux64/151.0.4129.101.hello.hex",
+        "sha256": "56b16a972c5a19ee89e127b3fe1cd65de1abab251d5499bb3e1d029f8713f66f",
+        "bytes": 3478
+      }
     }
   ]
 }

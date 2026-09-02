@@ -348,6 +348,8 @@ if [ "$PUBLIC" = "1" ]; then
   _hex_out=$(printf '%s\n' "$_hex_out" \
     | grep -vE '"sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' \
     | grep -vE ':[0-9]+:sha256[[:space:]]+[0-9a-f]{64}$' \
+    | grep -vE '"published_sha256":"[0-9a-f]{64}"' \
+    | grep -vE ':[0-9]+:verified [0-9a-f]{64} matches the digest' \
     | grep -vE '^(corpus|raw)/[^:]*:[0-9]+:[[:space:]]*"[0-9a-f]+",?$' || true)
 
   [ -n "$_hex_out" ] && hit "a long hex identifier" "$_hex_out"

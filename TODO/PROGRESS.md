@@ -23,7 +23,7 @@ session ran      2026-09-02T01:14:00Z to 2026-09-02T11:30:00Z. Unattended
 baseline         gate ok: all 27 checks passed, in full, on this Windows
                  host. 26 with check-twins skipped by -Fast, and
                  check-twins compares 27 pairs. 309 tests in 36 files.
-entries          total 98  open 31  blocked 0  done 67
+entries          total 98  open 30  blocked 0  done 68
 gate             27 checks in full, and check-provisioning is not one of
                  them: it is the acceptance for an entry that is open
 ```

@@ -309,11 +309,15 @@ pub struct Split {
     pub cold: usize,
     /// Connections that reached HTTP/2 and offered a pre-shared key.
     pub resumed: usize,
-    /// Connections that never reached HTTP/2.
+    /// Connections that reached no HTTP/2.
     ///
     /// ⚠ On the raw surface this is every connection, by construction: nothing
     /// can reach HTTP/2 through a handshake that never completes.
-    pub abandoned: usize,
+    ///
+    /// ⚠ **Renamed from `abandoned` with [`crate::Kind::NoHttp2`]**, and the
+    /// rename is the point: one fact had two names for as long as this field
+    /// and `Selection` disagreed about what to call it.
+    pub no_http2: usize,
 }
 
 /// Split connections by kind.
@@ -329,11 +333,11 @@ pub fn resumption_split(captures: &[Capture]) -> Split {
     let mut split = Split {
         cold: 0,
         resumed: 0,
-        abandoned: 0,
+        no_http2: 0,
     };
     for capture in captures {
         match crate::select::kind(capture) {
-            crate::Kind::NoHttp2 => split.abandoned += 1,
+            crate::Kind::NoHttp2 => split.no_http2 += 1,
             crate::Kind::Cold => split.cold += 1,
             crate::Kind::Resumed => split.resumed += 1,
         }

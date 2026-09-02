@@ -3,10 +3,12 @@
   "layout": "v1",
   "latest": {
     "chrome/linux64": "corpus/v1/chrome/stable/linux64/151.0.7922.173.json",
-    "chrome/win64": "corpus/v1/chrome/stable/win64/151.0.7922.174.json"
+    "chrome/win64": "corpus/v1/chrome/stable/win64/151.0.7922.174.json",
+    "edge/linux64": "corpus/v1/edge/stable/linux64/151.0.4129.101.json"
   },
   "per_channel": {
     "chrome/stable/linux64": "corpus/v1/chrome/stable/linux64/151.0.7922.173.json",
-    "chrome/stable/win64": "corpus/v1/chrome/stable/win64/151.0.7922.174.json"
+    "chrome/stable/win64": "corpus/v1/chrome/stable/win64/151.0.7922.174.json",
+    "edge/stable/linux64": "corpus/v1/edge/stable/linux64/151.0.4129.101.json"
   }
 }

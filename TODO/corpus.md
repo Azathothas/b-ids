@@ -515,9 +515,26 @@ The acceptance command names four rows:
 | row | state |
 | --- | --- |
 | `chrome` | ⭐ captured, on `linux64` and `win64`, from runners |
-| `edge` | ⚠ the lane is enabled and wired and has not run yet |
+| `edge` | ⭐ **captured 2026-09-02**, `151.0.4129.101` on `linux64`, provisioned from the vendor's enterprise index rather than taken from the image. `DRIVER-10` is the entry and its closing carries the run. |
 | `chromium` | ⛔ `b_ids_driver::Family` has two variants, `Chrome` and `Edge`. Nothing can resolve Chromium, so no lane can produce it. |
 | `firefox` | ⛔ the same. `VALID-03` is the check that says so from the corpus side. |
+
+⚠ **So two of the four required rows are captured and two are blocked on the
+same thing**: `b_ids_driver::Family` knowing the family at all. That is
+`DRIVER-10`'s steps 2 and 3, and it is the whole of what stands between this
+entry and its acceptance command.
+
+```text
+$ sh scripts/common/check-coverage.sh --require-rows chrome,edge,chromium,firefox
+coverage check failed, 2 required row(s) with no capture:
+
+  chromium: no capture at all, on any channel or platform
+  firefox: no capture at all, on any channel or platform
+exit=1
+```
+
+⭐ **The refusal is down from three rows to two**, which is the half of this
+entry that moved on 2026-09-02.
 
 ---
 

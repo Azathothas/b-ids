@@ -1304,7 +1304,7 @@ has purged or installed anything, and `DRIVER-08` is where that stays recorded.
 
 **Source** the operator, 2026-09-02: install and set up any browser version we
 want, headless and unattended, on any runner
-**Category** driver, **Priority** P1, **Effort** L, **Status** open
+**Category** driver, **Priority** P1, **Effort** L, **Status** done
 
 ### Problem
 
@@ -1371,3 +1371,137 @@ Passing means: exit 0 with an `edge` row carrying at least one profile whose
 four-family form in `CORPUS-02` is what closes that entry rather than this one.
 
 ---
+
+### ⭐ Closed 2026-09-02 on step 1. The `edge` lane captures, and its build was chosen
+
+⛔ **Every profile before this one records `captured.acquisition: null`.** This
+is the first the project chose the build for, and the first whose artefact was
+checked against the publisher rather than only recorded.
+
+```text
+$ sh scripts/common/check-coverage.sh --require-rows chrome,edge
+coverage over 8 planned cell(s):
+
+  captured       chrome/stable/linux64              1 profile(s) required
+  captured       chrome/stable/win64                2 profile(s) required
+  captured       edge/stable/linux64                1 profile(s) required
+  not-attempted  chrome/for-testing/linux64         0 profile(s)
+  not-attempted  chrome/for-testing/win64           0 profile(s)
+  not-attempted  chrome/stable/macos-arm64          0 profile(s)
+  not-attempted  chrome/beta/linux64                0 profile(s)
+  not-attempted  firefox/stable/linux64             0 profile(s)
+
+3 captured, 0 absent, 5 not attempted.
+exit=0
+```
+
+```text
+Chrome/stable/linux64/151.0.7922.173           acquisition: null
+Chrome/stable/win64/151.0.7922.174             acquisition: null
+Chrome/stable/win64/151.0.7922.76              acquisition: null
+Edge/stable/linux64/151.0.4129.101             acquisition: edge-enterprise, sha256 bd7604025424...
+```
+
+#### ⭐ Edge has a first-party index, and it is better than Chrome's
+
+⚠ **The premise said Edge needed "its own vendor channel and its own
+uninstaller".** Measured 2026-09-02: it needs an index, and the one the vendor
+publishes carries something the Chrome automation index does not.
+
+| | |
+| --- | --- |
+| ⭐ **it states a SHA-256 and a byte count per artefact** | so what arrived is compared with what the publisher said it published, and a mismatch is a refusal. The automation index for Chrome states neither, and the tool reports that absence rather than passing over it |
+| ⭐ **it carries the build the runner images ship** | `151.0.4129.101` is in it, so the lane installs the build it means to measure rather than the nearest one |
+| ⚠ **it is keyed by build and serves no current-build URL** | so `--route vendor` for this family is a refusal with its reason, which is a complete outcome. `--route for-testing` is the route |
+| ⛔ **and the route name does not say whether a build is branded** | Chrome's automation index serves UNBRANDED builds and Edge's enterprise index serves the vendor's own branded product. The flag cannot say which and the matrix cell does. `DRIVER-06` is the entry that measures the difference |
+
+```text
+$ target/debug/b-ids-driver.exe acquire --browser edge --version 151.0.4129.101 --platform linux64 --index INDEX --json
+{"browser":"edge","index":"https://edgeupdates.microsoft.com/api/products?view=enterprise","platform":"linux64","published_bytes":194950834,"published_sha256":"bd7604025424914a61c06293cb6bf269141a29d8c54cf1997110bc96d3365d60","route":"edge-enterprise","schema":"acquire/2","url":"https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-stable/microsoft-edge-stable_151.0.4129.101-1_amd64.deb","version":"151.0.4129.101"}
+exit=0
+```
+
+#### ⛔ The reason the lane captured nothing was never in this tree
+
+⚠ **`capture.yml` run `33615327503` recorded it, in the browser's own log, which
+is what `DRIVER-07` kept it for.** The record called it "Edge exits after 1.4
+seconds having opened no connection", which is the symptom:
+
+```text
+FATAL:sandbox/linux/suid/client/setuid_sandbox_host.cc:166] The SUID sandbox
+helper binary was found, but is not configured correctly. Rather than run
+without sandboxing I'm aborting now. You need to make sure that
+/opt/microsoft/msedge/msedge-sandbox is owned by root and has mode 4755.
+```
+
+⭐ **A vendor package sets that up in its own post-install step and the image's
+Edge did not have it**, so the tool confirms it after every Linux install rather
+than assuming it. The whole chain, on `ubuntu-latest`:
+
+```text
+-- purging every edge on this machine --
+before  151.0.4129.101
+after   nothing resolves, resolve exits 2
+
+-- installing edge via for-testing --
+index   https://edgeupdates.microsoft.com/api/products?view=enterprise
+verified bd7604025424914a61c06293cb6bf269141a29d8c54cf1997110bc96d3365d60 matches the digest the index publishes
+sandbox root:root 4755 /opt/microsoft/msedge/msedge-sandbox
+url     https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-stable/microsoft-edge-stable_151.0.4129.101-1_amd64.deb
+sha256  bd7604025424914a61c06293cb6bf269141a29d8c54cf1997110bc96d3365d60
+bytes   194950834
+version 151.0.4129.101
+
+provisioned  edge 151.0.4129.101 via for-testing on linux
+```
+
+#### ⭐ And the lane that captured is the case `HARNESS-15` was written for
+
+⛔ **With session tickets offered, this navigation has no connection carrying
+both halves.** Its only cold hello arrived on connection 1, which reached no
+HTTP/2, and every other connection resumed:
+
+```text
+8 connection(s): 0 cold, 7 resumed, 0 further cold, 1 with no http2
+tls from connection 1, http2 from connection 2
+edge-151.0.4129.101-linux64-stable
+```
+
+⚠ **`0 cold` is the whole point.** Under the rule this session replaced, that
+navigation publishes nothing, and the `edge` row would still be absent.
+
+#### The route table, which is what the entry asked for
+
+⭐ **Per family and data rather than branches**, in both halves and in the
+driver:
+
+| where | what it holds |
+| --- | --- |
+| `b_ids_driver::acquire::index_url` and `index_route` | which index a family has and which route a profile records for it. ⛔ `plan` reads the table rather than branching on Chrome. |
+| `provision-browser.sh`, six functions above the plan | packages, paths, links, the SUID sandbox helper, the uninstaller pattern and the program directory, per family |
+| `provision-browser.ps1`, `$familyRoutes` | the same six, as a hashtable |
+
+⛔ **And the purge removes the family that was asked for.** Before this it
+removed Chrome AND Edge whatever `--browser` said, which is not what "purge
+every browser of the target family" means and would have destroyed the other
+family's lane on a shared runner.
+
+#### ⛔ Two defects this entry's own work produced, both found by running it
+
+| | how it showed |
+| --- | --- |
+| ⛔ **the recorded route came from the shell, not the driver** | a `case` mapped `for-testing` to `chrome-for-testing` whatever the family was, so the first Edge profile recorded a Chrome route. Found by reading the identity file capture.yml run 33637307031 produced. Both halves read the driver's answer now, out of the same JSON the digest comparison already reads. |
+| ⛔ **the table was defined below the plan that reads it** | `--plan` for an `edge` request printed an empty purge line and a command-not-found. Found by running `--plan`, which is the one mode this tool has that runs nothing. |
+
+#### ⚠ What remains, and it is steps 2 and 3
+
+⛔ **`firefox` and `chromium` are untouched**, and the entry's approach is one
+family per change. This closes on step 1, which is what its acceptance names.
+⚠ `CORPUS-02` is where the four-family form of the same command closes, and
+`firefox` needs `b_ids_driver::resolve` to know the family before anything else
+can be attempted.
+
+⚠ **And `captured.operator` is still typed.** The identity writer leaves it
+empty and it was filled in by hand for this profile as it was for the three
+before it. That is named in the writer's own comment and it is not this entry's
+to fix.

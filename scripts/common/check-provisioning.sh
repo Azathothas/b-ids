@@ -157,15 +157,18 @@ if [ "$plan_rc" != "0" ]; then
 "
   COUNT=$((COUNT + 1))
 else
+  # ⛔ A LINE WHOSE FIRST FIELD IS THE STEP, never the word anywhere in the
+  # output. ⚠ Measured 2026-09-02 by planting the defect: with every `index`
+  # line removed from a COPY of the tool, a substring search still passed,
+  # because the `fetch` line reads "the zip that index names for the build".
+  # A check that a different line satisfies is the "passes because a different
+  # code path happens to satisfy it" shape in docs/methodology/reviews.md.
   for word in purge fetch install confirm; do
-    case "$plan" in
-      *"$word"*) ;;
-      *)
-        PROBLEMS="$PROBLEMS  --plan: names no $word step for this platform
+    if ! printf '%s\n' "$plan" | awk -v w="$word" '$1 == w { f = 1 } END { exit !f }'; then
+      PROBLEMS="$PROBLEMS  --plan: names no $word step for this platform
 "
-        COUNT=$((COUNT + 1))
-        ;;
-    esac
+      COUNT=$((COUNT + 1))
+    fi
   done
 fi
 
@@ -182,14 +185,11 @@ if [ "$ftplan_rc" != "0" ]; then
   COUNT=$((COUNT + 1))
 else
   for word in purge index fetch install confirm; do
-    case "$ftplan" in
-      *"$word"*) ;;
-      *)
-        PROBLEMS="$PROBLEMS  --plan for-testing: names no $word step for this platform
+    if ! printf '%s\n' "$ftplan" | awk -v w="$word" '$1 == w { f = 1 } END { exit !f }'; then
+      PROBLEMS="$PROBLEMS  --plan for-testing: names no $word step for this platform
 "
-        COUNT=$((COUNT + 1))
-        ;;
-    esac
+      COUNT=$((COUNT + 1))
+    fi
   done
 fi
 
