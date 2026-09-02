@@ -185,6 +185,116 @@ pub fn is_never_recorded(name: &str) -> bool {
         .any(|banned| name.eq_ignore_ascii_case(banned))
 }
 
+/// The alphabet a boundary's random part is drawn from.
+///
+/// ⛔ **An enum rather than a literal character set.** The set is a property of
+/// the browser's generator and it is compared across profiles; a free string
+/// would fail silently on an ordering or a spelling, which is the reason
+/// [`crate::Trust`] is an enum for the same job.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BoundaryAlphabet {
+    /// `0123456789abcdef`.
+    LowerHex,
+    /// `0123456789ABCDEF`.
+    UpperHex,
+    /// `0-9A-Za-z`.
+    Alphanumeric,
+}
+
+impl BoundaryAlphabet {
+    /// Every alphabet, in the order the vocabulary is written down.
+    #[must_use]
+    pub fn all() -> [Self; 3] {
+        [Self::LowerHex, Self::UpperHex, Self::Alphanumeric]
+    }
+
+    /// The word as it is written in a profile.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::LowerHex => "lower-hex",
+            Self::UpperHex => "upper-hex",
+            Self::Alphanumeric => "alphanumeric",
+        }
+    }
+
+    /// Whether one character is in this alphabet.
+    #[must_use]
+    pub fn contains(self, c: char) -> bool {
+        match self {
+            Self::LowerHex => c.is_ascii_digit() || ('a'..='f').contains(&c),
+            Self::UpperHex => c.is_ascii_digit() || ('A'..='F').contains(&c),
+            Self::Alphanumeric => c.is_ascii_alphanumeric(),
+        }
+    }
+}
+
+impl core::fmt::Display for BoundaryAlphabet {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+/// The shape of the boundary string a browser generates for a multipart body.
+///
+/// ⛔ **THE PATTERN, NEVER A DRAWN VALUE.** The boundary is generated per
+/// request, like a GREASE codepoint, so one captured boundary is one draw and
+/// recording it as though it were the value would publish a constant no browser
+/// has. `TODO/schema.md`, `SCHEMA-11`.
+///
+/// ⚠ **Measured by reading somebody else's client, at a named commit, and not
+/// by this project.** One client generates `----WebKitFormBoundary` plus
+/// sixteen alphanumerics for one browser and `----geckoformboundary` plus
+/// thirty-two hexadecimal characters for another;
+/// `docs/reference-sweeps/usable.md` section 8 is the source. ⛔ No profile
+/// carries this field until this project measures a form submission itself.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MultipartBoundary {
+    /// The literal text every boundary from this browser starts with.
+    pub prefix: String,
+    /// How many characters are drawn after the prefix.
+    pub random_len: usize,
+    /// Which alphabet those characters come from.
+    pub alphabet: BoundaryAlphabet,
+}
+
+impl MultipartBoundary {
+    /// Whether one observed boundary matches this pattern.
+    ///
+    /// ⛔ **Length is counted in CHARACTERS that are in the alphabet**, and the
+    /// total is checked as well: a pattern that only asserted the prefix would
+    /// match a boundary from any browser whose prefix happens to agree, and one
+    /// that only counted would match a prefix that does not.
+    #[must_use]
+    pub fn matches(&self, observed: &str) -> bool {
+        let Some(rest) = observed.strip_prefix(&self.prefix) else {
+            return false;
+        };
+        rest.chars().count() == self.random_len && rest.chars().all(|c| self.alphabet.contains(c))
+    }
+
+    /// Every way this pattern is malformed on its own terms.
+    ///
+    /// ⛔ **A pattern with no random part is a constant**, and a constant is
+    /// exactly what this field exists to avoid recording.
+    #[must_use]
+    pub fn problems(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        if self.prefix.is_empty() {
+            out.push("multipart_boundary.prefix is empty".to_owned());
+        }
+        if self.random_len == 0 {
+            out.push(
+                "multipart_boundary.random_len is 0, which records a constant rather than a \
+                 pattern. The boundary is drawn per request"
+                    .to_owned(),
+            );
+        }
+        out
+    }
+}
+
 /// The HTTP half of a profile: one header set per request kind captured.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HttpHalf {
@@ -194,6 +304,16 @@ pub struct HttpHalf {
     /// nothing about HTTP at all, which is a different thing from a profile
     /// that records a navigation and no subresource fetch.
     pub variants: Vec<HeaderSet>,
+    /// The shape of the boundary this browser generates for a multipart body.
+    ///
+    /// ⛔ **Absent until this project measures a form submission itself.** The
+    /// pattern is known by reading somebody else's client and
+    /// `docs/inherited-claims.md` is where a value this project did not measure
+    /// lives; nothing from there is published as data. ⚠ `None` is "not
+    /// measured", which is a different fact from a browser that sends no
+    /// boundary.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multipart_boundary: Option<MultipartBoundary>,
 }
 
 impl HttpHalf {

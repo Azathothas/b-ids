@@ -110,6 +110,7 @@ pub fn profile_with_header_values() -> Profile {
                 raw_headers(),
                 ValuePolicy::WithValues,
             )],
+            multipart_boundary: None,
         },
         ..profile()
     }
@@ -238,6 +239,7 @@ pub fn http() -> HttpHalf {
             raw_headers(),
             ValuePolicy::NamesOnly,
         )],
+        multipart_boundary: None,
     }
 }
 

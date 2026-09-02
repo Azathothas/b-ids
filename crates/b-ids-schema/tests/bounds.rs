@@ -46,6 +46,9 @@ fn expected() -> Vec<(&'static str, f64, f64)> {
         // usize on the Rust side, bounded by what JSON can carry exactly.
         ("#/captured/acquisition/bytes", 0.0, JSON_SAFE_INTEGER),
         ("#/record_layer/bytes_arrived", 0.0, JSON_SAFE_INTEGER),
+        // ⛔ The minimum is 1 rather than 0. A zero-length random part records a
+        // CONSTANT, which is what the field exists to avoid.
+        ("#/multipart_boundary/random_len", 1.0, JSON_SAFE_INTEGER),
     ]
 }
 

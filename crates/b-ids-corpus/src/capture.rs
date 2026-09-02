@@ -220,6 +220,7 @@ pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, V
                 .map(|h| (h.name.clone(), h.value.clone().unwrap_or_default())),
             policy,
         )],
+        multipart_boundary: None,
     };
 
     let frames: Vec<String> = http2

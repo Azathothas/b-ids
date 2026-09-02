@@ -32,6 +32,7 @@ fn with_headers(profile: &Profile, headers: Vec<(String, String)>) -> Profile {
                 headers,
                 ValuePolicy::WithValues,
             )],
+            multipart_boundary: None,
         },
         ..profile.clone()
     }

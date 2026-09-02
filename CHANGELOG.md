@@ -14,6 +14,24 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T04:00:00Z - the multipart boundary, as a pattern rather than a value
+
+**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-11` and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`http.multipart_boundary`**, carrying a literal prefix, the length of
+  the random part and its alphabet, with a matcher that checks all three. The
+  boundary is drawn per request like a GREASE codepoint, so one captured value
+  would publish a constant no browser has.
+- ⛔ **The field is absent in every profile and both fixtures, and a test
+  holds that.** The two patterns are inherited by reading somebody else's
+  client, and nothing inherited is published as data.
+- **The schema bounds `random_len` at 1**, because a zero-length random part
+  records a constant, which is what the field exists to avoid.
+
 ### 2026-09-02T03:45:00Z - every script answers 2 for a state it cannot act on
 
 **Record:** [`TODO/ci.md`](TODO/ci.md) `CI-07` and

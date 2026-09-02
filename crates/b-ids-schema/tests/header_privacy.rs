@@ -112,6 +112,7 @@ fn header_privacy_a_set_says_which_request_kind_produced_it() {
 
     let half = HttpHalf {
         variants: vec![navigate, subresource],
+        multipart_boundary: None,
     };
     assert!(half.variant(Variant::Navigate).is_some());
     assert!(half.variant(Variant::Reload).is_none());

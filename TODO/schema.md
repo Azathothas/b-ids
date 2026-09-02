@@ -1094,7 +1094,7 @@ order fails with a message saying so.
 ## SCHEMA-11. The multipart boundary, which is a per-browser surface nobody listed
 
 **Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 8
-**Category** schema, **Priority** P2, **Effort** S, **Status** open
+**Category** schema, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -1126,6 +1126,71 @@ cargo test -p b-ids-schema multipart -- --nocapture
 
 Passing means: a fixture of sixteen boundaries from one browser all match the
 recorded pattern, and a boundary from another browser does not.
+
+### Closing
+
+**Closed 2026-09-02T04:00:00Z.** `http.multipart_boundary` records the shape a
+browser generates, never a drawn value: a literal prefix, the length of the
+random part and its alphabet, with a matcher that checks all three.
+
+```text
+$ cargo test -p b-ids-schema multipart -- --nocapture
+     Running tests\multipart.rs (target\debug\deps\multipart-edc0b06126b3ecf9.exe)
+running 8 tests
+test multipart_the_length_is_checked_as_well_as_the_prefix ... ok
+test multipart_a_character_outside_the_alphabet_does_not_match ... ok
+test multipart_a_boundary_from_another_browser_does_not_match ... ok
+test multipart_a_pattern_with_no_random_part_is_a_constant_and_is_refused ... ok
+test multipart_sixteen_boundaries_of_one_browser_all_match_its_pattern ... ok
+test multipart_every_alphabet_names_itself_and_is_checkable ... ok
+test multipart_no_profile_in_this_tree_claims_a_boundary ... ok
+test multipart_the_published_schema_carries_the_pattern ... ok
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+#### ⛔ The field is absent everywhere in this corpus, and a test holds that
+
+**This project has not captured a form submission from any browser.** The two
+patterns in the test are inherited by reading somebody else's client at a named
+commit, and [`../docs/inherited-claims.md`](../docs/inherited-claims.md) is
+where a value this project did not measure lives. ⛔ Nothing from there is
+published as data, so `http.multipart_boundary` is `None` in every profile and
+in both fixtures, and `multipart_no_profile_in_this_tree_claims_a_boundary`
+is what stops that changing quietly.
+
+⭐ **What IS measured here is the matcher**, against boundaries generated to the
+recorded shape.
+
+#### The pattern, and the three things it carries
+
+| | |
+| --- | --- |
+| `prefix` | the literal text every boundary from this browser starts with |
+| `random_len` | how many characters follow it. ⛔ The schema's minimum is **1**: a zero-length random part records a constant, which is exactly what this field exists to avoid |
+| `alphabet` | `lower-hex`, `upper-hex` or `alphanumeric`. ⚠ An enum rather than a literal character set, because the value is compared across profiles and a free string fails silently on an ordering |
+
+#### ⛔ Both halves of the match, on the same value
+
+A pattern that only asserted the prefix would match a boundary from any browser
+whose prefix happens to agree; one that only counted would match a prefix that
+does not. ⚠ **The hyphen is the case that matters**: it appears in the prefix, so
+a matcher reading the whole string rather than the tail would accept it inside
+the random part.
+
+#### ⚠ The fixtures are deterministic on purpose
+
+A test that drew randomly would pass or fail on a seed, and a matcher checked
+against one lucky draw is a matcher nobody has checked. The sixteen boundaries
+walk the alphabet instead, and the test asserts they are sixteen DISTINCT
+strings, which is what makes the set a sample rather than one value repeated.
+
+#### ⚠ What is still unmeasured, and it is the whole field
+
+⛔ **Whether Chrome `151.0.7922.76` generates the shape recorded here has not
+been checked by this project.** The harness captures a navigation; a multipart
+body needs a form submission, which needs a page that posts one. That is a
+capture-path change and it is not in this entry.
 
 ---
 

@@ -141,6 +141,7 @@ fn http_half_from(bytes: &[u8], policy: ValuePolicy, notes: &mut Vec<Note>) -> H
     }
     HttpHalf {
         variants: vec![HeaderSet::record(Variant::Navigate, fields, policy)],
+        multipart_boundary: None,
     }
 }
 

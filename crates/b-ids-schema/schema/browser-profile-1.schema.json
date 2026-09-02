@@ -709,6 +709,39 @@
           "items": {
             "$ref": "#/$defs/header_set"
           }
+        },
+        "multipart_boundary": {
+          "$ref": "#/$defs/multipart_boundary"
+        }
+      }
+    },
+    "multipart_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prefix",
+        "random_len",
+        "alphabet"
+      ],
+      "description": "The SHAPE of the boundary a browser generates for a multipart body, never one drawn value. The boundary is generated per request, like a GREASE codepoint, so a recorded value would publish a constant no browser has. Absent where this project has not measured a form submission from this build.",
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "description": "The literal text every boundary from this browser starts with."
+        },
+        "random_len": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991,
+          "description": "How many characters are drawn after the prefix. A zero here would record a constant rather than a pattern, so the minimum is 1."
+        },
+        "alphabet": {
+          "enum": [
+            "lower-hex",
+            "upper-hex",
+            "alphanumeric"
+          ],
+          "description": "Which alphabet those characters come from."
         }
       }
     },

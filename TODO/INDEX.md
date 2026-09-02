@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 91  open 38  blocked 0  done 53
+total 91  open 37  blocked 0  done 54
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 9 | 9 |
 | P1 | 8 | 0 | 32 | 40 |
-| P2 | 26 | 0 | 11 | 37 |
+| P2 | 25 | 0 | 12 | 37 |
 | P3 | 4 | 0 | 1 | 5 |
-| **all** | **38** | **0** | **53** | **91** |
+| **all** | **37** | **0** | **54** | **91** |
 
 ---
 
@@ -93,7 +93,7 @@ total 91  open 38  blocked 0  done 53
 | SCHEMA-08 | P1 | L | open | Every generated format, from one generator, round-tripped | [`schema.md`](schema.md) |
 | SCHEMA-09 | P1 | S | done | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
 | SCHEMA-10 | P2 | M | open | Record the shuffle as a property, and consider recording its seed | [`schema.md`](schema.md) |
-| SCHEMA-11 | P2 | S | open | The multipart boundary, which is a per-browser surface nobody listed | [`schema.md`](schema.md) |
+| SCHEMA-11 | P2 | S | done | The multipart boundary, which is a per-browser surface nobody listed | [`schema.md`](schema.md) |
 | SCHEMA-12 | P2 | L | open | The six formats that need a decoder as well as an encoder | [`schema.md`](schema.md) |
 | SCHEMA-13 | P1 | S | done | The published schema accepts 999 for a byte | [`schema.md`](schema.md) |
 | SCHEMA-14 | P1 | M | done | A credential's presence is a fingerprint, and it is currently a hole | [`schema.md`](schema.md) |
