@@ -13,7 +13,7 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 91  open 36  blocked 0  done 55
+total 91  open 35  blocked 0  done 56
 ```
 
 | priority | open | blocked | done | total |
@@ -21,8 +21,8 @@ total 91  open 36  blocked 0  done 55
 | P0 | 0 | 0 | 9 | 9 |
 | P1 | 7 | 0 | 33 | 40 |
 | P2 | 25 | 0 | 12 | 37 |
-| P3 | 4 | 0 | 1 | 5 |
-| **all** | **36** | **0** | **55** | **91** |
+| P3 | 3 | 0 | 2 | 5 |
+| **all** | **35** | **0** | **56** | **91** |
 
 ---
 
@@ -42,7 +42,7 @@ total 91  open 36  blocked 0  done 55
 | CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
 | CORPUS-03 | P2 | S | done | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
 | CORPUS-04 | P2 | M | open | Per-build trust-anchor lists, and a recommendation | [`corpus.md`](corpus.md) |
-| CORPUS-05 | P3 | S | open | Name the unidentified extension | [`corpus.md`](corpus.md) |
+| CORPUS-05 | P3 | S | done | Name the unidentified extension | [`corpus.md`](corpus.md) |
 | DOC-01 | P2 | S | open | There is no technical reference, and one document is pretending not to notice | [`docs.md`](docs.md) |
 | DOC-02 | P2 | S | open | The operator's side is unwritten because there is nothing to operate | [`docs.md`](docs.md) |
 | DOC-03 | P2 | S | open | There is no threat model, and publishing a corpus will need one | [`docs.md`](docs.md) |

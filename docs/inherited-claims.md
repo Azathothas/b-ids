@@ -172,8 +172,8 @@ JA4_ro included, strips GREASE before it is computed.
 
 | codepoint | length | body | what it is | source | status |
 | --- | --- | --- | --- | --- | --- |
-| `0x12e0` | 2 | `0000` | unidentified as of 2026-08-31. Two zero bytes, trivially reproducible by anything that can write an arbitrary extension. | `ORIGIN` | inherited. `CORPUS-05` names it. |
-| `0xca34` | 206 | a length-prefixed list of 24 identifiers, in the browser's own order | trust anchors, `draft-ietf-tls-trust-anchor-ids` | `ORIGIN` | ⚠ the **body** is measured; the **name** is inferred. No specification was read against the bytes. |
+| `0x12e0` | 2 | `0000` | still unidentified. Two zero bytes, trivially reproducible by anything that can write an arbitrary extension. | `ORIGIN` | inherited, and ⭐ **narrowed by measurement 2026-09-02**: absent from all three Chrome `151` profiles this project has captured, on both platforms, while the origin's `152` capture carries it. `CORPUS-05`. |
+| `0xca34` | 206 | a length-prefixed list of 24 identifiers, in the browser's own order | trust anchors, `draft-ietf-tls-trust-anchor-ids` | `ORIGIN` | ⚠ the **body** is measured; the **name** is inferred. No specification was read against the bytes. ⭐ Also absent from every Chrome `151` profile here. |
 
 ⛔ **These two are why the origin repository's version bump did not ship.**
 Neither `impit`'s closed extension enum nor `rustls`'s one-typed-field-per-

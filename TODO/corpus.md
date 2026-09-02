@@ -701,7 +701,7 @@ options with the cost of each.
 ## CORPUS-05. Name the unidentified extension
 
 **Source** the founding brief; the two codepoints are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3
-**Category** corpus, **Priority** P3, **Effort** S, **Status** open
+**Category** corpus, **Priority** P3, **Effort** S, **Status** done
 
 ### Problem
 
@@ -733,9 +733,89 @@ carry as inferred: its body is measured and its name is not.
 ### Prove
 
 ```bash
-sh experiments/30-identify-extension.sh
+sh experiments/60-identify-extension.sh
 ```
 
 Passing means: the script records what was searched and what it found, and
 either the extension is named with a citation or the search is recorded as
 exhausted with a list of what was ruled out.
+
+### ⚠ The acceptance names `60-` rather than `30-`, and the reason is a rule
+
+⛔ **A number is never reused and `30-` was taken** by
+[`../experiments/30-resumption-control.sh`](../experiments/30-resumption-control.sh),
+written after this entry was authored.
+[`../docs/methodology/experiments.md`](../docs/methodology/experiments.md) says a
+citation has to keep meaning what it meant, so the script is
+[`../experiments/60-identify-extension.sh`](../experiments/60-identify-extension.sh)
+and the Prove block above is corrected rather than the file misnumbered to match.
+
+### Closing
+
+**Closed 2026-09-02T04:30:00Z.** The search ran, is recorded, and is re-runnable.
+⛔ **The extension is NOT named**, and what was searched is written down so the
+next attempt does not repeat it.
+
+```text
+$ sh experiments/60-identify-extension.sh
+searching for extension 0x12e0 (4832 decimal)
+
+-- what this project measured itself --
+  absent   chrome-151.0.7922.173-linux64-stable
+  absent   chrome-151.0.7922.174-win64-stable
+  absent   chrome-151.0.7922.76-win64-stable
+  0 of 3 published profile(s) carry it
+
+-- reference captures whose extension list carries it --
+  references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json
+
+-- verdict --
+  ⛔ NOT NAMED. No specification was read against these bytes, and the
+     browser engine source is not a tree this project keeps.
+exit=0
+```
+
+### ⭐ The search produced a measurement, which the entry did not expect
+
+⛔ **Chrome `151` does not send `0x12e0`, on either platform, in any of the three
+profiles this project has captured.** The origin's capture of Chrome
+`152.0.7977.64` on `linux64` does: its `ja4_r` extension list reads
+`...,0033,12e0,44cd,ca34,fe0d,ff01`, at
+[`../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json`](../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json).
+
+⭐ **So it is a codepoint Chrome added between 151 and 152**, which narrows the
+search from "somewhere in an engine" to "a change in one release". ⚠ The same is
+true of `0xca34`, the inferred trust-anchor extension: present in the 152
+capture, absent in all three 151 profiles here.
+
+⚠ **This is a measurement of ABSENCE and it is worth what an absence is worth.**
+It says Chrome 151 does not send the codepoint. It does not say Chrome 152 does:
+that is a reading of somebody else's capture at a named commit, and this project
+has captured no 152 build.
+
+### ⛔ What the script is allowed to conclude, and what it is not
+
+| it searches | what that is |
+| --- | --- |
+| every profile under `corpus/v1/` | ⭐ a **measurement**: whether the codepoint was on a wire this project read |
+| every tracked reference tree, three spellings | a **reading** of somebody else's repository at a named commit |
+| the reference captures whose extension list carries it | the highest-signal reading there is, because it names the build |
+
+⛔ **It does not guess a name from a neighbour.** That is how `0xca34` acquired
+an inferred name this tree carries as inferred: its body is measured and its
+name is not.
+
+⚠ **The decimal spelling is low signal and is searched anyway.** Four digits
+occur in unrelated JSON across the reference corpus, so a hit there is a place to
+look rather than a finding. ⛔ Narrowing the search to make the output tidy would
+be narrowing it to get the answer that fits.
+
+### ⛔ Why the engine source was not searched
+
+**A claim about a repository is not written until that repository is in
+[`../references/`](../references/) at a named commit**, and a browser engine
+checkout is not a tree this project keeps.
+[`RULES.md`](RULES.md) section 3 is the rule and it cost this repository its most
+expensive defect. ⭐ So the verdict names what would settle it: the engine source
+at a named commit here, or a specification draft read against the recorded body.
+

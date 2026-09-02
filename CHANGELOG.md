@@ -14,6 +14,28 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T04:35:00Z - the trust anchor apparatus, and a search that narrowed itself
+
+**Record:** [`TODO/harness.md`](TODO/harness.md) `HARNESS-14`,
+[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-05`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`experiments/50-trust-anchor.sh` and `trust-anchor.yml`.** The script
+  refuses to install a root unless `B_IDS_DISPOSABLE=1` says the machine is
+  thrown away afterwards, and the workflow is the only place that is set. The
+  removal is read back rather than assumed, and a root left behind fails the
+  run whatever the comparison said.
+- ⭐ **`CORPUS-05` closes with a measurement it did not expect.** `0x12e0` is
+  absent from all three Chrome `151` profiles this project has captured, on
+  both platforms, while the origin's `152` capture carries it: a codepoint
+  added in one release rather than one hidden somewhere in an engine.
+- ⛔ **The extension is still not named**, and what was searched is written
+  down so the next attempt does not repeat it. The engine source is not a tree
+  this project keeps, and a claim about a repository is not written until it is.
+
 ### 2026-09-02T04:20:00Z - staleness is a schedule, and its output carries the replacement
 
 **Record:** [`TODO/ci.md`](TODO/ci.md) `CI-02` and
