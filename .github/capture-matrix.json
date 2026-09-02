@@ -38,24 +38,24 @@
       "channel": "stable",
       "platform": "linux64",
       "os": "ubuntu-latest",
-      "route": "installed",
+      "route": "vendor",
       "branded": true,
       "build": null,
       "enabled": true,
       "required": true,
-      "why": "The cheapest lane there is: the runner image ships Chrome, so this needs no acquisition at all."
+      "why": "The cheapest lane there is: the runner image ships Chrome, so this needs no acquisition at all. ⭐ Route changed to vendor on 2026-09-02, which is the ruling applied: the lane purges the machine and installs the current branded build rather than measuring whatever the image shipped. ⚠ Measured in provision.yml run 33628209454: the vendor channel served 152.0.7977.75 on Linux and 152.0.7977.76 on Windows one hour apart, so this route does NOT give both platforms one build."
     },
     {
       "browser": "chrome",
       "channel": "stable",
       "platform": "win64",
       "os": "windows-latest",
-      "route": "installed",
+      "route": "vendor",
       "branded": true,
       "build": null,
       "enabled": true,
       "required": true,
-      "why": "The one platform the corpus already has, captured again on a runner rather than on a laptop. Two profiles of one build on two platforms is what decides whether the TLS half is platform-independent."
+      "why": "The one platform the corpus already has, captured again on a runner rather than on a laptop. Two profiles of one build on two platforms is what decides whether the TLS half is platform-independent. ⭐ Route changed to vendor on 2026-09-02, which is the ruling applied: the lane purges the machine and installs the current branded build rather than measuring whatever the image shipped. ⚠ Measured in provision.yml run 33628209454: the vendor channel served 152.0.7977.75 on Linux and 152.0.7977.76 on Windows one hour apart, so this route does NOT give both platforms one build."
     },
     {
       "browser": "edge",
