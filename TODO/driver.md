@@ -968,7 +968,8 @@ run on a runner.** The entry stays open rather than closing on machinery.
 $ sh scripts/common/check-provisioning.sh
 provisioning ok: 7 check(s), every refusal held, provisioning skipped
   SKIP the provisioning itself: this machine is not disposable, so nothing
-  was purged. .github/workflows/provision.yml is where that leg runs.
+  was purged. A workflow on a disposable runner is where that leg runs,
+  and TODO/driver.md, DRIVER-08, is what has not been built yet.
 exit=0
 ```
 
@@ -1018,10 +1019,12 @@ incident.
 5. **`captured.acquisition` populated** from what the tool printed: the route,
    the URL, the sha256 and the byte count. `b_ids_driver::acquire` already has
    the shape and still has no caller.
-6. **`check-provisioning` into the gate**, with a PowerShell twin, once the work
-   above lands. ⚠ It is deliberately out of the gate today: it is the acceptance
-   for an entry that is not finished, and `check-staleness` and `check-sources`
-   are the precedent for a check that lives outside it.
+6. **`check-provisioning` into the gate**, once the work above lands. ⚠ It is
+   deliberately out of the gate today: it is the acceptance for an entry that is
+   not finished, and `check-staleness` and `check-sources` are the precedent for
+   a check that lives outside it. ⭐ Its PowerShell twin is not on this list any
+   more: `DRIVER-09` closed on 2026-09-02, because the gate refused the sh half
+   on its own.
 
 
 ---

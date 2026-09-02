@@ -24,8 +24,8 @@ baseline         gate ok: all 27 checks passed, in full, on this Windows
                  host. 26 with check-twins skipped by -Fast, and
                  check-twins compares 27 pairs. 309 tests in 36 files.
 entries          total 97  open 33  blocked 0  done 64
-gate             26 checks. check-provisioning is the 27th script and is
-                 deliberately outside it: DRIVER-08 is open
+gate             27 checks in full, and check-provisioning is not one of
+                 them: it is the acceptance for an entry that is open
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -72,13 +72,25 @@ runner has executed the purge or the install.
 | --- | --- |
 | [`../scripts/common/provision-browser.sh`](../scripts/common/provision-browser.sh) | purge, confirm by requiring `resolve` to exit 2, install, confirm the version. The vendor route, Linux and Windows. `--plan` runs nothing. |
 | [`../scripts/common/check-provisioning.sh`](../scripts/common/check-provisioning.sh) | seven refusals asserted on any host; the provisioning leg skipped LOUDLY where the machine is not disposable |
+| [`../scripts/common/provision-browser.ps1`](../scripts/common/provision-browser.ps1) and [`../scripts/common/check-provisioning.ps1`](../scripts/common/check-provisioning.ps1) | the twins, which the gate refused to go green without. Each acceptance drives the tool written in its own language. |
 
 ```text
 $ sh scripts/common/check-provisioning.sh
 provisioning ok: 7 check(s), every refusal held, provisioning skipped
   SKIP the provisioning itself: this machine is not disposable, so nothing
-  was purged. .github/workflows/provision.yml is where that leg runs.
+  was purged. A workflow on a disposable runner is where that leg runs,
+  and TODO/driver.md, DRIVER-08, is what has not been built yet.
 exit=0
+```
+
+⭐ **And the PowerShell half answers identically**, which is what makes the
+pair comparable at all:
+
+```text
+$ pwsh -NoProfile -File scripts/common/check-provisioning.ps1 -Json
+{"schema":"check-provisioning/1","checks":7,"problems":0,"provisioned":"skipped"}
+$ sh scripts/common/check-provisioning.sh --json
+{"schema":"check-provisioning/1","checks":7,"problems":0,"provisioned":"skipped"}
 ```
 
 ⛔ **The twin was not optional and the gate said so.** `DRIVER-09` was written
