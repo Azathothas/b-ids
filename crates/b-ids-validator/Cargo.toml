@@ -19,3 +19,8 @@ serde_json.workspace = true
 
 [dev-dependencies]
 b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }
+# ⛔ A DEV DEPENDENCY, and that is the design rather than an accident. The
+# validator is pure logic over the model and takes the reachable list as an
+# argument; only `reachable_dimensions` needs to know what THIS project can
+# resolve, and it is a test. TODO/validator.md, VALID-03.
+b-ids-driver = { path = "../b-ids-driver" }

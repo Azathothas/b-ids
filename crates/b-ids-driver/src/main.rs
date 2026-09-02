@@ -14,7 +14,7 @@ use b_ids_driver::{Family, Launch, drive, resolve};
 const USAGE: &str = "\
 usage: b-ids-driver resolve [--browser NAME] [--json]
        b-ids-driver drive --url URL [--browser NAME] [--pin PIN] [--headless]
-                          [--timeout-ms N]
+                          [--timeout-ms N] [--log PATH] [--disable-verification]
        b-ids-driver versions [--channel CH] [--json]
 
   resolve          find a browser on this machine and report its build, with
@@ -39,6 +39,17 @@ usage: b-ids-driver resolve [--browser NAME] [--json]
   --headless       run headless. Off by default, because headless changes the
                    product token the browser announces.
   --timeout-ms N   the ceiling on the launch. Sixty seconds by default.
+  --disable-verification
+                   switch certificate verification OFF in the subject,
+                   with --test-type so a branded build honours it.⛔ A
+                   CAPTURE TOOL AND NEVER SOMETHING TO SHIP IN A CLIENT: it
+                   changes what the browser ACCEPTS after the handshake
+                   rather than what it SENDS. Refused together with
+                   --pin, and --ca-out plus a pin is the preferred route.
+  --log PATH       write the browser's own stdout and stderr here. Without
+                   it they are discarded, and a launch that captured
+                   nothing then carries no word from the browser about
+                   why.
   --json           one object, on stdout.
 
 exit 0 done, 1 the launch failed, 2 nothing could be run.";
@@ -136,6 +147,13 @@ fn main() -> ExitCode {
                     return fail("--url needs a URL");
                 };
                 launch.url = value;
+            }
+            "--disable-verification" => launch.disable_verification = true,
+            "--log" => {
+                let Some(value) = argv.next() else {
+                    return fail("--log needs a path");
+                };
+                launch.log = Some(std::path::PathBuf::from(value));
             }
             "--pin" => {
                 let Some(value) = argv.next() else {

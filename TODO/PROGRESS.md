@@ -20,7 +20,7 @@ session ran      2026-09-02T01:14:00Z, unattended, in progress
 baseline         the gate passes: 24 checks on this Windows host with
                  check-twins skipped by -Fast. 265 tests in 29 files across
                  the 5 crates that have a tests directory.
-entries          total 91  open 43  blocked 0  done 48
+entries          total 91  open 39  blocked 0  done 52
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -99,6 +99,21 @@ cell is enabled and required.
 
 ---
 
+## ⭐ Four entries closed beside it
+
+| | |
+| --- | --- |
+| ⭐ `SCHEMA-13` | every integer field in the published schema carries a bound derived from its Rust width, and a field added without one fails the test |
+| ⭐ `SCHEMA-14` | a credential is recorded as PRESENT, in its wire position, with no value. It was dropped entirely before, so the order closed over an unmarked gap. Three refusals added, no way to record a value |
+| ⭐ `VALID-03` | `unreachable_dimensions`, over every browser, channel and platform the corpus carries, reading `Family::all` rather than a list of its own |
+| ⭐ `DRIVER-04` | `experiments/40-trust-paths.sh`. ⛔ The negative control is the finding: with no trust flag at all, four connections completed zero handshakes |
+
+⚠ **Seven tests changed their assertions and none changed its title.** Each
+asserted that a credential NAME was gone; each now asserts the name is there and
+the value is not.
+
+---
+
 ## What is in progress
 
 ⚠ **`CORPUS-02` is open.** The apparatus works and one lane publishes. What
@@ -157,16 +172,22 @@ defaults off so the resumed-connection sample stays reachable.
 separately as its own profile, and nothing captured under this switch can ever
 produce one. Nothing does that today.
 
-### 2. Should a new entry be authored for the driver's discarded diagnostics?
+### 2. The driver discarded the browser's own output, and it is fixed here
 
-⛔ `b-ids-driver drive` gives the browser `Stdio::null()`, so a lane that
-captured nothing carries no word from the browser about why. This session
-diagnosed the runner failure from the capture records instead, which worked and
-was slower.
+⛔ `b-ids-driver drive` gave the browser `Stdio::null()`, so a lane that
+captured nothing carried no word from the browser about why. ⚠ **It stopped
+being a hypothetical while this session ran**: the `edge` lane launched Edge on
+a hosted runner, the browser exited after 1.4 seconds having opened no
+connection, and what it said went nowhere.
 
-⭐ **The recommendation is yes, as an `S`**, a `--log PATH` that the capture
-script passes and the lane uploads. ⛔ Not authored here: `ENTRY.md` says an
-entry is not filed until the operator approves it.
+⭐ **`--log PATH` is implemented, under `CORPUS-02`**, because the edge row
+that entry requires cannot be diagnosed without it. ⛔ No new entry was filed:
+`ENTRY.md` says an entry is not filed until the operator approves it.
+
+⭐ **The question that remains is whether it should have been its own entry**
+rather than part of `CORPUS-02`. The recommendation is no: it is one switch, it
+is what unblocks a row of an open entry, and a `DRIVER-07` covering it after the
+fact would be a record of a decision rather than a unit of work.
 
 ---
 

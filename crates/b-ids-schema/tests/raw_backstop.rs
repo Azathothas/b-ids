@@ -119,7 +119,15 @@ fn raw_backstop_rebuilds_a_cleartext_request_through_the_one_construction_path()
     let rebuilt = rebuild(&raw, ValuePolicy::WithValues);
     let http = rebuilt.http.expect("the raw block carries a request");
     let names: Vec<&str> = http.variants[0].names().collect();
-    assert_eq!(names, vec!["Host", "Accept"]);
+    // ⭐ The credential keeps its NAME and its POSITION. `SCHEMA-14`, and the
+    // case here is the one that matters most: HTTP/1.1 does not lower-case its
+    // names, so the filter has to recognise `Cookie` as well as `cookie`.
+    assert_eq!(names, vec!["Host", "Cookie", "Accept"]);
+    let withheld: Vec<&str> = http.variants[0]
+        .withheld()
+        .map(|h| h.name.as_str())
+        .collect();
+    assert_eq!(withheld, vec!["Cookie"]);
     let serialised = serde_json::to_string(&http).expect("serialises");
     assert!(!serialised.contains("not-a-real-value"), "{serialised}");
 }

@@ -127,6 +127,8 @@ fn resolve_and_drive_completes_a_capture_against_the_harness() {
         spki_pin: Some(pin),
         headless: false,
         timeout: Duration::from_secs(30),
+        log: None,
+        disable_verification: false,
     };
     let browser_for_thread = browser.clone();
     let launcher = std::thread::spawn(move || drive(&browser_for_thread, &launch));
@@ -291,4 +293,85 @@ fn resolve_and_drive_browser_reports_only_the_family_it_names() {
             reported["name"], reported["version"]
         );
     }
+}
+
+#[test]
+fn resolve_and_drive_log_records_what_the_browser_said() {
+    // ⛔ THE DIAGNOSIS THIS EXISTS FOR. On 2026-09-02 the `edge` capture lane
+    // launched Edge on a hosted runner, the browser exited after 1.4 seconds
+    // having opened no connection, and the only thing anybody could read was
+    // that it had exited: whatever Edge said went to `Stdio::null()`.
+    //
+    // ⚠ WHAT IS ASSERTED IS THE FILE, not its content. A browser that says
+    // nothing on a healthy run is normal, and a test that demanded output would
+    // fail for the wrong reason. The file existing is what a later diagnosis
+    // needs; whether it is empty is the browser's business.
+    let Some(found) = browsers() else { return };
+    let browser = &found[0];
+
+    let dir = std::env::temp_dir().join(format!("b-ids-driver-log-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a scratch directory");
+    let log = dir.join("browser.log");
+
+    // ⚠ A PORT NOTHING IS LISTENING ON, deliberately. This test is about the
+    // log file rather than about a capture, and a browser pointed at a closed
+    // port is the cheapest launch that still exercises the whole path.
+    let launch = Launch {
+        url: "https://127.0.0.1:1/".to_owned(),
+        spki_pin: None,
+        headless: true,
+        timeout: Duration::from_secs(5),
+        log: Some(log.clone()),
+        disable_verification: false,
+    };
+    let driven = drive(browser, &launch).expect("the browser launched");
+    assert!(
+        log.is_file(),
+        "the log path was written: {driven:?}, {}",
+        log.display()
+    );
+    println!(
+        "resolve_and_drive: {} wrote {} byte(s) to its log",
+        browser.family,
+        std::fs::metadata(&log).map(|m| m.len()).unwrap_or(0)
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn resolve_and_drive_log_with_no_value_is_refused() {
+    let output = std::process::Command::new(driver_bin())
+        .args(["drive", "--url", "https://127.0.0.1:1/", "--log"])
+        .output()
+        .expect("the driver command runs");
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("--log needs a path"), "{stderr}");
+}
+
+#[test]
+fn resolve_and_drive_log_refuses_a_path_it_cannot_write() {
+    // ⛔ REFUSED BEFORE THE SPAWN. A launch whose log could not be opened and
+    // ran anyway would discard the output while the caller believed it was
+    // being recorded, which is worse than not asking for it.
+    let Some(found) = browsers() else { return };
+    let browser = &found[0];
+    let launch = Launch {
+        url: "https://127.0.0.1:1/".to_owned(),
+        spki_pin: None,
+        headless: true,
+        timeout: Duration::from_secs(5),
+        // A directory that does not exist, so `File::create` cannot make the file.
+        log: Some(
+            std::env::temp_dir()
+                .join("b-ids-driver-no-such-directory")
+                .join("browser.log"),
+        ),
+        disable_verification: false,
+    };
+    let refused = drive(browser, &launch).expect_err("an unwritable log is refused");
+    assert!(
+        refused.contains("browser.log"),
+        "the refusal names the path: {refused}"
+    );
 }

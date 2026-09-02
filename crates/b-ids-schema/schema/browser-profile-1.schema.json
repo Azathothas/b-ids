@@ -64,13 +64,22 @@
   },
   "$defs": {
     "u8": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255,
+      "description": "A byte on the wire. The bound is the Rust width this field is read into, so a value the implementation cannot hold is refused by the published contract too."
     },
     "u16": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535,
+      "description": "A two-byte value on the wire, bounded by the Rust width it is read into."
     },
     "u32": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295,
+      "description": "A four-byte value on the wire, bounded by the Rust width it is read into."
     },
     "hex": {
       "type": "string"
@@ -217,7 +226,10 @@
               "type": "string"
             },
             "bytes": {
-              "type": "integer"
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "How many bytes arrived. The ceiling is the largest integer a JSON number carries exactly, because a consumer that read a larger one would read a different number than was written."
             }
           }
         }
@@ -443,7 +455,10 @@
           "type": [
             "integer",
             "null"
-          ]
+          ],
+          "minimum": 0,
+          "maximum": 65535,
+          "description": "The padding extension's length, bounded by the Rust width it is read into. Absent where the extension was not sent."
         },
         "shuffled": {
           "$ref": "#/$defs/shuffle"
@@ -632,6 +647,8 @@
             "integer",
             "null"
           ],
+          "minimum": 0,
+          "maximum": 4294967295,
           "description": "The window in the human unit, carried beside the increment rather than instead of it. A check asserts they differ by the protocol default."
         }
       }
@@ -649,6 +666,10 @@
         "value": {
           "type": "string",
           "description": "Absent under the default policy. Present only where values were deliberately recorded, and never for cookie or authorization."
+        },
+        "withheld": {
+          "type": "boolean",
+          "description": "The header carried a credential and its value is withheld by construction. Whether the header was sent, and where in the order, is a fingerprint signal that carries no secret; the value never appears on any surface. Absent means false. A true here beside a value, or on a name that is not cookie or authorization, is refused."
         }
       }
     },
@@ -809,7 +830,10 @@
           "$ref": "#/$defs/u16"
         },
         "bytes_arrived": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "How many bytes of the record arrived. The ceiling is the largest integer a JSON number carries exactly."
         },
         "fragmented": {
           "type": "boolean"

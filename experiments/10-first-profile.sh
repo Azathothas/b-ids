@@ -41,7 +41,8 @@
 # will one day publish a credential. A corpus profile is the case the default
 # is deliberately turned off for: four of the validator's checks read a header
 # VALUE, and a published profile that none of them can check is a profile
-# nobody can validate. `cookie` and `authorization` are dropped either way, at
+# nobody can validate. `cookie` and `authorization` keep their name and lose
+# their value either way, at
 # HeaderSet::record, and the raw bytes are refused by Raw::check if they spell
 # one out.
 #
@@ -158,7 +159,8 @@ printf 'harness at %s\n' "$BASE"
 # -- the browser, in the foreground, which is the hold -----------------------
 printf '\nlaunching the browser at it\n'
 # shellcheck disable=SC2086 # both are a flag and its value, or empty
-"$DRIVER" drive --url "$BASE" --pin "$PIN" --timeout-ms 45000 $HEADLESS $BROWSER_FLAG \
+"$DRIVER" drive --url "$BASE" --pin "$PIN" --timeout-ms 45000 \
+  --log "$OUT/browser.log" $HEADLESS $BROWSER_FLAG \
   > "$OUT/driven.txt" 2>&1
 DRIVER_RC=$?
 cat "$OUT/driven.txt"
@@ -174,6 +176,11 @@ CONNECTIONS=$(awk 'NR>1 && /^\{/' "$CAPTURES" | wc -l | tr -d ' ')
 printf 'connections recorded: %s\n' "$CONNECTIONS"
 if [ "$CONNECTIONS" = "0" ]; then
   printf '10-first-profile: the browser opened no connection this run\n' >&2
+  # ⛔ WHAT THE BROWSER SAID, on the one path where it is the whole
+  # diagnosis. An `edge` lane on a hosted runner exited after 1.4 seconds
+  # having opened nothing, and its own output had been discarded.
+  printf '10-first-profile: what the browser wrote:\n' >&2
+  tail -n 40 "$OUT/browser.log" >&2 || printf '  (nothing)\n' >&2
   exit 1
 fi
 
@@ -262,6 +269,7 @@ printf '  identity  trust=%s\n' "$(awk -F'"' '/"trust"/ { print $4 }' "$IDENTITY
 printf '\nleft in %s\n' "$OUT"
 printf '  captures.jsonl  every connection the navigation opened\n'
 printf '  driven.txt      what the driver reported, switches included\n'
+printf '  browser.log     what the BROWSER itself wrote, stdout and stderr\n'
 printf '  harness.err     the pin, and the sampling shortfall if there was one\n'
 printf '  identity.json   ⚠ the operator fills in the channel, branded and the\n'
 printf '                  operator; everything else is read from this run\n'

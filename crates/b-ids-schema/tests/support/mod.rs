@@ -43,6 +43,8 @@ pub const KNOWN_KEYWORDS: &[&str] = &[
     "const",
     "oneOf",
     "minItems",
+    "minimum",
+    "maximum",
 ];
 
 /// The published schema, read from the crate's own directory.
@@ -169,6 +171,25 @@ fn validate_at(
             }
         }
         _ => {}
+    }
+
+    // ⛔ BOUNDS ARE CHECKED, not merely allowed as a keyword. The schema said
+    // nothing about width until 2026-09-02, so a profile claiming 999 in a
+    // byte-wide field satisfied the contract this project PUBLISHES and failed
+    // the one it implements. `TODO/schema.md`, `SCHEMA-13`.
+    // ⚠ Read as f64 rather than i64, because a number outside the Rust width is
+    // exactly the case being refused and `as_i64` returns None for some of them.
+    if let Some(number) = instance.as_f64() {
+        if let Some(minimum) = node.get("minimum").and_then(Value::as_f64)
+            && number < minimum
+        {
+            problems.push(format!("{path}: {instance} is below the minimum {minimum}"));
+        }
+        if let Some(maximum) = node.get("maximum").and_then(Value::as_f64)
+            && number > maximum
+        {
+            problems.push(format!("{path}: {instance} is above the maximum {maximum}"));
+        }
     }
 
     if let Some(Value::Array(branches)) = node.get("oneOf") {

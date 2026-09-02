@@ -52,6 +52,34 @@ pub struct Launch {
     pub headless: bool,
     /// How long the launch may take before it is killed.
     pub timeout: Duration,
+    /// Where the browser's own stdout and stderr go.
+    ///
+    /// ⛔ **`None` DISCARDS THEM, and that has cost a diagnosis.** On
+    /// 2026-09-02 the `edge` capture lane launched Edge on a hosted runner, the
+    /// browser exited after 1.4 seconds having opened no connection, and the
+    /// only thing anybody could read was that it had exited: whatever Edge said
+    /// about why went to `Stdio::null()`. `TODO/corpus.md`, `CORPUS-02`.
+    ///
+    /// ⚠ **A FILE rather than a pipe.** A pipe nobody drains fills, and a
+    /// browser that filled it would block on a write while this process waits
+    /// for the browser to exit.
+    pub log: Option<PathBuf>,
+    /// Whether to switch certificate verification off in the subject.
+    ///
+    /// ⛔ **A CAPTURE TOOL, AND NEVER SOMETHING TO SHIP IN A CLIENT.** It
+    /// changes what the browser ACCEPTS after the handshake rather than what it
+    /// SENDS, so the hello is unaffected; what it also does is remove every
+    /// check the subject would otherwise make, which is why it is off by default
+    /// and why `--ca-out` plus a pin is the preferred route.
+    ///
+    /// ⚠ **It is the way through on the platform where the browser does not
+    /// read the trust store a caller can write to.** `docs/inherited-claims.md`
+    /// section 8 carries the measurement, and `TODO/driver.md`, `DRIVER-04`, is
+    /// the entry that reports which route completes a handshake here.
+    ///
+    /// ⛔ Refused together with a pin: two trust configurations at once is a
+    /// capture whose condition nobody can name.
+    pub disable_verification: bool,
 }
 
 impl Default for Launch {
@@ -61,6 +89,8 @@ impl Default for Launch {
             spki_pin: None,
             headless: false,
             timeout: Duration::from_secs(60),
+            log: None,
+            disable_verification: false,
         }
     }
 }
@@ -130,19 +160,48 @@ pub fn drive(browser: &Resolved, launch: &Launch) -> Result<Driven, String> {
     if launch.headless {
         switches.push("--headless=new".to_owned());
     }
+    if launch.spki_pin.is_some() && launch.disable_verification {
+        return Err(
+            "a launch trusts one key or it verifies nothing, never both: two trust \
+             configurations at once is a capture whose condition nobody can name"
+                .to_owned(),
+        );
+    }
     if let Some(pin) = &launch.spki_pin {
         switches.push(format!("--ignore-certificate-errors-spki-list={pin}"));
+    }
+    if launch.disable_verification {
+        // ⚠ BOTH FLAGS, and the second is not decoration. Chromium ignores
+        // the first on a branded build unless the run is marked as a test run,
+        // which is the shape of the measurement in
+        // `docs/inherited-claims.md` section 8.
+        switches.push("--ignore-certificate-errors".to_owned());
+        switches.push("--test-type".to_owned());
     }
     // ⛔ The URL is LAST and it is a positional argument. A switch that takes
     // the URL as its value is a mode, and passing one is how a launch ends up
     // navigating and then sitting there.
     switches.push(launch.url.clone());
 
+    // ⛔ OPENED BEFORE THE SPAWN, so a path that cannot be written is a refusal
+    // rather than a launch whose output went nowhere while a caller believed it
+    // was being recorded.
+    let (out, err) = match &launch.log {
+        None => (Stdio::null(), Stdio::null()),
+        Some(path) => {
+            let file =
+                std::fs::File::create(path).map_err(|e| format!("{}: {e}", path.display()))?;
+            let second = file
+                .try_clone()
+                .map_err(|e| format!("{}: {e}", path.display()))?;
+            (Stdio::from(file), Stdio::from(second))
+        }
+    };
     let started = Instant::now();
     let mut child = Command::new(&browser.path)
         .args(&switches)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stdout(out)
+        .stderr(err)
         .spawn()
         .map_err(|e| format!("{}: {e}", browser.path.display()))?;
 

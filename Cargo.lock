@@ -113,6 +113,7 @@ dependencies = [
 name = "b-ids-validator"
 version = "0.0.0"
 dependencies = [
+ "b-ids-driver",
  "b-ids-schema",
  "serde",
  "serde_json",

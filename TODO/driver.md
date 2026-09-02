@@ -442,7 +442,7 @@ of silently wrong.
 ## DRIVER-04. The root store a browser actually reads
 
 **Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
-**Category** driver, **Priority** P2, **Effort** S, **Status** open
+**Category** driver, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -473,12 +473,103 @@ route.
 ### Prove
 
 ```bash
-sh experiments/10-trust-paths.sh
+sh experiments/40-trust-paths.sh
 ```
 
 Passing means: the script reports, per platform available on this host, which
 trust route completed a handshake, and the profile records which route produced
 each capture.
+
+### ⚠ The acceptance names `40-` rather than `10-`, and the reason is a rule
+
+⛔ **A number is never reused and `10-` was taken** by
+[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh),
+which was written after this entry was authored.
+[`../docs/methodology/experiments.md`](../docs/methodology/experiments.md) says
+a citation of `10-` has to keep meaning what it meant, so this entry's script is
+[`../experiments/40-trust-paths.sh`](../experiments/40-trust-paths.sh) and the
+Prove block above is corrected rather than the file being misnumbered to match
+it.
+
+### Closing
+
+**Closed 2026-09-02T03:15:00Z.** The script reports, per route, whether a
+browser completed a handshake and reached HTTP/2 on the platform it ran on, and
+names the one route it deliberately does not run.
+
+```text
+$ sh experiments/40-trust-paths.sh --headless
+
+resolving a browser
+{"family":"chrome","name":"Chrome","path":"C:\\Program Files\\Google/Chrome/Application/chrome.exe","version":"151.0.7922.76","answers":[["sibling-directory","151.0.7922.76"]],"disagreement":false}
+
+-- routes this host can exercise without changing the machine --
+route=pin handshakes=3 h2=3 connections=4
+route=none handshakes=0 h2=0 connections=4
+route=verification-disabled handshakes=3 h2=3 connections=4
+
+-- the route this host does NOT exercise --
+route=trust-store handshakes=- h2=- connections=- not-attempted
+  ⛔ Installing a root is a change to this machine, and the operator ruled
+     2026-09-01 that it belongs on a runner that is thrown away. HARNESS-14.
+  would be: certutil -addstore -user Root <ca.pem>
+  ⚠ and whether a browser reads THAT store is the question DRIVER-04 asks
+
+conditions
+  host      MINGW64_NT-10.0-26200 3.6.9-b4195d69.x86_64
+  browser   Chrome 151.0.7922.76
+  rustc     rustc 1.98.0 (88d9e12ae 2026-08-18)
+  taken     2026-09-02T03:11:25Z
+  headless  --headless
+  handshakes 4 per route, resumption refused, one throwaway profile each
+
+the standing route completed 3 connection(s) to HTTP/2
+exit=0
+```
+
+#### ⭐ The negative control is the finding
+
+⛔ **`route=none` reached 0 handshakes over 4 connections.** The browser
+connected four times and completed nothing, which is what says the pin is doing
+the work. ⚠ Without that row the other two rows would prove nothing: a harness
+whose certificate the browser accepted anyway would give the same `pin` line.
+
+#### What each route means, and what is recorded
+
+| route | `captured.trust` | this host, Chrome `151.0.7922.76`, headless |
+| --- | --- | --- |
+| `pin` | `spki-pin` | ⭐ 3 handshakes, 3 to HTTP/2. The standing route, and no trust store is changed. |
+| `none` | n/a | ⛔ 0 of 4. The control. |
+| `verification-disabled` | `verification-disabled` | 3 handshakes, 3 to HTTP/2. ⛔ A CAPTURE TOOL AND NEVER SOMETHING TO SHIP IN A CLIENT. |
+| `trust-store` | `trust-store` | ⚠ not attempted here. It changes the machine, and `HARNESS-14` runs it on one that is thrown away. |
+
+⭐ **The recording half already existed and is unchanged.** `Trust` names all
+four states and `Profile::check` refuses `not-applicable` on a profile carrying
+both a hello and HTTP/2 frames, so a capture cannot claim no handshake was
+completed while publishing one.
+
+#### ⛔ What is NOT concluded, and this is the entry's own rule
+
+⚠ **This is one machine on one day.** The inherited claim in
+[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 is about
+**Chrome on Linux** not reading the user's NSS database for server
+authentication. ⛔ Nothing here measures that: the script ran on Windows, and it
+reports the Linux command it would use rather than claiming a result for it.
+`CORPUS-02`'s Linux lane is where that gets measured.
+
+⚠ **And "verification-disabled works" is not a recommendation.** It is recorded
+because a route that completes a handshake by removing every check the subject
+makes has to be labelled honestly rather than left looking equivalent to the pin.
+The `--ca-out` path is preferred and the driver refuses the two together: a
+launch trusts one key or it verifies nothing, never both.
+
+#### The driver gained one switch, and it is refused beside a pin
+
+`b-ids-driver drive --disable-verification` passes
+`--ignore-certificate-errors --test-type`. ⚠ **Both flags, and the second is not
+decoration**: a branded Chromium ignores the first unless the run is marked as a
+test run. ⛔ Passing it together with `--pin` is refused, because two trust
+configurations at once is a capture whose condition nobody can name.
 
 ---
 

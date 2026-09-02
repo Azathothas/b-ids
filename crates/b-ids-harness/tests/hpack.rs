@@ -329,6 +329,11 @@ fn hpack_reads_the_header_order_off_a_captured_connection() {
             ":path",
             "x-fixture-marker",
             "user-agent",
+            // ⭐ TWICE, AND IN PLACE. `SCHEMA-14`: a credential keeps its name
+            // and its position and loses its value, because a gap nothing marks
+            // is a sequence a consumer believes is whole and is not.
+            "cookie",
+            "cookie",
             "x-fixture-marker",
         ]
     );
@@ -352,17 +357,29 @@ fn hpack_fills_the_pseudo_header_order_from_the_recorded_fields() {
 fn hpack_drops_a_credential_the_dynamic_table_had_to_see() {
     // ⛔ The two requirements pull in opposite directions and both hold. The
     // decoder MUST store `cookie` or every later index resolves against the
-    // wrong table; the capture MUST NOT record it.
+    // wrong table; the capture MUST NOT record its VALUE.
+    //
+    // ⭐ THE TITLE STAYS AND WHAT IS DROPPED CHANGED. `SCHEMA-14` made the
+    // NAME and the POSITION recordable, because whether a credential was sent
+    // and where is a fingerprint signal that carries no secret. The value is
+    // what is dropped, and this test asserts exactly that.
     let (capture, _) = fixture_capture(ValuePolicy::WithValues);
-    let names: Vec<&str> = capture.headers.iter().map(|h| h.name.as_str()).collect();
-    assert!(!names.iter().any(|n| n.eq_ignore_ascii_case("cookie")));
+    let credentials: Vec<&b_ids_harness::hpack::HeaderRecord> = capture
+        .headers
+        .iter()
+        .filter(|h| h.name.eq_ignore_ascii_case("cookie"))
+        .collect();
+    assert_eq!(credentials.len(), 2, "{credentials:?}");
+    assert!(
+        credentials.iter().all(|h| h.value.is_none()),
+        "no credential carries a value even with the switch on: {credentials:?}"
+    );
 
     let serialised = serde_json::to_string(&capture).expect("serialises");
     assert!(
         !serialised.contains("not-a-real-value"),
-        "a credential reached the capture"
+        "a credential value reached the capture"
     );
-    assert!(!serialised.to_lowercase().contains("cookie"));
 
     // ⭐ And the proof that the table DID see it: the last field is an index
     // one slot further down than the marker was inserted at. It names the
@@ -413,6 +430,11 @@ fn hpack_records_the_indexing_form_of_every_captured_field() {
             Indexing::Indexed,
             Indexing::Incremental,
             Indexing::WithoutIndexing,
+            // ⭐ The two credential fields keep their indexing form too. It is a
+            // choice the encoder made about a header it sent, and it carries no
+            // part of the value.
+            Indexing::Incremental,
+            Indexing::Indexed,
             Indexing::Indexed,
         ]
     );

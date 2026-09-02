@@ -47,11 +47,20 @@ fn header_privacy_names_only_is_the_default_policy() {
 
 #[test]
 fn header_privacy_values_on_still_drops_cookie_and_authorization() {
+    // ⭐ THE TITLE STILL HOLDS AND THE SHAPE CHANGED. `SCHEMA-14` made a
+    // credential recordable as PRESENT, in its wire position, so a header order
+    // stops closing over a gap nothing marks. What is dropped is the VALUE, and
+    // that is what this test asserts.
     let set = HeaderSet::record(Variant::Navigate, raw_headers(), ValuePolicy::WithValues);
     assert!(set.carries_values(), "the switch is on, so values are kept");
     let names: Vec<&str> = set.names().collect();
-    assert!(!names.contains(&"cookie"), "{names:?}");
-    assert!(!names.contains(&"authorization"), "{names:?}");
+    assert!(names.contains(&"cookie"), "the NAME is kept: {names:?}");
+    assert!(names.contains(&"authorization"), "{names:?}");
+    for field in set.headers.iter().filter(|h| h.withheld) {
+        assert!(field.value.is_none(), "{} carried a value", field.name);
+    }
+    let withheld: Vec<&str> = set.withheld().map(|h| h.name.as_str()).collect();
+    assert_eq!(withheld, vec!["cookie", "authorization"]);
 
     let text = serde_json::to_string(&set).expect("serialises");
     assert!(!text.contains("not-a-real-value"), "{text}");
@@ -75,7 +84,19 @@ fn header_privacy_the_credential_filter_is_case_insensitive() {
         [("Cookie", "a=b"), ("Authorization", "Bearer x")],
         ValuePolicy::WithValues,
     );
-    assert!(set.headers.is_empty(), "{:?}", set.headers);
+    // ⛔ Both are recognised whatever their case, and both are withheld rather
+    // than dropped. A case the filter missed would carry a VALUE, which is the
+    // failure this test exists for.
+    assert_eq!(set.headers.len(), 2, "{:?}", set.headers);
+    assert!(set.headers.iter().all(|h| h.withheld), "{:?}", set.headers);
+    assert!(
+        set.headers.iter().all(|h| h.value.is_none()),
+        "{:?}",
+        set.headers
+    );
+    let text = serde_json::to_string(&set).expect("serialises");
+    assert!(!text.contains("a=b"), "{text}");
+    assert!(!text.contains("Bearer x"), "{text}");
 }
 
 #[test]
@@ -102,8 +123,10 @@ fn header_privacy_header_order_is_kept() {
     let names: Vec<&str> = set.names().collect();
     assert_eq!(names.first(), Some(&"sec-ch-ua"));
     assert_eq!(names.last(), Some(&"accept-language"));
-    // The two dropped names leave no gap and no placeholder.
-    assert_eq!(names.len(), raw_headers().len() - 2);
+    // ⭐ EVERY NAME, INCLUDING THE CREDENTIALS. `SCHEMA-14`: the order is a
+    // fingerprint signal and a gap nothing marks is a sequence a consumer
+    // believes is whole and is not.
+    assert_eq!(names.len(), raw_headers().len());
 }
 
 #[test]

@@ -571,10 +571,18 @@ impl Oracle {
             let name = name.trim().to_owned();
             // ⛔ The credential filter runs here as well as in the model. One
             // gate per action, and this is a different door into the same one.
-            if b_ids_schema::http::is_never_recorded(&name) {
-                continue;
-            }
-            if self.config.header_values {
+            //
+            // ⭐ THE NAME IS KEPT AND THE VALUE IS NOT. `SCHEMA-14`: whether a
+            // credential was sent, and where in the order, is a fingerprint signal
+            // that carries no secret, and a name dropped here left the recorded
+            // order closed over a gap nothing marked.
+            //
+            // ⚠ THE TWO LISTS ARE NOT PARALLEL AND NEVER WERE. `header_values`
+            // is empty under the default policy while `header_names` is full, so
+            // nothing may index one by the other's position. The published header
+            // set is built from `HeaderSet::record`, which pairs a name with its
+            // own value and marks a withheld one.
+            if self.config.header_values && !b_ids_schema::http::is_never_recorded(&name) {
                 capture.header_values.push(value.trim().to_owned());
             }
             capture.header_names.push(name);

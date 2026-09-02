@@ -831,10 +831,34 @@ impl Profile {
         // only enforced where the bytes are first seen.
         for set in &self.http.variants {
             for field in &set.headers {
-                if crate::http::is_never_recorded(&field.name) {
+                let credential = crate::http::is_never_recorded(&field.name);
+                // ⛔ THE NAME AND THE POSITION ARE ALLOWED; THE VALUE NEVER IS.
+                // `SCHEMA-14` made a credential header recordable as PRESENT so
+                // the header order stops closing over a gap nothing marks. What
+                // stayed refused is the value, on every surface.
+                if credential && field.value.is_some() {
                     defects.push(Defect::ConnectionStateInIdentity {
                         field: format!("http.variants.{}.{}", set.variant, field.name),
-                        what: "a credential header, which no capture records".to_owned(),
+                        what: "a credential header with a value, which no capture records"
+                            .to_owned(),
+                    });
+                }
+                // ⛔ AND THE MARKER MEANS ONE THING. `withheld` on a name that is
+                // not a credential would say a value was suppressed where none was,
+                // which reads as a hole in the record that is not there.
+                if field.withheld && !credential {
+                    defects.push(Defect::ConnectionStateInIdentity {
+                        field: format!("http.variants.{}.{}", set.variant, field.name),
+                        what: "marked withheld, which only a credential header is".to_owned(),
+                    });
+                }
+                // ⛔ A CREDENTIAL ENTRY SAYS SO. One written without the marker is a
+                // credential header a reader would take for an ordinary one whose
+                // value was simply not recorded, and those are different facts.
+                if credential && !field.withheld {
+                    defects.push(Defect::ConnectionStateInIdentity {
+                        field: format!("http.variants.{}.{}", set.variant, field.name),
+                        what: "a credential header not marked withheld".to_owned(),
                     });
                 }
             }

@@ -22,7 +22,8 @@
 //!
 //! - the default shape carries header names only;
 //! - values are recorded only under [`ValuePolicy::WithValues`];
-//! - `cookie` and `authorization` are dropped even then.
+//! - `cookie` and `authorization` keep their NAME and their POSITION and lose
+//!   their value under either policy, marked `withheld`. `SCHEMA-14`.
 
 use serde::{Deserialize, Serialize};
 
@@ -77,6 +78,32 @@ pub struct HeaderField {
     /// The value, present only under [`ValuePolicy::WithValues`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    /// Whether this header carried a credential, whose value is withheld.
+    ///
+    /// ⭐ **Whether the header was sent, and where in the order, is a
+    /// fingerprint signal in its own right, and it carries no secret.** Before
+    /// 2026-09-02 a credential header was dropped entirely, name and all, so a
+    /// recorded order closed over the gap and nothing downstream could tell
+    /// that a header had been there. `TODO/schema.md`, `SCHEMA-14`.
+    ///
+    /// ⛔ **There is no mode under which the value is retained.** This field
+    /// adds a way to say a header was here; it adds no way to say what was in
+    /// it. [`Profile::check`] refuses an entry that is both withheld and
+    /// carrying a value, and refuses the marker on a name that is not a
+    /// credential.
+    ///
+    /// [`Profile::check`]: crate::Profile::check
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub withheld: bool,
+}
+
+/// Whether a boolean is false, for `skip_serializing_if`.
+///
+/// ⚠ A profile written before the field existed has no `withheld` key, and a
+/// profile whose headers carry no credential should not gain one on every
+/// entry. The default and the omission are the same fact.
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 /// One request kind's header set, in the order the headers were sent.
@@ -104,16 +131,27 @@ impl HeaderSet {
     {
         let headers = headers
             .into_iter()
-            .filter_map(|(name, value)| {
+            .map(|(name, value)| {
                 let name: String = name.into();
+                // ⛔ RECORDED AS PRESENT, NEVER AS A VALUE. The entry keeps its
+                // place in the order and the value is not read at all: there is no
+                // branch here that can put it into the field.
                 if is_never_recorded(&name) {
-                    return None;
+                    return HeaderField {
+                        name,
+                        value: None,
+                        withheld: true,
+                    };
                 }
                 let value = match policy {
                     ValuePolicy::NamesOnly => None,
                     ValuePolicy::WithValues => Some(value.into()),
                 };
-                Some(HeaderField { name, value })
+                HeaderField {
+                    name,
+                    value,
+                    withheld: false,
+                }
             })
             .collect();
         Self { variant, headers }
@@ -128,6 +166,14 @@ impl HeaderSet {
     /// The header names, in order.
     pub fn names(&self) -> impl Iterator<Item = &str> {
         self.headers.iter().map(|h| h.name.as_str())
+    }
+
+    /// Every entry whose value is withheld because it was a credential.
+    ///
+    /// ⭐ A reader asking "was a credential sent, and where" gets an answer
+    /// here rather than inferring one from a gap that is not marked.
+    pub fn withheld(&self) -> impl Iterator<Item = &HeaderField> {
+        self.headers.iter().filter(|h| h.withheld)
     }
 }
 

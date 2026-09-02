@@ -164,10 +164,16 @@ fn listener_reads_a_cleartext_request_when_that_is_the_surface() {
     );
     let capture = &captures[0];
     assert_eq!(capture.request_line.as_deref(), Some("GET / HTTP/1.1"));
-    assert_eq!(capture.header_names, vec!["Host", "User-Agent", "Accept"]);
-    // ⛔ The credential filter runs here as well as in the model: one gate per
+    // ⭐ THE CREDENTIAL KEEPS ITS NAME AND ITS POSITION. `SCHEMA-14`: whether
+    // it was sent, and where in the order, is a fingerprint signal that carries
+    // no secret, and a name dropped here left the order closed over an unmarked
+    // gap.
+    assert_eq!(
+        capture.header_names,
+        vec!["Host", "User-Agent", "Cookie", "Accept"]
+    );
+    // ⛔ The VALUE filter runs here as well as in the model: one gate per
     // action, and this is a different door into the same one.
-    assert!(!capture.header_names.iter().any(|n| n == "Cookie"));
     assert!(capture.header_values.is_empty(), "names only by default");
 }
 

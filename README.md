@@ -160,8 +160,8 @@ sh scripts/common/check-routes.sh --assert-latest-is-stable
   the URL a build was fetched from. Never the binary.
 - ⛔ **It never captures from a real profile.** Only a browser the harness
   launched itself, into a throwaway profile, having visited nothing. Header
-  values are gated behind a switch, credentials are dropped even then, and the
-  default shape carries names only.
+  values are gated behind a switch, a credential keeps its name and loses its
+  value under either policy, and the default shape carries names only.
 - ⛔ **The unit is a browser build, never a person.** Nothing here profiles,
   targets or identifies an individual, and no capture is taken from anybody's
   traffic.

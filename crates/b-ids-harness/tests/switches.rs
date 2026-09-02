@@ -189,6 +189,9 @@ fn switches_header_values_records_them_when_it_is_passed() {
 #[test]
 fn switches_header_values_still_drops_a_credential() {
     // ⚠ The switch widens what is recorded; it does not lift the rule.
+    // ⭐ The title stays and what is dropped changed: `SCHEMA-14` made the NAME
+    // and the position recordable, so this asserts the VALUE is not there while
+    // the name is.
     let request =
         b"GET / HTTP/1.1\r\nHost: example\r\nCookie: not-a-real-value\r\nAccept: */*\r\n\r\n";
     let (out, _err, code) = run_with(
@@ -197,7 +200,7 @@ fn switches_header_values_still_drops_a_credential() {
     );
     assert_eq!(code, 0, "{out}");
     assert!(!out.contains("not-a-real-value"), "{out}");
-    assert!(!out.to_lowercase().contains("cookie"), "{out}");
+    assert!(out.contains("Cookie"), "the name is kept: {out}");
 }
 
 #[test]

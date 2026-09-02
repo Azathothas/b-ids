@@ -14,6 +14,40 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-02T03:20:00Z - four entries close: bounds, credentials, reachability and trust routes
+
+**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-13` and `SCHEMA-14`,
+[`TODO/validator.md`](TODO/validator.md) `VALID-03`,
+[`TODO/driver.md`](TODO/driver.md) `DRIVER-04`, and
+[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **`SCHEMA-13`: the published schema bounds every integer field.** A
+  profile claiming 999 in a byte-wide field satisfied the contract this project
+  publishes and failed the one it implements. The bounds are derived in the test
+  from the Rust widths, and a field added without one fails.
+- ⭐ **`SCHEMA-14`: a credential is recorded as present, in its wire
+  position, with no value.** It was dropped entirely before, so a recorded
+  header order closed over a gap nothing marked. ⛔ Three refusals were added
+  and no way to record a value was.
+- ⭐ **`VALID-03`: `unreachable_dimensions`**, which walks every browser,
+  channel and platform the corpus carries and reports each one no resolver
+  branch can select. It reads `Family::all` rather than a list of its own.
+- ⭐ **`DRIVER-04`: `experiments/40-trust-paths.sh`**, which reports which
+  trust route completes a handshake on the platform it ran on. ⛔ The negative
+  control is the finding: with no flag at all, four connections completed zero
+  handshakes.
+- **`b-ids-driver --disable-verification` and `--log PATH`.** The first is a
+  capture tool and never something to ship in a client, and it is refused
+  beside a pin. The second exists because an `edge` lane exited after 1.4
+  seconds and its own output had been discarded.
+
+⚠ **Seven existing tests were rewritten rather than removed**, and
+[`TODO/schema.md`](TODO/schema.md) `SCHEMA-14` names each and says what it
+asserts now.
+
 ### 2026-09-02T02:45:00Z - the linux64 profile lands, and the matrix column reaches the driver
 
 **Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02`,

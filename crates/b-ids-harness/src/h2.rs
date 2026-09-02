@@ -128,10 +128,11 @@ pub struct Http2Capture {
     /// The first request's header fields, in wire order, with what HPACK did
     /// to each.
     ///
-    /// ⛔ `cookie` and `authorization` are dropped here even though the
-    /// decoder saw them, because the dynamic table has to see every field the
-    /// encoder inserted or every later index is wrong. That is the third door
-    /// into the credential rule and it is gated like the other two.
+    /// ⛔ `cookie` and `authorization` keep their NAME and their POSITION
+    /// here and lose their value, whatever the policy. The decoder still stores
+    /// them, because the dynamic table has to see every field the encoder
+    /// inserted or every later index is wrong. That is the third door into the
+    /// credential rule and it is gated like the other two. `SCHEMA-14`.
     pub headers: Vec<HeaderRecord>,
     /// Every dynamic table size update the encoder sent, in order.
     ///
@@ -233,7 +234,8 @@ pub fn first_header_block_complete(bytes: &[u8]) -> bool {
 ///
 /// ⛔ `policy` decides whether header VALUES are recorded, and
 /// [`ValuePolicy::NamesOnly`] is the default everywhere. `cookie` and
-/// `authorization` are dropped under either.
+/// `authorization` lose their value under either, and keep their name and
+/// their place in the order.
 ///
 /// # Errors
 ///
@@ -498,14 +500,24 @@ fn header_block_fragment(payload: &[u8], flags: u8, notes: &mut Vec<Note>) -> Ve
 /// the model's and the HTTP/1.1 reader's. The decoder deliberately does not
 /// filter, because the dynamic table has to see every field the encoder
 /// inserted.
+///
+/// ⭐ **A credential keeps its NAME and its POSITION and loses its value.**
+/// Before 2026-09-02 it was dropped entirely, so the recorded order closed over
+/// the gap and a consumer reading the sequence believed it had the whole of it.
+/// `TODO/schema.md`, `SCHEMA-14`. ⛔ There is no branch here that can put the
+/// value into the field: the match is on the policy for an ordinary header and
+/// `None` unconditionally for a credential.
 fn record_fields(fields: &[HeaderRecord], policy: ValuePolicy) -> Vec<HeaderRecord> {
     fields
         .iter()
-        .filter(|field| !b_ids_schema::http::is_never_recorded(&field.name))
         .map(|field| HeaderRecord {
-            value: match policy {
-                ValuePolicy::NamesOnly => None,
-                ValuePolicy::WithValues => field.value.clone(),
+            value: if b_ids_schema::http::is_never_recorded(&field.name) {
+                None
+            } else {
+                match policy {
+                    ValuePolicy::NamesOnly => None,
+                    ValuePolicy::WithValues => field.value.clone(),
+                }
             },
             ..field.clone()
         })

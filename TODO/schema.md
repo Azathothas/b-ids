@@ -412,7 +412,8 @@ The privacy rule, which is a schema rule because the default shape enforces it:
 
 - the default shape carries header **names only**;
 - values are recorded only behind an explicit switch;
-- `cookie` and `authorization` are dropped even when that switch is on;
+- `cookie` and `authorization` keep their name and their position and lose
+  their value even when that switch is on, marked `withheld`. `SCHEMA-14`;
 - a capture is taken only from a browser the harness launched itself, into a
   throwaway profile, having visited nothing.
 
@@ -1195,7 +1196,7 @@ row produced no output at all.
 ## SCHEMA-13. The published schema accepts 999 for a byte
 
 **Source** found while reading the published schema, 2026-09-01; ruled the same day
-**Category** schema, **Priority** P1, **Effort** S, **Status** open
+**Category** schema, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -1233,12 +1234,78 @@ and a `maximum` that match its Rust width; a profile with 999 in a byte-wide
 field is refused by the published schema as well as by the type; and a field
 added without a bound fails the test.
 
+### Closing
+
+**Closed 2026-09-02T02:55:00Z.** Every integer field in the published schema
+carries a `minimum` and a `maximum`, the checker enforces both, and the bounds
+are derived in the test from the Rust widths rather than typed beside them.
+
+```text
+$ cargo test -p b-ids-schema bounds -- --nocapture
+     Running tests\bounds.rs (target\debug\deps\bounds-dc604ce60633f46c.exe)
+running 4 tests
+test bounds_every_integer_field_carries_the_bound_its_rust_type_gives ... ok
+test bounds_every_integer_field_is_in_this_table ... ok
+test bounds_a_negative_value_is_refused_where_the_rust_type_is_unsigned ... ok
+test bounds_the_published_schema_refuses_999_for_a_byte ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+exit=0
+```
+
+#### What is bounded, and where the bound came from
+
+| schema node | Rust type | minimum | maximum |
+| --- | --- | --- | --- |
+| `$defs/u8` | `u8` | 0 | 255 |
+| `$defs/u16` | `u16` | 0 | 65535 |
+| `$defs/u32` | `u32` | 0 | 4294967295 |
+| `tls.padding_len` | `Option<u16>` | 0 | 65535 |
+| `http2.connection_window` | `Option<u32>` | 0 | 4294967295 |
+| `captured.acquisition.bytes` | `usize` | 0 | 9007199254740991 |
+| `raw.record_layer.bytes_arrived` | `usize` | 0 | 9007199254740991 |
+
+⚠ **The two `usize` fields are bounded by JSON rather than by Rust**, and the
+schema says so in its own description. `usize` is wider than that on every host
+this runs on, but a consumer reading a larger value out of a JSON number reads a
+different number than was written, so the contract's real ceiling is the largest
+integer a JSON number carries exactly. ⛔ Bounding them at `usize::MAX` would
+publish a contract this format cannot honour.
+
+#### ⭐ The guard against the next field
+
+`bounds_every_integer_field_is_in_this_table` walks the schema and fails on an
+integer node that has no row in the test's table. ⛔ **So a field added without a
+bound cannot pass by being forgotten**, which is the failure mode of every
+hand-maintained bound table.
+
+#### Both halves landed together, and that was not optional
+
+The checker in `crates/b-ids-schema/tests/support/mod.rs` refuses a keyword it
+does not implement, so adding `minimum` and `maximum` to the schema without
+teaching the checker would have failed `check_schema_is_supported`. ⭐ The two
+cannot drift apart.
+
+#### ⛔ The guard was seen to fail
+
+`"maximum": 255` removed from `$defs/u8` and nothing else changed:
+
+```text
+999 in a byte-wide field is refused by the published schema: []
+
+failures:
+    bounds_every_integer_field_carries_the_bound_its_rust_type_gives
+    bounds_the_published_schema_refuses_999_for_a_byte
+
+test result: FAILED. 2 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out
+exit=101
+```
+
 ---
 
 ## SCHEMA-14. A credential's presence is a fingerprint, and it is currently a hole
 
 **Source** ruled by the operator 2026-09-01, from open question 4 of the previous session
-**Category** schema, **Priority** P1, **Effort** M, **Status** open
+**Category** schema, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -1282,3 +1349,68 @@ holds an entry at that position marked as a withheld credential with no value
 field at all; the serialised profile contains none of the credential's bytes,
 asserted by searching the serialised text; and a profile hand-built with a value
 on such an entry is refused.
+
+### Closing
+
+**Closed 2026-09-02T03:15:00Z.** A credential header is recorded as present, in
+its wire position, with the value absent by construction and a field that says
+so. ⛔ Nothing here added a way to record the value, and three refusals were
+added that did not exist.
+
+```text
+$ cargo test -p b-ids-schema credentials -- --nocapture
+     Running tests\credentials.rs (target\debug\deps\credentials-918349ee6bd1880c.exe)
+running 7 tests
+test credentials_are_recorded_as_present_in_their_wire_position ... ok
+test credentials_a_profile_carrying_a_credential_value_is_refused ... ok
+test credentials_the_marker_on_an_ordinary_header_is_refused ... ok
+test credentials_a_credential_without_the_marker_is_refused ... ok
+test credentials_carry_no_value_field_at_all ... ok
+test credentials_an_ordinary_header_carries_no_marker ... ok
+test credentials_the_published_schema_carries_the_marker ... ok
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+exit=0
+```
+
+#### ⭐ Four doors, and the change reached every one of them
+
+⚠ **The entry said three places and there were four**, and the fourth was found
+by grepping for the filter rather than by recalling the list.
+
+| door | what it does now |
+| --- | --- |
+| `HeaderSet::record`, the model | keeps the entry with `value: None` and `withheld: true`. ⛔ There is no branch in it that can put a credential's value into the field. |
+| `b_ids_harness::h2::record_fields` | keeps the field with `value: None`, whatever the policy. The decoder still stores it, because the dynamic table has to see every field the encoder inserted or every later index resolves wrongly. |
+| the HTTP/1.1 reader in `listener.rs` | pushes the name into `header_names` and pushes nothing into `header_values`. ⚠ The two lists were never parallel: `header_values` is empty under the default policy while `header_names` is full. |
+| `Profile::check`, the read path | ⭐ **three refusals rather than one.** A capture-time filter cannot hold a rule about a FILE. |
+
+#### ⛔ What is refused, and each is its own failure
+
+| refused | why it is not the same as the others |
+| --- | --- |
+| a credential entry carrying a value | the rule this entry must not weaken. It is what the old filter enforced by deletion. |
+| a credential entry with no `withheld` marker | it would read as an ordinary header whose value simply was not recorded, and those are different facts about what the wire carried |
+| `withheld` on a name that is not a credential | it would claim a value was suppressed where none was, which reads as a hole in the record that is not there |
+
+#### What a consumer sees
+
+`withheld` is absent where it is false, so a profile written before this change
+reads unchanged and a profile whose headers carry no credential gains no keys.
+⛔ The published schema declares it as a boolean with `additionalProperties:
+false` still in force, so a consumer validating against the file this project
+publishes accepts the marker and nothing else new.
+
+#### ⚠ Four tests changed their assertions, and none changed its title
+
+`header_privacy_values_on_still_drops_cookie_and_authorization`,
+`header_privacy_the_credential_filter_is_case_insensitive`,
+`header_privacy_header_order_is_kept`,
+`hpack_drops_a_credential_the_dynamic_table_had_to_see`,
+`listener_reads_a_cleartext_request_when_that_is_the_surface`,
+`switches_header_values_still_drops_a_credential` and
+`raw_backstop_rebuilds_a_cleartext_request_through_the_one_construction_path`
+all asserted that the NAME was gone. ⭐ Each now asserts that the name is there
+and the VALUE is not, which is the rule this entry replaced the old one with.
+⛔ None was deleted: a test removed here would be a door that stopped being
+watched.
+

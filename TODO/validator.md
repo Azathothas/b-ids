@@ -368,7 +368,7 @@ directory walk, and only an assertion about the order can see that.
 ## VALID-03. A family the resolver cannot produce is data nobody can reach
 
 **Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 7
-**Category** validator, **Priority** P2, **Effort** S, **Status** open
+**Category** validator, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -401,6 +401,69 @@ cargo test -p b-ids-validator reachable_dimensions -- --nocapture
 
 Passing means: a fixture corpus carrying a family the resolver has no branch for
 fails with a message naming the family and both files.
+
+### Closing
+
+**Closed 2026-09-02T03:30:00Z.** `b_ids_validator::unreachable_dimensions`
+walks every browser, channel and platform the corpus carries and reports each
+one no resolver branch can select, naming the dimension, the value and every
+profile that carries it.
+
+```text
+$ cargo test -p b-ids-validator reachable_dimensions -- --nocapture
+     Running tests\reachable_dimensions.rs (target\debug\deps\reachable_dimensions-60ba3c943a3fcfa6.exe)
+running 5 tests
+test reachable_dimensions_a_platform_with_no_route_is_reported_too ... ok
+test reachable_dimensions_the_comparison_is_on_the_route_spelling ... ok
+test reachable_dimensions_every_profile_carrying_it_is_named ... ok
+test reachable_dimensions_a_family_the_resolver_cannot_produce_is_reported ... ok
+reachable_dimensions: 3 published profile(s), every dimension reachable
+test reachable_dimensions_the_published_corpus_is_wholly_reachable ... ok
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=0
+```
+
+#### ⭐ The resolver's list is injected, and that is the design
+
+The validator is pure logic over the model and does not depend on the driver.
+⭐ **The caller names what its resolver can produce**, so the same check answers
+for this project's driver, for a fixture, and for a resolver nobody has written
+yet. `b-ids-driver` is a **dev** dependency of this crate, used by the
+acceptance test alone.
+
+⛔ **And the test reads `Family::all` rather than listing names.** A list of
+families written in the test would be a second copy of the driver's with nothing
+checking that the two agree, which is this entry's own defect one file along.
+
+#### ⚠ The comparison is on the route spelling, and that is not cosmetic
+
+`b_ids_corpus::route` derives a path by lower-casing `browser.name`, and the
+driver reports `Chrome` while a route reads `chrome`. A check comparing the two
+verbatim would report every profile in the corpus as unreachable, which is a
+guard that fires on everything and therefore reports nothing.
+`reachable_dimensions_the_comparison_is_on_the_route_spelling` is that case.
+
+#### ⭐ A positive control, over the corpus this repository publishes
+
+⛔ **A check that only ever fires on a fixture has not been shown to pass over
+anything real.** `reachable_dimensions_the_published_corpus_is_wholly_reachable`
+reads every profile under `corpus/v1/` and asserts the whole set is reachable:
+three profiles today, and it will say so about the next hundred.
+
+#### ⛔ It says they disagree; it does not pick
+
+The entry's own rule, and the code says so where it lives: the data may be right
+and the resolver wrong. ⚠ A check that "fixed" this by deleting a profile would
+destroy a measurement to satisfy a code path, which is the wrong way round in a
+project whose product is measurements.
+
+#### ⚠ What this does NOT check
+
+- **Whether a resolver branch that exists can actually run here.** `Family::edge`
+  has a branch and Edge resolved on a hosted runner; whether it completes a
+  capture is `CORPUS-02`'s business and it currently does not.
+- **A dimension the corpus does not carry.** A family nothing has captured is
+  absent rather than unreachable, and `check-coverage` is what reports that.
 
 ---
 
