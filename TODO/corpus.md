@@ -445,9 +445,13 @@ exit 101.
 #### ⭐ The fix, and the control that says it is safe
 
 `b-ids-harness --no-resumption` issues no session tickets, so the subject cannot
-resume and every hello is a cold one. `experiments/10-first-profile.sh` passes
-it, the harness **reports** the configuration on stderr, and the script reads
-that line back into `captured.resumption` rather than typing it.
+resume and every hello is a cold one. ⚠ **`experiments/10-first-profile.sh`
+stopped passing it on 2026-09-02**, when `HARNESS-15` made the two halves
+selectable independently: the switch is a CONTROL for
+`experiments/30-resumption-control.sh` and it is no longer a condition every
+published profile is taken under. The harness still **reports** the
+configuration on stderr and the script still reads that line back into
+`captured.resumption` rather than typing it.
 
 ⭐ **Measured, not argued.** `experiments/30-resumption-control.sh`, three
 rounds on this Windows host against Chrome `151.0.7922.76`, headless:

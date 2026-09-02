@@ -9,7 +9,7 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
-use b_ids_driver::acquire::{Platform, Route, download_url};
+use b_ids_driver::acquire::{Platform, download, index_route, index_url};
 use b_ids_driver::{Family, Launch, drive, plan, resolve};
 
 const USAGE: &str = "\
@@ -142,7 +142,7 @@ fn acquire(
     version: Option<&str>,
     platform: Option<Platform>,
     index: Option<&std::path::Path>,
-    index_url: bool,
+    want_index_url: bool,
     json: bool,
 ) -> ExitCode {
     let Some(family) = family else {
@@ -155,26 +155,21 @@ fn acquire(
     // before it can be read, and a fetcher that carried its own copy of the URL
     // would be a value in two places with no check that they agree. The version
     // is not needed to name the index, so it is not required here.
-    if index_url {
-        let Some(candidate) = plan(family, Some("0.0.0.0"))
-            .into_iter()
-            .find(|c| c.route == Route::ChromeForTesting)
-        else {
-            eprintln!(
-                "b-ids-driver: there is no automation-build route for {family}, so there is \
-                 no index to fetch."
-            );
-            return ExitCode::from(2);
-        };
-        match candidate.url {
+    if want_index_url {
+        match index_url(family) {
             Some(url) => {
                 println!("{url}");
                 return ExitCode::SUCCESS;
             }
-            // ⛔ Unreachable through `plan` today and refused rather than
-            // unwrapped: a route offered with no URL is a defect in the plan,
-            // and a panic here would report it as a crash.
-            None => return fail("the automation-build route was planned with no index URL"),
+            // ⛔ A family with no index is refused rather than answered with
+            // an empty line a caller would fetch.
+            None => {
+                eprintln!(
+                    "b-ids-driver: there is no first-party index for {family}, so there is \
+                     nothing to fetch."
+                );
+                return ExitCode::from(2);
+            }
         }
     }
     let Some(version) = version else {
@@ -187,13 +182,14 @@ fn acquire(
     // ⛔ THE PLAN DECIDES WHETHER THE ROUTE EXISTS, rather than this command
     // knowing which families have an automation index. A second answer here
     // would be a copy of `plan`'s branch with nothing checking that they agree.
+    let want = index_route(family);
     let Some(candidate) = plan(family, Some(version))
         .into_iter()
-        .find(|c| c.route == Route::ChromeForTesting)
+        .find(|c| c.route == want)
     else {
         eprintln!(
-            "b-ids-driver: there is no automation-build route for {family}. \
-             It is the one route that serves an exact build, and it is Chrome only."
+            "b-ids-driver: there is no first-party index route for {family}, so no exact build \
+             can be asked for."
         );
         return ExitCode::from(2);
     };
@@ -214,27 +210,32 @@ fn acquire(
         }
     };
 
-    match download_url(&text, version, platform) {
-        Ok(url) => {
+    match download(family, &text, version, platform) {
+        Ok(found) => {
             if json {
                 // ⛔ SERIALISED, never formatted. A URL carrying a character
                 // that has to be escaped would otherwise emit JSON that does
                 // not parse.
                 let object = serde_json::json!({
-                    "schema": "acquire/1",
+                    "schema": "acquire/2",
                     "route": candidate.route.as_str(),
                     "index": candidate.url,
                     "browser": family.as_str(),
-                    "version": version,
+                    "version": found.version,
                     "platform": platform.as_str(),
-                    "url": url,
+                    "url": found.url,
+                    // ⚠ THE PUBLISHER'S CLAIM, not a measurement of what
+                    // arrived. Null where the index states none, which is a
+                    // fact about the index rather than a gap here.
+                    "published_sha256": found.published_sha256,
+                    "published_bytes": found.published_bytes,
                 });
                 match serde_json::to_string(&object) {
                     Ok(line) => println!("{line}"),
                     Err(err) => return fail(&format!("could not serialise: {err}")),
                 }
             } else {
-                println!("{url}");
+                println!("{}", found.url);
             }
             ExitCode::SUCCESS
         }

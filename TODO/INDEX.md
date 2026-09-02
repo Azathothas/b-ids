@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 98  open 33  blocked 0  done 65
+total 98  open 31  blocked 0  done 67
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
-| P0 | 1 | 0 | 10 | 11 |
-| P1 | 9 | 0 | 34 | 43 |
+| P0 | 0 | 0 | 11 | 11 |
+| P1 | 8 | 0 | 35 | 43 |
 | P2 | 20 | 0 | 19 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **33** | **0** | **65** | **98** |
+| **all** | **31** | **0** | **67** | **98** |
 
 ---
 
@@ -75,7 +75,7 @@ total 98  open 33  blocked 0  done 65
 | HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
 | HARNESS-14 | P2 | M | done | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
-| HARNESS-15 | P0 | M | open | A cold hello is thrown away because its own connection carried no HTTP/2 | [`harness.md`](harness.md) |
+| HARNESS-15 | P0 | M | done | A cold hello is thrown away because its own connection carried no HTTP/2 | [`harness.md`](harness.md) |
 | HARNESS-16 | P2 | S | open | The trust store a Windows runner can be made to use without a person | [`harness.md`](harness.md) |
 | LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
@@ -120,7 +120,7 @@ total 98  open 33  blocked 0  done 65
 | TOOL-15 | P2 | M | done | The twin comparison costs a thousand seconds, and half of it is one row | [`tooling.md`](tooling.md) |
 | TOOL-16 | P1 | S | done | A tree that moved under the comparison reads as a drift | [`tooling.md`](tooling.md) |
 | TOOL-17 | P1 | S | done | The gate's line-endings filter cannot see the working tree | [`tooling.md`](tooling.md) |
-| TOOL-18 | P1 | M | open | The gate is slow because of how it reads files, not because of what it reads | [`tooling.md`](tooling.md) |
+| TOOL-18 | P1 | M | done | The gate is slow because of how it reads files, not because of what it reads | [`tooling.md`](tooling.md) |
 | VALID-01 | P0 | M | done | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
 | VALID-02 | P1 | S | done | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | done | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |

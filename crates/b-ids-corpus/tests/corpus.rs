@@ -15,7 +15,8 @@ use support::{Throwaway, cold_capture, identity};
 
 #[test]
 fn corpus_a_capture_becomes_a_profile_at_the_route_its_own_keys_derive() {
-    let profile = profile_from(&cold_capture(), &identity()).expect("the cold capture converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity())
+        .expect("the cold capture converts");
     let route = route(&profile).expect("its keys produce a route");
     assert_eq!(
         b_ids_corpus::route::as_route(&route.profile),
@@ -34,20 +35,23 @@ fn corpus_a_capture_becomes_a_profile_at_the_route_its_own_keys_derive() {
 
 #[test]
 fn corpus_the_conversion_derives_the_major_rather_than_taking_one() {
-    let profile = profile_from(&cold_capture(), &identity()).expect("the cold capture converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity())
+        .expect("the cold capture converts");
     assert_eq!(profile.browser.major, 999);
     assert_eq!(profile.id, profile.derived_id());
 }
 
 #[test]
 fn corpus_the_capture_instant_reaches_the_profile_rather_than_the_clock_at_conversion() {
-    let profile = profile_from(&cold_capture(), &identity()).expect("the cold capture converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity())
+        .expect("the cold capture converts");
     assert_eq!(profile.captured.at, "2026-09-01T04:05:06Z");
 }
 
 #[test]
 fn corpus_the_trust_configuration_is_carried_into_the_profile() {
-    let profile = profile_from(&cold_capture(), &identity()).expect("the cold capture converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity())
+        .expect("the cold capture converts");
     assert_eq!(profile.captured.trust, Trust::SpkiPin);
 }
 
@@ -59,7 +63,7 @@ fn corpus_a_terminated_capture_may_not_claim_no_handshake_completed() {
     // that is a condition nobody recorded reading as one somebody did.
     let mut identity = identity();
     identity.trust = Trust::NotApplicable;
-    let profile = profile_from(&cold_capture(), &identity).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity).expect("it converts");
     let messages = profile
         .check()
         .iter()
@@ -74,7 +78,8 @@ fn corpus_a_terminated_capture_may_not_claim_no_handshake_completed() {
 
 #[test]
 fn corpus_the_throwaway_profile_path_is_redacted_and_the_substitution_is_recorded() {
-    let profile = profile_from(&cold_capture(), &identity()).expect("the cold capture converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity())
+        .expect("the cold capture converts");
     assert!(
         profile
             .captured
@@ -102,7 +107,8 @@ fn corpus_the_throwaway_profile_path_is_redacted_and_the_substitution_is_recorde
 fn corpus_a_capture_that_never_reached_http2_is_refused_by_name() {
     let mut capture = cold_capture();
     capture.http2 = None;
-    let refusals = profile_from(&capture, &identity()).expect_err("an abandoned socket is refused");
+    let refusals =
+        profile_from(&capture, &capture, &identity()).expect_err("an abandoned socket is refused");
     let listed = refusals
         .iter()
         .map(ToString::to_string)
@@ -118,7 +124,7 @@ fn corpus_a_capture_that_never_reached_http2_is_refused_by_name() {
 fn corpus_a_capture_with_no_hello_is_refused_by_name() {
     let mut capture = cold_capture();
     capture.tls = None;
-    let refusals = profile_from(&capture, &identity()).expect_err("it is refused");
+    let refusals = profile_from(&capture, &capture, &identity()).expect_err("it is refused");
     let listed = refusals
         .iter()
         .map(ToString::to_string)
@@ -131,7 +137,7 @@ fn corpus_a_capture_with_no_hello_is_refused_by_name() {
 fn corpus_a_capture_with_no_instant_is_refused_rather_than_stamped_here() {
     let mut capture = cold_capture();
     capture.at = String::new();
-    let refusals = profile_from(&capture, &identity()).expect_err("it is refused");
+    let refusals = profile_from(&capture, &capture, &identity()).expect_err("it is refused");
     let listed = refusals
         .iter()
         .map(ToString::to_string)
@@ -152,7 +158,7 @@ fn corpus_a_credential_in_the_decrypted_first_message_refuses_the_profile() {
     let termination = capture.termination.as_mut().expect("it terminated");
     termination.plaintext_hex = b_ids_harness::hex(&plaintext);
 
-    let profile = profile_from(&capture, &identity()).expect("it converts");
+    let profile = profile_from(&capture, &capture, &identity()).expect("it converts");
     let messages = profile
         .check()
         .iter()
@@ -177,7 +183,7 @@ fn corpus_a_credential_in_the_decrypted_first_message_refuses_the_profile() {
 fn corpus_a_published_profile_is_never_overwritten() {
     let throwaway = Throwaway::new("append-only");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
 
     let added = store.add(&profile).expect("the first write lands");
     assert!(added.profile.is_file());
@@ -199,7 +205,7 @@ fn corpus_the_hello_sidecar_carries_no_trailing_newline() {
     // docs/reference-sweeps/usable.md section 9.
     let throwaway = Throwaway::new("newline");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     let added = store.add(&profile).expect("the write lands");
     let text = std::fs::read_to_string(&added.hello).expect("the sidecar is readable");
     assert!(!text.ends_with('\n'), "it carries exactly one value");
@@ -210,7 +216,8 @@ fn corpus_the_hello_sidecar_carries_no_trailing_newline() {
 fn corpus_a_supersedes_naming_nothing_is_refused() {
     let throwaway = Throwaway::new("dangling");
     let store = Store::at(&throwaway.root);
-    let mut profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let mut profile =
+        profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     profile.supersedes = Some("chrome/998.0.0.1/win64/stable".to_owned());
     let why = store
         .add(&profile)
@@ -222,7 +229,7 @@ fn corpus_a_supersedes_naming_nothing_is_refused() {
 fn corpus_verify_is_clean_over_a_corpus_the_writer_produced() {
     let throwaway = Throwaway::new("verify-clean");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     store.add(&profile).expect("the write lands");
     store.write_index().expect("the index is written");
     let problems = store.verify().expect("the corpus is readable");
@@ -235,7 +242,7 @@ fn corpus_verify_catches_a_sidecar_that_no_longer_matches_its_profile() {
     // reader trusts is the wrong one.
     let throwaway = Throwaway::new("sidecar-drift");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     let added = store.add(&profile).expect("the write lands");
     store.write_index().expect("the index is written");
 
@@ -251,7 +258,7 @@ fn corpus_verify_catches_a_sidecar_that_no_longer_matches_its_profile() {
 fn corpus_verify_catches_an_index_that_does_not_match_the_tree() {
     let throwaway = Throwaway::new("index-drift");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     store.add(&profile).expect("the write lands");
     store.write_index().expect("the index is written");
 
@@ -274,7 +281,7 @@ fn corpus_verify_catches_an_index_that_does_not_match_the_tree() {
 fn corpus_verify_catches_a_profile_published_under_a_name_that_is_not_its_name() {
     let throwaway = Throwaway::new("wrong-route");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     let added = store.add(&profile).expect("the write lands");
     store.write_index().expect("the index is written");
 
@@ -298,7 +305,7 @@ fn corpus_the_index_carries_a_content_address_for_every_published_file() {
     // entries. docs/reference-sweeps/usable.md section 9.
     let throwaway = Throwaway::new("content-address");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     let added = store.add(&profile).expect("the write lands");
 
     let index = store.index().expect("the index derives");
@@ -321,7 +328,8 @@ fn corpus_the_latest_pointer_orders_builds_numerically_rather_than_as_text() {
     for version in ["152.0.7977.9", "152.0.7977.64"] {
         let mut identity = identity();
         identity.version = version.to_owned();
-        let profile = profile_from(&cold_capture(), &identity).expect("it converts");
+        let profile =
+            profile_from(&cold_capture(), &cold_capture(), &identity).expect("it converts");
         store.add(&profile).expect("the write lands");
     }
     let pointers = store.pointers().expect("the pointers derive");
@@ -339,7 +347,7 @@ fn corpus_verify_asserts_every_half_is_reproducible_from_the_bytes_beside_it() {
     // bytes they were read from are replaced.
     let throwaway = Throwaway::new("rebuild");
     let store = Store::at(&throwaway.root);
-    let profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let profile = profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     store.add(&profile).expect("the write lands");
     store.write_index().expect("the index is written");
     assert!(
@@ -393,7 +401,8 @@ fn corpus_latest_names_the_newest_stable_and_never_a_pre_release() {
         let mut identity = identity();
         identity.version = version.to_owned();
         identity.channel = channel;
-        let profile = profile_from(&cold_capture(), &identity).expect("it converts");
+        let profile =
+            profile_from(&cold_capture(), &cold_capture(), &identity).expect("it converts");
         store.add(&profile).expect("the write lands");
     }
     store.write_index().expect("the index is written");
@@ -436,7 +445,8 @@ fn corpus_a_hand_edited_latest_pointing_at_a_pre_release_is_refused_by_name() {
         let mut identity = identity();
         identity.version = version.to_owned();
         identity.channel = channel;
-        let profile = profile_from(&cold_capture(), &identity).expect("it converts");
+        let profile =
+            profile_from(&cold_capture(), &cold_capture(), &identity).expect("it converts");
         store.add(&profile).expect("the write lands");
     }
     store.write_index().expect("the index is written");
@@ -483,7 +493,8 @@ fn corpus_a_hand_edited_latest_pointing_at_a_pre_release_is_refused_by_name() {
 
 #[test]
 fn corpus_a_browser_name_that_would_escape_the_root_has_no_route() {
-    let mut profile = profile_from(&cold_capture(), &identity()).expect("it converts");
+    let mut profile =
+        profile_from(&cold_capture(), &cold_capture(), &identity()).expect("it converts");
     profile.browser.name = "..".to_owned();
     let why = route(&profile).expect_err("it is refused rather than sanitised");
     assert_eq!(why.field, "browser.name");
@@ -500,5 +511,87 @@ fn corpus_an_absent_corpus_is_not_an_empty_one() {
             .expect("a missing tree reads as none")
             .is_empty(),
         "and reading it is not an error"
+    );
+}
+
+// -- HARNESS-15: two halves, two connections, and the profile says so --------
+
+/// ⭐ The profile records which connection each half came from.
+#[test]
+fn corpus_records_the_connection_each_half_came_from() {
+    // ⛔ THE RUNNER'S SHAPE. The cold hello arrived on a connection that
+    // reached no HTTP/2, and the frames came from a later one. Before
+    // HARNESS-15 this combination could not produce a profile at all.
+    let mut tls_from = cold_capture();
+    tls_from.connection = 1;
+    tls_from.http2 = None;
+    tls_from.termination = None;
+
+    let mut http2_from = cold_capture();
+    http2_from.connection = 3;
+
+    let profile = profile_from(&tls_from, &http2_from, &identity()).expect("it converts");
+    let connections = profile
+        .captured
+        .connections
+        .expect("a profile written today records both connections");
+    assert_eq!(connections.tls, 1);
+    assert_eq!(connections.http2, 3);
+    assert!(
+        !connections.one_connection(),
+        "two sockets of one navigation is a condition of the measurement"
+    );
+}
+
+/// ⚠ The ordinary case still records one connection twice rather than nothing.
+///
+/// ⛔ **Absent means "written before the field existed", not "one
+/// connection".** A reader has to be able to tell those apart, so the ordinary
+/// case says so explicitly.
+#[test]
+fn corpus_records_one_connection_twice_when_one_carried_both_halves() {
+    let capture = cold_capture();
+    let profile = profile_from(&capture, &capture, &identity()).expect("it converts");
+    let connections = profile.captured.connections.expect("recorded");
+    assert_eq!(connections.tls, capture.connection);
+    assert_eq!(connections.http2, capture.connection);
+    assert!(connections.one_connection());
+}
+
+/// ⛔ The TLS half and the raw hello come from the TLS connection, and the
+/// frames from the HTTP/2 one.
+///
+/// ⚠ **This is the assertion that would catch a half taken from the wrong
+/// capture**, which a test that passed one capture twice cannot see at all.
+#[test]
+fn corpus_takes_each_half_from_its_own_connection() {
+    let mut tls_from = cold_capture();
+    tls_from.connection = 1;
+    tls_from.at = "2026-09-01T00:00:01Z".to_owned();
+    tls_from.raw_hex = tls_from.raw_hex.to_uppercase();
+
+    let mut http2_from = cold_capture();
+    http2_from.connection = 7;
+    http2_from.at = "2026-09-01T00:00:09Z".to_owned();
+
+    let profile = profile_from(&tls_from, &http2_from, &identity()).expect("it converts");
+
+    // ⛔ The bytes came from the TLS connection, not from the HTTP/2 one.
+    assert_eq!(
+        profile.raw.client_hello_hex.as_deref(),
+        Some(tls_from.raw_hex.as_str()),
+        "the ClientHello bytes belong to the connection that sent the hello"
+    );
+    // ⚠ The instant is the TLS connection's, which is stated in profile_from's
+    // own documentation rather than left for a reader to discover.
+    assert_eq!(profile.captured.at, "2026-09-01T00:00:01Z");
+    // ⛔ And the frame bytes came from the HTTP/2 connection.
+    assert_eq!(
+        profile.raw.connection_hex,
+        http2_from
+            .termination
+            .as_ref()
+            .map(|t| t.plaintext_hex.clone()),
+        "the decrypted first message belongs to the connection that carried it"
     );
 }

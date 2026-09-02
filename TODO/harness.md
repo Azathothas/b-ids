@@ -2069,7 +2069,7 @@ wrong store gives a confident wrong answer.
 ## HARNESS-15. A cold hello is thrown away because its own connection carried no HTTP/2
 
 **Source** the operator, 2026-09-02: "solve this properly" rather than behind a switch
-**Category** harness, **Priority** P0, **Effort** M, **Status** open
+**Category** harness, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
 
@@ -2142,6 +2142,103 @@ Passing means: the thirteen-connection fixture with its cold connection made to
 carry no HTTP/2 still yields a TLS half, taken from that connection, and an
 HTTP/2 half taken from a later one; the profile records both connection numbers;
 and a navigation whose every hello resumed still publishes nothing.
+
+---
+
+### ⭐ Closed 2026-09-02. Selected per half, and the switch left the capture path
+
+⛔ **The rule that required one connection to carry both halves is gone.**
+`b_ids_harness::select` chooses the TLS half from the first connection whose
+hello offers no pre-shared key, whether or not that connection reached HTTP/2,
+and the HTTP/2 half from the first connection that reached it, resumed or not.
+
+```text
+$ cargo test -p b-ids-harness connection_selection -- --nocapture
+running 11 tests
+test connection_selection_classifies_a_connection_that_sent_nothing_as_abandoned ... ok
+test connection_selection_keeps_the_first_connection_that_reached_http2 ... ok
+test connection_selection_reports_no_cold_connection_when_every_one_resumed ... ok
+test connection_selection_the_resumed_handshake_differs_from_the_cold_one ... ok
+test connection_selection_publishes_nothing_when_every_hello_resumed ... ok
+test connection_selection_never_deduplicates_two_connections_that_agree ... ok
+test connection_selection_takes_both_halves_from_one_connection_when_one_carries_both ... ok
+test connection_selection_reports_the_cold_count_it_measured ... ok
+test connection_selection_takes_the_tls_half_from_a_connection_that_reached_no_http2 ... ok
+test connection_selection_records_the_resumed_ones_as_their_own_set ... ok
+test connection_selection_says_when_resumption_is_not_observable ... ok
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+exit=0
+```
+
+⭐ **And it was driven against the capture that produced the finding.** The
+`linux64` lane of the scheduled run `33615327503`, replayed through
+`b-ids-corpus add` into a scratch root:
+
+```text
+$ target/debug/b-ids-corpus.exe add --captures CAPTURES --identity IDENTITY --root SCRATCH
+skipped a line that is not a capture: https://127.0.0.1:46369/
+8 connection(s): 1 cold, 0 resumed, 6 further cold, 1 with no http2
+tls from connection 1, http2 from connection 2
+chrome-151.0.7922.173-linux64-stable
+$ node -e "console.log(JSON.stringify(require('SCRATCH/corpus/v1/chrome/stable/linux64/151.0.7922.173.json').captured.connections))"
+{"tls":1,"http2":2}
+```
+
+#### ⛔ The measured consequence: this changes which hello is published
+
+⚠ **The published profile for that build was built from connection 2 under the
+old rule; the new rule takes connection 1.** The two are not the same bytes:
+1707 against 1771. ⭐ Compared field by field, and the difference is smaller
+than the byte count suggests:
+
+| | |
+| --- | --- |
+| ⭐ **16 TLS fields compared, 10 identical** | the six that differ are `session_id_hex`, `cipher_suites`, `extensions`, `key_exchange_groups`, `key_shares` and `grease` |
+| ⭐ **and five of the six differ ONLY by GREASE or per-connection randomness** | the cipher list differs by one GREASE value, the extension list by two GREASE codepoints, the group list and the key shares by the GREASE group, and the session id is random per connection |
+| ⛔ **the sixth is real and the model sees it** | `encrypted_client_hello`, codepoint `65037`, is **186 bytes on connection 1 and 250 on connection 2**. That is the whole 64-byte difference. |
+| ⛔ **and the extension ORDER is permuted between them** | position by position the two lists agree on nothing. This browser shuffles per connection, and the order is recorded, so two connections of one navigation legitimately publish two different ordered lists |
+
+⚠ **So the choice between the two connections is not a formality**, and saying
+so is better than implying the halves are interchangeable. ⛔ What it is NOT is
+a defect of this rule: the extension order and the ECH length are properties of
+the connection, and `SCHEMA-10`'s `Shuffle::Observed` with its `distinct_orders`
+is the field that exists to say so. ⚠ **That field is still unfilled**: nothing
+in the capture path writes anything but `Shuffle::Unknown`, which the door sweep
+of 2026-09-02 recorded and which this entry does not fix.
+
+#### The switch left the capture path
+
+⭐ **`experiments/10-first-profile.sh` no longer passes `--no-resumption`.** The
+subject resumes when it can, which is what it does in the wild, and the cold
+hello it sent before it could is the one that is read. ⚠ The switch stays where
+a comparison needs both configurations: `30-resumption-control.sh` is the
+control it exists for, and `40-trust-paths.sh` and `50-trust-anchor.sh` keep it
+so their two runs stay comparable to each other.
+
+#### ⛔ Both halves of the rule were seen to fail
+
+⚠ **A guard nobody has seen fail is theatre.** Two mutations, planted in the
+live file on a machine that is not what the guard protects, each restored and
+the tree confirmed byte-identical afterwards:
+
+| planted | what went red |
+| --- | --- |
+| the TLS half required to have reached HTTP/2, which is the old rule | `connection_selection_takes_the_tls_half_from_a_connection_that_reached_no_http2` and `..._takes_both_halves_from_one_connection...`, exit **101** |
+| the HTTP/2 half required to come from a connection that did not resume | `connection_selection_publishes_nothing_when_every_hello_resumed` and the same first test, exit **101** |
+
+#### What changed in the model
+
+| | |
+| --- | --- |
+| `Kind::Abandoned` | is `Kind::NoHttp2`. The old name was a verdict on the connection; the new one is a fact about one half. `Selection::abandoned` is `Selection::no_http2` with it. |
+| `Selection` | gains `tls_from`, `http2_from`, `one_connection()` and `halves()`. `cold` stays, for the report and for the ordinary case. |
+| `profile_from` | takes the two connections rather than one, with a separate refusal for each so a message names the socket it is about |
+| `captured.connections` | `{tls, http2}`, in the model and in the published schema, optional and omitted when absent. ⚠ Absent means a profile written before the field existed, so the ordinary case records one number twice rather than nothing. |
+
+⛔ **Every profile already in the corpus keeps `captured.connections` absent.**
+The corpus is append-only, those three were built under the old rule from one
+connection, and filling the field in for them from that reasoning would be a
+derivation wearing a measurement's label.
 
 ---
 

@@ -40,8 +40,8 @@ pub mod tls;
 pub use error::Defect;
 pub use id::{PlatformToken, ProfileId, version_order};
 pub use profile::{
-    ACQUISITION_ROUTES, Acquisition, Browser, Captured, Channel, Digests, Os, Platform, Profile,
-    Raw, RecordLayer, Resumption, Trust,
+    ACQUISITION_ROUTES, Acquisition, Browser, Captured, Channel, Connections, Digests, Os,
+    Platform, Profile, Raw, RecordLayer, Resumption, Trust,
 };
 pub use provenance::{Provenance, ProvenanceEntry, ProvenanceKind};
 

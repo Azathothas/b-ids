@@ -31,10 +31,18 @@
 #                ONLY: the channel serves what is current and nothing else.
 #                ⭐ Both platforms provisioned on one day therefore get the SAME
 #                build, which is the whole point.
-#   for-testing  an exact build, any version, every platform, from the
-#                automation-build index. ⛔ UNBRANDED: a different brand list
-#                and a different sec-ch-ua, and a profile taken through it
-#                records `branded: false`. DRIVER-06 measures the difference.
+#   for-testing  AN EXACT BUILD, from the family's own first-party index. The
+#                index and the artefact kind are per family and the driver's
+#                route table owns both.
+#
+#                ⛔ WHETHER THAT BUILD IS BRANDED DEPENDS ON THE FAMILY, and
+#                the route name does not say. Chrome's automation index serves
+#                UNBRANDED builds: a different brand list and a different
+#                sec-ch-ua, and a profile taken through it records
+#                `branded: false`. Edge's enterprise index serves the vendor's
+#                own branded product, so a profile taken through it records
+#                `branded: true`. ⚠ The matrix cell records which, because
+#                this flag cannot. DRIVER-06 measures the difference.
 #
 # ⛔ THIS NEVER REDISTRIBUTES A BROWSER. It prints the URL it fetched and the
 # sha256 of what arrived; the artefact is the vendor's to serve.
@@ -119,43 +127,93 @@ if (Test-Path 'variable:IsWindows') {
 # ⭐ -Plan RUNS NOTHING. It is what a person reads before letting this near a
 # machine, and it is what the acceptance check can assert on a host that is not
 # disposable.
+# ⭐ THE ROUTE TABLE IS PER FAMILY AND IT IS DATA, and it is defined HERE, above
+# the plan, because -Plan reads it too. ⛔ It purges the NAMED family and not
+# every browser. TODO/driver.md, DRIVER-10.
+$familyRoutes = @{
+    chrome = @{
+        packages       = @('google-chrome-stable', 'google-chrome-beta', 'google-chrome-unstable')
+        paths          = @('/opt/google/chrome', '/opt/google/chrome-beta', '/opt/google/chrome-unstable')
+        links          = @('/usr/bin/google-chrome', '/usr/bin/google-chrome-stable')
+        sandbox        = '/opt/google/chrome/chrome-sandbox'
+        uninstallMatch = '^Google Chrome'
+        vendorDir      = 'Google\Chrome'
+    }
+    edge   = @{
+        packages       = @('microsoft-edge-stable', 'microsoft-edge-beta', 'microsoft-edge-dev')
+        paths          = @('/opt/microsoft/msedge', '/opt/microsoft/msedge-beta', '/opt/microsoft/msedge-dev')
+        links          = @('/usr/bin/microsoft-edge', '/usr/bin/microsoft-edge-stable')
+        # ⛔ THE SUID SANDBOX HELPER, which is the difference between installed
+        # and able to capture. Measured 2026-09-02 in capture.yml run
+        # 33615327503: the edge lane exited after 2.4 seconds having opened no
+        # connection, and its own log named this file and the mode it needs.
+        sandbox        = '/opt/microsoft/msedge/msedge-sandbox'
+        uninstallMatch = '^Microsoft Edge$'
+        vendorDir      = 'Microsoft\Edge'
+    }
+}
+
+if (-not $familyRoutes.ContainsKey($Browser)) {
+    [Console]::Error.WriteLine('provision-browser: no route table for ' + $Browser + '. It knows ' + ($familyRoutes.Keys -join ', '))
+    exit 2
+}
+$routes = $familyRoutes[$Browser]
+
 function Write-Plan {
-    $key = $os + '/' + $Route
+    # ⛔ KEYED ON THE FAMILY TOO. A plan that described Chrome's archive for an
+    # edge request is a plan nobody could act on, and -Plan is what a person
+    # reads before letting this near a machine. TODO/driver.md, DRIVER-10.
+    if ($os -eq 'linux') {
+        Write-Output ('purge   apt-get remove --purge of ' + ($routes.packages -join ' ') + ', then ' + ($routes.paths -join ' ') + ' and the /usr/bin links')
+    } else {
+        Write-Output ('purge   the vendor uninstaller for every install matching ' + $routes.uninstallMatch + ', then the program directories')
+    }
+    $key = $Browser + '/' + $os + '/' + $Route
     switch ($key) {
-        'linux/vendor' {
-            Write-Output 'purge   apt-get remove --purge, then /opt/google/chrome and the /usr/bin links'
+        'chrome/linux/vendor' {
             Write-Output 'fetch   https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'
             Write-Output 'install dpkg -i, then apt-get -f install for anything it needs'
         }
-        'windows/vendor' {
-            Write-Output 'purge   the vendor uninstaller for every install found, then the program directory'
+        'chrome/windows/vendor' {
             Write-Output 'fetch   https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi'
             Write-Output 'install msiexec /qn, which is the silent unattended mode'
         }
-        'linux/for-testing' {
-            Write-Output 'purge   as for the vendor route on this platform'
-            Write-Output 'index   the automation-build index, whose URL b_ids_driver::acquire owns.'
+        'chrome/linux/for-testing' {
+            Write-Output 'index   the first-party index for this family, whose URL b_ids_driver::acquire owns.'
             Write-Output '        it publishes a SUBSET of builds, so an exact build may not be in it'
             Write-Output 'fetch   the chrome-linux64.zip that index names for the build asked for'
-            Write-Output 'install unzip into /opt/google/chrome, link /usr/bin/google-chrome at it,'
-            Write-Output '        and give chrome_sandbox root ownership and mode 4755'
+            Write-Output 'install unzip into /opt/google/chrome and link /usr/bin/google-chrome at it'
         }
-        'windows/for-testing' {
-            Write-Output 'purge   as for the vendor route on this platform'
-            Write-Output 'index   the automation-build index, whose URL b_ids_driver::acquire owns.'
+        'chrome/windows/for-testing' {
+            Write-Output 'index   the first-party index for this family, whose URL b_ids_driver::acquire owns.'
             Write-Output '        it publishes a SUBSET of builds, so an exact build may not be in it'
             Write-Output 'fetch   the chrome-win64.zip that index names for the build asked for'
             Write-Output 'install expand into the Chrome Application directory. The archive is FLAT:'
             Write-Output '        chrome.exe sits beside the manifest resolve reads the build from'
         }
+        'edge/linux/for-testing' {
+            Write-Output 'index   the enterprise update index, whose URL b_ids_driver::acquire owns.'
+            Write-Output '        it publishes a SHA-256 per artefact, which this run checks what arrived against'
+            Write-Output 'fetch   the microsoft-edge-stable deb that index names for the build asked for'
+            Write-Output 'install apt-get install of the deb, whose own post-install sets the sandbox up'
+        }
+        'edge/windows/for-testing' {
+            Write-Output 'index   the enterprise update index, whose URL b_ids_driver::acquire owns.'
+            Write-Output '        it publishes a SHA-256 per artefact, which this run checks what arrived against'
+            Write-Output 'fetch   the MicrosoftEdgeEnterpriseX64.msi that index names for the build asked for'
+            Write-Output 'install msiexec /qn, which is the silent unattended mode'
+        }
         default {
-            if ($Route -eq 'for-testing') {
-                Write-Output 'purge   as for the vendor route on this platform'
-                Write-Output ('no unpack layout is recorded for ' + $os)
+            if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
+                Write-Output 'fetch   nothing. The vendor publishes no current-build URL for this family,'
+                Write-Output '        so this route is refused and -Route for-testing is the one to use'
             } else {
-                Write-Output ('no plan is recorded for ' + $Route + ' on this platform')
+                Write-Output ('no plan is recorded for ' + $Browser + ' via ' + $Route + ' on ' + $os)
             }
         }
+    }
+    if ($os -eq 'linux') {
+        Write-Output ('sandbox ' + $routes.sandbox + ', which is set to root ownership and mode 4755 after the install')
     }
     Write-Output 'confirm resolve exits 2 after the purge, and reports the version after the install'
 }
@@ -255,7 +313,9 @@ function Invoke-PurgeWindows {
     foreach ($regRoot in $roots) {
         foreach ($key in (Get-ItemProperty $regRoot)) {
             $name = $key.DisplayName
-            if ($name -match '^Google Chrome' -or $name -match '^Microsoft Edge$') {
+            # ⛔ THE NAMED FAMILY ONLY. A run provisioning one family must not
+            # uninstall the other. TODO/driver.md, DRIVER-10.
+            if ($name -match $routes.uninstallMatch) {
                 $uninstall = $key.UninstallString
                 if ($uninstall -match 'setup\.exe') {
                     $exe = ($uninstall -split '" ')[0].Trim('"')
@@ -265,18 +325,34 @@ function Invoke-PurgeWindows {
             }
         }
     }
-    Remove-Item -Recurse -Force (Join-Path $env:ProgramFiles 'Google\Chrome') 2>$null
-    Remove-Item -Recurse -Force (Join-Path ${env:ProgramFiles(x86)} 'Google\Chrome') 2>$null
-    Remove-Item -Recurse -Force (Join-Path $env:LOCALAPPDATA 'Google\Chrome') 2>$null
+    Remove-Item -Recurse -Force (Join-Path $env:ProgramFiles $routes.vendorDir) 2>$null
+    Remove-Item -Recurse -Force (Join-Path ${env:ProgramFiles(x86)} $routes.vendorDir) 2>$null
+    Remove-Item -Recurse -Force (Join-Path $env:LOCALAPPDATA $routes.vendorDir) 2>$null
     $ErrorActionPreference = $keep
 }
 
 function Invoke-PurgeLinux {
-    foreach ($pkg in @('google-chrome-stable', 'google-chrome-beta', 'google-chrome-unstable', 'microsoft-edge-stable')) {
+    foreach ($pkg in $routes.packages) {
         & sudo apt-get remove --purge -y $pkg > $null 2>&1
     }
-    & sudo rm -rf /opt/google/chrome /opt/google/chrome-beta /opt/google/chrome-unstable /opt/microsoft/msedge > $null 2>&1
-    & sudo rm -f /usr/bin/google-chrome /usr/bin/google-chrome-stable /usr/bin/microsoft-edge /usr/bin/microsoft-edge-stable > $null 2>&1
+    foreach ($path in $routes.paths) { & sudo rm -rf $path > $null 2>&1 }
+    foreach ($link in $routes.links) { & sudo rm -f $link > $null 2>&1 }
+}
+
+# ⛔ CHECKED AFTER EVERY LINUX INSTALL, and reported rather than assumed. A
+# vendor package sets this up in its own post-install step and an unpacked
+# archive does not, so the one path that needs the fix is the one that would
+# otherwise install a browser that cannot open a socket.
+function Confirm-SandboxLinux {
+    $helper = $routes.sandbox
+    if (-not $helper) { return }
+    if (-not (Test-Path -LiteralPath $helper)) {
+        Write-Output ('sandbox no ' + $helper + ' on this machine after the install')
+        return
+    }
+    & sudo chown root:root $helper > $null 2>&1
+    & sudo chmod 4755 $helper > $null 2>&1
+    Write-Output ('sandbox ' + (& stat -c '%U:%G %a %n' $helper))
 }
 
 switch ($os) {
@@ -304,8 +380,19 @@ Write-Output ('-- installing ' + $Browser + ' via ' + $Route + ' --')
 $url = ''
 $archive = ''
 
-$key = $os + '/' + $Route
-if ($key -eq 'linux/vendor') {
+# ⛔ KEYED ON THE FAMILY AS WELL AS THE PLATFORM AND THE ROUTE. Two families do
+# not install the same way, and a case that keyed on the platform alone
+# installed Chrome whatever -Browser said. TODO/driver.md, DRIVER-10.
+$key = $Browser + '/' + $os + '/' + $Route
+if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
+    # ⛔ A REFUSAL WITH ITS REASON, which is a complete outcome. Measured
+    # 2026-09-02: the vendor publishes no current-build URL for this family the
+    # way it does for Chrome, and its enterprise index is keyed by build.
+    [Console]::Error.WriteLine('provision-browser: -Route vendor serves a CURRENT-build URL, and the vendor')
+    [Console]::Error.WriteLine('  publishes none for ' + $Browser + '. Its index is keyed by build, so use -Route for-testing')
+    [Console]::Error.WriteLine('  with the build you want. TODO/driver.md, DRIVER-10.')
+    exit 2
+} elseif ($key -eq 'chrome/linux/vendor') {
     $url = 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'
     $archive = Join-Path $out 'google-chrome-stable_current_amd64.deb'
     try { Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing } catch {
@@ -317,7 +404,8 @@ if ($key -eq 'linux/vendor') {
         & sudo dpkg -i $archive > $null 2>&1
         & sudo apt-get -f install -y > $null 2>&1
     }
-} elseif ($key -eq 'windows/vendor') {
+    Confirm-SandboxLinux
+} elseif ($key -eq 'chrome/windows/vendor') {
     $url = 'https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi'
     $archive = Join-Path $out 'googlechromestandaloneenterprise64.msi'
     try { Invoke-WebRequest -Uri $url -OutFile $archive -UseBasicParsing } catch {
@@ -328,22 +416,23 @@ if ($key -eq 'linux/vendor') {
 } elseif ($Route -eq 'for-testing' -and ($os -eq 'linux' -or $os -eq 'windows')) {
     # ⛔ THE INDEX IS READ BY THE DRIVER AND SO IS THE URL IT LIVES AT. A second
     # spelling in this file would 404 on its own the day the vendor moves the
-    # file, and nothing would compare the two.
+    # file, and nothing would compare the two. The driver's route table is what
+    # decides which index a family has. TODO/driver.md, DRIVER-10.
     #
-    # ⚠ THE INDEX PUBLISHES A SUBSET OF BUILDS. Measured 2026-09-02: it carried
-    # 67 builds of Chrome 151, and neither 151.0.7922.173 nor 151.0.7922.174,
-    # which are the two the hosted runner images served.
+    # ⚠ AN INDEX PUBLISHES A SUBSET OF BUILDS. Measured 2026-09-02: the Chrome
+    # automation index carried 67 builds of 151 and neither of the two the
+    # hosted runner images served.
     $indexLines = & $driver acquire --index-url --browser $Browser 2>$null
     $indexRc = $LASTEXITCODE
     $indexUrl = if ($indexLines) { [string]@($indexLines)[0] } else { '' }
     if ($indexRc -ne 0 -or -not $indexUrl) {
-        [Console]::Error.WriteLine('provision-browser: the driver named no automation index for ' + $Browser)
+        [Console]::Error.WriteLine('provision-browser: the driver named no index for ' + $Browser)
         exit 2
     }
     Write-Output ('index   ' + $indexUrl)
     $indexPath = Join-Path $out 'index.json'
     try { Invoke-WebRequest -Uri $indexUrl -OutFile $indexPath -UseBasicParsing } catch {
-        [Console]::Error.WriteLine('provision-browser: the automation index did not fetch')
+        [Console]::Error.WriteLine('provision-browser: the index did not fetch')
         exit 1
     }
 
@@ -363,56 +452,88 @@ if ($key -eq 'linux/vendor') {
         exit 1
     }
 
-    $unpacked = Join-Path $out 'unpacked'
-    if (Test-Path -LiteralPath $unpacked) { Remove-Item -Recurse -Force -LiteralPath $unpacked }
-    New-Item -ItemType Directory -Force -Path $unpacked | Out-Null
-    try { Expand-Archive -LiteralPath $archive -DestinationPath $unpacked -Force } catch {
-        [Console]::Error.WriteLine('provision-browser: the archive did not unpack')
-        exit 1
+    # ⭐ AND WHERE THE PUBLISHER STATES A DIGEST, WHAT ARRIVED IS COMPARED WITH
+    # IT. The Edge index states a SHA-256 for every artefact and the Chrome
+    # automation index states none, so this fires on one route and reports the
+    # absence on the other. ⛔ A mismatch is a refusal.
+    $publishedJson = & $driver acquire --browser $Browser --version $Version --index $indexPath --json 2>$null
+    $published = ''
+    if ($publishedJson) {
+        $m = [regex]::Match([string]@($publishedJson)[0], '"published_sha256":"([0-9a-f]{64})"')
+        if ($m.Success) { $published = $m.Groups[1].Value }
+    }
+    if ($published) {
+        $arrived = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($arrived -ne $published) {
+            [Console]::Error.WriteLine('provision-browser: the archive is not what the index published.')
+            [Console]::Error.WriteLine('  published ' + $published)
+            [Console]::Error.WriteLine('  arrived   ' + $arrived)
+            exit 1
+        }
+        Write-Output ('verified ' + $arrived + ' matches the digest the index publishes')
+    } else {
+        Write-Output 'verified no, this index publishes no digest to compare against'
     }
 
-    if ($os -eq 'linux') {
-        # ⛔ THE SUID SANDBOX HELPER IS SET UP, AND SKIPPING IT IS A LANE THAT
-        # CAPTURES NOTHING. Measured 2026-09-02 in capture.yml run 33615327503:
-        # the edge lane on ubuntu-latest exited after 2.4 seconds having opened
-        # no connection, and its own log said the helper was found and not
-        # configured correctly, naming the ownership and mode it needs.
-        # ⚠ TWO NAMES: the official build's compiled-in path uses a hyphen and
-        # the archive ships an underscore.
-        $src = Join-Path $unpacked 'chrome-linux64'
-        if (-not (Test-Path -LiteralPath (Join-Path $src 'chrome'))) {
-            [Console]::Error.WriteLine('provision-browser: no chrome in ' + $src + ' after unpacking')
-            exit 1
-        }
-        & sudo rm -rf /opt/google/chrome
-        & sudo mkdir -p /opt/google/chrome
-        & sudo cp -a ($src + '/.') /opt/google/chrome/
-        & sudo ln -sf /opt/google/chrome/chrome /usr/bin/google-chrome
-        if (Test-Path -LiteralPath '/opt/google/chrome/chrome_sandbox') {
-            & sudo cp -a /opt/google/chrome/chrome_sandbox /opt/google/chrome/chrome-sandbox
-            foreach ($helper in @('/opt/google/chrome/chrome_sandbox', '/opt/google/chrome/chrome-sandbox')) {
-                & sudo chown root:root $helper
-                & sudo chmod 4755 $helper
+    # ⚠ ONLY THE ZIP ROUTE UNPACKS. A deb and an msi are installed by the
+    # platform's own tool rather than unpacked into a directory.
+    if ($Browser -eq 'edge') {
+        if ($os -eq 'linux') {
+            & sudo apt-get install -y $archive > $null 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                & sudo dpkg -i $archive > $null 2>&1
+                & sudo apt-get -f install -y > $null 2>&1
             }
-            Write-Output ('sandbox ' + (& stat -c '%U:%G %a %n' /opt/google/chrome/chrome-sandbox))
+            Confirm-SandboxLinux
         } else {
-            [Console]::Error.WriteLine('provision-browser: the archive carried no chrome_sandbox')
+            & msiexec.exe /i $archive /qn /norestart | Out-Null
         }
     } else {
-        # ⚠ THE ARCHIVE IS FLAT AND THAT IS WHY THIS WORKS AT ALL. Read from its
-        # central directory 2026-09-02: chrome.exe sits beside a
-        # VERSION.manifest and there is no version-shaped DIRECTORY, so
-        # b_ids_driver::resolve reads the build from the manifest.
-        $src = Join-Path $unpacked 'chrome-win64'
-        if (-not (Test-Path -LiteralPath (Join-Path $src 'chrome.exe'))) {
-            [Console]::Error.WriteLine('provision-browser: no chrome.exe in ' + $src + ' after unpacking')
+        $unpacked = Join-Path $out 'unpacked'
+        if (Test-Path -LiteralPath $unpacked) { Remove-Item -Recurse -Force -LiteralPath $unpacked }
+        New-Item -ItemType Directory -Force -Path $unpacked | Out-Null
+        try { Expand-Archive -LiteralPath $archive -DestinationPath $unpacked -Force } catch {
+            [Console]::Error.WriteLine('provision-browser: the archive did not unpack')
             exit 1
         }
-        $dest = Join-Path $env:ProgramFiles 'Google\Chrome\Application'
-        if (Test-Path -LiteralPath $dest) { Remove-Item -Recurse -Force -LiteralPath $dest }
-        New-Item -ItemType Directory -Force -Path $dest | Out-Null
-        Copy-Item -Path (Join-Path $src '*') -Destination $dest -Recurse -Force
-        Write-Output ('installed ' + (Join-Path $dest 'chrome.exe'))
+
+        if ($os -eq 'linux') {
+            # ⚠ TWO NAMES: the official build's compiled-in path uses a hyphen
+            # and the archive ships an underscore. The ownership and the mode
+            # are Confirm-SandboxLinux's job for every route.
+            $src = Join-Path $unpacked 'chrome-linux64'
+            if (-not (Test-Path -LiteralPath (Join-Path $src 'chrome'))) {
+                [Console]::Error.WriteLine('provision-browser: no chrome in ' + $src + ' after unpacking')
+                exit 1
+            }
+            & sudo rm -rf /opt/google/chrome
+            & sudo mkdir -p /opt/google/chrome
+            & sudo cp -a ($src + '/.') /opt/google/chrome/
+            & sudo ln -sf /opt/google/chrome/chrome /usr/bin/google-chrome
+            if (Test-Path -LiteralPath '/opt/google/chrome/chrome_sandbox') {
+                & sudo cp -a /opt/google/chrome/chrome_sandbox /opt/google/chrome/chrome-sandbox
+                & sudo chown root:root /opt/google/chrome/chrome_sandbox
+                & sudo chmod 4755 /opt/google/chrome/chrome_sandbox
+            } else {
+                [Console]::Error.WriteLine('provision-browser: the archive carried no chrome_sandbox')
+            }
+            Confirm-SandboxLinux
+        } else {
+            # ⚠ THE ARCHIVE IS FLAT AND THAT IS WHY THIS WORKS AT ALL. Read from
+            # its central directory 2026-09-02: chrome.exe sits beside a
+            # VERSION.manifest and there is no version-shaped DIRECTORY, so
+            # b_ids_driver::resolve reads the build from the manifest.
+            $src = Join-Path $unpacked 'chrome-win64'
+            if (-not (Test-Path -LiteralPath (Join-Path $src 'chrome.exe'))) {
+                [Console]::Error.WriteLine('provision-browser: no chrome.exe in ' + $src + ' after unpacking')
+                exit 1
+            }
+            $dest = Join-Path $env:ProgramFiles 'Google\Chrome\Application'
+            if (Test-Path -LiteralPath $dest) { Remove-Item -Recurse -Force -LiteralPath $dest }
+            New-Item -ItemType Directory -Force -Path $dest | Out-Null
+            Copy-Item -Path (Join-Path $src '*') -Destination $dest -Recurse -Force
+            Write-Output ('installed ' + (Join-Path $dest 'chrome.exe'))
+        }
     }
 } else {
     [Console]::Error.WriteLine('provision-browser: the ' + $Route + ' route on ' + $os + ' is not implemented yet')

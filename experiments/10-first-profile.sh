@@ -34,16 +34,24 @@
 # answer, and until it has, every profile this writes carries `spki-pin` in
 # `captured.trust` so the comparison is possible at all.
 #
-# ⛔ THE HARNESS ISSUES NO SESSION TICKETS, and that is a condition too.
-# --no-resumption is passed, so the subject cannot resume and every hello is a
-# cold one. ⚠ MEASURED on hosted runners, twice, capture.yml runs
+# ⭐ THE HARNESS OFFERS SESSION TICKETS, so the subject resumes when it can and
+# behaves as it does in the wild. --no-resumption is NOT passed here, and it has
+# not been since HARNESS-15: it stays as a CONTROL for
+# experiments/30-resumption-control.sh and it stopped being a condition every
+# published profile is taken under.
+#
+# ⚠ WHY IT WAS A CONDITION, measured on hosted runners twice, capture.yml runs
 # 33579619515 and 33580371329: with tickets offered, Chrome on ubuntu-latest
-# abandoned both of the connections that were not resumed and resumed every
-# one it kept, so the navigation produced NO cold connection and nothing could
-# be published from it. ⭐ experiments/30-resumption-control.sh is the
-# control: 19 TLS fields compared, 0 differing, so the switch changes WHICH
-# connections are cold rather than WHAT a cold hello is. The profile records
-# it in `captured.resumption`, read back from what the harness reported.
+# abandoned both of the connections that were not resumed and resumed every one
+# it kept, so no single connection carried both a cold hello and HTTP/2. The
+# selection required one connection to carry both, so the navigation published
+# nothing and the switch was the way round it.
+#
+# ⭐ THE TWO HALVES ARE SELECTED INDEPENDENTLY NOW. The cold hello on a
+# connection that reached no HTTP/2 is the one that is read, the frames come
+# from the first connection that did, and the profile records which connection
+# each half came from. The resumption configuration is still recorded in
+# `captured.resumption`, read back from what the harness reported.
 #
 # ⚠ HEADER VALUES ARE RECORDED, DELIBERATELY. The default capture shape is
 # names only, because a model whose natural form carries values is a model that
@@ -136,7 +144,7 @@ HARNESS_ERR="$OUT/harness.err"
 : > "$HARNESS_ERR"
 
 printf '\nbinding the terminating harness\n'
-"$HARNESS" --ca-out "$OUT/ca.pem" --json --header-values --no-resumption \
+"$HARNESS" --ca-out "$OUT/ca.pem" --json --header-values \
   --handshakes 8 --run-timeout-ms 60000 --timeout-ms 5000 \
   > "$CAPTURES" 2>"$HARNESS_ERR" &
 HARNESS_PID=$!

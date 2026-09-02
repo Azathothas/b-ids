@@ -115,16 +115,31 @@ fn add(root: &str, captures_path: &str, identity_path: &str) -> ExitCode {
     // different digest. Nothing is averaged and nothing is deduplicated.
     let selection = b_ids_harness::select(&captures);
     println!("{}", selection.report());
-    let Some(cold) = selection.cold else {
+    println!("{}", selection.halves());
+
+    // ⛔ TWO ABSENCES, NAMED SEPARATELY. "No connection sent a cold hello" and
+    // "no connection reached HTTP/2" send a reader to two different places, and
+    // a message covering both would send them to neither. TODO/harness.md,
+    // HARNESS-15.
+    let Some(tls_from) = selection.tls_from else {
         eprintln!(
-            "b-ids-corpus: no connection of this navigation reached HTTP/2, so there is no cold \
-             handshake to publish. {} connection(s) were abandoned",
-            selection.abandoned.len()
+            "b-ids-corpus: every hello in this navigation offered a pre-shared key, so the \
+             session resumed on all {} connection(s) and there is no cold handshake to publish. \
+             ⛔ A resumed hello is NOT published in a cold one's place.",
+            selection.connections()
+        );
+        return ExitCode::from(1);
+    };
+    let Some(http2_from) = selection.http2_from else {
+        eprintln!(
+            "b-ids-corpus: no connection of this navigation reached HTTP/2, so there is no \
+             HTTP/2 half to publish. {} connection(s) carried none",
+            selection.no_http2.len()
         );
         return ExitCode::from(1);
     };
 
-    let profile = match profile_from(cold, &identity) {
+    let profile = match profile_from(tls_from, http2_from, &identity) {
         Ok(profile) => profile,
         Err(refusals) => {
             for refusal in &refusals {

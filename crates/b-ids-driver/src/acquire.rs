@@ -56,6 +56,13 @@ pub enum Route {
     Vendor,
     /// The vendor's automation-build index, which serves an exact build.
     ChromeForTesting,
+    /// The Edge enterprise update index, which serves an exact build and
+    /// publishes a digest for it.
+    ///
+    /// ⭐ **It states a SHA-256 and a byte count for every artefact**, which
+    /// the automation index for Chrome does not, so an acquisition through this
+    /// route can be checked against the publisher rather than only recorded.
+    EdgeEnterprise,
 }
 
 impl Route {
@@ -67,12 +74,13 @@ impl Route {
     /// ⚠ It is NOT the order [`plan`] tries, and it never was a promise that
     /// it would be: [`Route::Vendor`] is not a plannable route at all.
     #[must_use]
-    pub fn all() -> [Self; 4] {
+    pub fn all() -> [Self; 5] {
         [
             Self::Installed,
             Self::Cache,
             Self::Vendor,
             Self::ChromeForTesting,
+            Self::EdgeEnterprise,
         ]
     }
 
@@ -84,6 +92,7 @@ impl Route {
             Self::Cache => "cache",
             Self::Vendor => "vendor",
             Self::ChromeForTesting => "chrome-for-testing",
+            Self::EdgeEnterprise => "edge-enterprise",
         }
     }
 }
@@ -157,12 +166,13 @@ pub fn plan(family: Family, version: Option<&str>) -> Vec<Candidate> {
             url: None,
         },
     ];
-    // ⛔ Chrome only, and saying so is better than a URL that cannot answer.
-    // Edge and the rest arrive with their own indexes in DRIVER-06.
-    if family == Family::Chrome && version.is_some() {
+    // ⛔ READ FROM THE ROUTE TABLE, never from a branch here. A family with no
+    // first-party index gets no candidate offered, and saying so is better than
+    // a URL that cannot answer. TODO/driver.md, DRIVER-10.
+    if let (Some(index), true) = (index_url(family), version.is_some()) {
         candidates.push(Candidate {
-            route: Route::ChromeForTesting,
-            url: Some(FOR_TESTING_INDEX.to_owned()),
+            route: index_route(family),
+            url: Some(index.to_owned()),
         });
     }
     candidates
@@ -349,16 +359,16 @@ pub enum IndexRefusal {
 impl fmt::Display for IndexRefusal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Unparsable(why) => write!(f, "the automation index did not parse: {why}"),
+            Self::Unparsable(why) => write!(f, "the index did not parse: {why}"),
             Self::NoSuchBuild {
                 version,
                 known,
                 nearest,
             } => write!(
                 f,
-                "the automation index does not publish {version}. It carries {known} build(s), \
-                 and it publishes a subset rather than every build the vendor ships. \
-                 Nearest in the same line: {}",
+                "the index does not publish {version}. It carries {known} build(s) for this \
+                 platform, and it publishes a subset rather than every build the vendor ships. \
+                 Nearest: {}",
                 if nearest.is_empty() {
                     "none".to_owned()
                 } else {
@@ -371,7 +381,7 @@ impl fmt::Display for IndexRefusal {
                 had,
             } => write!(
                 f,
-                "the automation index publishes {version} and not for {platform}. It has {}",
+                "the index publishes {version} and not for {platform}. It has {}",
                 had.join(", ")
             ),
         }
@@ -456,5 +466,207 @@ pub fn download_url(
             .filter_map(|d| d.get("platform").and_then(serde_json::Value::as_str))
             .map(str::to_owned)
             .collect(),
+    })
+}
+
+/// The enterprise update index, which is the first-party route for Edge.
+///
+/// ⭐ **It carries the vendor's own digest for every artefact**, which the
+/// automation index for Chrome does not. That makes an Edge acquisition
+/// verifiable against the publisher rather than only recorded: a caller can
+/// compare what arrived with what the vendor said it published.
+const EDGE_ENTERPRISE_INDEX: &str =
+    "https://edgeupdates.microsoft.com/api/products?view=enterprise";
+
+/// What one index answered about one build on one platform.
+///
+/// ⛔ **The digest is the publisher's claim, not a measurement of what
+/// arrived.** A caller hashes the bytes it received and compares; recording the
+/// published value as though it were the digest of the download would be a
+/// number nobody checked.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Download {
+    /// Where the artefact is served.
+    pub url: String,
+    /// The build the index names for it.
+    pub version: String,
+    /// The digest the publisher states, lowercase hex, where it states one.
+    ///
+    /// ⚠ `None` for an index that publishes no digest, which is the automation
+    /// index for Chrome. That absence is a fact about the publisher.
+    pub published_sha256: Option<String>,
+    /// The size the publisher states, where it states one.
+    pub published_bytes: Option<u64>,
+}
+
+/// Which index serves a family, and the URL it is served at.
+///
+/// ⭐ **This is the route table, and it is data rather than a case statement in
+/// a caller.** Adding a family is a row here and a reader beside it.
+/// `TODO/driver.md`, `DRIVER-10`.
+///
+/// ⚠ `None` for a family this project has found no first-party index for.
+#[must_use]
+pub fn index_url(family: Family) -> Option<&'static str> {
+    match family {
+        Family::Chrome => Some(FOR_TESTING_INDEX),
+        Family::Edge => Some(EDGE_ENTERPRISE_INDEX),
+    }
+}
+
+/// The route a profile records for a build obtained from a family's index.
+#[must_use]
+pub fn index_route(family: Family) -> Route {
+    match family {
+        Family::Chrome => Route::ChromeForTesting,
+        Family::Edge => Route::EdgeEnterprise,
+    }
+}
+
+/// The artefact one family's index names for one build on one platform.
+///
+/// ⛔ **Two indexes, two readers, one entry point.** The shapes are not alike:
+/// Chrome's is a flat list of builds each carrying a list of downloads, and
+/// Edge's is a list of products each carrying a list of releases per platform
+/// and architecture. A single reader that tried to cover both would be a parser
+/// with two meanings for every field.
+///
+/// # Errors
+///
+/// [`IndexRefusal`], which distinguishes bytes that did not parse from a build
+/// the index does not carry from a build with no artefact for this platform.
+pub fn download(
+    family: Family,
+    index_json: &str,
+    version: &str,
+    platform: Platform,
+) -> Result<Download, IndexRefusal> {
+    match family {
+        Family::Chrome => {
+            let url = download_url(index_json, version, platform)?;
+            Ok(Download {
+                url,
+                version: version.to_owned(),
+                // ⚠ The automation index publishes no digest. Absent rather
+                // than empty: a caller can tell "the publisher states none"
+                // from "the publisher states nothing useful".
+                published_sha256: None,
+                published_bytes: None,
+            })
+        }
+        Family::Edge => edge_download(index_json, version, platform),
+    }
+}
+
+/// The artefact the Edge enterprise index names, and the digest it publishes.
+///
+/// ⚠ **The index spells platforms its own way**, `Linux` and `Windows` with an
+/// `Architecture` beside them, and it serves a `deb`, an `rpm` and an `msi`
+/// rather than one archive. This maps [`Platform`] onto that pair and picks the
+/// artefact a provisioning run can install.
+fn edge_download(
+    index_json: &str,
+    version: &str,
+    platform: Platform,
+) -> Result<Download, IndexRefusal> {
+    let (want_platform, want_arch, want_artifact) = match platform {
+        Platform::Linux64 => ("Linux", "x64", "deb"),
+        Platform::Win64 => ("Windows", "x64", "msi"),
+        // ⛔ Named rather than guessed. The index does publish other pairs, and
+        // a reader that mapped one of these onto the nearest would provision a
+        // machine with another machine's build.
+        other => {
+            return Err(IndexRefusal::NoDownloadForPlatform {
+                version: version.to_owned(),
+                platform: other,
+                had: vec!["linux64".to_owned(), "win64".to_owned()],
+            });
+        }
+    };
+
+    let parsed: serde_json::Value = serde_json::from_str(index_json)
+        .map_err(|err| IndexRefusal::Unparsable(err.to_string()))?;
+    let products = parsed.as_array().ok_or_else(|| {
+        IndexRefusal::Unparsable("no array of products at the top level".to_owned())
+    })?;
+    let stable = products
+        .iter()
+        .find(|p| p.get("Product").and_then(serde_json::Value::as_str) == Some("Stable"))
+        .ok_or_else(|| IndexRefusal::Unparsable("no Stable product".to_owned()))?;
+    let releases = stable
+        .get("Releases")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| IndexRefusal::Unparsable("Stable carries no Releases array".to_owned()))?;
+
+    // ⚠ Selected by name at every level: the platform, the architecture, the
+    // build and the artefact kind are all matched on their own fields.
+    let matching = |r: &&serde_json::Value| {
+        r.get("Platform").and_then(serde_json::Value::as_str) == Some(want_platform)
+            && r.get("Architecture").and_then(serde_json::Value::as_str) == Some(want_arch)
+    };
+    let Some(release) = releases
+        .iter()
+        .filter(matching)
+        .find(|r| r.get("ProductVersion").and_then(serde_json::Value::as_str) == Some(version))
+    else {
+        let nearest: Vec<String> = releases
+            .iter()
+            .filter(matching)
+            .filter_map(|r| r.get("ProductVersion").and_then(serde_json::Value::as_str))
+            .take(8)
+            .map(str::to_owned)
+            .collect();
+        return Err(IndexRefusal::NoSuchBuild {
+            version: version.to_owned(),
+            known: releases.iter().filter(matching).count(),
+            nearest,
+        });
+    };
+
+    let artifacts = release
+        .get("Artifacts")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| {
+            IndexRefusal::Unparsable(format!("{version} on {platform} carries no Artifacts"))
+        })?;
+    let Some(artifact) = artifacts
+        .iter()
+        .find(|a| a.get("ArtifactName").and_then(serde_json::Value::as_str) == Some(want_artifact))
+    else {
+        return Err(IndexRefusal::NoDownloadForPlatform {
+            version: version.to_owned(),
+            platform,
+            had: artifacts
+                .iter()
+                .filter_map(|a| a.get("ArtifactName").and_then(serde_json::Value::as_str))
+                .map(str::to_owned)
+                .collect(),
+        });
+    };
+
+    let url = artifact
+        .get("Location")
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| {
+            IndexRefusal::Unparsable(format!("{version} on {platform} carries no Location"))
+        })?;
+
+    // ⛔ ONLY WHERE THE ALGORITHM IS THE ONE THIS PROJECT COMPARES WITH. A
+    // digest recorded under the wrong algorithm is worse than none: it looks
+    // comparable and never matches.
+    let published_sha256 = artifact
+        .get("HashAlgorithm")
+        .and_then(serde_json::Value::as_str)
+        .filter(|a| a.eq_ignore_ascii_case("SHA256"))
+        .and_then(|_| artifact.get("Hash").and_then(serde_json::Value::as_str))
+        .map(str::to_ascii_lowercase);
+
+    Ok(Download {
+        url: url.to_owned(),
+        version: version.to_owned(),
+        published_sha256,
+        published_bytes: artifact
+            .get("SizeInBytes")
+            .and_then(serde_json::Value::as_u64),
     })
 }

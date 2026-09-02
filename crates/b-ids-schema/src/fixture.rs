@@ -14,8 +14,8 @@ use crate::http::{HeaderSet, HttpHalf, ValuePolicy, Variant};
 use crate::http2::{Frame, Http2Half, SettingEntry, StreamPriority};
 use crate::tls::{Ech, Extension, Grease, KeyShare, Shuffle, TlsHalf};
 use crate::{
-    Browser, Captured, Channel, Digests, Os, Platform, PlatformToken, Profile, ProfileId,
-    Provenance, ProvenanceEntry, ProvenanceKind, Raw, Resumption, SCHEMA_ID, Trust,
+    Browser, Captured, Channel, Connections, Digests, Os, Platform, PlatformToken, Profile,
+    ProfileId, Provenance, ProvenanceEntry, ProvenanceKind, Raw, Resumption, SCHEMA_ID, Trust,
 };
 
 /// A profile that is well formed and internally coherent.
@@ -85,6 +85,12 @@ pub fn profile() -> Profile {
             // an acquisition would be claiming a route and a digest nobody
             // produced, which is the one thing this file must never do.
             acquisition: None,
+            // ⚠ One connection carried both halves, which is the ordinary case
+            // and the one this fixture stands in for. ⛔ Not `None`: absent
+            // means a profile written before the field existed, and a fixture
+            // standing in for what the harness writes today has to carry what
+            // it writes today.
+            connections: Some(Connections { tls: 1, http2: 1 }),
         },
         tls: tls(),
         http2: http2(),

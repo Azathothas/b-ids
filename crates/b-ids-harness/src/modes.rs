@@ -333,7 +333,7 @@ pub fn resumption_split(captures: &[Capture]) -> Split {
     };
     for capture in captures {
         match crate::select::kind(capture) {
-            crate::Kind::Abandoned => split.abandoned += 1,
+            crate::Kind::NoHttp2 => split.abandoned += 1,
             crate::Kind::Cold => split.cold += 1,
             crate::Kind::Resumed => split.resumed += 1,
         }

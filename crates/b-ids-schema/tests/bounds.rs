@@ -45,6 +45,13 @@ fn expected() -> Vec<(&'static str, f64, f64)> {
         ("#/http2/connection_window", 0.0, f64::from(u32::MAX)),
         // usize on the Rust side, bounded by what JSON can carry exactly.
         ("#/captured/acquisition/bytes", 0.0, JSON_SAFE_INTEGER),
+        // u32 on the Rust side, which is what b_ids_harness::Capture numbers a
+        // connection with. ⚠ The harness numbers them from 1 and the bound
+        // here is 0, because this table carries the bound the RUST WIDTH gives
+        // rather than a tighter one the model does not enforce. A schema
+        // stricter than the model would refuse a value the model can hold.
+        ("#/captured/connections/tls", 0.0, f64::from(u32::MAX)),
+        ("#/captured/connections/http2", 0.0, f64::from(u32::MAX)),
         ("#/record_layer/bytes_arrived", 0.0, JSON_SAFE_INTEGER),
         // ⛔ The minimum is 1 rather than 0. A zero-length random part records a
         // CONSTANT, which is what the field exists to avoid.

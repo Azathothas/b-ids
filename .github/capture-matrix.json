@@ -62,12 +62,12 @@
       "channel": "stable",
       "platform": "linux64",
       "os": "ubuntu-latest",
-      "route": "installed",
+      "route": "for-testing",
       "branded": true,
-      "build": null,
+      "build": "151.0.4129.101",
       "enabled": true,
       "required": true,
-      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. Enabled 2026-09-02: the driver resolved Edge 151.0.4129.101 at /usr/bin/microsoft-edge on the ubuntu-latest image in capture.yml run 33579619515, and b-ids-driver drive takes a --browser switch now, so the lane drives the family this row names."
+      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. ⭐ Provisioned from the vendor enterprise index as of 2026-09-02 rather than taken from the image: the index publishes a SHA-256 per artefact, so this is the first cell whose acquisition can be checked against the publisher. ⚠ branded stays true: the enterprise index serves the vendor own product, unlike the Chrome automation index. The image Edge could not capture at all, because its SUID sandbox helper was not configured, which capture.yml run 33615327503 recorded and DRIVER-10 fixes."
     },
     {
       "browser": "chrome",

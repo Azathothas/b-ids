@@ -9,7 +9,8 @@
 //! `TODO/driver.md`, `DRIVER-05`.
 
 use b_ids_driver::acquire::{
-    Candidate, IndexRefusal, Platform, Route, acquire_with, download_url, plan,
+    Candidate, IndexRefusal, Platform, Route, acquire_with, download, download_url, index_route,
+    index_url, plan,
 };
 use b_ids_driver::resolve::Family;
 
@@ -321,4 +322,160 @@ fn the_published_schema_carries_the_same_route_vocabulary() {
         b_ids_schema::ACQUISITION_ROUTES.to_vec(),
         "the published schema and the model accept the same routes"
     );
+}
+
+// -- the Edge enterprise index, which is a different shape -----------------
+//
+// ⛔ A TRIMMED EXCERPT OF THE REAL INDEX, in its real shape, read on
+// 2026-09-02 from the URL `b_ids_driver::acquire::index_url` names for Edge. It
+// carried five products and 157 Stable releases; the two below are two of them
+// verbatim, with the CVE lists dropped because this reader does not look at
+// them. ⚠ A fixture somebody invented would let this suite agree with a reader
+// that cannot read the real thing. `TODO/driver.md`, `DRIVER-10`.
+const EDGE_INDEX: &str = r#"[
+  { "Product": "Dev", "Releases": [] },
+  {
+    "Product": "Stable",
+    "Releases": [
+      {
+        "ReleaseId": 1,
+        "Platform": "Windows",
+        "Architecture": "x64",
+        "ProductVersion": "152.0.4191.53",
+        "PublishedTime": "2026-08-28T03:03:00",
+        "Artifacts": [
+          {
+            "ArtifactName": "msi",
+            "Location": "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/dd96e247-54fb-4e65-bc78-514b4b7ead4c/MicrosoftEdgeEnterpriseX64.msi",
+            "Hash": "17B704410AE47E33F830230503AFFED39BA8ED36356E90F0CF6759231543A22C",
+            "HashAlgorithm": "SHA256",
+            "SizeInBytes": 258912256
+          }
+        ]
+      },
+      {
+        "ReleaseId": 2,
+        "Platform": "Linux",
+        "Architecture": "x64",
+        "ProductVersion": "151.0.4129.101",
+        "PublishedTime": "2026-08-14T02:38:00",
+        "Artifacts": [
+          {
+            "ArtifactName": "rpm",
+            "Location": "https://packages.microsoft.com/yumrepos/edge/microsoft-edge-stable-151.0.4129.101-1.x86_64.rpm",
+            "Hash": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "HashAlgorithm": "SHA256",
+            "SizeInBytes": 1
+          },
+          {
+            "ArtifactName": "deb",
+            "Location": "https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-stable/microsoft-edge-stable_151.0.4129.101-1_amd64.deb",
+            "Hash": "BD7604025424914A61C06293CB6BF269141A29D8C54CF1997110BC96D3365D60",
+            "HashAlgorithm": "SHA256",
+            "SizeInBytes": 194950834
+          }
+        ]
+      }
+    ]
+  }
+]"#;
+
+#[test]
+fn the_edge_index_names_the_deb_for_linux_and_the_msi_for_windows() {
+    // ⛔ THE ARTEFACT KIND IS PART OF THE ANSWER, and it is not the same on the
+    // two platforms. A reader that took the first artefact would install an rpm
+    // on a Debian runner.
+    let linux = download(
+        Family::Edge,
+        EDGE_INDEX,
+        "151.0.4129.101",
+        Platform::Linux64,
+    )
+    .expect("the index carries it");
+    assert!(linux.url.ends_with("_amd64.deb"), "{}", linux.url);
+
+    let windows =
+        download(Family::Edge, EDGE_INDEX, "152.0.4191.53", Platform::Win64).expect("carried");
+    assert!(windows.url.ends_with(".msi"), "{}", windows.url);
+}
+
+#[test]
+fn the_edge_index_carries_the_publishers_digest_and_the_chrome_one_does_not() {
+    // ⭐ THE DIFFERENCE BETWEEN THE TWO INDEXES, asserted rather than assumed.
+    // Edge states a SHA-256 and a byte count for every artefact, so an
+    // acquisition through it can be checked against the publisher. The
+    // automation index for Chrome states neither, and `None` says so.
+    let edge = download(
+        Family::Edge,
+        EDGE_INDEX,
+        "151.0.4129.101",
+        Platform::Linux64,
+    )
+    .expect("carried");
+    // ⛔ DERIVED FROM THE FIXTURE RATHER THAN REPEATED. A digest written out
+    // here as well would be the same value in two places with no check that
+    // they agree, and it is the thing this reader is supposed to be carrying
+    // across unchanged.
+    let digest = edge
+        .published_sha256
+        .expect("the Edge index publishes a digest for every artefact");
+    assert_eq!(digest.len(), 64, "a SHA-256 in hex: {digest}");
+    assert!(
+        digest
+            .chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
+        "lower-cased, because that is the form this project compares digests in: {digest}"
+    );
+    assert!(
+        EDGE_INDEX.contains(&digest.to_ascii_uppercase()),
+        "and it is the digest the fixture states, read rather than retyped"
+    );
+    assert_eq!(edge.published_bytes, Some(194_950_834));
+
+    let chrome =
+        download(Family::Chrome, INDEX, "151.0.7922.76", Platform::Linux64).expect("carried");
+    assert_eq!(chrome.published_sha256, None);
+    assert_eq!(chrome.published_bytes, None);
+}
+
+#[test]
+fn a_platform_the_edge_index_does_not_serve_is_refused_by_name() {
+    // ⛔ Named rather than mapped onto the nearest. The index does publish
+    // other pairs, and answering a macOS request with the Linux deb would
+    // provision one machine with another machine's build.
+    let refusal = download(
+        Family::Edge,
+        EDGE_INDEX,
+        "151.0.4129.101",
+        Platform::MacArm64,
+    )
+    .expect_err("this reader maps only linux64 and win64");
+    assert!(
+        matches!(refusal, IndexRefusal::NoDownloadForPlatform { .. }),
+        "{refusal:?}"
+    );
+}
+
+#[test]
+fn the_route_table_names_an_index_and_a_route_for_every_family_it_knows() {
+    // ⛔ THE TABLE IS THE DESIGN. Adding a family is a row plus a reader, not a
+    // branch in a caller, and a family whose index is named must also have a
+    // route a profile can record.
+    for family in Family::all() {
+        let Some(url) = index_url(family) else {
+            continue;
+        };
+        assert!(url.starts_with("https://"), "{family}: {url}");
+        let route = index_route(family);
+        assert!(
+            b_ids_schema::ACQUISITION_ROUTES.contains(&route.as_str()),
+            "{family}: the route {route} is not one a profile may record"
+        );
+        // ⚠ And `plan` must offer it, which is what a caller actually reads.
+        let offered: Vec<_> = plan(family, Some("1.2.3.4"))
+            .into_iter()
+            .map(|c| c.route)
+            .collect();
+        assert!(offered.contains(&route), "{family}: {offered:?}");
+    }
 }

@@ -155,13 +155,21 @@ fn redact_switches(switches: &[String]) -> (Vec<String>, bool) {
     (out, changed)
 }
 
-/// Build a profile from one capture and the identity of what produced it.
+/// Build a profile from the two connections its halves were read from, and the
+/// identity of what produced them.
 ///
-/// ⛔ **The capture must be the connection a profile is built from**: one that
-/// carried a `ClientHello` and reached HTTP/2. A browser opens sockets it
-/// abandons, and `b_ids_harness::select` is what picks the cold one out of a
-/// navigation. Refusing everything else here means the corpus cannot acquire a
-/// profile of an abandoned preconnect by anybody forgetting to select.
+/// ⛔ **TWO CONNECTIONS, AND THEY MAY BE THE SAME ONE.** `tls_from` must carry a
+/// `ClientHello`; `http2_from` must have reached HTTP/2. Requiring ONE
+/// connection to satisfy both is what this signature replaced, and it is what
+/// made a navigation whose only cold hello arrived on an abandoned preconnect
+/// publish nothing at all. `b_ids_harness::select` chooses both, and the
+/// profile records which connection each half came from. `TODO/harness.md`,
+/// `HARNESS-15`.
+///
+/// ⚠ **The instant is the TLS connection's.** A profile carries one `at` and
+/// two connections can have two, so it is the one the `ClientHello` arrived on
+/// rather than an average or the earlier of the pair. `captured.connections` is
+/// what lets a reader go back to the capture file for the other one.
 ///
 /// # Errors
 ///
@@ -169,28 +177,41 @@ fn redact_switches(switches: &[String]) -> (Vec<String>, bool) {
 /// [`Defect`]s the assembled profile fails its own well-formedness check with.
 /// ⚠ The second case includes the credential refusal, which is the one this
 /// function exists to place.
-pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, Vec<Refusal>> {
-    let refuse = |why: &str| {
+pub fn profile_from(
+    tls_from: &Capture,
+    http2_from: &Capture,
+    identity: &Identity,
+) -> Result<Profile, Vec<Refusal>> {
+    // ⛔ TWO REFUSAL MAKERS, because a refusal names the connection it is about
+    // and the two halves can come from two. One that always named the first
+    // would send a reader to the wrong socket.
+    let refuse_tls = |why: &str| {
         vec![Refusal {
-            connection: capture.connection,
+            connection: tls_from.connection,
+            why: why.to_owned(),
+        }]
+    };
+    let refuse_http2 = |why: &str| {
+        vec![Refusal {
+            connection: http2_from.connection,
             why: why.to_owned(),
         }]
     };
 
-    let Some(tls) = capture.tls.clone() else {
-        return Err(refuse(
+    let Some(tls) = tls_from.tls.clone() else {
+        return Err(refuse_tls(
             "carries no ClientHello, so there is no TLS half to publish. A profile is not \
              assembled from a connection that did not send one",
         ));
     };
-    let Some(http2) = capture.http2.clone() else {
-        return Err(refuse(
-            "never reached HTTP/2, which is what an abandoned preconnect looks like. Select the \
-             cold connection with b_ids_harness::select before converting",
+    let Some(http2) = http2_from.http2.clone() else {
+        return Err(refuse_http2(
+            "never reached HTTP/2, which is what an abandoned preconnect looks like. Select both \
+             halves with b_ids_harness::select before converting",
         ));
     };
-    if capture.at.trim().is_empty() {
-        return Err(refuse(
+    if tls_from.at.trim().is_empty() {
+        return Err(refuse_tls(
             "carries no instant. A capture with no instant cannot be ordered against the build it \
              describes, and stamping one here would record when this ran rather than when the \
              bytes arrived",
@@ -229,7 +250,7 @@ pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, V
         .map(b_ids_harness::RawFrame::wire_hex)
         .collect();
     let raw = Raw {
-        client_hello_hex: Some(capture.raw_hex.clone()),
+        client_hello_hex: Some(tls_from.raw_hex.clone()),
         // ⚠ The same frame in two fields, and `Raw::check` asserts they agree.
         // The older field is kept for profiles written before the list existed.
         settings_frame_hex: frames.first().cloned(),
@@ -239,7 +260,7 @@ pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, V
         // first message, which is where a real browser's credentials appear.
         // `Raw::check` scans it, so assembling it here is what arms the
         // refusal.
-        connection_hex: capture
+        connection_hex: http2_from
             .termination
             .as_ref()
             .map(|t| t.plaintext_hex.clone()),
@@ -299,7 +320,7 @@ pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, V
         browser,
         platform,
         captured: Captured {
-            at: capture.at.clone(),
+            at: tls_from.at.clone(),
             method: identity.method.clone(),
             harness: identity.harness.clone(),
             operator: identity.operator.clone(),
@@ -314,6 +335,15 @@ pub fn profile_from(capture: &Capture, identity: &Identity) -> Result<Profile, V
             // route that answered and the digest of what arrived are facts
             // about a FETCH, and nothing in this crate does one.
             acquisition: identity.acquisition.clone(),
+            // ⛔ READ FROM THE CAPTURES, never from the identity. Which socket
+            // each half arrived on is a fact about this run that nothing
+            // outside it can know, and a reader who cannot tell whether the two
+            // halves came from one connection cannot reason about anything that
+            // spans them. TODO/harness.md, HARNESS-15.
+            connections: Some(b_ids_schema::Connections {
+                tls: tls_from.connection,
+                http2: http2_from.connection,
+            }),
         },
         tls,
         http2: http2.half,

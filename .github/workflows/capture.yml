@@ -125,6 +125,33 @@ jobs:
           rustup show active-toolchain
           cargo --version
 
+      # ⭐ PROVISION FIRST, WHERE THE CELL ASKS FOR IT. A cell whose route is
+      # `installed` measures whatever the image shipped, which is what every
+      # profile in the corpus records today and why DRIVER-08 exists. A cell
+      # naming any other route purges the machine and installs the build the
+      # cell names, and the profile then carries a URL and a digest in
+      # `captured.acquisition`.
+      #
+      # ⛔ B_IDS_DISPOSABLE IS SET ON THIS STEP AND NOWHERE ELSE IN THIS FILE.
+      # provision-browser needs it AND the platform's own CI marker, from two
+      # sources, because one edit lifting one condition is how the purge path
+      # reached a developer laptop on 2026-09-02.
+      #
+      # ⛔ AND THE LANE FAILS LOUDLY WHEN PROVISIONING DOES NOT CONFIRM. The
+      # tool's own step 4 requires `resolve` to report exactly the build asked
+      # for; nothing here swallows a nonzero exit, so a lane that installed one
+      # build and would have captured another goes red instead.
+      - name: provision the build this cell names
+        if: matrix.route != 'installed'
+        shell: bash
+        env:
+          B_IDS_DISPOSABLE: '1'
+        run: |
+          sh scripts/common/provision-browser.sh \
+            --browser "${{ matrix.browser }}" \
+            --route "${{ matrix.route }}" \
+            --version "${{ matrix.build }}"
+
       # ⛔ RESOLVED, NOT ASSUMED, AND A LANE WITH NO BROWSER EXITS 2. "This runner
       # has no browser" and "the capture failed" are different facts, and a lane
       # that returned 1 for both would make an absent browser look like a

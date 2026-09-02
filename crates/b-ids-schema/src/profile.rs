@@ -339,6 +339,48 @@ pub struct Captured {
     /// existed has to keep serialising exactly as it was published.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub acquisition: Option<Acquisition>,
+    /// Which connection of the navigation each half was read from.
+    ///
+    /// ⛔ **A profile says whether its two halves came from one connection.**
+    /// Two halves from two sockets of one navigation is a condition of the
+    /// measurement rather than a detail: a reader who cannot tell cannot reason
+    /// about anything that spans them, and the ordinary case and the
+    /// interesting case look identical without it. `TODO/harness.md`,
+    /// `HARNESS-15`.
+    ///
+    /// ⚠ **Absent on every profile written before 2026-09-02.** Those were
+    /// built from one connection by construction, because the rule then
+    /// required one connection to carry both halves. ⛔ Filling the field in
+    /// for them from that reasoning would be a derivation wearing a
+    /// measurement's label, so it stays absent and this sentence is the record.
+    ///
+    /// ⛔ **Omitted from the serialised form when absent**, like
+    /// [`Captured::acquisition`] and for the same reason: the corpus is
+    /// append-only, so a profile published before this field existed has to
+    /// keep serialising exactly as it was published.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connections: Option<Connections>,
+}
+
+/// Which connection of a navigation each half of a profile was read from.
+///
+/// ⚠ **Numbered from 1, as the harness numbers them**, and they are the same
+/// numbers the capture file carries, so a reader can go back to the bytes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Connections {
+    /// The connection the TLS half and the `ClientHello` bytes were read from.
+    pub tls: u32,
+    /// The connection the HTTP/2 half, the HTTP half and the frame bytes were
+    /// read from.
+    pub http2: u32,
+}
+
+impl Connections {
+    /// Whether both halves came from one connection.
+    #[must_use]
+    pub fn one_connection(self) -> bool {
+        self.tls == self.http2
+    }
 }
 
 /// The routes a build can come from, as [`Profile::check`] accepts them.
@@ -348,7 +390,13 @@ pub struct Captured {
 /// for it to drift, and the two that can be compared are compared: a profile
 /// carrying a route outside this list is refused here, and the schema refuses
 /// it to a consumer.
-pub const ACQUISITION_ROUTES: [&str; 4] = ["installed", "cache", "vendor", "chrome-for-testing"];
+pub const ACQUISITION_ROUTES: [&str; 5] = [
+    "installed",
+    "cache",
+    "vendor",
+    "chrome-for-testing",
+    "edge-enterprise",
+];
 
 /// Where a build came from, and the digest of what arrived.
 ///

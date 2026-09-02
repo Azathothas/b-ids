@@ -72,9 +72,10 @@ project's rules are mostly about one of them.**
         |  the listener reads the first TLS record itself
         v
   a Capture per connection            <- one navigation is MANY connections
-        |  b_ids_harness::select: cold, resumed, further cold, abandoned
+        |  b_ids_harness::select, PER HALF: the first cold hello, and the
+        |  first connection that reached HTTP/2. They need not be the same one.
         v
-  the ONE cold connection
+  two connections, and the profile records both numbers
         |  b_ids_corpus::profile_from, with an identity read from the run
         v
   a Profile, checked by Profile::check
@@ -89,7 +90,7 @@ project's rules are mostly about one of them.**
 | where | what goes wrong | what holds it |
 | --- | --- | --- |
 | browser to socket | the subject will not complete a handshake with a certificate it does not trust | a per-launch key pin, recorded as `captured.trust`. [`../experiments/40-trust-paths.sh`](../experiments/40-trust-paths.sh) reports which routes work per platform |
-| many connections to one | a browser opens sockets it abandons and it resumes, and a resumed hello is a different hello | `select` keeps the FIRST connection that reached HTTP/2, and the harness can refuse to issue tickets so every hello is cold. `captured.resumption` records which |
+| many connections to one | a browser opens sockets it abandons and it resumes, and a resumed hello is a different hello | `select` chooses PER HALF: the TLS half comes from the first hello offering no pre-shared key, whether or not that connection reached HTTP/2, and the HTTP/2 half from the first connection that did. `captured.connections` records both numbers and `captured.resumption` records what the harness offered |
 | capture to profile | a field somebody typed rather than read | the identity file is written from what the run reported, and the capture script reads the driver's and the harness's own output back |
 | profile to store | an edit to something already published | `Store::add` refuses a path that exists. The corpus is append-only. |
 

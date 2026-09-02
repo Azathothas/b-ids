@@ -2115,7 +2115,7 @@ the wrong file.
 
 **Source** the operator, 2026-09-02: why do the checks take so long, and are they
 reading the vendored and reference trees
-**Category** tooling, **Priority** P1, **Effort** M, **Status** open
+**Category** tooling, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -2197,3 +2197,90 @@ reported before, file counts included; and the per-pair seconds for
 the premise, on a host whose conditions are recorded beside the figure.
 
 ---
+
+### ⭐ Closed 2026-09-02. One pass per check, and the cause was not the one the premise named
+
+⛔ **The premise blamed a subprocess per file, and that was two thirds of it.**
+The third cause was bigger than either and it is not a per-file loop at all: a
+command substitution in a `while ... read` **assignment prefix** is re-evaluated
+on every iteration, so `IFS="$(printf '\t')" read ...` forks once per LINE READ.
+⚠ Measured on this host: a command substitution costs 35 ms, and `check-docs`
+reads about 1100 findings.
+
+| the cause | where it was | what it cost |
+| --- | --- | --- |
+| ⛔ **a fork per line read** | `IFS="$(printf '\t')"` on eleven `while read` loops across seven checks | about 39 seconds in `check-docs` alone, and it is why `check-record` and `check-markers` were slow for no visible reason |
+| ⛔ **a `git check-ignore` per link** | `check-docs`, once for every one of 966 link targets that resolves | 52 seconds, now one `git check-ignore --stdin` |
+| ⛔ **three processes per fenced block** | `check-docs`: `tr`, `sh -n`, `grep -q` per block, 163 blocks | two of the three moved into the `awk` pass that extracts the block. Only `sh -n` still needs a process, because it is the parse rather than a search |
+| ⛔ **six processes per file** | `check-control-bytes`, over 387 files | the C0 class is one `grep` over the whole list now, and the NUL question is asked of the whole list at once and falls back to naming files only when the answer is yes |
+
+⭐ **Measured before and after, on the same tree, with the payloads compared:**
+
+| check | before | after | payload |
+| --- | --- | --- | --- |
+| `check-control-bytes` | 126 s | **1.1 s** | `{"schema":"check-control-bytes/1","problems":0,"files":387}`, identical |
+| `check-docs` | 173.6 s | **28 s** | `{"schema":"check-docs/1","problems":0,"files":53,"links":966,"cited_paths":98,"shell_blocks":163}`, identical |
+| `check-markers` | 29 s | **15.6 s** | identical |
+| `check-record` | 34 s | **27 s** | identical |
+
+⛔ **Nothing about what is checked changed**, which is the rule `TOOL-15` set
+and this entry kept. The file lists, the exclusions and every reported count are
+the same before and after, and the `--json` payload is what says so.
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-twins.sh --timings
+  ok     check-docs: both say {"schema":"check-docs/1","problems":0,"files":53,"links":966,"cited_paths":98,"shell_blocks":163}, exit 0
+  ok     check-control-bytes: both say {"schema":"check-control-bytes/1","problems":0,"files":387}, exit 0
+  ok     check-record: both say {"schema":"check-record/1","problems":0,"entries":98,"open":33,"blocked":0,"done":65}, exit 0
+
+  seconds per half, sh then ps:
+      28     54  check-docs
+      15     19  check-markers
+       3      3  check-one-home
+       2      1  check-placeholders
+       1     27  check-control-bytes
+       1      0  check-changelog
+      27      1  check-record
+       5      1  check-no-secrets
+       6      2  check-no-secrets pub
+     170     36  check-no-secrets scoped
+       1      1  check-msrv
+       4      0  check-vendor
+       3      1  check-corpus
+       2      2  check-line-endings
+       2      2  check-validate
+       2      1  check-workflows
+       1      1  check-coverage
+       1      1  check-routes
+       2      9  check-exit-codes
+       0      1  check-staleness
+       1      0  check-sources
+       3      1  check-manual-path
+       2      3  check-provisioning
+       1      1  mine-repo selftest
+      43     34  check-gate
+       1      1  git-sync --check
+       5      3  check-remote-items
+
+✅ every twin pair agrees on this tree.
+exit=0
+```
+
+⚠ **Conditions**: one Windows 11 Pro 26200 host, Git Bash, warm, 2026-09-02,
+with the tree at the commit that closed `DRIVER-08`. Every pair listed before
+this entry is still listed.
+
+#### ⛔ What this did NOT fix, named rather than left
+
+| | |
+| --- | --- |
+| ⛔ **the PowerShell halves still carry the per-file shape** | `check-control-bytes.ps1` is 27 s against its twin's 1 s, and `check-docs.ps1` is 54 s against 28 s. The premise measured the sh halves and this entry rewrote the sh halves; the ps1 halves are the same work again and they are not done. ⚠ A gate run on Windows pays the slow half, and `check-twins` pays both. |
+| ⛔ **`check-no-secrets --scope references` is now the largest row by far** | 170 s of the sh side's 333. It is already batched through `xargs`, so it is not the shape this entry fixed: it reads 4972 files because that is the row that exists to scan what every other check exempts. |
+| ⚠ **`check-record` is 27 s and its cause is known** | three processes per entry across 98 entries: an `awk` and a `head` to find each entry's file, and a second `awk` to read its status. One pass would fix it the way `check-docs` was fixed. |
+| ⚠ **`check-control-bytes` still reads `vendor/NAME/`** | 146 of its 387 files are vendored. This entry records it and does not decide it, exactly as the approach said. |
+
+⭐ **The fast gate went from about 600 seconds to 246**, measured on this host
+with `check-provisioning` newly inside it, so the comparison is against a gate
+that now runs one more check than the one that cost 600.

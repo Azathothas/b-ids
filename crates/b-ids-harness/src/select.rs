@@ -29,9 +29,17 @@ pub const PRE_SHARED_KEY: u16 = 0x0029;
 /// What one connection of a navigation turned out to be.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
-    /// It never reached HTTP/2. ⚠ A browser opens sockets it abandons, and a
-    /// run that dropped them would under-report what a navigation does.
-    Abandoned,
+    /// It never reached HTTP/2.
+    ///
+    /// ⛔ **Renamed from `Abandoned` on 2026-09-02, and the rename is the
+    /// entry.** The old name said the connection was useless; what is actually
+    /// true of it is that it carried no HTTP/2, which is a fact about ONE HALF
+    /// rather than a verdict on the connection. A connection classified this
+    /// way can carry the only cold `ClientHello` of a navigation, and on
+    /// `ubuntu-latest` that is exactly what happened: every connection that
+    /// reached HTTP/2 had resumed, so discarding these published nothing.
+    /// `TODO/harness.md`, `HARNESS-15`.
+    NoHttp2,
     /// It reached HTTP/2 and nothing says the session resumed.
     Cold,
     /// It reached HTTP/2 and offered a pre-shared key.
@@ -59,7 +67,7 @@ pub fn offers_pre_shared_key(tls: &TlsHalf) -> bool {
 #[must_use]
 pub fn kind(capture: &Capture) -> Kind {
     if !capture.reached_h2() {
-        return Kind::Abandoned;
+        return Kind::NoHttp2;
     }
     match &capture.tls {
         Some(tls) if offers_pre_shared_key(tls) => Kind::Resumed,
@@ -74,8 +82,27 @@ pub fn kind(capture: &Capture) -> Kind {
 /// capture to live.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Selection<'a> {
-    /// ⭐ The first connection that reached HTTP/2, which is the cold
-    /// handshake.
+    /// ⭐ **The connection the TLS half is taken from: the first whose hello
+    /// offers no pre-shared key, whether or not it reached HTTP/2.**
+    ///
+    /// ⛔ **The `whether or not` is the whole entry.** Requiring one connection
+    /// to carry both halves threw away a perfectly good cold hello whenever the
+    /// connection carrying it was a preconnect, and on `ubuntu-latest` that was
+    /// every cold hello there was. `TODO/harness.md`, `HARNESS-15`.
+    pub tls_from: Option<&'a Capture>,
+    /// ⭐ **The connection the HTTP/2 half is taken from: the first that
+    /// reached HTTP/2, resumed or not.**
+    ///
+    /// ⚠ Resumption is a property of the TLS handshake and says nothing about
+    /// the frames, so a resumed connection's HTTP/2 half is as good as a cold
+    /// one's. What a profile owes the reader is which connection it came from,
+    /// and [`Selection::one_connection`] is how that is said.
+    pub http2_from: Option<&'a Capture>,
+    /// ⭐ The first connection that reached HTTP/2 without resuming.
+    ///
+    /// ⚠ **Kept for the report and no longer the selection.** It is the
+    /// connection that carries BOTH halves where one exists, which is the
+    /// ordinary case and the one a reader should not have to think about.
     pub cold: Option<&'a Capture>,
     /// Every connection that reached HTTP/2 and resumed, in order.
     ///
@@ -89,8 +116,11 @@ pub struct Selection<'a> {
     /// a label the bytes contradict; it is also not the one the profile is
     /// built from, which is why it is not `cold`.
     pub additional_cold: Vec<&'a Capture>,
-    /// Every connection that never reached HTTP/2, in order.
-    pub abandoned: Vec<&'a Capture>,
+    /// Every connection that reached no HTTP/2, in order.
+    ///
+    /// ⚠ **Renamed from `abandoned` with [`Kind::NoHttp2`].** One of these can
+    /// be the connection [`Selection::tls_from`] points at.
+    pub no_http2: Vec<&'a Capture>,
     /// ⚠ Whether the cold-against-resumed split means anything on this run.
     ///
     /// False where no connection carried a `ClientHello`, which is every
@@ -103,7 +133,37 @@ impl Selection<'_> {
     /// How many connections the navigation opened.
     #[must_use]
     pub fn connections(&self) -> usize {
-        self.abandoned.len() + self.resumed.len() + self.additional_cold.len() + self.cold_count()
+        self.no_http2.len() + self.resumed.len() + self.additional_cold.len() + self.cold_count()
+    }
+
+    /// Whether both halves came from one connection.
+    ///
+    /// ⛔ **A profile says this, because two halves from two sockets of one
+    /// navigation is a condition of the measurement rather than a detail.** A
+    /// reader who cannot tell cannot reason about anything that spans the two,
+    /// and the ordinary case and the interesting case look identical without
+    /// it. `TODO/harness.md`, `HARNESS-15`.
+    #[must_use]
+    pub fn one_connection(&self) -> Option<bool> {
+        match (self.tls_from, self.http2_from) {
+            (Some(tls), Some(http2)) => Some(tls.connection == http2.connection),
+            _ => None,
+        }
+    }
+
+    /// One line naming the connection each half was taken from.
+    ///
+    /// ⚠ Separate from [`Selection::report`] so a caller can print the counts
+    /// without committing to a navigation that has both halves.
+    #[must_use]
+    pub fn halves(&self) -> String {
+        let name =
+            |c: Option<&Capture>| c.map_or_else(|| "none".to_owned(), |c| c.connection.to_string());
+        format!(
+            "tls from connection {}, http2 from connection {}",
+            name(self.tls_from),
+            name(self.http2_from)
+        )
     }
 
     /// How many cold connections there are, which is zero or one.
@@ -127,12 +187,12 @@ impl Selection<'_> {
     #[must_use]
     pub fn report(&self) -> String {
         format!(
-            "{} connection(s): {} cold, {} resumed, {} further cold, {} abandoned",
+            "{} connection(s): {} cold, {} resumed, {} further cold, {} with no http2",
             self.connections(),
             self.cold_count(),
             self.resumed.len(),
             self.additional_cold.len(),
-            self.abandoned.len()
+            self.no_http2.len()
         )
     }
 }
@@ -145,15 +205,40 @@ impl Selection<'_> {
 #[must_use]
 pub fn select(captures: &[Capture]) -> Selection<'_> {
     let mut selection = Selection {
+        tls_from: None,
+        http2_from: None,
         cold: None,
         resumed: Vec::new(),
         additional_cold: Vec::new(),
-        abandoned: Vec::new(),
+        no_http2: Vec::new(),
         resumption_observable: captures.iter().any(resumption_observable),
     };
     for capture in captures {
+        // ⭐ THE TWO HALVES ARE SELECTED INDEPENDENTLY, and neither asks
+        // anything about the other. This is the whole of HARNESS-15: the rule
+        // it replaced required ONE connection to carry both, and a navigation
+        // in which no connection did published nothing at all even when the
+        // cold hello and the frames were both sitting in the capture file.
+        //
+        // ⛔ A COLD HELLO IS A HELLO THAT OFFERS NO PRE-SHARED KEY. Whether its
+        // connection went on to speak HTTP/2 is a fact about the other half.
+        if selection.tls_from.is_none()
+            && capture
+                .tls
+                .as_ref()
+                .is_some_and(|tls| !offers_pre_shared_key(tls))
+        {
+            selection.tls_from = Some(capture);
+        }
+        // ⚠ RESUMED OR NOT. Resumption is a property of the handshake and says
+        // nothing about the frames, so the first connection to reach HTTP/2 is
+        // the one to read them from.
+        if selection.http2_from.is_none() && capture.reached_h2() {
+            selection.http2_from = Some(capture);
+        }
+
         match kind(capture) {
-            Kind::Abandoned => selection.abandoned.push(capture),
+            Kind::NoHttp2 => selection.no_http2.push(capture),
             Kind::Resumed => selection.resumed.push(capture),
             // ⭐ The FIRST cold one. A later cold connection is kept in its
             // own set: it is not resumed, and it is not the one the profile is

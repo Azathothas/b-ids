@@ -39,8 +39,8 @@ fn connection_selection_records_the_resumed_ones_as_their_own_set() {
     let navigation = thirteen_connection_navigation();
     let selection = select(&navigation);
 
-    assert_eq!(selection.abandoned.len(), 1);
-    assert_eq!(selection.abandoned[0].connection, 1);
+    assert_eq!(selection.no_http2.len(), 1);
+    assert_eq!(selection.no_http2[0].connection, 1);
     assert_eq!(selection.resumed.len(), 11);
     assert!(selection.additional_cold.is_empty());
     assert_eq!(
@@ -137,10 +137,15 @@ fn connection_selection_classifies_a_connection_that_sent_nothing_as_abandoned()
         header_values: Vec::new(),
         notes: Vec::new(),
     };
-    assert_eq!(kind(&empty), Kind::Abandoned);
+    assert_eq!(kind(&empty), Kind::NoHttp2);
     let selection = select(std::slice::from_ref(&empty));
     assert!(selection.cold.is_none());
-    assert_eq!(selection.abandoned.len(), 1);
+    assert_eq!(selection.no_http2.len(), 1);
+    // ⛔ AND NEITHER HALF IS AVAILABLE. A connection that sent nothing carries
+    // no hello either, so this is not the HARNESS-15 case: there is nothing to
+    // take a TLS half from.
+    assert!(selection.tls_from.is_none());
+    assert!(selection.http2_from.is_none());
 }
 
 /// ⭐ The report reads the cold count off the selection.
@@ -160,7 +165,7 @@ fn connection_selection_reports_the_cold_count_it_measured() {
     );
     assert_eq!(
         selection.report(),
-        "13 connection(s): 1 cold, 11 resumed, 0 further cold, 1 abandoned"
+        "13 connection(s): 1 cold, 11 resumed, 0 further cold, 1 with no http2"
     );
 }
 
@@ -188,6 +193,88 @@ fn connection_selection_reports_no_cold_connection_when_every_one_resumed() {
     assert_eq!(selection.connections(), 13, "a connection was dropped");
     assert_eq!(
         selection.report(),
-        "13 connection(s): 0 cold, 11 resumed, 0 further cold, 2 abandoned"
+        "13 connection(s): 0 cold, 11 resumed, 0 further cold, 2 with no http2"
     );
+}
+
+/// ⭐ HARNESS-15. The two halves are selected independently.
+///
+/// ⚠ **This is the runner's shape, reproduced.** `capture.yml` runs
+/// 33579619515 and 33580371329: on `ubuntu-latest` every connection that
+/// reached HTTP/2 had resumed, and the only cold hellos arrived on connections
+/// the browser abandoned. The rule that required ONE connection to carry both
+/// halves threw those hellos away and published nothing.
+#[test]
+fn connection_selection_takes_the_tls_half_from_a_connection_that_reached_no_http2() {
+    let mut navigation = thirteen_connection_navigation();
+    // ⛔ Connection 2 is the one that carried both halves. Taking its HTTP/2
+    // away leaves connections 1 and 2 with cold hellos and no frames, and
+    // connections 3 to 13 with frames and a resumed hello. No connection
+    // carries both, which is the case that used to publish nothing.
+    navigation[1].http2 = None;
+
+    let selection = select(&navigation);
+
+    let tls_from = selection.tls_from.expect("connection 1 sent a cold hello");
+    assert_eq!(
+        tls_from.connection, 1,
+        "the TLS half comes from the first connection whose hello offers no pre-shared key, \
+         whether or not it reached HTTP/2"
+    );
+    assert!(
+        !tls_from.reached_h2(),
+        "the point of this test is that the TLS half came from a connection with no HTTP/2"
+    );
+
+    let http2_from = selection.http2_from.expect("connection 3 reached HTTP/2");
+    assert_eq!(
+        http2_from.connection, 3,
+        "the HTTP/2 half comes from the first connection that reached it, resumed or not"
+    );
+
+    // ⛔ AND THE PROFILE HAS TO SAY SO. Two halves from two sockets of one
+    // navigation is a condition of the measurement rather than a detail.
+    assert_eq!(selection.one_connection(), Some(false));
+    assert_eq!(
+        selection.halves(),
+        "tls from connection 1, http2 from connection 3"
+    );
+}
+
+/// ⚠ The ordinary case, and it must not have changed.
+#[test]
+fn connection_selection_takes_both_halves_from_one_connection_when_one_carries_both() {
+    let navigation = thirteen_connection_navigation();
+    let selection = select(&navigation);
+
+    // ⚠ Connection 1 sent a cold hello and no frames; connection 2 sent both.
+    // The TLS half is still connection 1's, because it is the FIRST cold hello
+    // and the rule does not ask about HTTP/2.
+    assert_eq!(selection.tls_from.expect("a cold hello").connection, 1);
+    assert_eq!(selection.http2_from.expect("frames").connection, 2);
+    assert_eq!(selection.one_connection(), Some(false));
+}
+
+/// ⛔ A navigation whose every hello resumed still publishes nothing.
+///
+/// ⚠ **The rule this entry relaxed is not the rule that a resumed hello is not
+/// a cold one.** That one stands: a profile built from a resumed handshake
+/// would record a hello no fresh client sends.
+#[test]
+fn connection_selection_publishes_nothing_when_every_hello_resumed() {
+    let mut navigation = thirteen_connection_navigation();
+    // ⛔ Every hello resumed, which the fixture does not do on its own: its
+    // first two are cold. Truncating to the resumed ones is the shape.
+    navigation.drain(0..2);
+    assert_eq!(navigation.len(), 11);
+
+    let selection = select(&navigation);
+    assert!(
+        selection.tls_from.is_none(),
+        "every hello offered a pre-shared key, so there is no cold one to publish"
+    );
+    // ⚠ The HTTP/2 half IS available, and that is the point of selecting per
+    // half: the absence is one-sided and the message says which side.
+    assert!(selection.http2_from.is_some());
+    assert_eq!(selection.one_connection(), None);
 }

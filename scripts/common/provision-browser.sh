@@ -30,10 +30,18 @@
 #                ONLY: the channel serves what is current and nothing else.
 #                ⭐ Both platforms provisioned on one day therefore get the SAME
 #                build, which is the whole point.
-#   for-testing  an exact build, any version, every platform, from the
-#                automation-build index. ⛔ UNBRANDED: a different brand list
-#                and a different sec-ch-ua, and a profile taken through it
-#                records `branded: false`. DRIVER-06 measures the difference.
+#   for-testing  AN EXACT BUILD, from the family's own first-party index. The
+#                index and the artefact kind are per family and the driver's
+#                route table owns both.
+#
+#                ⛔ WHETHER THAT BUILD IS BRANDED DEPENDS ON THE FAMILY, and
+#                the route name does not say. Chrome's automation index serves
+#                UNBRANDED builds: a different brand list and a different
+#                sec-ch-ua, and a profile taken through it records
+#                `branded: false`. Edge's enterprise index serves the vendor's
+#                own branded product, so a profile taken through it records
+#                `branded: true`. ⚠ The matrix cell records which, because
+#                this flag cannot. DRIVER-06 measures the difference.
 #
 # ⛔ THIS NEVER REDISTRIBUTES A BROWSER. It prints the URL it fetched and the
 # sha256 of what arrived; the artefact is the vendor's to serve.
@@ -111,43 +119,128 @@ esac
 # ⭐ --plan RUNS NOTHING. It is what a person reads before letting this near a
 # machine, and it is what the acceptance check can assert on a host that is not
 # disposable.
+# ⭐ THE ROUTE TABLE IS PER FAMILY AND IT IS DATA, and it is defined HERE, above
+# the plan, because --plan reads it too. A table defined below its first caller
+# is a table the plan cannot see: measured 2026-09-02, --plan for an edge
+# request printed an empty purge line and a command-not-found. TODO/driver.md,
+# DRIVER-10.
+#
+# ⛔ IT PURGES THE NAMED FAMILY AND NOT EVERY BROWSER. Before 2026-09-02 the
+# Linux purge removed Chrome AND Edge whatever --browser said. The rule is
+# every browser of the target family, and this is that.
+
+packages_for() {
+  case "$1" in
+    chrome) printf 'google-chrome-stable google-chrome-beta google-chrome-unstable\n' ;;
+    edge) printf 'microsoft-edge-stable microsoft-edge-beta microsoft-edge-dev\n' ;;
+    *) printf '\n' ;;
+  esac
+}
+
+paths_for() {
+  case "$1" in
+    chrome) printf '/opt/google/chrome /opt/google/chrome-beta /opt/google/chrome-unstable\n' ;;
+    edge) printf '/opt/microsoft/msedge /opt/microsoft/msedge-beta /opt/microsoft/msedge-dev\n' ;;
+    *) printf '\n' ;;
+  esac
+}
+
+links_for() {
+  case "$1" in
+    chrome) printf '/usr/bin/google-chrome /usr/bin/google-chrome-stable\n' ;;
+    edge) printf '/usr/bin/microsoft-edge /usr/bin/microsoft-edge-stable\n' ;;
+    *) printf '\n' ;;
+  esac
+}
+
+sandbox_for() {
+  case "$1" in
+    chrome) printf '/opt/google/chrome/chrome-sandbox\n' ;;
+    edge) printf '/opt/microsoft/msedge/msedge-sandbox\n' ;;
+    *) printf '\n' ;;
+  esac
+}
+
+uninstall_match_for() {
+  case "$1" in
+    chrome) printf '^Google Chrome\n' ;;
+    edge) printf '^Microsoft Edge$\n' ;;
+    *) printf '^$\n' ;;
+  esac
+}
+
+vendor_dir_for() {
+  case "$1" in
+    chrome) printf 'Google\\Chrome\n' ;;
+    edge) printf 'Microsoft\\Edge\n' ;;
+    *) printf '\n' ;;
+  esac
+}
+
 plan_for() {
-  case "$OS/$ROUTE" in
-    linux/vendor)
-      printf 'purge   apt-get remove --purge, then /opt/google/chrome and the /usr/bin links\n'
+  # ⛔ KEYED ON THE FAMILY TOO. A plan that described Chrome's archive for an
+  # `edge` request is a plan nobody could act on, and --plan is what a person
+  # reads before letting this near a machine. TODO/driver.md, DRIVER-10.
+  printf 'purge   %s\n' "$(purge_line)"
+  case "$BROWSER/$OS/$ROUTE" in
+    chrome/linux/vendor)
       printf 'fetch   https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb\n'
       printf 'install dpkg -i, then apt-get -f install for anything it needs\n'
       ;;
-    windows/vendor)
-      printf 'purge   the vendor uninstaller for every install found, then the program directory\n'
+    chrome/windows/vendor)
       printf 'fetch   https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi\n'
       printf 'install msiexec /qn, which is the silent unattended mode\n'
       ;;
-    linux/for-testing)
-      printf 'purge   as for the vendor route on this platform\n'
-      printf 'index   the automation-build index, whose URL b_ids_driver::acquire owns.\n'
+    chrome/linux/for-testing)
+      printf 'index   the first-party index for this family, whose URL b_ids_driver::acquire owns.\n'
       printf '        it publishes a SUBSET of builds, so an exact build may not be in it\n'
       printf 'fetch   the chrome-linux64.zip that index names for the build asked for\n'
-      printf 'install unzip into /opt/google/chrome, link /usr/bin/google-chrome at it,\n'
-      printf '        and give chrome_sandbox root ownership and mode 4755\n'
+      printf 'install unzip into /opt/google/chrome and link /usr/bin/google-chrome at it\n'
       ;;
-    windows/for-testing)
-      printf 'purge   as for the vendor route on this platform\n'
-      printf 'index   the automation-build index, whose URL b_ids_driver::acquire owns.\n'
+    chrome/windows/for-testing)
+      printf 'index   the first-party index for this family, whose URL b_ids_driver::acquire owns.\n'
       printf '        it publishes a SUBSET of builds, so an exact build may not be in it\n'
       printf 'fetch   the chrome-win64.zip that index names for the build asked for\n'
       printf 'install expand into the Chrome Application directory. The archive is FLAT:\n'
       printf '        chrome.exe sits beside the manifest resolve reads the build from\n'
       ;;
-    */for-testing)
-      printf 'purge   as for the vendor route on this platform\n'
-      printf 'no unpack layout is recorded for %s\n' "$OS"
+    edge/linux/for-testing)
+      printf 'index   the enterprise update index, whose URL b_ids_driver::acquire owns.\n'
+      printf '        it publishes a SHA-256 per artefact, which this run checks what arrived against\n'
+      printf 'fetch   the microsoft-edge-stable deb that index names for the build asked for\n'
+      printf 'install apt-get install of the deb, whose own post-install sets the sandbox up\n'
+      ;;
+    edge/windows/for-testing)
+      printf 'index   the enterprise update index, whose URL b_ids_driver::acquire owns.\n'
+      printf '        it publishes a SHA-256 per artefact, which this run checks what arrived against\n'
+      printf 'fetch   the MicrosoftEdgeEnterpriseX64.msi that index names for the build asked for\n'
+      printf 'install msiexec /qn, which is the silent unattended mode\n'
+      ;;
+    edge/*/vendor)
+      printf 'fetch   nothing. The vendor publishes no current-build URL for this family,\n'
+      printf '        so this route is refused and --route for-testing is the one to use\n'
       ;;
     *)
-      printf 'no plan is recorded for %s on this platform\n' "$ROUTE"
+      printf 'no plan is recorded for %s via %s on %s\n' "$BROWSER" "$ROUTE" "$OS"
       ;;
   esac
+  if [ "$OS" = linux ]; then
+    printf 'sandbox %s, which is set to root ownership and mode 4755 after the install\n' \
+      "$(sandbox_for "$BROWSER")"
+  fi
   printf 'confirm resolve exits 2 after the purge, and reports the version after the install\n'
+}
+
+# ⚠ One sentence, per platform, naming what the purge actually removes for the
+# family that was asked for. It reads the same table the purge itself reads.
+purge_line() {
+  if [ "$OS" = linux ]; then
+    printf 'apt-get remove --purge of %s, then %s and the /usr/bin links' \
+      "$(packages_for "$BROWSER")" "$(paths_for "$BROWSER")"
+  else
+    printf 'the vendor uninstaller for every install matching %s, then the program directories' \
+      "$(uninstall_match_for "$BROWSER")"
+  fi
 }
 
 if [ "$PLAN" = 1 ]; then
@@ -216,22 +309,68 @@ printf '\n-- purging every %s on this machine --\n' "$BROWSER"
 before=$(resolved_version)
 printf 'before  %s\n' "${before:-nothing resolved}"
 
+# ⭐ THE ROUTE TABLE IS PER FAMILY AND IT IS DATA. Adding a family is a row in
+# each of these three functions and a fixture, rather than a fifth arm of a case
+# statement threaded through the script. TODO/driver.md, DRIVER-10.
+#
+# ⛔ IT PURGES THE NAMED FAMILY AND NOT EVERY BROWSER. Before 2026-09-02 the
+# Linux purge removed Chrome AND Edge whatever --browser said, so a lane
+# provisioning one family destroyed the other family's lane on the same runner
+# if they ever shared one. The entry's rule is "every browser of the target
+# family", and this is that.
+
+
+
+# ⛔ THE SUID SANDBOX HELPER, WHICH IS THE DIFFERENCE BETWEEN INSTALLED AND
+# ABLE TO CAPTURE. Measured 2026-09-02 in capture.yml run 33615327503: the edge
+# lane on ubuntu-latest exited after 2.4 seconds having opened no connection,
+# and its own log named this file and the mode it needs. DRIVER-07 is why that
+# log was kept at all.
+
 purge_linux() {
-  for pkg in google-chrome-stable google-chrome-beta google-chrome-unstable microsoft-edge-stable; do
+  for pkg in $(packages_for "$BROWSER"); do
     sudo apt-get remove --purge -y "$pkg" >/dev/null 2>&1
   done
-  sudo rm -rf /opt/google/chrome /opt/google/chrome-beta /opt/google/chrome-unstable \
-              /opt/microsoft/msedge >/dev/null 2>&1
-  sudo rm -f /usr/bin/google-chrome /usr/bin/google-chrome-stable \
-             /usr/bin/microsoft-edge /usr/bin/microsoft-edge-stable >/dev/null 2>&1
+  for path in $(paths_for "$BROWSER"); do
+    sudo rm -rf "$path" >/dev/null 2>&1
+  done
+  for link in $(links_for "$BROWSER"); do
+    sudo rm -f "$link" >/dev/null 2>&1
+  done
 }
 
+# ⛔ CHECKED AFTER EVERY LINUX INSTALL, and reported rather than assumed. A
+# vendor package sets this up in its own post-install step and an unpacked
+# archive does not, so the one path that needs the fix is the one that would
+# otherwise install a browser that cannot open a socket.
+confirm_sandbox_linux() {
+  helper=$(sandbox_for "$BROWSER")
+  [ -n "$helper" ] || return 0
+  if [ ! -f "$helper" ]; then
+    printf 'sandbox no %s on this machine after the install\n' "$helper"
+    return 0
+  fi
+  sudo chown root:root "$helper" >/dev/null 2>&1
+  sudo chmod 4755 "$helper" >/dev/null 2>&1
+  printf 'sandbox %s\n' "$(stat -c '%U:%G %a %n' "$helper")"
+}
+
+# ⛔ THE FAMILY IS PASSED IN, so a run provisioning one family does not uninstall
+# the other. The uninstaller pattern and the directory list are per family, which
+# is the same table the Linux half reads. TODO/driver.md, DRIVER-10.
+
+
 purge_windows() {
+  pw_match=$(uninstall_match_for "$BROWSER")
+  pw_dir=$(vendor_dir_for "$BROWSER")
   # ⚠ EVERY INSTALL, not the first one found: an image may carry a machine-wide
   # install and a per-user one, and removing one leaves the other for `resolve`.
+  # ⚠ The two values are passed as ARGUMENTS rather than interpolated into the
+  # payload, so the shell never has to quote anything inside it.
   # shellcheck disable=SC2016 # the payload is PowerShell and the shell must not
   # expand anything in it. docs/conventions/shell.md section 1.
   powershell -NoProfile -Command '
+    param($Match, $Dir)
     $ErrorActionPreference = "SilentlyContinue"
     $roots = @(
       "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
@@ -240,7 +379,7 @@ purge_windows() {
     )
     foreach ($root in $roots) {
       foreach ($key in (Get-ItemProperty $root)) {
-        if ($key.DisplayName -match "^Google Chrome" -or $key.DisplayName -match "^Microsoft Edge$") {
+        if ($key.DisplayName -match $Match) {
           $u = $key.UninstallString
           if ($u -match "setup.exe") {
             $exe = ($u -split "`" ")[0].Trim(@("`""))
@@ -250,10 +389,12 @@ purge_windows() {
         }
       }
     }
-    Remove-Item -Recurse -Force "$env:ProgramFiles\Google\Chrome" 2>$null
-    Remove-Item -Recurse -Force "${env:ProgramFiles(x86)}\Google\Chrome" 2>$null
-    Remove-Item -Recurse -Force "$env:LOCALAPPDATA\Google\Chrome" 2>$null
-  ' >/dev/null 2>&1
+    if ($Dir) {
+      Remove-Item -Recurse -Force (Join-Path $env:ProgramFiles $Dir) 2>$null
+      Remove-Item -Recurse -Force (Join-Path ${env:ProgramFiles(x86)} $Dir) 2>$null
+      Remove-Item -Recurse -Force (Join-Path $env:LOCALAPPDATA $Dir) 2>$null
+    }
+  ' "$pw_match" "$pw_dir" >/dev/null 2>&1
 }
 
 case "$OS" in
@@ -275,10 +416,9 @@ esac
 # nearest builds in the same line, so a caller that asked for an unpublished
 # build is told what it could have asked for instead.
 #
-# Sets URL and ARCHIVE for the digest step, and leaves the unpacked tree in
-# $OUT/unpacked. Exits nonzero rather than setting a flag: a fetch that half
-# worked must not reach the install.
-for_testing_fetch() {
+# Sets URL and ARCHIVE for the digest step. Exits nonzero rather than setting
+# a flag: a fetch that half worked must not reach the install.
+index_fetch() {
   command -v curl >/dev/null 2>&1 || {
     printf 'provision-browser: curl not found, and the index has to be fetched\n' >&2
     return 2
@@ -314,6 +454,32 @@ for_testing_fetch() {
     return 1
   }
 
+  # ⭐ AND WHERE THE PUBLISHER STATES A DIGEST, WHAT ARRIVED IS COMPARED WITH
+  # IT. The Edge index states a SHA-256 for every artefact and the automation
+  # index for Chrome states none, so this fires on one route and reports the
+  # absence on the other. ⛔ A mismatch is a refusal: an artefact that is not
+  # the one the publisher named is not the one a profile would be describing.
+  PUBLISHED=$("$DRIVER" acquire --browser "$BROWSER" --version "$VERSION" \
+    --index "$OUT/index.json" --json |
+    awk -F'"published_sha256":"' 'NR==1 { split($2, a, /"/); print a[1] }')
+  if [ -n "$PUBLISHED" ]; then
+    ARRIVED=$(sha256sum "$ARCHIVE" 2>/dev/null | awk '{ print $1 }')
+    if [ "$ARRIVED" != "$PUBLISHED" ]; then
+      printf 'provision-browser: the archive is not what the index published.\n' >&2
+      printf '  published %s\n  arrived   %s\n' "$PUBLISHED" "$ARRIVED" >&2
+      return 1
+    fi
+    printf 'verified %s matches the digest the index publishes\n' "$ARRIVED"
+  else
+    printf 'verified no, this index publishes no digest to compare against\n'
+  fi
+  return 0
+}
+
+# ⚠ ONLY THE ZIP ROUTE UNPACKS. A deb and an msi are installed by the platform's
+# own tool rather than unpacked into a directory, so unpacking is the Chrome
+# route's step and not a step every family takes.
+unpack_archive() {
   rm -rf "$OUT/unpacked"
   mkdir -p "$OUT/unpacked" || return 1
   if command -v unzip >/dev/null 2>&1; then
@@ -339,6 +505,22 @@ for_testing_fetch() {
   return 0
 }
 
+# ⚠ THE PLATFORM'S OWN INSTALLER, for a family the vendor ships as a package
+# rather than as an archive. The package's own post-install step is what puts
+# the SUID sandbox helper in place, which is why `confirm_sandbox_linux` reports
+# rather than assumes.
+install_package_linux() {
+  sudo apt-get install -y "$ARCHIVE" >/dev/null 2>&1 ||
+    { sudo dpkg -i "$ARCHIVE" >/dev/null 2>&1; sudo apt-get -f install -y >/dev/null 2>&1; }
+  return 0
+}
+
+install_package_windows() {
+  native=$(cygpath -w "$ARCHIVE" 2>/dev/null || printf '%s' "$ARCHIVE")
+  msiexec //i "$native" //qn //norestart >/dev/null 2>&1
+  return 0
+}
+
 # ⛔ THE SUID SANDBOX HELPER IS SET UP, AND SKIPPING IT IS A LANE THAT CAPTURES
 # NOTHING. Measured 2026-09-02 in capture.yml run 33615327503: the edge lane on
 # ubuntu-latest exited after 2.4 seconds having opened no connection, and its
@@ -359,13 +541,15 @@ install_for_testing_linux() {
   sudo mkdir -p /opt/google/chrome || return 1
   sudo cp -a "$src/." /opt/google/chrome/ || return 1
   sudo ln -sf /opt/google/chrome/chrome /usr/bin/google-chrome || return 1
+  # ⚠ TWO NAMES, and only this route needs the copy. The archive ships an
+  # underscore and the official build's compiled-in path uses a hyphen, so an
+  # unpacked build is laid out under both. ⛔ The ownership and the mode are
+  # `confirm_sandbox_linux`'s job for every route, and doing them here as well
+  # would be the same rule in two places.
   if [ -f /opt/google/chrome/chrome_sandbox ]; then
     sudo cp -a /opt/google/chrome/chrome_sandbox /opt/google/chrome/chrome-sandbox || return 1
-    for helper in /opt/google/chrome/chrome_sandbox /opt/google/chrome/chrome-sandbox; do
-      sudo chown root:root "$helper" || return 1
-      sudo chmod 4755 "$helper" || return 1
-    done
-    printf 'sandbox %s\n' "$(stat -c '%U:%G %a %n' /opt/google/chrome/chrome-sandbox)"
+    sudo chown root:root /opt/google/chrome/chrome_sandbox || return 1
+    sudo chmod 4755 /opt/google/chrome/chrome_sandbox || return 1
   else
     printf 'provision-browser: the archive carried no chrome_sandbox\n' >&2
   fi
@@ -414,31 +598,60 @@ printf '\n-- installing %s via %s --\n' "$BROWSER" "$ROUTE"
 URL=""
 ARCHIVE=""
 
-case "$OS/$ROUTE" in
-  linux/vendor)
+# ⛔ KEYED ON THE FAMILY AS WELL AS THE PLATFORM AND THE ROUTE, which is what
+# DRIVER-10 needed: two families do not install the same way, and a case that
+# keyed on the platform alone installed Chrome whatever --browser said.
+case "$BROWSER/$OS/$ROUTE" in
+  chrome/linux/vendor)
     URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
     ARCHIVE="$OUT/google-chrome-stable_current_amd64.deb"
     curl -fsSL -o "$ARCHIVE" "$URL" || { printf 'provision-browser: fetch failed\n' >&2; exit 1; }
-    sudo apt-get install -y "$ARCHIVE" >/dev/null 2>&1 \
-      || { sudo dpkg -i "$ARCHIVE" >/dev/null 2>&1; sudo apt-get -f install -y >/dev/null 2>&1; }
+    install_package_linux
+    confirm_sandbox_linux
     ;;
-  windows/vendor)
+  chrome/windows/vendor)
     URL="https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"
     ARCHIVE="$OUT/googlechromestandaloneenterprise64.msi"
     curl -fsSL -o "$ARCHIVE" "$URL" || { printf 'provision-browser: fetch failed\n' >&2; exit 1; }
-    native=$(cygpath -w "$ARCHIVE" 2>/dev/null || printf '%s' "$ARCHIVE")
-    msiexec //i "$native" //qn //norestart >/dev/null 2>&1
+    install_package_windows
     ;;
-  linux/for-testing|windows/for-testing)
-    for_testing_fetch || exit $?
-    case "$OS" in
-      linux) install_for_testing_linux || exit 1 ;;
-      windows) install_for_testing_windows || exit 1 ;;
-    esac
+  chrome/linux/for-testing)
+    index_fetch || exit $?
+    unpack_archive || exit 1
+    install_for_testing_linux || exit 1
+    confirm_sandbox_linux
+    ;;
+  chrome/windows/for-testing)
+    index_fetch || exit $?
+    unpack_archive || exit 1
+    install_for_testing_windows || exit 1
+    ;;
+  # ⭐ EDGE IS A PACKAGE ON BOTH PLATFORMS, from the vendor's own enterprise
+  # index, which publishes a digest this run compares what arrived against.
+  edge/linux/for-testing)
+    index_fetch || exit $?
+    install_package_linux
+    confirm_sandbox_linux
+    ;;
+  edge/windows/for-testing)
+    index_fetch || exit $?
+    install_package_windows
+    ;;
+  # ⛔ A REFUSAL WITH ITS REASON, which is a complete outcome. Measured
+  # 2026-09-02: the vendor publishes no current-build URL for this family the
+  # way it does for Chrome, and its enterprise index is keyed by build. Asking
+  # for "whatever is current" of a family whose vendor does not serve that is
+  # asking for something nobody can answer.
+  edge/*/vendor)
+    printf 'provision-browser: --route vendor serves a CURRENT-build URL, and the vendor\n' >&2
+    printf '  publishes none for %s. Its index is keyed by build, so use --route for-testing\n' "$BROWSER" >&2
+    printf '  with the build you want. TODO/driver.md, DRIVER-10.\n' >&2
+    exit 2
     ;;
   *)
-    printf 'provision-browser: the %s route on %s is not implemented yet\n' "$ROUTE" "$OS" >&2
-    printf '  Run with --plan to read what it would do. TODO/driver.md, DRIVER-08.\n' >&2
+    printf 'provision-browser: the %s route for %s on %s is not implemented yet\n' \
+      "$ROUTE" "$BROWSER" "$OS" >&2
+    printf '  Run with --plan to read what it would do. TODO/driver.md, DRIVER-10.\n' >&2
     exit 2
     ;;
 esac
