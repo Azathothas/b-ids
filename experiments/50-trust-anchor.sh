@@ -134,6 +134,10 @@ head -1 "$OUT/resolved.jsonl"
 # interrupt.
 PLATFORM=$(uname -s 2>/dev/null || printf 'unknown')
 STORE_NICK="b-ids-trust-anchor"
+# ⚠ Which Windows store took the root, set by install_root and read by
+# remove_root. Empty everywhere else, and declared here so `set -u` never sees
+# it unset. TODO/harness.md, HARNESS-16.
+WINDOWS_STORE=""
 
 # ⛔ EVERY STORE COMMAND IS BOUNDED AND ITS STDIN IS CLOSED, and both halves
 # of that are paid for. MEASURED 2026-09-02, run 33590621046: the first run of
@@ -170,7 +174,38 @@ install_root() {
       if command -v cygpath >/dev/null 2>&1; then
         ir_native=$(cygpath -w "$ir_pem")
       fi
-      store certutil -addstore -user Root "$ir_native" >/dev/null 2>&1 || return 2
+      # ⛔ WHAT THE TOOL SAID IS KEPT, and this is HARNESS-16. The call
+      # discarded its own output, so run 33594293802 could report only that
+      # `certutil -addstore -user Root` returned non-zero and never why. A
+      # bounded call whose diagnosis goes to /dev/null is a measurement nobody
+      # can act on.
+      #
+      # ⚠ AND MORE THAN ONE STORE IS TRIED, in the order a browser on Windows is
+      # documented to read them, because DRIVER-04 warned that the store a
+      # browser reads is not obviously the one certutil writes to. The FIRST one
+      # that takes the root is recorded, and which one it was is part of the
+      # answer rather than a detail.
+      : > "$OUT/store.log"
+      WINDOWS_STORE=""
+      for ir_store in "-user Root" "-user CA" "Root"; do
+        printf '== certutil -addstore %s ==\n' "$ir_store" >> "$OUT/store.log"
+        # shellcheck disable=SC2086 # ir_store is a flag and its value, deliberately split
+        if store certutil -addstore $ir_store "$ir_native" >> "$OUT/store.log" 2>&1; then
+          WINDOWS_STORE="$ir_store"
+          printf '== accepted by %s ==\n' "$ir_store" >> "$OUT/store.log"
+          break
+        fi
+        printf '== refused, exit %s ==\n' "$?" >> "$OUT/store.log"
+      done
+      if [ -z "$WINDOWS_STORE" ]; then
+        # ⛔ "THIS PLATFORM CANNOT BE PROVISIONED UNATTENDED" IS AN ANSWER, and
+        # the entry says to record it as one. What the tool said is in
+        # store.log beside this run.
+        printf '50-trust-anchor: no Windows store took the root. certutil said:\n' >&2
+        cat "$OUT/store.log" >&2
+        return 2
+      fi
+      printf 'store   %s took the root\n' "$WINDOWS_STORE"
       ;;
     *) return 2 ;;
   esac
@@ -188,8 +223,15 @@ remove_root() {
         /Library/Keychains/System.keychain >/dev/null 2>&1
       ;;
     MINGW*|MSYS*|CYGWIN*|Windows*)
-      store certutil -delstore -user Root "$STORE_NICK" >/dev/null 2>&1
-      store certutil -store -user Root 2>/dev/null | grep -q "$STORE_NICK" && return 1
+      # ⛔ REMOVED FROM THE STORE IT WENT INTO, which is why install_root records
+      # which one took it. A teardown that guessed would leave a root behind on
+      # a machine, and "anything a session created on another system, that
+      # session removes" is not conditional on the guess being right.
+      rr_store="${WINDOWS_STORE:--user Root}"
+      # shellcheck disable=SC2086 # rr_store is a flag and its value, deliberately split
+      store certutil -delstore $rr_store "$STORE_NICK" >/dev/null 2>&1
+      # shellcheck disable=SC2086 # the same
+      store certutil -store $rr_store 2>/dev/null | grep -q "$STORE_NICK" && return 1
       ;;
   esac
   return 0
