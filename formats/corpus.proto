@@ -1,0 +1,172 @@
+// The corpus, as a protobuf definition. Generated: do not edit.
+// It is DERIVED FROM THE PUBLISHED CORPUS. A field absent from every published
+// profile is absent here, and a field that is null in every published profile is
+// an unmeasured comment rather than a field, because its type has not been
+// measured. Nothing publishes encoded protobuf: a consumer generates its own
+// decoder, and this project then owes no codec.
+
+syntax = "proto3";
+
+package b_ids.corpus.v1;
+
+message Corpus {
+  repeated Profile profiles = 1;
+}
+
+message Profile {
+  ProfileBrowser browser = 1;
+  ProfileCaptured captured = 2;
+  ProfileDigests digests = 3;
+  ProfileHttp http = 4;
+  ProfileHttp2 http2 = 5;
+  string id = 6;
+  string license = 7;
+  ProfilePlatform platform = 8;
+  map<string, string> provenance = 9;
+  ProfileRaw raw = 10;
+  string schema = 11;
+  ProfileTls tls = 12;
+  // unmeasured: supersedes
+}
+
+message ProfileBrowser {
+  bool branded = 1;
+  string channel = 2;
+  int64 major = 3;
+  string name = 4;
+  string version = 5;
+}
+
+message ProfileCaptured {
+  optional ProfileCapturedAcquisition acquisition = 1;
+  string at = 2;
+  optional ProfileCapturedConnections connections = 3;
+  string harness = 4;
+  string method = 5;
+  string operator = 6;
+  optional string resumption = 7;
+  repeated string switches = 8;
+  string trust = 9;
+}
+
+message ProfileCapturedAcquisition {
+  int64 bytes = 1;
+  string route = 2;
+  string sha256 = 3;
+  string url = 4;
+}
+
+message ProfileCapturedConnections {
+  int64 http2 = 1;
+  int64 tls = 2;
+}
+
+message ProfileDigests {
+  // unmeasured: akamai
+  // unmeasured: ja3
+  // unmeasured: ja4
+  // unmeasured: ja4_r
+  // unmeasured: ja4_ro
+}
+
+message ProfileHttp {
+  repeated ProfileHttpVariants[] variants = 1;
+}
+
+message ProfileHttp2 {
+  repeated ProfileHttp2Frames[] frames = 1;
+  repeated string pseudo_header_order = 2;
+  ProfileHttp2StreamPriority stream_priority = 3;
+  // unmeasured: connection_window
+  // unmeasured: priority_frames
+}
+
+message ProfileHttp2Frames[] {
+  repeated ProfileHttp2Frames[]Entries[] entries = 1;
+  string frame = 2;
+  optional bool has_priority_block = 3;
+  optional int64 stream_id = 4;
+  optional int64 window_size_increment = 5;
+}
+
+message ProfileHttp2Frames[]Entries[] {
+  int64 id = 1;
+  int64 value = 2;
+}
+
+message ProfileHttp2StreamPriority {
+  bool exclusive = 1;
+  int64 stream_dependency = 2;
+  int64 weight_wire = 3;
+}
+
+message ProfileHttpVariants[] {
+  repeated ProfileHttpVariants[]Headers[] headers = 1;
+  string variant = 2;
+}
+
+message ProfileHttpVariants[]Headers[] {
+  string name = 1;
+  string value = 2;
+}
+
+message ProfilePlatform {
+  string arch = 1;
+  optional string distribution = 2;
+  string os = 3;
+}
+
+message ProfileRaw {
+  string client_hello_hex = 1;
+  string connection_hex = 2;
+  repeated string http2_frames_hex = 3;
+  string settings_frame_hex = 4;
+  // unmeasured: record_layer
+  // unmeasured: request_line_hex
+}
+
+message ProfileTls {
+  repeated string alpn = 1;
+  repeated int64 cipher_suites = 2;
+  repeated int64 compression_methods = 3;
+  ProfileTlsEch ech = 4;
+  repeated ProfileTlsExtensions[] extensions = 5;
+  ProfileTlsGrease grease = 6;
+  repeated int64 key_exchange_groups = 7;
+  repeated ProfileTlsKeyShares[] key_shares = 8;
+  int64 legacy_version = 9;
+  int64 record_version = 10;
+  string session_id_hex = 11;
+  int64 session_id_len = 12;
+  ProfileTlsShuffled shuffled = 13;
+  repeated int64 signature_algorithms = 14;
+  // unmeasured: padding_len
+  // unmeasured: signature_algorithms_cert
+}
+
+message ProfileTlsEch {
+  int64 kem_id = 1;
+  int64 mode = 2;
+}
+
+message ProfileTlsExtensions[] {
+  string body_hex = 1;
+  int64 codepoint = 2;
+  int64 length = 3;
+}
+
+message ProfileTlsGrease {
+  repeated string bodies_hex = 1;
+  bool distinct = 2;
+  repeated int64 extension_positions = 3;
+  repeated int64 values = 4;
+}
+
+message ProfileTlsKeyShares[] {
+  int64 entry_len = 1;
+  int64 group = 2;
+}
+
+message ProfileTlsShuffled {
+  string state = 1;
+}

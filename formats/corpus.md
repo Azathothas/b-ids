@@ -1,0 +1,14 @@
+# The corpus
+
+Generated. Do not edit: every value here comes from the canonical JSON, and an edit here is lost the next time it is generated.
+
+This table carries the keys and the capture instant only. The handshake, the frames, the headers and the raw bytes are in the JSON.
+
+| id | browser | version | channel | branded | os | arch | captured_at |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| chrome-151.0.7922.173-linux64-stable | Chrome | 151.0.7922.173 | stable | true | linux | x86_64 | 2026-09-02T02:23:31Z |
+| chrome-152.0.7977.75-linux64-stable | Chrome | 152.0.7977.75 | stable | true | linux | x86_64 | 2026-09-02T14:08:20Z |
+| chrome-151.0.7922.174-win64-stable | Chrome | 151.0.7922.174 | stable | true | windows | x86_64 | 2026-09-02T01:31:39Z |
+| chrome-151.0.7922.76-win64-stable | Chrome | 151.0.7922.76 | stable | true | windows | x86_64 | 2026-09-01T08:26:33Z |
+| chrome-152.0.7977.76-win64-stable | Chrome | 152.0.7977.76 | stable | true | windows | x86_64 | 2026-09-02T14:53:12Z |
+| edge-151.0.4129.101-linux64-stable | Edge | 151.0.4129.101 | stable | true | linux | x86_64 | 2026-09-02T13:52:53Z |

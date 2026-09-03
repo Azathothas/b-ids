@@ -1,0 +1,133 @@
+{
+  "schema": "corpus-index/1",
+  "license": "0BSD",
+  "layout": "v1",
+  "profiles": [
+    {
+      "id": "chrome-151.0.7922.173-linux64-stable",
+      "browser": "Chrome",
+      "version": "151.0.7922.173",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-09-02T02:23:31Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/linux64/151.0.7922.173.json",
+        "sha256": "809e4341817f57d168ed2c884c0dc4eae3d0d6fa0ad3f7e1cfc40f31243a6664",
+        "bytes": 15837
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/linux64/151.0.7922.173.hello.hex",
+        "sha256": "694f3dee9b080ff17232e0a6c13dda790fa11307dd9550069599eecd9fbb0888",
+        "bytes": 3606
+      }
+    },
+    {
+      "id": "chrome-152.0.7977.75-linux64-stable",
+      "browser": "Chrome",
+      "version": "152.0.7977.75",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-09-02T14:08:20Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/linux64/152.0.7977.75.json",
+        "sha256": "bdb6c5ce822054ed85f2955c08d0829ca7ecf3ad1e84d511945b4a6ba593adc9",
+        "bytes": 16945
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/linux64/152.0.7977.75.hello.hex",
+        "sha256": "c68b4adad9c4220aa7025e1e88d1447cd703d04ca600af3b319860eb7177c10a",
+        "bytes": 3966
+      }
+    },
+    {
+      "id": "chrome-151.0.7922.174-win64-stable",
+      "browser": "Chrome",
+      "version": "151.0.7922.174",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-09-02T01:31:39Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/win64/151.0.7922.174.json",
+        "sha256": "7e552890738bdee26f3738fb6db6145842cc592823ec7bde47371f37c3adc31c",
+        "bytes": 15732
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/win64/151.0.7922.174.hello.hex",
+        "sha256": "7cbfa8debfcc555461c806d9177b0885a1dfb08790bfa248d97d8ccc7f6d8a99",
+        "bytes": 3542
+      }
+    },
+    {
+      "id": "chrome-151.0.7922.76-win64-stable",
+      "browser": "Chrome",
+      "version": "151.0.7922.76",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-09-01T08:26:33Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/win64/151.0.7922.76.json",
+        "sha256": "95f35b978683bd251d3d3010a25cd8abc787645f442f7e7c23dd0d8ee0bb5216",
+        "bytes": 15625
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/win64/151.0.7922.76.hello.hex",
+        "sha256": "5b9f1e59306496cf737da03c4ca520d98a3177029637c0b484941d7ab72a1355",
+        "bytes": 3542
+      }
+    },
+    {
+      "id": "chrome-152.0.7977.76-win64-stable",
+      "browser": "Chrome",
+      "version": "152.0.7977.76",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-09-02T14:53:12Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/win64/152.0.7977.76.json",
+        "sha256": "2c7f36f8b3cda1f4143c0f49e2095c10cf5fde53e83db65823ac37f672a5e036",
+        "bytes": 16998
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/win64/152.0.7977.76.hello.hex",
+        "sha256": "d289843fa92350d35a0e96586459cdfbdae9d786f21c6edbf1b7a2285eca6dd9",
+        "bytes": 3966
+      }
+    },
+    {
+      "id": "edge-151.0.4129.101-linux64-stable",
+      "browser": "Edge",
+      "version": "151.0.4129.101",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-09-02T13:52:53Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/edge/stable/linux64/151.0.4129.101.json",
+        "sha256": "02c1ad7c2936db983656f6fe0434c749b02829ef26360d8da2ff485de41d8dea",
+        "bytes": 15990
+      },
+      "hello": {
+        "path": "raw/v1/edge/stable/linux64/151.0.4129.101.hello.hex",
+        "sha256": "56b16a972c5a19ee89e127b3fe1cd65de1abab251d5499bb3e1d029f8713f66f",
+        "bytes": 3478
+      }
+    }
+  ]
+}
