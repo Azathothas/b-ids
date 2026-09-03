@@ -22,9 +22,10 @@ entries a check can read. TOOL-14.
 [`TODO/validator.md`](TODO/validator.md) `VALID-04`,
 [`TODO/ci.md`](TODO/ci.md) `CI-05`, [`TODO/driver.md`](TODO/driver.md)
 `DRIVER-06`.
-**Deployed:** no. No tag was created, no asset uploaded, no branch pushed and no
-workflow run. ⚠ The publishing workflow now EXISTS, so the next push to the
-default branch is what creates the data branch.
+**Deployed:** ⭐ the data branch, and nothing else. The push that landed this
+change ran the workflow it adds, which created `origin/data` with 200 files.
+⛔ No tag was created, no asset uploaded and no release cut: a tag is the only
+thing that produces one, and pushing one is the operator's act.
 
 What landed:
 
@@ -54,6 +55,12 @@ What landed:
   report that runs whatever happened.
 - Three checks joined the gate: `check-publish`, `check-cold-start` and
   `check-support-matrix`, each with a twin and a comparison row.
+- ⭐ **The data branch exists.** The push that landed this change triggered the
+  workflow it adds: the branch was created with 200 files and its tree was
+  compared object for object with a local build. ⚠ The release job of the same
+  run skipped, because no tag was pushed. `check-data-branch` compares against
+  the published branch now instead of reporting a skip, in both halves, and its
+  schema moved to `check-data-branch/2` because the object gained a field.
 
 ### 2026-09-03T05:40:00Z - one assembler, two publishing surfaces
 

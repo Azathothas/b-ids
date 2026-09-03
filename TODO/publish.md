@@ -292,6 +292,82 @@ built on, and answers in four cases:
 | a workflow that pushes it | ⚠ Deliberately absent, for the same reason. The assembler and the checks are here; the trigger is theirs. |
 | the cache documented next to the URL | Named in the approach. There is no URL yet, and a documented cache duration for a service nobody is serving from would be a number nobody measured. |
 
+### ⭐ 2026-09-03, later the same day: the branch exists, and the leg that could not run does
+
+⛔ **`PUB-10` armed the trigger and the push that landed it created the
+branch.** The first run of `publish.yml` on commit `8361ee7`:
+
+```text
+$ gh run view 33723601879 --json jobs --jq '.jobs[] | "\(.name)\t\(.conclusion)"'
+assemble, and check both surfaces        success
+the data branch, appended to             success
+the release, cut from a pushed tag       skipped
+```
+
+⚠ **The release job skipped and that is correct**: no tag was pushed, and a tag
+is the only thing that cuts a release.
+
+#### ⭐ Verified byte for byte, which is the operator's own first step
+
+```text
+$ git ls-tree -r --name-only refs/remotes/origin/data | wc -l
+200
+$ git log -1 --format='%an %s' refs/remotes/origin/data
+github-actions[bot] corpus: 198 artefact(s), built from 91d175e84340...
+```
+
+⛔ **The comparison is between two git TREE OBJECTS**, which is what "byte for
+byte" means for a branch: one tree object is one set of bytes, over every path
+and every mode. The regenerated tree and the published one are the same object.
+
+#### ⛔ The skip that had stopped being honest
+
+⚠ **This check reported `published: remote` and still printed "push it once and
+this leg starts running".** The branch was there; nothing compared against it.
+⛔ A skip whose own condition has been met is worse than a failure, because it
+reads as a pass with a caveat nobody re-checks.
+
+Both halves compare now, and the answer is in the JSON as `matched`, so
+`check-twins` can see whether both did it:
+
+```text
+$ sh scripts/common/check-data-branch.sh
+data branch ok: 200 file(s) regenerated, identical over two builds,
+  198 of them with a checksum in the manifest and in SHA256SUMS, and no
+  source, vendored dependency or reference corpus among them.
+  ⭐ The data branch is remote and its tree is 6d0b4c1703f3…, which is what this
+  corpus derives to. One tree object is one set of bytes.
+  ⛔ Nothing was pushed and no branch was created.
+rc=0
+```
+
+⚠ **The tree object is abbreviated at the ellipsis**, for the reason `PUB-01`s
+digest and `TOOL-03`s are: written out it is a 40-character hex run in a
+tracked file, and `check-no-secrets --public` excludes one inside a markdown
+code span rather than inside a fenced block. ⛔ It is a CONTENT ADDRESS rather
+than a credential, and abbreviating it was chosen over widening a security rule.
+
+```text
+{"schema":"check-data-branch/2","files":198,"present":200,"recorded":198,"cases":11,"published":"remote","matched":true,"problems":0}
+```
+
+⚠ **The schema moved to `check-data-branch/2`** because the object gained a
+field, and a reader that was told the shape is told the shape changed.
+
+#### ⛔ Two PowerShell traps, in one line, found by the twin disagreeing
+
+⚠ **The PowerShell half staged nothing and produced the EMPTY tree**, which
+compares unequal to everything, so it reported a difference that did not exist.
+Two separate causes in one command:
+
+| written | what PowerShell did |
+| --- | --- |
+| `--git-dir=(Join-Path $root '.git')` | ⛔ passed `--git-dir=` and the path as TWO arguments. git then had no directory, warned `unable to access '/config'` and staged nothing. Build the string first. |
+| `add --all --force -- .` | ⚠ consumed the bare `--` before git saw it, so the pathspec was lost |
+
+⭐ **Neither is visible by reading**, and the sh half is correct with the same
+words. The twin comparison is what said so.
+
 ---
 
 ## PUB-03. Routes a program with nothing but `curl` can read

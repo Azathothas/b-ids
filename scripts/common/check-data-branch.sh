@@ -152,18 +152,48 @@ CASES=$(awk '/^running [0-9]+ tests/ { print $2; exit }' "$OUT/tests.log")
 [ "${CASES:-0}" -ge "$CASES_WANTED" ] 2>/dev/null ||
   note "the suite ran ${CASES:-0} case(s) where at least $CASES_WANTED were expected"
 
-# ⛔ THE LEG THAT CANNOT RUN, REPORTED AS A SKIP. The branch does not exist, so
-# there is nothing published to compare the regenerated tree against.
+# ⛔ THE LEG THAT COULD NOT RUN, AND NOW DOES. Until 2026-09-03 the branch did
+# not exist and this reported a skip with the sentence "push it once and this leg
+# starts running". ⚠ It was pushed and the sentence stayed, which is a skip that
+# had stopped being honest: the branch was there and nothing compared against it.
 PUBLISHED=absent
+REF=""
 if git rev-parse -q --verify "refs/heads/$BRANCH" >/dev/null 2>&1; then
   PUBLISHED=local
+  REF="refs/heads/$BRANCH"
 elif git rev-parse -q --verify "refs/remotes/origin/$BRANCH" >/dev/null 2>&1; then
   PUBLISHED=remote
+  REF="refs/remotes/origin/$BRANCH"
+fi
+
+# ⭐ THE COMPARISON IS BETWEEN TWO GIT TREE OBJECTS, which is what "byte for
+# byte" means for a branch: one tree object is one set of bytes, over every path
+# and every mode. The regenerated tree is written into a TEMPORARY index, so the
+# repository's own index is never touched.
+MATCHES=""
+if [ -n "$REF" ]; then
+  IDX="$OUT/compare.index"
+  rm -f "$IDX"
+  if ( cd "$OUT/a" && GIT_INDEX_FILE="$IDX" git --git-dir="$REPO_ROOT/.git" --work-tree=. \
+    add --all --force -- . ) >/dev/null 2>&1; then
+    LOCAL_TREE=$(GIT_INDEX_FILE="$IDX" git write-tree 2>/dev/null || true)
+    PUBLISHED_TREE=$(git rev-parse -q --verify "$REF^{tree}" 2>/dev/null || true)
+    if [ -z "${LOCAL_TREE:-}" ] || [ -z "${PUBLISHED_TREE:-}" ]; then
+      note "the $BRANCH branch is $PUBLISHED and neither tree could be read, so nothing was compared"
+    elif [ "$LOCAL_TREE" = "$PUBLISHED_TREE" ]; then
+      MATCHES="$LOCAL_TREE"
+    else
+      note "the regenerated tree is $LOCAL_TREE and $REF carries $PUBLISHED_TREE, so what is published is not what this corpus derives to"
+    fi
+  else
+    note "the regenerated tree could not be written into a temporary index, so nothing was compared"
+  fi
 fi
 
 if [ "$JSON" = 1 ]; then
-  printf '{"schema":"check-data-branch/1","files":%s,"present":%s,"recorded":%s,"cases":%s,"published":"%s","problems":%s}\n' \
-    "${FILES:-0}" "$PRESENT" "$RECORDED" "${CASES:-0}" "$PUBLISHED" "$COUNT"
+  printf '{"schema":"check-data-branch/2","files":%s,"present":%s,"recorded":%s,"cases":%s,"published":"%s","matched":%s,"problems":%s}\n' \
+    "${FILES:-0}" "$PRESENT" "$RECORDED" "${CASES:-0}" "$PUBLISHED" \
+    "$([ -n "$MATCHES" ] && echo true || echo false)" "$COUNT"
   [ "$COUNT" = 0 ] || exit 1
   exit 0
 fi
@@ -172,8 +202,15 @@ if [ "$COUNT" = 0 ]; then
   printf 'data branch ok: %s file(s) regenerated, identical over two builds,\n' "$PRESENT"
   printf '  %s of them with a checksum in the manifest and in SHA256SUMS, and no\n' "$RECORDED"
   printf '  source, vendored dependency or reference corpus among them.\n'
-  printf '  ⚠ A SKIP IS NOT A PASS: the %s branch is %s, so the regenerated tree was\n' "$BRANCH" "$PUBLISHED"
-  printf '  compared against nothing. Push it once and this leg starts running.\n'
+  if [ -n "$MATCHES" ]; then
+    printf '  ⭐ The %s branch is %s and its tree is %s, which is what this\n' \
+      "$BRANCH" "$PUBLISHED" "$MATCHES"
+    printf '  corpus derives to. One tree object is one set of bytes.\n'
+  else
+    printf '  ⚠ A SKIP IS NOT A PASS: the %s branch is %s, so the regenerated tree was\n' \
+      "$BRANCH" "$PUBLISHED"
+    printf '  compared against nothing. Push it once and this leg starts running.\n'
+  fi
   printf '  ⛔ Nothing was pushed and no branch was created.\n'
   exit 0
 fi

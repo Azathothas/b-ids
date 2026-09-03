@@ -184,21 +184,67 @@ if ($cases -lt $want.Count) {
     [void]$problems.Add("  the suite ran $cases case(s) where at least $($want.Count) were expected")
 }
 
-# ⛔ THE LEG THAT CANNOT RUN, REPORTED AS A SKIP.
+# ⛔ THE LEG THAT COULD NOT RUN, AND NOW DOES. Until 2026-09-03 the branch did
+# not exist and this reported a skip saying "push it once and this leg starts
+# running". ⚠ It was pushed and the sentence stayed, which is a skip that had
+# stopped being honest.
 $published = 'absent'
+$ref = ''
 & git rev-parse -q --verify ("refs/heads/" + $branch) > $null 2>&1
-if ($LASTEXITCODE -eq 0) { $published = 'local' }
+if ($LASTEXITCODE -eq 0) { $published = 'local'; $ref = "refs/heads/$branch" }
 else {
     & git rev-parse -q --verify ("refs/remotes/origin/" + $branch) > $null 2>&1
-    if ($LASTEXITCODE -eq 0) { $published = 'remote' }
+    if ($LASTEXITCODE -eq 0) { $published = 'remote'; $ref = "refs/remotes/origin/$branch" }
+}
+
+# ⭐ TWO GIT TREE OBJECTS, which is what "byte for byte" means for a branch: one
+# tree object is one set of bytes, over every path and every mode. The
+# regenerated tree goes into a TEMPORARY index, so the repository's own index is
+# never touched.
+$matched = $false
+if ($ref) {
+    $indexFile = Join-Path $out 'compare.index'
+    if (Test-Path -LiteralPath $indexFile) { Remove-Item -LiteralPath $indexFile -Force }
+    $here = Get-Location
+    try {
+        Set-Location -LiteralPath (Join-Path $out 'a')
+        $env:GIT_INDEX_FILE = $indexFile
+        # ⛔ THE ARGUMENT IS BUILT AS ONE STRING FIRST. `--git-dir=(Join-Path
+        # ...)` is not an interpolation: PowerShell passes `--git-dir=` and the
+        # path as TWO arguments, so git gets an empty directory, warns about
+        # `/config` and stages nothing. The empty tree 4b825dc6 is what that
+        # looks like, and it compares unequal to everything, which is how this
+        # was found.
+        # ⚠ And no bare `--` separator, which PowerShell consumes before a
+        # native command ever sees it.
+        $gitDir = Join-Path $root '.git'
+        & git "--git-dir=$gitDir" '--work-tree=.' add --all --force '.' > $null 2>&1
+        $localTree = (& git write-tree 2>$null | Select-Object -First 1)
+    }
+    finally {
+        Remove-Item Env:GIT_INDEX_FILE -ErrorAction SilentlyContinue
+        Set-Location -LiteralPath $here
+    }
+    $publishedTree = (& git rev-parse -q --verify ($ref + '^{tree}') 2>$null | Select-Object -First 1)
+    if (-not $localTree -or -not $publishedTree) {
+        [void]$problems.Add("  the $branch branch is $published and neither tree could be read, so nothing was compared")
+    }
+    elseif ($localTree.Trim() -eq $publishedTree.Trim()) {
+        $matched = $true
+        $matchedTree = $localTree.Trim()
+    }
+    else {
+        [void]$problems.Add("  the regenerated tree is $($localTree.Trim()) and $ref carries $($publishedTree.Trim()), so what is published is not what this corpus derives to")
+    }
 }
 
 $count = $problems.Count
 
 if ($Json) {
-    Write-Output ('{"schema":"check-data-branch/1","files":' + $files + ',"present":' + $present +
+    Write-Output ('{"schema":"check-data-branch/2","files":' + $files + ',"present":' + $present +
                   ',"recorded":' + $recorded + ',"cases":' + $cases +
-                  ',"published":"' + $published + '","problems":' + $count + '}')
+                  ',"published":"' + $published + '","matched":' +
+                  $matched.ToString().ToLowerInvariant() + ',"problems":' + $count + '}')
     if ($count -gt 0) { exit 1 }
     exit 0
 }
@@ -207,8 +253,14 @@ if ($count -eq 0) {
     Write-Output "data branch ok: $present file(s) regenerated, identical over two builds,"
     Write-Output "  $recorded of them with a checksum in the manifest and in SHA256SUMS, and no"
     Write-Output '  source, vendored dependency or reference corpus among them.'
-    Write-Output "  `u{26A0} A SKIP IS NOT A PASS: the $branch branch is $published, so the regenerated tree was"
-    Write-Output '  compared against nothing. Push it once and this leg starts running.'
+    if ($matched) {
+        Write-Output "  `u{2B50} The $branch branch is $published and its tree is $matchedTree, which is what this"
+        Write-Output '  corpus derives to. One tree object is one set of bytes.'
+    }
+    else {
+        Write-Output "  `u{26A0} A SKIP IS NOT A PASS: the $branch branch is $published, so the regenerated tree was"
+        Write-Output '  compared against nothing. Push it once and this leg starts running.'
+    }
     Write-Output "  `u{26D4} Nothing was pushed and no branch was created."
     exit 0
 }

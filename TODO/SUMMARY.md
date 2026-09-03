@@ -17,7 +17,7 @@ list. ⛔ Overwritten every session.
 | entries now | 100 total, 14 open, 0 blocked, 86 done |
 | tests | 380 at the start, 401 at the end |
 | gate | 35 at the start with one of them skipped, 38 at the end with none skipped and `check-twins` included. `check-publish`, `check-cold-start` and `check-support-matrix` joined it, each with a twin and a comparison row |
-| published | ⛔ nothing. No tag, no asset, no branch, no workflow run |
+| published | ⭐ the `data` branch, 200 files, by the first run of `publish.yml` on the push that landed it, verified tree-for-tree against a local build. ⛔ No tag, no asset and no release: a tag is the only thing that cuts one |
 
 ---
 
@@ -52,5 +52,5 @@ list. ⛔ Overwritten every session.
 | | |
 | --- | --- |
 | ⭐ measured | six profiles emit whole, 1739 to 1983 bytes; four of the six share one JA4 and the split is by major rather than by platform or browser; the specification's own `8daaf6152771` reproduced from this project's captures by three independent paths |
-| ⚠ not measured | the publishing workflow has never run; the `for-testing` capture lane has never run; the cold-start job has never run on a cold machine |
-| ⛔ not done | nothing was published anywhere, and `corpus/` and `raw/` were not touched |
+| ⚠ not measured | the release half of the publishing workflow has never run, because no tag has been pushed; the `for-testing` capture lane has never run; the cold-start job has never run on a cold machine |
+| ⛔ not done | no release was cut, and `corpus/` and `raw/` were not touched. Removing them is sequenced after `PUB-11` |

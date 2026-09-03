@@ -20,6 +20,8 @@ session ran      2026-09-03, unattended, ended by the operator
 baseline         gate ok: 34 passed, 1 skipped (check-twins, which --fast skips)
                  on this Windows host at the start. 380 tests.
 entries          total 100  open 14  blocked 0  done 86
+published        the data branch exists: 200 files on origin/data since
+                 2026-09-03, pushed by publish.yml and verified tree-for-tree
 gate             three checks joined it today: check-publish, check-cold-start
                  and check-support-matrix, each with a twin and a comparison row.
                  Closing run: gate ok, all 38 checks passed. 401 tests.
@@ -81,6 +83,8 @@ the same profile, field by field.
 | ⚠ check 3 answers not-checkable over a profile that keeps header names only | which is the default. The enforcement half `DRIVER-06` called existing fires only on a capture that turned values on |
 | ⛔ this session own placeholder check fired in one half and not the other | PowerShell `-match` is case-INSENSITIVE and the twin `grep -E` is not, so an ordinary sentence containing three lower-case words was a template instruction to one half. Found by `check-twins`, fixed with `-cmatch` |
 | ⛔ shellcheck refused three lines of a check written this session | `A && B || C` is not if-then-else, and the gate treats that as a failure rather than a note. Rewritten as a function with an explicit `if` |
+| ⛔ a skip whose own condition had been met still reported a skip | `check-data-branch` said the branch was `remote` and printed "push it once and this leg starts running" in the same breath. The branch was there and nothing compared against it |
+| ⛔ two PowerShell argument traps in one line, found by the twin disagreeing | `--git-dir=(expr)` passes two arguments rather than one, and a bare `--` is consumed before a native command sees it. The half staged nothing and produced the empty tree, which compares unequal to everything |
 | a heredoc ate a backslash in a Rust literal, twice | the tree's own tooling note says a heredoc is not reliably literal here, and the payload has to go through `write-file.mjs` |
 
 ---
@@ -168,21 +172,22 @@ holes; 4 vector cases, 5 escape-hatch cases and 4 client cases; the record at
 
 ## Open questions for the operator
 
-### ⭐ One, and it is the first run of something that writes
+### ⭐ None about the data branch any more, because it exists
 
-⛔ **The publishing workflow is armed and has never run.** Pushing this change
-to the default branch triggers it, and its data-branch job creates the `data`
-branch from the 198 artefacts the assembler produces.
+⛔ **The workflow ran and the branch is published.** The push that landed
+`PUB-10` triggered it: the assemble job and the data-branch job both succeeded,
+the release job skipped because no tag was pushed, and `origin/data` carries
+200 files committed by the platform's own actor.
 
-**Recommendation: let it run, then verify the branch before anything else
-happens.** That is the operator's own sequence. The two conditions in front of
-the push are the crate's rewrite rule and the remote's refusal of a
-non-fast-forward, and a run that finds the branch already holding those bytes
-pushes nothing.
+⭐ **Verified, not assumed.** The tree object the branch carries is the tree a
+local build of this corpus produces, compared object for object, which is what
+"byte for byte" means for a branch. `check-data-branch` does that comparison
+now in both halves and reports it as `matched` in its JSON, so the twin row
+proves both halves did it.
 
-**What to check after the first run**: that `origin/data` carries 198 files,
-that its tree object matches what the run reported, and that
-`sh scripts/common/check-data-branch.sh` stops reporting `published: absent`.
+⛔ **The next step is the operator's sequence, not a question**: `PUB-11` moves
+the eleven check pairs that read the corpus from the working tree, and only then
+does `corpus/` leave the default branch.
 
 ### ⚠ Two things this session deliberately did not do
 

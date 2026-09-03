@@ -21,24 +21,25 @@ than a document about the project.
 
 ---
 
-## ⭐ The one thing to know before anything else
+## The one thing to know before anything else
 
-⛔ **The publishing workflow exists now, and a push to the default branch
-triggers it.** Its data-branch job creates `data` from the 198 artefacts the
-assembler produces, appends to it on later runs, and never force-pushes. That is
-the first step of the sequence the operator ruled, and the next session's job
-starts after it: verify the branch, then `PUB-11` moves the eleven check pairs
-that read the corpus from the working tree, and only then does `corpus/` leave
-`main`.
+⭐ **The `data` branch exists.** The push that landed `PUB-10` triggered the
+workflow, its data-branch job created the branch, and the tree it carries was
+compared object for object with a local build of this corpus. Every later push
+to the default branch APPENDS to it and never force-pushes.
 
-⚠ **Nothing has run yet.** No tag, no asset, no branch, no workflow run from
-this machine.
+⛔ **So the next step is `PUB-11`**, which moves the eleven check pairs that
+read the corpus from the working tree. Only after that does `corpus/` leave
+`main`, and that step is the operator's.
+
+⚠ **No release has been cut**, because no tag has been pushed. The release job
+of the same workflow skipped, which is what it should do.
 
 ---
 
 ## The conditions this session leaves
 
-⭐ **The corpus is usable rather than only accurate.** `b-ids` hands a program a
+**The corpus is usable rather than only accurate.** `b-ids` hands a program a
 profile with the corpus embedded and no network in it; `b-ids-cli` puts one back
 on a wire and the harness reads back the same profile, field by field, with 1951
 of 1983 bytes identical to the browser's own.
