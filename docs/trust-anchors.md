@@ -43,9 +43,10 @@ instant, the declared extension length and every identifier **in the browser's
 own order**. ⛔ The order is part of what was measured; sorting it would publish
 a list no browser sent.
 
-⚠ **Most profiles do not carry the extension at all.** Measured 2026-09-02: one
-of the five profiles in this corpus carries it, and every Chrome `151` captured
-here does not. That is a fact about those builds rather than a gap here.
+⚠ **Most profiles do not carry the extension at all.** Re-measured 2026-09-03
+with `b-ids-corpus anchors`, whose last line is a fixed count: two of the six
+profiles in this corpus carry it, both of them Chrome `152`, and every Chrome
+`151` captured here does not. That is a fact about those builds rather than a gap here.
 
 ---
 

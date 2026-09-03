@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-license-consistency check-release check-data-branch"
+COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-license-consistency check-release check-data-branch check-publish check-cold-start check-support-matrix"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -251,6 +251,16 @@ compared_directly 'check-release' ||   check_simple 'check-release' sh "$HERE/ch
 # that property is free right up until somebody rewrites the branch.
 # TODO/publish.md, PUB-02.
 compared_directly 'check-data-branch' ||   check_simple 'check-data-branch' sh "$HERE/check-data-branch.sh"
+# ⛔ THE TRIGGER, AND THE TWO CONDITIONS THAT STAND BETWEEN IT AND A REWRITTEN
+# BRANCH. A force push over the data branch discards every commit a consumer
+# pinned. TODO/publish.md, PUB-10.
+compared_directly 'check-publish' ||   check_simple 'check-publish' sh "$HERE/check-publish.sh"
+# ⛔ EVERY WARM RUN PASSES OVER A BROKEN COLD PATH, and nothing else in this
+# tree catches one. TODO/ci.md, CI-05.
+compared_directly 'check-cold-start' ||   check_simple 'check-cold-start' sh "$HERE/check-cold-start.sh"
+# ⛔ A CELL THAT SAYS "approximately" IS WORSE THAN ONE THAT SAYS "cannot", and a
+# hole whose evidence stopped resolving is a claim. TODO/emitters.md, EMIT-01.
+compared_directly 'check-support-matrix' ||   check_simple 'check-support-matrix' sh "$HERE/check-support-matrix.sh"
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
 # build that carries it gets a published list with its date. TODO/corpus.md,
 # CORPUS-04.

@@ -1,0 +1,376 @@
+# The two publishing surfaces, triggered. TODO/publish.md, PUB-10.
+#
+# ⭐ WHAT THIS ADDS THAT NOTHING ELSE DID. PUB-01 built the assembler and the
+# release rules, PUB-02 built the data-branch rules, and both closed with
+# checks that publish nothing. Until this file existed, no event in this
+# repository reached either of them: the project could assemble what it
+# publishes and had no way to publish it.
+#
+# ⛔ THREE TRIGGERS, RULED BY THE OPERATOR 2026-09-03. A manual dispatch, a push
+# to the default branch, and a pushed tag. The first two publish the DATA
+# BRANCH; the third cuts a RELEASE. A tag is the operator's own act, which is
+# why it is the only thing that produces a release.
+#
+# ⛔ THE WRITE IS JOB-SCOPED AND IT IS THE RUN'S OWN TOKEN. `contents: write`
+# sits on the two publishing jobs and nowhere else, and never a personal access
+# token. The job that assembles and checks holds `contents: read`, so the thing
+# that decides whether a push may happen cannot itself push.
+#
+# ⛔ THE DATA BRANCH IS APPEND-ONLY AND THIS FILE NEVER FORCE-PUSHES. Two
+# conditions from two sources stand between this run and a rewritten branch, and
+# a guard on something irreversible is two conditions or it is one edit away
+# from being none:
+#
+#   1. b_ids_corpus::publish::would_rewrite, called through `b-ids-corpus
+#      data-branch`, which refuses a commit built on anything but the branch
+#      head. ⚠ THE CASE THAT MATTERS is a commit with NO parent: an orphan
+#      pushed over an existing branch discards every commit on it, which is
+#      exactly how a branch built with `--orphan` destroys itself on its second
+#      run. The four cases are in crates/b-ids-corpus/tests/publish.rs.
+#   2. the remote's own refusal. The push carries no `--force`, no
+#      `--force-with-lease` and no `+` refspec, so a push that is not a
+#      fast-forward is rejected by the server rather than by this file.
+#
+# ⛔ NOTHING HERE DECIDES A RULE. The tag shape, the immutability of a released
+# tag, the rewrite verdict and the release body are all the crate's, reached
+# through `b-ids-corpus release` and `b-ids-corpus data-branch`. A workflow that
+# decided any of them in shell would be a second statement of the rule, and the
+# day the two disagreed the published data would be the thing that lost.
+#
+# ⚠ THE ONE BRANCH NAME IN THIS TREE'S WORKFLOWS IS BELOW, and it is here
+# because the operator ruled the trigger rather than because a filter was
+# convenient. GitHub does not accept an expression in an `on:` filter, so the
+# default branch cannot be named indirectly.
+#
+# ⛔ THIRD-PARTY ACTIONS ARE PINNED TO A COMMIT, NOT A TAG. Every pin below is
+# one this tree already carries, resolved rather than recalled:
+#
+#   gh api repos/actions/checkout/git/ref/tags/v7.0.1 --jq .object.sha
+#   gh api repos/actions/upload-artifact/git/ref/tags/v7.0.1 --jq .object.sha
+#   gh api repos/actions/download-artifact/git/ref/tags/v8.0.1 --jq .object.sha
+#
+# ⚠ NOTHING HERE NAMES AN OWNER OR A REPOSITORY.
+
+name: publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v1.*']
+
+# Least privilege at the top. The two jobs that write say so themselves.
+permissions:
+  contents: read
+
+# ⛔ CANCEL-IN-PROGRESS IS FALSE, unlike every other workflow here. A run
+# cancelled between building a commit and pushing it leaves nothing behind, and
+# a run cancelled between two pushes leaves half of what it was asked to
+# publish. Queueing is the cheaper failure.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ⭐ ONE ASSEMBLER, ONE BUILD, BOTH SURFACES. The release archive and the data
+  # branch take the SAME bytes, because two builds is two answers to what this
+  # project publishes and the day they differ nobody finds out from either.
+  # ⛔ THIS JOB CANNOT PUSH. It holds `contents: read`, so the job that decides
+  # whether the tree is publishable is not the job that publishes it.
+  assemble:
+    # manual: sh scripts/common/check-publish.sh
+    name: assemble, and check both surfaces
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      files: ${{ steps.build.outputs.files }}
+      from: ${{ steps.build.outputs.from }}
+    steps:
+      # ⛔ fetch-depth: 0 IS LOAD-BEARING. check-release asks git which tags
+      # exist and check-corpus runs inside check-data-branch's suite; both are
+      # answered "none" by a shallow clone.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: the pinned Rust toolchain
+        shell: bash
+        run: |
+          rustup show active-toolchain
+          cargo --version
+
+      # ⛔ THE CHECKS RUN BEFORE ANYTHING IS WRITTEN, and both publishing jobs
+      # need this one, so a tree that fails either is a tree nothing publishes.
+      - name: the release build is reproducible and the tag is free
+        shell: bash
+        run: sh scripts/common/check-release.sh --dry-run
+
+      - name: the branch content is what the corpus derives to
+        shell: bash
+        run: sh scripts/common/check-data-branch.sh
+
+      # ⭐ THE WORKFLOW ITSELF IS CHECKED BY THE SAME RUN IT GOVERNS. A file that
+      # grew a force push, lost a trigger or moved its write to the top of the
+      # file fails here rather than on the day it rewrites a branch.
+      - name: this workflow declares what it must
+        shell: bash
+        run: sh scripts/common/check-publish.sh
+
+      - name: assemble the tree, once
+        id: build
+        shell: bash
+        run: |
+          rm -rf .tmp/publish
+          cargo run -q -p b-ids-corpus -- publish --root . --out .tmp/publish/tree > .tmp/publish.log
+          cat .tmp/publish.log
+          line=$(awk '/^corpus=publish /{ line = $0 } END { print line }' .tmp/publish.log)
+          files=$(printf '%s' "$line" | awk -F'files:' '{ split($2, a, / /); print a[1] }')
+          from=$(printf '%s' "$line" | awk -F'from:' '{ split($2, a, / /); print a[1] }')
+          [ -n "$files" ] && [ "$files" -ge 1 ]
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+          echo "from=$from" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: publish-tree
+          path: .tmp/publish/tree
+          if-no-files-found: error
+          retention-days: 30
+
+  # ⛔ THE DATA BRANCH. Append-only, never force-pushed, and it carries only what
+  # the assembler produced.
+  data-branch:
+    # manual: sh scripts/common/check-data-branch.sh
+    name: the data branch, appended to
+    needs: [assemble]
+    # ⚠ NOT ON A TAG. A tag cuts a release; the branch tracks the default
+    # branch, and pushing the same bytes from two events would put two commits
+    # on it for one change.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: publish-tree
+          path: tree
+
+      # ⭐ WHAT ARRIVED IS WHAT WAS BUILT, checked with the file a consumer uses.
+      # The tree travelled through an artefact store, and the checksums this
+      # project publishes are exactly the thing that says it arrived intact.
+      - name: what was downloaded is what was assembled
+        shell: bash
+        run: |
+          cd tree
+          sha256sum -c SHA256SUMS > /dev/null
+          n=$(grep -c . SHA256SUMS)
+          echo "$n file(s) verified against their published checksums"
+
+      - name: what the branch holds now
+        id: head
+        shell: bash
+        run: |
+          git fetch --no-tags origin '+refs/heads/data:refs/remotes/origin/data' || true
+          head=$(git rev-parse -q --verify refs/remotes/origin/data || true)
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+          echo "data branch head: ${head:-absent}"
+
+      # ⛔ THE COMMIT IS BUILT WITH PLUMBING, over a temporary index, so the
+      # checkout is never touched. A step that fails here leaves the working
+      # tree exactly as it was.
+      # ⚠ A RUN THAT WOULD CHANGE NOTHING PUSHES NOTHING. The tree object is
+      # compared with the one the branch already holds, so a push to the default
+      # branch that did not move the corpus does not add an empty commit.
+      - name: the commit, built without a working tree
+        id: commit
+        shell: bash
+        env:
+          HEAD_SHA: ${{ steps.head.outputs.head }}
+          FILES: ${{ needs.assemble.outputs.files }}
+          FROM: ${{ needs.assemble.outputs.from }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          GIT_INDEX_FILE="$RUNNER_TEMP/data.index"
+          export GIT_INDEX_FILE
+          rm -f "$GIT_INDEX_FILE"
+          ( cd tree && git --git-dir="$GITHUB_WORKSPACE/.git" --work-tree=. add --all --force -- . )
+          tree_sha=$(git write-tree)
+          echo "tree=$tree_sha" >> "$GITHUB_OUTPUT"
+          if [ -n "$HEAD_SHA" ] && [ "$(git rev-parse "$HEAD_SHA^{tree}")" = "$tree_sha" ]; then
+            echo "the branch already holds these bytes, so this run pushes nothing"
+            echo "commit=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          message="corpus: $FILES artefact(s), built from $FROM"
+          if [ -n "$HEAD_SHA" ]; then
+            commit=$(git commit-tree "$tree_sha" -p "$HEAD_SHA" -m "$message")
+          else
+            commit=$(git commit-tree "$tree_sha" -m "$message")
+          fi
+          parent=$(git rev-parse -q --verify "$commit^" || true)
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "parent=$parent" >> "$GITHUB_OUTPUT"
+          echo "commit $commit over tree $tree_sha, parent ${parent:-none}"
+
+      # ⛔ CONDITION ONE OF TWO, AND IT IS THE CRATE'S RULE RATHER THAN THIS
+      # FILE'S. `data-branch` exits 1 on a rewrite, and a `run:` step is a shell
+      # with errexit on, so the exit code is read from the process that produced
+      # it with no pipe in the way.
+      - name: the push would append, and the crate is what says so
+        if: steps.commit.outputs.commit != ''
+        shell: bash
+        env:
+          HEAD_SHA: ${{ steps.head.outputs.head }}
+          NEW_PARENT: ${{ steps.commit.outputs.parent }}
+          NEW_COMMIT: ${{ steps.commit.outputs.commit }}
+        run: |
+          cargo run -q -p b-ids-corpus -- data-branch --head "$HEAD_SHA" --parent "$NEW_PARENT"
+          if [ -n "$HEAD_SHA" ]; then
+            git merge-base --is-ancestor "$HEAD_SHA" "$NEW_COMMIT"
+            echo "the branch head is an ancestor of the commit this run would push"
+          fi
+
+      # ⛔ CONDITION TWO OF TWO, AND IT IS THE REMOTE'S. No --force, no
+      # --force-with-lease and no + on the refspec, so a push that is not a
+      # fast-forward is refused by the server. scripts/common/check-publish
+      # refuses this file if any of those three appears in it.
+      - name: push, and never with force
+        if: steps.commit.outputs.commit != ''
+        shell: bash
+        env:
+          NEW_COMMIT: ${{ steps.commit.outputs.commit }}
+        run: git push origin "$NEW_COMMIT:refs/heads/data"
+
+      # ⭐ READ BACK FROM THE REMOTE, never assumed from the push exiting 0. The
+      # tree object is compared as well as the commit, which is what "byte for
+      # byte" means for a git branch: one tree object is one set of bytes.
+      - name: what the branch holds now, read back
+        if: steps.commit.outputs.commit != ''
+        shell: bash
+        env:
+          NEW_COMMIT: ${{ steps.commit.outputs.commit }}
+          NEW_TREE: ${{ steps.commit.outputs.tree }}
+        run: |
+          git fetch --no-tags origin '+refs/heads/data:refs/remotes/origin/data'
+          landed=$(git rev-parse refs/remotes/origin/data)
+          [ "$landed" = "$NEW_COMMIT" ]
+          [ "$(git rev-parse "$landed^{tree}")" = "$NEW_TREE" ]
+          n=$(git ls-tree -r --name-only "$landed" | wc -l)
+          echo "data is at $landed carrying $n file(s), tree $NEW_TREE"
+
+  # ⛔ THE RELEASE. Cut only by a pushed tag, and a published release is
+  # immutable: an asset is never re-uploaded.
+  release:
+    # manual: sh scripts/common/check-release.sh --dry-run
+    name: the release, cut from a pushed tag
+    needs: [assemble]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: publish-tree
+          path: tree
+
+      - name: what was downloaded is what was assembled
+        shell: bash
+        run: |
+          cd tree
+          sha256sum -c SHA256SUMS > /dev/null
+          n=$(grep -c . SHA256SUMS)
+          echo "$n file(s) verified against their published checksums"
+
+      # ⚠ THE CORPUS THIS TAG SUPERSEDES, so the body says what MOVED rather
+      # than listing everything every time. A first release has no previous tag
+      # and every route is then new, which is the honest answer rather than an
+      # empty one.
+      - name: the corpus this tag supersedes
+        id: previous
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          prev=$(git tag --list 'v1.*' --sort=-version:refname | grep -vxF "$TAG" | head -1 || true)
+          if [ -n "$prev" ]; then
+            git worktree add --detach "$RUNNER_TEMP/before" "$prev"
+            echo "before=$RUNNER_TEMP/before" >> "$GITHUB_OUTPUT"
+          fi
+          echo "previous tag: ${prev:-none}"
+
+      # ⛔ THE TAG IS PARSED, PLANNED AND REBUILT BY THE CRATE. `--existing` is
+      # the tags that ALREADY CARRY A RELEASE, read from the repository, so the
+      # immutability rule is asked about releases rather than about tags: the
+      # tag itself was pushed on purpose and exists by definition.
+      - name: plan the release, and write its body
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --limit 200 --json tagName --jq '.[].tagName' \
+            > "$RUNNER_TEMP/released.txt"
+          released=$(grep -c . "$RUNNER_TEMP/released.txt" || true)
+          echo "$released tag(s) already carry a release"
+          set -- release --tree tree --tag "$TAG" \
+            --existing "$RUNNER_TEMP/released.txt" --notes "$RUNNER_TEMP/NOTES.md"
+          before='${{ steps.previous.outputs.before }}'
+          [ -z "$before" ] || set -- "$@" --before "$before"
+          cargo run -q -p b-ids-corpus -- "$@"
+          echo '--- the body ---'
+          cat "$RUNNER_TEMP/NOTES.md"
+
+      # ⛔ THE ARCHIVE IS DETERMINISTIC AND ITS EPOCH IS READ FROM THE CHECK
+      # RATHER THAN TYPED HERE. check-release.sh is the one home of that value,
+      # and a second copy in this file is a value in two places with no check
+      # that they agree. ⚠ `gzip -n` is what keeps the name and the clock out of
+      # the compressed stream.
+      - name: a deterministic archive
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          epoch=$(awk -F'"' '/^TAR_EPOCH=/{ print $2; exit }' scripts/common/check-release.sh)
+          [ -n "$epoch" ]
+          echo "archive epoch: $epoch"
+          ( cd tree && find . -type f | LC_ALL=C sort > "$RUNNER_TEMP/files.txt" )
+          tar --format=ustar --numeric-owner --owner=0 --group=0 --mtime "$epoch" \
+            -cf "$RUNNER_TEMP/b-ids-corpus-$TAG.tar" -C tree -T "$RUNNER_TEMP/files.txt"
+          gzip -n -9 "$RUNNER_TEMP/b-ids-corpus-$TAG.tar"
+          ( cd "$RUNNER_TEMP" && sha256sum "b-ids-corpus-$TAG.tar.gz" )
+
+      # ⛔ `gh release create` REFUSES A TAG THAT ALREADY HAS A RELEASE, which is
+      # the immutability rule enforced a second time by the platform after the
+      # crate enforced it above.
+      # ⭐ --latest IS WHY NO GIT TAG MOVES. A consumer fetches
+      # releases/latest/download/NAME without listing anything, and this project
+      # never force-updates a ref to give them that.
+      - name: create the release
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/NOTES.md" \
+            --latest \
+            "$RUNNER_TEMP/b-ids-corpus-$TAG.tar.gz" \
+            tree/MANIFEST.json \
+            tree/SHA256SUMS \
+            tree/formats/*
+          gh release view "$TAG" --json tagName,assets \
+            --jq '.tagName + " carries " + (.assets | length | tostring) + " asset(s)"'

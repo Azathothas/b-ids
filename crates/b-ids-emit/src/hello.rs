@@ -166,6 +166,161 @@ pub fn extensions(tls: &TlsHalf) -> Result<Vec<EmittableExtension>, Vec<Unreprod
     }
 }
 
+/// The whole extensions block, as a `ClientHello` carries it: a two-byte total
+/// length, then every extension in wire order.
+///
+/// ⭐ **This is the escape hatch.** Any emitter that reproduces a browser
+/// faithfully needs an ordered list of codepoint-and-body pairs, and a model
+/// with one typed field per extension cannot hold one. Retrofitting the list
+/// into such a model is the largest change in this space, so it is the shape
+/// this project started from. `TODO/emitters.md`, `EMIT-02`.
+///
+/// ⛔ **The order is the capture's, never sorted and never normalised.** A
+/// browser's extension order is a fingerprint in its own right, and an emitter
+/// that reordered it would produce a hello that exists nowhere.
+///
+/// # Errors
+///
+/// Every [`Unreproducible`] reason, not the first one.
+pub fn extensions_block(tls: &TlsHalf) -> Result<Vec<u8>, Vec<Unreproducible>> {
+    let emittable = extensions(tls)?;
+    let mut body = Vec::new();
+    for extension in &emittable {
+        body.extend_from_slice(&extension.encode());
+    }
+    // ⛔ DERIVED FROM WHAT WAS WRITTEN, like every other length here. A total
+    // taken from anywhere but the bytes is a total that can disagree with them.
+    let Ok(length) = u16::try_from(body.len()) else {
+        return Err(vec![Unreproducible::BodyTooLong {
+            codepoint: 0,
+            actual: body.len(),
+        }]);
+    };
+    let mut out = Vec::with_capacity(2 + body.len());
+    out.extend_from_slice(&length.to_be_bytes());
+    out.extend_from_slice(&body);
+    Ok(out)
+}
+
+/// The codepoints in a capture that no field of the model names.
+///
+/// ⭐ **The list is what the escape hatch exists for**, and it is derived from
+/// the schema rather than typed here: a codepoint the model gives a field to is
+/// one an emitter could write without the list, and everything else is only
+/// reachable through it.
+///
+/// ⚠ **`supported_versions` is NOT on the named list even though the model
+/// reads it**, because reading a value out of a body is not the same as being
+/// able to write that body back. The test is whether the model could reproduce
+/// the extension without its recorded bytes.
+#[must_use]
+pub fn unnamed_codepoints(tls: &TlsHalf) -> Vec<u16> {
+    // The extensions whose whole content the model carries as a typed field, so
+    // an emitter could rebuild the body without the recorded bytes.
+    const NAMED: [u16; 4] = [
+        0x000a, // supported_groups: TlsHalf::key_exchange_groups
+        0x000d, // signature_algorithms: TlsHalf::signature_algorithms
+        0x0010, // application_layer_protocol_negotiation: TlsHalf::alpn
+        0x0033, // key_share: TlsHalf::key_shares
+    ];
+    tls.extensions
+        .iter()
+        .map(|e| e.codepoint)
+        .filter(|c| !NAMED.contains(c))
+        .collect()
+}
+
+/// A whole `ClientHello`, in one TLS record, from a captured profile.
+///
+/// ⛔ **The random is the CALLER'S**, and it is the one field of a hello this
+/// project does not record. A per-connection random carries no fingerprint, so
+/// the model steps over it at capture time; an emitter therefore cannot
+/// reproduce a capture byte for byte and must not pretend to. Everything else
+/// on the wire comes from the profile. `TODO/emitters.md`, `EMIT-02`, and
+/// `TODO/library.md`, `LIB-02`.
+///
+/// ⚠ **The lengths are all derived from what was written**, at three levels:
+/// the extensions block, the handshake body and the record. A length taken from
+/// anywhere but the bytes is a length that can disagree with them.
+///
+/// # Errors
+///
+/// Every [`Unreproducible`] reason, plus the two the shape itself can produce:
+/// a session id whose declared length disagrees with its bytes, and a body
+/// longer than its length field.
+pub fn client_hello(tls: &TlsHalf, random: &[u8; 32]) -> Result<Vec<u8>, Vec<Unreproducible>> {
+    let block = extensions_block(tls)?;
+    let session_id = decode_hex(&tls.session_id_hex).map_err(|why| {
+        vec![Unreproducible::BodyNotHex {
+            codepoint: 0,
+            why: format!("the session id: {why}"),
+        }]
+    })?;
+    if usize::from(tls.session_id_len) != session_id.len() {
+        return Err(vec![Unreproducible::LengthDisagrees {
+            codepoint: 0,
+            declared: u16::from(tls.session_id_len),
+            actual: session_id.len(),
+        }]);
+    }
+
+    let mut body = Vec::new();
+    body.extend_from_slice(&tls.legacy_version.to_be_bytes());
+    body.extend_from_slice(random);
+    body.push(tls.session_id_len);
+    body.extend_from_slice(&session_id);
+
+    let ciphers_len = tls.cipher_suites.len() * 2;
+    let Ok(ciphers_len) = u16::try_from(ciphers_len) else {
+        return Err(vec![Unreproducible::BodyTooLong {
+            codepoint: 0,
+            actual: ciphers_len,
+        }]);
+    };
+    body.extend_from_slice(&ciphers_len.to_be_bytes());
+    for suite in &tls.cipher_suites {
+        body.extend_from_slice(&suite.to_be_bytes());
+    }
+
+    let Ok(compression_len) = u8::try_from(tls.compression_methods.len()) else {
+        return Err(vec![Unreproducible::BodyTooLong {
+            codepoint: 0,
+            actual: tls.compression_methods.len(),
+        }]);
+    };
+    body.push(compression_len);
+    body.extend_from_slice(&tls.compression_methods);
+    body.extend_from_slice(&block);
+
+    // The handshake header: type 1, then a THREE-byte length.
+    let Ok(body_len) = u32::try_from(body.len()) else {
+        return Err(vec![Unreproducible::BodyTooLong {
+            codepoint: 0,
+            actual: body.len(),
+        }]);
+    };
+    let mut handshake = Vec::with_capacity(4 + body.len());
+    handshake.push(1);
+    handshake.extend_from_slice(&body_len.to_be_bytes()[1..]);
+    handshake.extend_from_slice(&body);
+
+    // ⚠ The record layer's version is the CAPTURE'S, not a constant. A hello
+    // that announced a different record version from the one measured would be
+    // a different fingerprint in the one byte pair a middlebox reads first.
+    let Ok(record_len) = u16::try_from(handshake.len()) else {
+        return Err(vec![Unreproducible::BodyTooLong {
+            codepoint: 0,
+            actual: handshake.len(),
+        }]);
+    };
+    let mut record = Vec::with_capacity(5 + handshake.len());
+    record.push(0x16);
+    record.extend_from_slice(&tls.record_version.to_be_bytes());
+    record.extend_from_slice(&record_len.to_be_bytes());
+    record.extend_from_slice(&handshake);
+    Ok(record)
+}
+
 /// Decode a hex body.
 ///
 /// ⚠ Deliberately not shared with the harness's decoder. This crate does not

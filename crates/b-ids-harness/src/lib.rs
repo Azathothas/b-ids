@@ -29,6 +29,7 @@
 //! an error that throws it away.
 
 pub mod bytes;
+pub mod digest;
 pub mod fuzz;
 pub mod h2;
 pub mod hello;
@@ -42,6 +43,7 @@ pub mod select;
 pub mod tls;
 
 pub use bytes::{Cursor, hex, sha256, unhex};
+pub use digest::{ja4, ja4_o};
 pub use fuzz::drive_every_parser;
 pub use h2::{Http2Capture, RawFrame};
 pub use hello::{HelloCapture, parse_record};

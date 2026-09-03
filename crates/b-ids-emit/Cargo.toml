@@ -14,3 +14,11 @@ workspace = true
 
 [dependencies]
 b-ids-schema = { path = "../b-ids-schema" }
+# ⚠ THE MATRIX IS SERIALISED, never formatted. EMIT-01.
+serde.workspace = true
+
+[dev-dependencies]
+# ⚠ THE ESCAPE HATCH SUITE READS THE PUBLISHED CORPUS, because a fixture would
+# prove the emitter can write a hello somebody made up. TODO/emitters.md,
+# EMIT-02.
+serde_json.workspace = true

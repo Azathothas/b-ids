@@ -1,0 +1,199 @@
+# The cold-start job. TODO/ci.md, CI-05.
+#
+# ⭐ WHAT THIS CATCHES THAT NOTHING ELSE DOES. Every other workflow here runs
+# against a warm world: the toolchain is already on the image, the crates are
+# already fetched, and a step that stopped resolving three weeks ago passes
+# because nothing asks it to resolve again. A dead URL, a removed field or a
+# renamed flag is then invisible until the day somebody needs a capture, and
+# that day is always the wrong one.
+#
+# ⛔ EVERY CACHE IS OFF, AND THAT IS THE ENTRY RATHER THAN A SETTING. No
+# actions/cache, no rust-cache, no sccache, no `cache:` key of any kind. A
+# cold-start job that shares a cache with another workflow has stopped being a
+# cold-start job while continuing to report as one, which is the worst outcome
+# available: it is green, and it verifies nothing.
+# scripts/common/check-cold-start refuses this file if a cache appears in it.
+#
+# ⛔ EVERY STAGE CARRIES AN id, AND THE LAST STEP NAMES THE FIRST THAT FAILED.
+# "Fails loudly naming the first step that could not resolve" is the acceptance,
+# and a run whose log a person has to scroll is not that. The report step runs
+# `if: always()`, so a stage that failed is named even when the job is red.
+#
+# ⚠ TWO HOSTS, because a cold path is per platform. The Windows runner's cold
+# path has never been exercised and the Linux one has been exercised only
+# incidentally, which is the reason for the matrix rather than a single lane.
+# ⛔ fail-fast is off: one host answering differently from the other is the
+# finding, and cancelling the sibling that would have shown it loses it.
+#
+# ⛔ THIRD-PARTY ACTIONS ARE PINNED TO A COMMIT, NOT A TAG, and the pin is the
+# one this tree already carries, resolved rather than copied:
+#
+#   gh api repos/actions/checkout/git/ref/tags/v7.0.1 --jq .object.sha
+#
+# ⚠ NOTHING HERE NAMES AN OWNER OR A REPOSITORY.
+
+name: cold-start
+
+on:
+  # ⚠ WEEKLY, ON A DIFFERENT DAY AND A DIFFERENT ODD MINUTE FROM capture.yml.
+  # Two scheduled workflows on one hour queue behind each other on a shared
+  # platform, and a cold-start run that waited an hour for a capture run is a
+  # cold-start run whose timings mean nothing.
+  schedule:
+    - cron: '41 4 * * 1'
+  workflow_dispatch:
+
+# Least privilege. Nothing here writes anything anywhere.
+permissions:
+  contents: read
+
+# ⛔ ITS OWN GROUP, and cancel-in-progress is false. A cold run cancelled part
+# way through proves nothing about a cold path, and the next one starts cold
+# either way.
+concurrency:
+  group: cold-start-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  cold:
+    # manual: sh scripts/common/check-cold-start.sh
+    name: cold start (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      # ⛔ FAIL-FAST OFF. See the header.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      # ⛔ fetch-depth: 0 IS LOAD-BEARING. check-corpus runs inside the gate and
+      # its only irreplaceable leg asks git whether a published file was ever
+      # modified, and a shallow clone answers "nothing" every time.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # ⭐ THE RESOLUTION PROBE IS THE CHECK'S, NOT THIS FILE'S, so a person can
+      # run the same thing by hand and the list of what a cold pipeline needs
+      # lives in one place. --require-tools is what makes an absent tool a
+      # failure here while it stays a report on a laptop.
+      - name: everything this pipeline names resolves
+        id: resolve
+        if: runner.os != 'Windows'
+        shell: bash
+        run: sh scripts/common/check-cold-start.sh --resolve --require-tools
+
+      - name: everything this pipeline names resolves
+        id: resolve_ps
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts\common\check-cold-start.ps1 -Resolve -RequireTools
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      # ⛔ THE TOOLCHAIN IS PINNED BY THE TREE, NOT BY THIS FILE, and on a cold
+      # runner this step is what downloads it. That download is exactly the
+      # thing a warm run never does.
+      - name: the pinned Rust toolchain, installed from cold
+        id: toolchain
+        shell: bash
+        run: |
+          rustup show active-toolchain
+          cargo --version
+          rustc --version
+
+      # ⚠ THE FETCH IS ITS OWN STAGE because it is the one that reaches the
+      # network for every dependency in the lock file. A registry outage or a
+      # yanked crate shows here and nowhere else.
+      - name: every dependency, fetched from cold
+        id: fetch
+        shell: bash
+        run: cargo fetch --locked
+
+      - name: the whole workspace, built from cold
+        id: build
+        shell: bash
+        run: cargo build --locked --workspace
+
+      - name: the gate
+        id: gate
+        if: runner.os != 'Windows'
+        shell: bash
+        run: sh scripts/common/check-gate.sh --strict
+
+      - name: the gate
+        id: gate_ps
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts\common\check-gate.ps1 -Fast -Strict
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      # ⛔ RESOLVED, NOT ASSUMED, AND NO BROWSER IS EXIT 2. "This runner has no
+      # browser" and "the capture failed" are different facts. CI-07.
+      - name: what browser this runner has
+        id: browser
+        shell: bash
+        run: |
+          set +e
+          cargo run -q --locked -p b-ids-driver -- resolve --browser chrome --json > resolved.jsonl 2> resolve.err
+          rc=$?
+          set -e
+          cat resolve.err || true
+          cat resolved.jsonl || true
+          echo "resolve exit=$rc"
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          [ "$rc" = 0 ] || [ "$rc" = 2 ]
+
+      # ⭐ THE CAPTURE PATH IS THE ONE A PERSON RUNS, which is what CI-08
+      # requires and what stops this file becoming a second pipeline.
+      - name: a capture, end to end
+        id: capture
+        if: steps.browser.outputs.rc == '0'
+        shell: bash
+        run: sh experiments/10-first-profile.sh --headless --browser chrome
+
+      # ⛔ THE PUBLISH HALF, over the corpus as checked out. It assembles and
+      # checks and publishes nothing: PUB-10's workflow is the only thing that
+      # writes anywhere.
+      - name: a publish, end to end
+        id: publish
+        shell: bash
+        run: |
+          rm -rf .tmp/cold-start
+          cargo run -q --locked -p b-ids-corpus -- publish --root . --out .tmp/cold-start/tree
+          sh scripts/common/check-release.sh --dry-run
+
+      # ⭐ THE FIRST STAGE THAT FAILED, BY NAME. A run whose log a person has to
+      # scroll to find the failure is not "fails loudly".
+      # ⛔ if: always(), so a red job still says which stage went red.
+      - name: what this cold start reached
+        id: report
+        if: always()
+        shell: bash
+        env:
+          RESOLVE: ${{ steps.resolve.outcome }}${{ steps.resolve_ps.outcome }}
+          TOOLCHAIN: ${{ steps.toolchain.outcome }}
+          FETCH: ${{ steps.fetch.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          GATE: ${{ steps.gate.outcome }}${{ steps.gate_ps.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          CAPTURE: ${{ steps.capture.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        run: |
+          first=''
+          for stage in resolve:"$RESOLVE" toolchain:"$TOOLCHAIN" fetch:"$FETCH" \
+            build:"$BUILD" gate:"$GATE" browser:"$BROWSER" capture:"$CAPTURE" \
+            publish:"$PUBLISH"; do
+            name=${stage%%:*}
+            outcome=${stage#*:}
+            printf '  %-10s %s\n' "$name" "$outcome"
+            case "$outcome" in
+              *failure*) [ -n "$first" ] || first=$name ;;
+            esac
+          done
+          if [ -n "$first" ]; then
+            echo "⛔ the cold path broke at: $first"
+            exit 1
+          fi
+          echo "the cold path is whole"

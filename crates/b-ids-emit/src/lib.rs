@@ -24,5 +24,12 @@
 //! well.
 
 pub mod hello;
+pub mod matrix;
 
-pub use hello::{EmittableExtension, Unreproducible, extension, extensions};
+pub use hello::{
+    EmittableExtension, Unreproducible, client_hello, extension, extensions, extensions_block,
+    unnamed_codepoints,
+};
+pub use matrix::{
+    Cell, Hole, MATRIX_SCHEMA, Matrix, REPRODUCE, RUNNABLE_STACK, holes, support_matrix,
+};

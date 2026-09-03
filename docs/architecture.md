@@ -47,14 +47,14 @@ types about every integer's width.
 | [`b-ids-driver`](../crates/b-ids-driver/) | resolves a browser on the machine, reports what the vendor is serving, and launches one at a URL into a profile nobody keeps | it parses no bytes |
 | [`b-ids-corpus`](../crates/b-ids-corpus/) | turns a capture into a profile, publishes it at its route, and verifies the whole store | ⛔ it never edits a published profile. A correction is a NEW profile naming the one it replaces. |
 | [`b-ids-validator`](../crates/b-ids-validator/) | pure logic over the model: could a real browser have sent this? | ⛔ it does not warn. Every check answers passed, failed, or not-checkable. |
+| [`b-ids-emit`](../crates/b-ids-emit/) | turns a profile back into the bytes a `ClientHello` carries, and generates the support matrix from a run | ⛔ it refuses rather than approximating. A hello it cannot write byte for byte is a refusal naming every reason. |
+| [`b-ids`](../crates/b-ids/) | hands a program a profile, with the corpus embedded at build time | ⛔ it never fetches and never substitutes. A platform this project has not captured returns nothing. |
+| [`b-ids-cli`](../crates/b-ids-cli/) | the smallest client: it puts one profile's hello on a socket and stops | ⛔ not a general-purpose HTTP client, and it must never grow into one. No cookie jar, no redirects, no retries. |
 
-⚠ **Four more crates exist and none is a component yet**, and each says so in
-its own first line rather than looking finished:
-[`b-ids-emit`](../crates/b-ids-emit/) for `EMIT-01`,
-[`b-ids-conformance`](../crates/b-ids-conformance/) for `VALID-05`,
-[`b-ids`](../crates/b-ids/) for `LIB-01`, and
-[`b-ids-cli`](../crates/b-ids-cli/), the front door with nothing to front yet.
-⭐ They exist so that the acceptance commands in [`../TODO/`](../TODO/) resolve
+⚠ **One more crate exists and is not a component yet**, and it says so in its
+own first line rather than looking finished:
+[`b-ids-conformance`](../crates/b-ids-conformance/) for `VALID-05`.
+⭐ It exists so that the acceptance commands in [`../TODO/`](../TODO/) resolve
 a target.
 
 ---
@@ -113,10 +113,10 @@ three surfaces. [`../TODO/publish.md`](../TODO/publish.md).
 
 ## 5. ⛔ The limits, stated rather than discovered
 
-- **The corpus holds five profiles.** Four Chrome and one Edge, majors 151 and
+- **The corpus holds six profiles.** Five Chrome and one Edge, majors 151 and
   152, on two platforms. ⚠ Three of them were taken through whatever build the
-  runner image shipped and record `captured.acquisition: null`; two name the URL
-  and the digest they were installed from.
+  runner image shipped and record `captured.acquisition: null`; three name the
+  URL and the digest they were installed from.
   [`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`, is the matrix.
 - **No digest is computed.** `digests` is empty on every profile and will stay
   empty until a reference implementation is verified against published vectors.

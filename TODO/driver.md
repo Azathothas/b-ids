@@ -734,7 +734,7 @@ installed.
 ## DRIVER-06. Branded and unbranded builds are different products
 
 **Source** the founding brief; the header sets are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 6
-**Category** driver, **Priority** P2, **Effort** M, **Status** open
+**Category** driver, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -775,7 +775,7 @@ rejected by the validator with a message naming the brand list.
 
 ---
 
-### ⚠ Still open. What landed 2026-09-03, and what it unblocked
+### ⭐ Closed 2026-09-03. The vocabulary, then the route that decides it, then the pass that joins the two
 
 ⭐ **The blocker named in [`PROGRESS.md`](PROGRESS.md) is gone.** The open
 question was where an unbranded build lives in the corpus, and the answer taken
@@ -789,20 +789,103 @@ is this entry's own recommendation: **`for-testing` is a `Channel`**, and
 | ⭐ nothing about the layout moved | the channel is already part of the route and of the `latest` key, so no consumer's pin moves |
 | ⚠ `latest` is unaffected | the pointer map is built from stable profiles alone, so an automation build cannot be mistaken for one. `CORPUS-03` is the rule |
 
-⛔ **What is NOT done, and it is the whole acceptance.** There is no test named
-`branded` in `b-ids-driver`, and `cargo test -p b-ids-driver branded` therefore
-selects nothing rather than passing. The enforcement half already exists:
-`b_ids_validator`'s check 3 refuses a profile whose `browser.branded` disagrees
-with its brand list, and its message names the brand list. What this entry still
-owes is the driver-side pair that drives an unbranded acquisition and asserts
-that refusal end to end.
+#### The acceptance
 
-⚠ **And the two `for-testing` matrix cells are still `enabled: false`.** The
-vocabulary no longer blocks them; enabling one is a single field in
-[`../.github/capture-matrix.json`](../.github/capture-matrix.json) and it makes
-the next scheduled run attempt a lane whose capture path nothing here has
-exercised, which is a change with an outward effect rather than a code change.
+```text
+$ cargo test -p b-ids-driver branded
+running 4 tests
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 1 test
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.01s
+```
 
+⚠ **Seven targets are compiled and five report zero**, so the block above is the
+two that ran, with the empty ones dropped and this line saying so. ⭐ The four
+are this entry's new file; the fifth is an acquisition case whose name already
+contained the filter word, and it is counted here rather than hidden.
+
+⚠ **This command selected NOTHING until now**, and exiting 0 having run nothing
+is the "step that exits 0 having done nothing it was asked to do" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+wearing an acceptance's name. `crates/b-ids-driver/tests/branded.rs` is the file
+that makes it select something, and every case in it is named for the filter.
+
+#### ⭐ The driver half was a route that could not answer the question
+
+The validator has refused an incoherent claim since `VALID-01`. What the driver
+could not do was say what a build obtained through a given route IS, so nothing
+connected an acquisition to the claim a profile makes about it.
+`Route::branded` is that answer, and its shape is the entry:
+
+| route | branded | why |
+| --- | --- | --- |
+| `chrome-for-testing` | `Some(false)` | the automation index serves unbranded builds, and they are the ones automation reaches for first |
+| `vendor`, `edge-enterprise` | `Some(true)` | each serves the vendor's own product |
+| `installed`, `cache` | ⛔ `None` | whatever somebody installed. Returning `true` here would be the synthesised brand list this entry forbids |
+
+#### ⛔ The finding: the rule does not run on a profile that keeps names only
+
+⚠ **Check 3 answered `NotCheckable` over the fixture**, and the fixture is the
+default shape: a profile records header NAMES and not values, which is
+`SCHEMA-04`'s privacy rule. So the enforcement half this entry called "already
+existing" fires only on a profile whose capture turned values on deliberately.
+
+⛔ **That is recorded rather than repaired.** Widening the privacy rule to make
+a check convenient is the wrong direction, and the corpus captures already turn
+values on where the field matters. The suite asserts the `NotCheckable` answer
+first, so the limitation is stated by a test rather than by a sentence.
+
+#### The pass, and what each case is for
+
+| case | what it drives |
+| --- | --- |
+| `branded_the_automation_index_serves_an_unbranded_build` | a real acquisition with the first two routes arranged to fail, so the one that answers is the unbranded index and its two refusals are kept |
+| `branded_a_route_that_does_not_decide_it_says_so` | the three answers above, including the two that are `None` |
+| `branded_an_unbranded_capture_claiming_a_brand_is_refused_by_the_validator` | ⭐ the acceptance: one field flipped on an otherwise unchanged profile, and the refusal names `Google Chrome` and the brand list |
+| `branded_a_branded_build_with_no_vendor_entry_is_refused_from_the_other_side` | the same rule the other way, because a check that only ever fires one way is half a check |
+
+⚠ **`b-ids-validator` is a DEV dependency of this crate now**, and the two test
+graphs point at each other: the validator already takes this crate as a dev
+dependency for `VALID-03`. Neither build graph does, which is why cargo accepts
+it.
+
+#### ⭐ Both `for-testing` matrix cells are enabled
+
+⛔ **Ruled by the operator 2026-09-03.** The vocabulary no longer blocks them, so
+`chrome/for-testing/linux64` and `chrome/for-testing/win64` are `enabled: true`
+in [`../.github/capture-matrix.json`](../.github/capture-matrix.json) and the
+coverage report moves them from `not-attempted` to `absent`, which is the
+difference between planned and tried:
+
+```text
+$ sh scripts/common/check-coverage.sh
+coverage over 8 planned cell(s):
+
+  captured       chrome/stable/linux64              2 profile(s) required
+  captured       chrome/stable/win64                3 profile(s) required
+  captured       edge/stable/linux64                1 profile(s) required
+  absent         chrome/for-testing/linux64         0 profile(s)
+  absent         chrome/for-testing/win64           0 profile(s)
+  not-attempted  chrome/stable/macos-arm64          0 profile(s)
+  not-attempted  chrome/beta/linux64                0 profile(s)
+  not-attempted  firefox/stable/linux64             0 profile(s)
+
+3 captured, 2 absent, 3 not attempted.
+rc=0
+```
+
+⚠ **Nothing here has exercised that lane's capture path.** `capture.yml` allows
+every lane to fail alone, so the first scheduled run reports what the lane could
+not do rather than taking the run down with it. ⛔ Neither cell is `required`,
+so `check-coverage --require-rows` does not fail over them either.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a capture through the unbranded lane | ⛔ None was taken. The lane is enabled and the next scheduled run is the first attempt; this machine has no browser purge to run and would not run one if it had. |
+| `browser.branded` written from the acquisition | ⚠ The capture path still takes it from the identity file. `Route::branded` is the value it should read, and wiring it is `CORPUS-02`'s lane work rather than this entry's rule. |
+| a widened privacy rule | ⛔ Declined above, with the reason. |
 ---
 
 ## DRIVER-07. The browser's own output is discarded, so a lane that captured nothing says nothing

@@ -211,3 +211,252 @@ impl TlsHalf {
             .collect()
     }
 }
+
+/// The lists a JA4 fingerprint is built from, before anything is hashed.
+///
+/// ⭐ **Separated because the hash is not this crate's job.** Rendering a list
+/// is pure logic over the model, which is where `akamai_text` already lives;
+/// SHA-256 has one home in this tree and it is not here. A caller that wants
+/// the hashed form asks `b_ids_harness::ja4`.
+///
+/// ⛔ **Every list has GREASE removed**, which the specification requires
+/// everywhere it appears. `TODO/validator.md`, `VALID-04`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ja4Lists {
+    /// `t13d1516h2`: transport, version, SNI, the two counts and the ALPN pair.
+    pub prefix: String,
+    /// The ciphers, sorted by hex value, comma delimited.
+    pub ciphers_sorted: String,
+    /// The extensions, sorted by hex value, with SNI and ALPN removed, then an
+    /// underscore and the signature algorithms in wire order.
+    ///
+    /// ⚠ **No underscore where the hello carried no signature algorithms**,
+    /// which the specification states and which changes the hash.
+    pub extensions_sorted: String,
+    /// The ciphers in wire order, GREASE removed.
+    pub ciphers_original: String,
+    /// The extensions in wire order, GREASE removed, with SNI and ALPN KEPT,
+    /// then the signature algorithms.
+    pub extensions_original: String,
+}
+
+impl TlsHalf {
+    /// The lists a JA4 fingerprint is built from.
+    ///
+    /// ⛔ **Implemented from the published specification**, at
+    /// `references/FoxIO-LLC__ja4/tree/technical_details/JA4.md`, and never by
+    /// copying source. JA4 itself is BSD-3 with no patent claim;
+    /// `docs/reference-sweeps/findings.md` finding 5 is the split, and ⛔ no
+    /// member of the JA4+ family is computed anywhere in this tree.
+    #[must_use]
+    pub fn ja4_lists(&self) -> Ja4Lists {
+        let ciphers: Vec<u16> = self
+            .cipher_suites
+            .iter()
+            .copied()
+            .filter(|c| !is_grease_value(*c))
+            .collect();
+        let extensions: Vec<u16> = self
+            .extensions
+            .iter()
+            .map(|e| e.codepoint)
+            .filter(|c| !is_grease_value(*c))
+            .collect();
+        let sigalgs: Vec<u16> = self
+            .signature_algorithms
+            .iter()
+            .copied()
+            .filter(|s| !is_grease_value(*s))
+            .collect();
+
+        let mut sorted_ciphers = ciphers.clone();
+        sorted_ciphers.sort_unstable();
+        // ⛔ SNI AND ALPN ARE REMOVED FROM THE HASHED LIST AND NOT FROM THE
+        // COUNT. The specification says so in as many words: they are already
+        // in the prefix, so one application produces the same third section
+        // whether it went to a domain or to an address.
+        let mut sorted_extensions: Vec<u16> = extensions
+            .iter()
+            .copied()
+            .filter(|c| *c != 0x0000 && *c != 0x0010)
+            .collect();
+        sorted_extensions.sort_unstable();
+
+        let sig_text = join_hex(&sigalgs);
+        // ⚠ NO TRAILING UNDERSCORE WHERE THERE ARE NO SIGNATURE ALGORITHMS.
+        let with_sigs = |list: String| {
+            if sig_text.is_empty() {
+                list
+            } else {
+                format!("{list}_{sig_text}")
+            }
+        };
+
+        Ja4Lists {
+            prefix: self.ja4_prefix(),
+            ciphers_sorted: join_hex(&sorted_ciphers),
+            extensions_sorted: with_sigs(join_hex(&sorted_extensions)),
+            ciphers_original: join_hex(&ciphers),
+            extensions_original: with_sigs(join_hex(&extensions)),
+        }
+    }
+
+    /// JA4's raw form, with both lists sorted.
+    #[must_use]
+    pub fn ja4_r(&self) -> String {
+        let lists = self.ja4_lists();
+        format!(
+            "{}_{}_{}",
+            lists.prefix, lists.ciphers_sorted, lists.extensions_sorted
+        )
+    }
+
+    /// JA4's order-preserving raw form.
+    ///
+    /// ⚠ **It shows order and nothing about GREASE**, because the specification
+    /// strips GREASE here too. The raw `ClientHello` is the one artefact in
+    /// which a GREASE question is answerable at all, which is what
+    /// `docs/inherited-claims.md` section 10 corrects.
+    #[must_use]
+    pub fn ja4_ro(&self) -> String {
+        let lists = self.ja4_lists();
+        format!(
+            "{}_{}_{}",
+            lists.prefix, lists.ciphers_original, lists.extensions_original
+        )
+    }
+
+    /// The first section of a JA4 fingerprint.
+    ///
+    /// ⚠ **`t` and never `q` or `d`.** This project captures TLS over TCP; a
+    /// QUIC or DTLS capture would need the transport recorded, and neither is
+    /// something this harness can take today.
+    #[must_use]
+    pub fn ja4_prefix(&self) -> String {
+        let version = self.ja4_version();
+        let sni = if self.extensions.iter().any(|e| e.codepoint == 0x0000) {
+            'd'
+        } else {
+            'i'
+        };
+        let ciphers = self
+            .cipher_suites
+            .iter()
+            .filter(|c| !is_grease_value(**c))
+            .count();
+        // ⚠ SNI AND ALPN ARE COUNTED HERE, and removed from the hashed list.
+        let extensions = self.extensions.iter().filter(|e| !e.is_grease()).count();
+        format!(
+            "t{version}{sni}{:02}{:02}{}",
+            ciphers.min(99),
+            extensions.min(99),
+            self.ja4_alpn()
+        )
+    }
+
+    /// The two characters the ALPN contributes.
+    ///
+    /// ⛔ **The byte rule, not the string rule, and the difference is the whole
+    /// of it.** Where the first or the last byte of the first protocol is not
+    /// ASCII alphanumeric, the pair becomes the FIRST character of that first
+    /// byte's hex and the LAST character of the last byte's hex. Derived from
+    /// the eight worked examples in the specification, all of which this
+    /// reading reproduces and one of which reads as a counter-example until
+    /// the rule is stated per BYTE rather than per string.
+    #[must_use]
+    pub fn ja4_alpn(&self) -> String {
+        let Some(first) = self.alpn.first() else {
+            return "00".to_owned();
+        };
+        let bytes = first.as_bytes();
+        let (Some(head), Some(tail)) = (bytes.first(), bytes.last()) else {
+            return "00".to_owned();
+        };
+        if head.is_ascii_alphanumeric() && tail.is_ascii_alphanumeric() {
+            return format!("{}{}", char::from(*head), char::from(*tail));
+        }
+        let head_hex = format!("{head:02x}");
+        let tail_hex = format!("{tail:02x}");
+        format!(
+            "{}{}",
+            head_hex.chars().next().unwrap_or('0'),
+            tail_hex.chars().last().unwrap_or('0')
+        )
+    }
+
+    /// The two characters the TLS version contributes.
+    ///
+    /// ⚠ **`supported_versions` wins where it exists, and the fallback is the
+    /// HANDSHAKE version rather than the record layer's.** The specification's
+    /// wording is ambiguous about which; the reference implementation resolves
+    /// it at `references/FoxIO-LLC__ja4/tree/rust/ja4/src/tls.rs:573`, whose
+    /// own comment says the field is not to be confused with the record
+    /// version. ⛔ Read to settle an ambiguity, never copied.
+    #[must_use]
+    pub fn ja4_version(&self) -> &'static str {
+        let highest = self
+            .extensions
+            .iter()
+            .find(|e| e.codepoint == 0x002b)
+            .and_then(|e| supported_versions(&e.body_hex))
+            .unwrap_or(self.legacy_version);
+        match highest {
+            0x0304 => "13",
+            0x0303 => "12",
+            0x0302 => "11",
+            0x0301 => "10",
+            0x0300 => "s3",
+            0x0002 => "s2",
+            0xfeff => "d1",
+            0xfefd => "d2",
+            0xfefc => "d3",
+            _ => "00",
+        }
+    }
+}
+
+/// Four-character lowercase hex codepoints, comma delimited.
+fn join_hex(values: &[u16]) -> String {
+    values
+        .iter()
+        .map(|v| format!("{v:04x}"))
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+/// The highest non-GREASE version a `supported_versions` body offers.
+///
+/// ⚠ **A client's body is a one-byte length then two-byte versions.** A body
+/// that does not parse produces [`None`] rather than a guess, and the caller
+/// then falls back to the handshake version, which is the specification's own
+/// rule for an absent extension.
+fn supported_versions(body_hex: &str) -> Option<u16> {
+    let bytes = decode_hex(body_hex)?;
+    let (&declared, rest) = bytes.split_first()?;
+    if usize::from(declared) != rest.len() || rest.len() % 2 != 0 {
+        return None;
+    }
+    rest.as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| (u16::from(pair[0]) << 8) | u16::from(pair[1]))
+        .filter(|v| !is_grease_value(*v))
+        .max()
+}
+
+/// Decode an even-length hex string, or nothing.
+fn decode_hex(text: &str) -> Option<Vec<u8>> {
+    if !text.len().is_multiple_of(2) {
+        return None;
+    }
+    let mut out = Vec::with_capacity(text.len() / 2);
+    let raw = text.as_bytes();
+    let mut i = 0;
+    while i < raw.len() {
+        let hi = char::from(raw[i]).to_digit(16)?;
+        let lo = char::from(raw[i + 1]).to_digit(16)?;
+        out.push(u8::try_from(hi * 16 + lo).ok()?);
+        i += 2;
+    }
+    Some(out)
+}

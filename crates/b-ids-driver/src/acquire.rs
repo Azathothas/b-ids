@@ -84,6 +84,31 @@ impl Route {
         ]
     }
 
+    /// Whether a build obtained through this route carries the vendor's own
+    /// brand entry.
+    ///
+    /// ⭐ **`None` is an answer, and it is the honest one for two of the
+    /// five.** A build already on the machine, or a copy this project cached,
+    /// is whatever somebody installed: the route says where the bytes came from
+    /// and not what they are. ⛔ Returning `true` for them would be the
+    /// synthesised brand list `DRIVER-06` forbids, and a profile wrong in that
+    /// field is one whose brand list cannot be trusted.
+    ///
+    /// ⚠ **The automation index serves UNBRANDED builds**, and they are the
+    /// ones automation reaches for first, so this is not an edge case. The
+    /// enterprise index serves the vendor's own product and is branded, which
+    /// is why the two indexes answer differently.
+    ///
+    /// `TODO/driver.md`, `DRIVER-06`.
+    #[must_use]
+    pub fn branded(self) -> Option<bool> {
+        match self {
+            Self::Installed | Self::Cache => None,
+            Self::Vendor | Self::EdgeEnterprise => Some(true),
+            Self::ChromeForTesting => Some(false),
+        }
+    }
+
     /// The route's name, as a report and a profile spell it.
     #[must_use]
     pub fn as_str(self) -> &'static str {

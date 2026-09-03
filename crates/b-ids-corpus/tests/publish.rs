@@ -6,8 +6,18 @@
 use std::path::Path;
 
 use b_ids_corpus::publish::{
-    CHECKSUMS, MANIFEST, NotReleasable, build, moving_tags, plan_release, tag, would_rewrite,
+    CHECKSUMS, MANIFEST, NotReleasable, build, moving_tags, parse_tag, plan_release, tag,
+    would_rewrite,
 };
+
+/// The repository root, canonicalised, which is what [`built_into`] builds from.
+fn repository_root() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .canonicalize()
+        .expect("the repository root")
+}
 
 /// Build the repository's own corpus into a throwaway directory.
 ///
@@ -15,11 +25,7 @@ use b_ids_corpus::publish::{
 /// this project actually holds, and a fixture would prove it can publish
 /// something else.
 fn built_into(name: &str) -> (b_ids_corpus::Built, std::path::PathBuf) {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .canonicalize()
-        .expect("the repository root");
+    let root = repository_root();
     let out = root.join(".tmp").join("publish-suite").join(name);
     let _ = std::fs::remove_dir_all(&out);
     let built = build(root.to_str().expect("a utf-8 root"), &out).expect("the corpus assembles");
@@ -99,7 +105,16 @@ fn publish_the_tree_carries_no_source_and_no_vendored_dependency() {
 fn publish_the_tree_carries_the_corpus_the_formats_and_the_routes() {
     let (built, _) = built_into("shape");
     let has = |prefix: &str| built.artefacts.iter().any(|a| a.path.starts_with(prefix));
-    for prefix in ["corpus/v1/", "raw/v1/", "formats/", "routes/", "anchors/"] {
+    for prefix in [
+        "corpus/v1/",
+        "raw/v1/",
+        "formats/",
+        "routes/",
+        "anchors/",
+        // ⭐ The published JA4 vectors, so an implementation in any language has
+        // something to check itself against. TODO/validator.md, VALID-04.
+        "vectors/",
+    ] {
         assert!(has(prefix), "nothing was published under {prefix}");
     }
     // ⚠ A profile and its raw sidecar are published together, always.
@@ -202,5 +217,80 @@ fn publish_a_push_that_would_rewrite_the_data_branch_is_refused() {
     assert!(
         would_rewrite(Some("abc"), None),
         "an orphan commit pushed over an existing branch discards every commit on it"
+    );
+}
+
+#[test]
+fn publish_the_tree_names_no_path_outside_itself() {
+    // ⛔ THE ROUTE MANIFEST RECORDS WHICH PROFILE EACH ROUTE WAS READ OUT OF,
+    // and it took that path from the caller's `--root`. A build under an
+    // absolute root therefore published the BUILDER'S filesystem, and produced
+    // different bytes from a build of the same corpus under a relative one:
+    // 668384 against 666710 on one machine, one minute apart. That is the
+    // reproducibility PUB-01 asserts, and check-release could not see it
+    // because it builds twice under ONE root. Found by running the assembler
+    // both ways. TODO/publish.md, PUB-10.
+    let (built, dir) = built_into("paths");
+    let root = repository_root().to_string_lossy().replace('\\', "/");
+    // ⚠ Windows canonicalises to a `\?\` prefixed path; the trimmed form is a
+    // substring of the untrimmed one, so searching for it catches both.
+    let root = root.trim_start_matches("//?/").to_owned();
+    assert!(!root.is_empty(), "the root is not a path");
+
+    let mut checked = 0_usize;
+    for name in built
+        .artefacts
+        .iter()
+        .map(|a| a.path.clone())
+        .chain([MANIFEST.to_owned(), CHECKSUMS.to_owned()])
+    {
+        let body = std::fs::read(dir.join(&name)).expect("it was written");
+        let text = String::from_utf8_lossy(&body).replace('\\', "/");
+        assert!(
+            !text.contains(&root),
+            "{name} names the builder's own filesystem"
+        );
+        checked += 1;
+    }
+    assert!(checked > 2, "the build produced almost nothing to check");
+}
+
+#[test]
+fn publish_a_tag_this_rule_did_not_produce_is_refused() {
+    // ⛔ A RELEASE JOB IS HANDED A TAG SOMEBODY PUSHED rather than asked to
+    // invent one, so the tag is parsed and then rebuilt from its own parts. A
+    // tag that does not survive that round trip is one this project's rule
+    // never produced, and publishing under it would put two names on one
+    // release. TODO/publish.md, PUB-10.
+    let (built, _) = built_into("parse");
+    assert_eq!(
+        parse_tag("v1.2026.09.03.1"),
+        Some(("v1".to_owned(), "2026-09-03".to_owned(), 1))
+    );
+    for bad in [
+        "v1.2026.09.03",
+        "v1.2026.09.03.1.2",
+        "v1.2026.09.03.x",
+        "latest",
+        "",
+    ] {
+        assert!(parse_tag(bad).is_none(), "{bad} parsed as a release tag");
+    }
+
+    // ⚠ A ZERO-PADDED COUNTER PARSES and rebuilds to a different string, which
+    // is why the round trip is the check rather than the parse.
+    let (layout, date, counter) = parse_tag("v1.2026.09.03.01").expect("it parses");
+    assert_eq!(tag(&layout, &date, counter), "v1.2026.09.03.1");
+
+    // ⚠ AND A MALFORMED DATE IS plan_release's REFUSAL, not the parser's: the
+    // parser says where the parts are and the rule says whether they are good.
+    let (layout, date, counter) = parse_tag("v1.2026.9.3.1").expect("it parses");
+    assert_eq!(layout, built.layout);
+    assert!(
+        matches!(
+            plan_release(&built, &date, counter, &[]),
+            Err(NotReleasable::BadDate { .. })
+        ),
+        "a malformed date was accepted"
     );
 }

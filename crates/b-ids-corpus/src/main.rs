@@ -15,8 +15,9 @@
 use std::process::ExitCode;
 
 use b_ids_corpus::{
-    Format, Identity, Run, SUPPORT_MATRIX_FILE, Store, build, indexes, manifest, profile_from,
-    render, requests, routes, support_matrix, verify as verify_format,
+    Built, Format, Identity, Run, SUPPORT_MATRIX_FILE, Store, build, indexes, manifest, model,
+    parse_tag, plan_release, profile_from, release_body, render, requests, routes, support_matrix,
+    verify as verify_format, would_rewrite,
 };
 use b_ids_harness::Capture;
 use b_ids_schema::Profile;
@@ -31,6 +32,9 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
        b-ids-corpus anchors --out DIR [--root DIR]
        b-ids-corpus routes --out DIR [--root DIR]
        b-ids-corpus publish --out DIR [--root DIR]
+       b-ids-corpus data-branch --head COMMIT|none --parent COMMIT|none
+       b-ids-corpus release --tree DIR --tag TAG [--existing FILE] [--notes FILE]
+                            [--before DIR] [--root DIR]
        b-ids-corpus pull-request --before DIR --after DIR --run FILE --out DIR
 
   add              turn the cold connection of a navigation into a profile and
@@ -90,6 +94,22 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    the corpus's own digest. ⛔ It writes a directory and pushes
                    nothing. Its LAST line is a fixed
                    `corpus=publish files:N bytes:N profiles:N from:DIGEST`.
+  data-branch      would pushing this commit REWRITE the data branch? --head is
+                   what the remote holds and --parent is what the new commit was
+                   built on; they agree on an append and differ when the commit
+                   was built on something the branch has moved past. ⛔ The case
+                   that matters is a commit with no parent: an orphan pushed
+                   over an existing branch discards every commit on it. Exit 1
+                   is a refusal. Its LAST line is a fixed
+                   `corpus=data-branch head:X parent:Y verdict:append|rewrite`.
+  release          the tag an assembled tree would be released under, and the
+                   body that goes with it. --tag is the tag somebody PUSHED and
+                   it is parsed, planned against the tags that already carry a
+                   release, and rebuilt from its own parts, so a tag this
+                   project's rule would not have produced is refused. ⛔ It
+                   publishes nothing: no tag, no asset, no remote. Its LAST line
+                   is a fixed
+                   `corpus=release tag:T files:N bytes:N profiles:N notes:N from:D`.
   pull-request     what a scheduled run that found a change should open: one
                    request per route that moved, each with a deterministic
                    branch, a body a reviewer can read without checking anything
@@ -104,6 +124,13 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    workflow, the run identifier, the images, the harness, the
                    command that reproduces this, what the run could not do, and
                    the validator's output. ⛔ Every field is required.
+  --head COMMIT    what the data branch holds on the remote, or none.
+  --parent COMMIT  what the commit being pushed was built on, or none.
+  --tree DIR       a tree `publish` assembled, read through its MANIFEST.json.
+  --tag TAG        the release tag, shaped LAYOUT.YYYY.MM.DD.COUNTER.
+  --existing FILE  the tags that already carry a release, one per line.
+  --notes FILE     where the release body is written. ⚠ Empty is the correct
+                   body for a release nothing moved in.
   --out DIR        where the generated formats or lists are written.
   --captures FILE  what `b-ids-harness --json` printed. Its first line is the
                    base URL and is not a capture; every other line is one.
@@ -636,6 +663,179 @@ fn publish_command(root: &str, out_dir: &str) -> ExitCode {
     }
 }
 
+/// Whether the commit a workflow built may be pushed to the data branch.
+///
+/// ⛔ **The rule lives in the crate and this is how a workflow reaches it.** A
+/// workflow that decided this in shell would be a second statement of the rule,
+/// and the day the two disagreed the branch would be the thing that lost.
+/// `b_ids_corpus::publish::would_rewrite` is the rule and its four cases are in
+/// the suite. `TODO/publish.md`, `PUB-02` and `PUB-10`.
+///
+/// ⚠ **`none` is how absence is spelled on a command line.** An empty argument
+/// is what a shell produces from an unset variable, so both mean absent and
+/// neither is a parse error: the caller reading `head=` from a branch that does
+/// not exist gets the same answer as one that wrote `none`.
+fn data_branch_command(head: &str, parent: &str) -> ExitCode {
+    fn present(value: &str) -> Option<&str> {
+        let value = value.trim();
+        if value.is_empty() || value == "none" {
+            None
+        } else {
+            Some(value)
+        }
+    }
+    let (head, parent) = (present(head), present(parent));
+    let rewrite = would_rewrite(head, parent);
+    println!(
+        "corpus=data-branch head:{} parent:{} verdict:{}",
+        head.unwrap_or("none"),
+        parent.unwrap_or("none"),
+        if rewrite { "rewrite" } else { "append" }
+    );
+    if !rewrite {
+        return ExitCode::SUCCESS;
+    }
+    eprintln!("b-ids-corpus: this push would REWRITE the data branch, and it is append-only.");
+    if parent.is_none() {
+        // ⛔ THE CASE THAT MATTERS. A branch built with `--orphan` destroys
+        // itself on its second run, and the push that does it looks like every
+        // other push.
+        eprintln!(
+            "b-ids-corpus: the commit has no parent, so pushing it over an existing branch \
+             would discard every commit on it."
+        );
+    }
+    ExitCode::from(1)
+}
+
+/// The tag a release would take, and the body that goes with it.
+///
+/// ⛔ **It publishes nothing.** No tag is created, no asset uploaded and no
+/// remote written to: this reads an assembled tree, plans the release against
+/// the tags that already carry one, and writes the body. The workflow holds the
+/// token. `TODO/publish.md`, `PUB-01` and `PUB-10`.
+///
+/// ⚠ **The tag is the CALLER'S**, because a release job is handed one somebody
+/// pushed rather than asked to invent one. It is parsed, planned, and then
+/// rebuilt from its own parts: a tag the rule would not have produced does not
+/// survive that round trip.
+fn release_command(
+    root: &str,
+    tree: &str,
+    wanted: &str,
+    existing_file: Option<&str>,
+    notes_file: Option<&str>,
+    before: Option<&str>,
+) -> ExitCode {
+    let manifest_path = std::path::Path::new(tree).join(b_ids_corpus::publish::MANIFEST);
+    let manifest_text = match std::fs::read_to_string(&manifest_path) {
+        Ok(text) => text,
+        // ⛔ 2, not 1. A tree with no manifest is one this never read, which is
+        // a different fact from a tree it read and refused.
+        Err(err) => return fail(&format!("{}: {err}", manifest_path.display())),
+    };
+    let built: Built = match serde_json::from_str(&manifest_text) {
+        Ok(built) => built,
+        Err(err) => {
+            return fail(&format!(
+                "{}: not a manifest: {err}",
+                manifest_path.display()
+            ));
+        }
+    };
+
+    let Some((layout, date, counter)) = parse_tag(wanted) else {
+        eprintln!(
+            "b-ids-corpus: {wanted} is not a release tag. The shape is \
+             LAYOUT.YYYY.MM.DD.COUNTER, for example v1.2026.09.03.1"
+        );
+        return ExitCode::from(1);
+    };
+    if layout != built.layout {
+        eprintln!(
+            "b-ids-corpus: {wanted} names layout {layout} and this build is {}",
+            built.layout
+        );
+        return ExitCode::from(1);
+    }
+
+    // ⛔ THE TAGS THAT ALREADY CARRY A RELEASE, read by the caller from the
+    // repository. A published release is immutable, so the question is whether
+    // this one would overwrite an asset somebody has pinned.
+    let existing: Vec<String> = match existing_file {
+        None => Vec::new(),
+        Some(path) => match std::fs::read_to_string(path) {
+            Ok(text) => text
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(str::to_owned)
+                .collect(),
+            Err(err) => return fail(&format!("{path}: {err}")),
+        },
+    };
+
+    let planned = match plan_release(&built, &date, counter, &existing) {
+        Ok(planned) => planned,
+        Err(why) => {
+            eprintln!("b-ids-corpus: {why}");
+            return ExitCode::from(1);
+        }
+    };
+    if planned != wanted {
+        // ⚠ THE ROUND TRIP IS THE CHECK. `v1.2026.09.03.01` parses, plans, and
+        // rebuilds as `v1.2026.09.03.1`, which is a different tag; publishing
+        // under the pushed spelling would put two names on one release.
+        eprintln!("b-ids-corpus: {wanted} is not the tag this rule produces, which is {planned}");
+        return ExitCode::from(1);
+    }
+
+    let load = |root: &str| -> Result<Vec<Profile>, String> {
+        let store = Store::at(root);
+        if !store.exists() {
+            // ⚠ ABSENT IS EMPTY HERE, as it is for `pull-request`: the first
+            // release has no published state behind it and every route is then
+            // new. A refusal would make the first release the one with no body.
+            return Ok(Vec::new());
+        }
+        store
+            .profiles()
+            .map(|found| found.into_iter().map(|(_, profile)| profile).collect())
+    };
+    // ⛔ NO `--before` IS AN EMPTY STATE, never the working directory. Passing
+    // "" to the loader resolved to the corpus this build was made from, so the
+    // before and the after were the same set and the body of the FIRST release
+    // came out empty. Found by running it.
+    let was = before.map_or_else(|| Ok(Vec::new()), load);
+    let (was, now) = match (was, load(root)) {
+        (Ok(was), Ok(now)) => (was, now),
+        (Err(why), _) | (_, Err(why)) => {
+            eprintln!("b-ids-corpus: {why}");
+            return ExitCode::from(1);
+        }
+    };
+    // ⛔ THE BODY IS `PUB-08`'s RENDERER, never one written here. A release body
+    // and a changelog entry that disagree is the defect that entry exists to
+    // make impossible.
+    let body = release_body(&model(&was, &now));
+    if let Some(path) = notes_file
+        && let Err(why) = std::fs::write(path, body.as_bytes())
+    {
+        eprintln!("b-ids-corpus: {path}: {why}");
+        return ExitCode::from(1);
+    }
+
+    println!(
+        "corpus=release tag:{planned} files:{} bytes:{} profiles:{} notes:{} from:{}",
+        built.artefacts.len(),
+        built.bytes(),
+        built.profiles,
+        body.len(),
+        built.generated_from
+    );
+    ExitCode::SUCCESS
+}
+
 /// What a scheduled run that found a change should open.
 ///
 /// ⛔ **It opens nothing.** The workflow holds the token and this holds the
@@ -818,6 +1018,12 @@ fn main() -> ExitCode {
     let mut before: Option<String> = None;
     let mut after: Option<String> = None;
     let mut run_file: Option<String> = None;
+    let mut head: Option<String> = None;
+    let mut parent: Option<String> = None;
+    let mut tree: Option<String> = None;
+    let mut wanted_tag: Option<String> = None;
+    let mut existing: Option<String> = None;
+    let mut notes: Option<String> = None;
     while let Some(arg) = argv.next() {
         match arg.as_str() {
             "--write" => write = true,
@@ -849,6 +1055,33 @@ fn main() -> ExitCode {
             "--run" => match argv.next() {
                 Some(value) => run_file = Some(value),
                 None => return fail("--run needs a path"),
+            },
+            // ⚠ EMPTY IS ALLOWED and means absent, because a shell reading a
+            // branch that does not exist produces an empty string rather than
+            // the word. `data-branch` treats the two the same.
+            "--head" => match argv.next() {
+                Some(value) => head = Some(value),
+                None => return fail("--head needs a commit, or none"),
+            },
+            "--parent" => match argv.next() {
+                Some(value) => parent = Some(value),
+                None => return fail("--parent needs a commit, or none"),
+            },
+            "--tree" => match argv.next() {
+                Some(value) => tree = Some(value),
+                None => return fail("--tree needs a directory"),
+            },
+            "--tag" => match argv.next() {
+                Some(value) => wanted_tag = Some(value),
+                None => return fail("--tag needs a tag"),
+            },
+            "--existing" => match argv.next() {
+                Some(value) => existing = Some(value),
+                None => return fail("--existing needs a path"),
+            },
+            "--notes" => match argv.next() {
+                Some(value) => notes = Some(value),
+                None => return fail("--notes needs a path"),
             },
             "-h" | "--help" => {
                 println!("{USAGE}");
@@ -882,6 +1115,28 @@ fn main() -> ExitCode {
                 return fail("routes needs --out, the directory to generate into");
             };
             routes_command(&root, &out_dir)
+        }
+        // ⛔ BOTH ARGUMENTS ARE REQUIRED rather than defaulted to absent. A
+        // caller that forgot one would otherwise be told the push appends,
+        // which is the answer that lets it through.
+        "data-branch" => {
+            let (Some(head), Some(parent)) = (head, parent) else {
+                return fail("data-branch needs --head and --parent, each a commit or none");
+            };
+            data_branch_command(&head, &parent)
+        }
+        "release" => {
+            let (Some(tree), Some(wanted_tag)) = (tree, wanted_tag) else {
+                return fail("release needs --tree, an assembled tree, and --tag");
+            };
+            release_command(
+                &root,
+                &tree,
+                &wanted_tag,
+                existing.as_deref(),
+                notes.as_deref(),
+                before.as_deref(),
+            )
         }
         "anchors" => {
             let Some(out_dir) = out_dir else {

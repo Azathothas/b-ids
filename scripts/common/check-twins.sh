@@ -493,6 +493,25 @@ compare_pair "check-release"        check-release.sh        "--dry-run --json" c
 # TODO/publish.md, PUB-02.
 compare_pair "check-data-branch"    check-data-branch.sh    "--json"          check-data-branch.ps1    "-Json"
 
+# ⚠ EACH HALF READS THE WORKFLOW ITSELF, one in awk, sed and grep and one in
+# -match over its lines, and each DRIVES the binary over ten refusal paths. ⛔ So
+# this row compares two readings of one file rather than two wrappers over one.
+# TODO/publish.md, PUB-10.
+compare_pair "check-publish"        check-publish.sh        "--json"          check-publish.ps1        "-Json"
+
+# ⭐ THE PAIR THE COLD-START JOB ITSELF DEPENDS ON: its Windows half RUNS the
+# .ps1 as its first step, so a twin that drifted would probe a different list
+# from the one the job is checked against. ⚠ Two rows, because the probe is a
+# different question from the workflow's shape. TODO/ci.md, CI-05.
+compare_pair "check-cold-start"     check-cold-start.sh     "--json"          check-cold-start.ps1     "-Json"
+compare_pair "check-cold-start probe" check-cold-start.sh   "--resolve --json" check-cold-start.ps1    "-Resolve -Json"
+
+# ⚠ EACH HALF RESOLVES EVERY CITATION ITSELF, one with wc and one with
+# Get-Content, over a matrix each generates by RUNNING the generator. ⭐ Two
+# readings of one run rather than two wrappers over one. TODO/emitters.md,
+# EMIT-01.
+compare_pair "check-support-matrix"  check-support-matrix.sh "--json"          check-support-matrix.ps1 "-Json"
+
 # ⚠ EACH HALF COUNTS THE CARRIERS ITSELF, in jq and in ConvertFrom-Json, so this
 # row compares two readings of the corpus rather than two wrappers over one.
 # ⛔ Both refuse a corpus with no carrier at exit 2 rather than passing over an

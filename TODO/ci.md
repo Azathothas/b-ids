@@ -778,7 +778,7 @@ actually breaks silence is the row under it, and it is caught three ways.
 ## CI-05. The cold-start job, which is the only thing that catches rot
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** ci, **Priority** P2, **Effort** M, **Status** open
+**Category** ci, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -809,6 +809,114 @@ sh scripts/common/check-cold-start.sh
 Passing means: the job runs with every cache disabled, completes a capture and a
 publish end to end, and fails loudly naming the first step that could not
 resolve.
+
+---
+
+### ⭐ Closed 2026-09-03. The job is cold, and the check refuses the day it stops being
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-cold-start.sh
+cold start ok: 11 stage(s), each named by the report step, no cache of any kind,
+  and 9 of 9 program(s) present on this host.
+  ⛔ Nothing was built, captured or published by this check.
+rc=0
+```
+
+Both halves agree. Each reads the file with its own tools rather than wrapping
+one reading, which is the same split `PUB-10`'s pair makes and for the same
+reason.
+
+```text
+$ sh scripts/common/check-cold-start.sh --json
+{"schema":"check-cold-start/1","tools":9,"found":9,"missing":0,"stages":11,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-cold-start.ps1 -Json
+{"schema":"check-cold-start/1","tools":9,"found":9,"missing":0,"stages":11,"problems":0}
+```
+
+#### ⛔ The whole point is that the job stays cold, so that is what is checked
+
+⚠ **A cold-start job that shares a cache has stopped being one while continuing
+to report as one**, which is the worst outcome available: green, and verifying
+nothing. The check refuses `actions/cache`, `rust-cache`, `sccache`,
+`RUSTC_WRAPPER` and any `cache:` key, over the workflow with its comment lines
+dropped first, ⛔ because a comment may say the words and a step may not carry
+them.
+
+⭐ **And it refuses a shared concurrency group.** A cold-start run that queued
+behind a capture run, or cancelled one, is a run whose timings mean nothing.
+
+#### ⭐ "Fails loudly naming the first step that could not resolve"
+
+That sentence is the acceptance, and a run whose log a person has to scroll is
+not it. So every stage carries an `id`, and the last step is a report that runs
+`if: always()`, prints each stage's outcome and names the first failure:
+
+```text
+  resolve    success
+  toolchain  success
+  ...
+  ⛔ the cold path broke at: fetch
+```
+
+⛔ **The check asserts the report names every stage**, so a stage added without
+a line in it is a stage whose failure would be silent. That is the rule that
+caught the mutation below.
+
+#### ⭐ The resolution probe belongs to the check, and the workflow runs it
+
+⛔ **One list, in one place.** `check-cold-start --resolve` names every program a
+cold pipeline needs and reports each; the workflow's first step runs that same
+probe with `--require-tools`, which turns the first absent one into a failure.
+⚠ On a laptop a missing tool is a fact about the laptop and a gate that failed
+over it is a gate somebody disables, which is the same split `--strict` makes.
+
+```text
+$ sh scripts/common/check-cold-start.sh --resolve
+cold start probe over 9 program(s):
+
+  ok    git
+  ok    cargo
+  ok    rustc
+  ok    rustup
+  ok    jq
+  ok    awk
+  ok    sed
+  ok    grep
+  ok    tar
+
+every program a cold pipeline names is on this host.
+rc=0
+```
+
+⚠ **A browser is deliberately not on that list.** `b-ids-driver resolve` exits 2
+on a host with none, and "this runner has no browser" is a fact about the host
+rather than a broken cold path. `CI-07` is the rule.
+
+#### The guard mutation, both halves, each exit code read unpiped
+
+⛔ **Every mutation was made against a copy under the ignored scratch directory,
+and the live file was compared byte for byte with that copy afterwards.**
+
+| planted | sh | ps | what went red |
+| --- | --- | --- | --- |
+| a cache action added | 1 | 1 | `1 line(s) name a cache, and a cold-start job that shares one has stopped being one` |
+| the schedule removed | 1 | 1 | `is not on a schedule, and a cold path nobody runs is one nobody checks` |
+| the concurrency group shared with `ci` | 1 | 1 | `the concurrency group is ci-…, which is not this workflow's own` |
+| the report step no longer `always()` | 1 | 1 | `a red job says nothing about which stage went red` |
+| the gate stage dropped from the report | 1 | 1 | `the report step does not name the gate stage` |
+| every stage `id` removed | 1 | 1 | `0 stage(s) carry an id` |
+| the workflow deleted | 1 | 1 | `there is no .github/workflows/cold-start.yml` |
+| a program the pipeline names made absent | 1 | 1 | ⭐ under `--require-tools` only: `the cold path breaks at the first absent program`. Exit **0** without it, which is the split above, proved rather than described |
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a cold run | ⛔ None was taken. This machine is warm by definition and a cold-start check that built the workspace here would prove nothing about a fresh runner while costing an hour. The first real answer is the next scheduled run. |
+| a capture on the Windows lane | ⚠ The lane exists and its cold path has never been exercised. `capture.yml` has run on both hosts; this workflow has run on neither. |
+| the network legs, probed locally | ⛔ Deliberately absent. A gate that needs the network fails on a machine that has none, and the fetch stage in the workflow is where a registry outage or a yanked crate shows. |
 
 ---
 

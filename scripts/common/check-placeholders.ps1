@@ -154,7 +154,14 @@ foreach ($rel in $files) {
         }
 
         # 2. A template guidance comment, addressed to whoever was filling it in.
-        if ($line -match '<!-- *TEMPLATE' -or $line -match 'delete this comment' -or $line -match 'Fill every') {
+        # ⛔ CASE-SENSITIVE, because the twin's `grep -E` is and these are
+        # LITERALS from TODO/ENTRY.md rather than ideas. PowerShell's `-match`
+        # is case-INSENSITIVE by default, so this half fired on an ordinary
+        # sentence containing "fill every cell" while the POSIX half did not,
+        # and check-twins reported the drift. `-cmatch` is the operator that
+        # makes the two halves one rule.
+        if ($line -cmatch '<!-- *TEMPLATE' -or $line -cmatch 'delete this comment' -or
+            $line -cmatch 'Fill every') {
             [void]$guideHits.Add("${rel}:${n}:$line")
         }
 

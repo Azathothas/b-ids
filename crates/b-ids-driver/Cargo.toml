@@ -30,4 +30,12 @@ b-ids-harness = { path = "../b-ids-harness" }
 # The fixtures feature, so the headless test has a well-formed profile to break
 # exactly one field of. ⛔ Nothing in it is a measurement.
 b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }
+# ⛔ A DEV DEPENDENCY, for DRIVER-06's acceptance and nothing else. The rule that
+# a branded profile has a vendor entry in its brand list belongs to the
+# validator and is asserted there; what this crate owes is the END TO END pass,
+# which drives an unbranded acquisition and hands the resulting claim to that
+# rule. ⚠ The validator already takes this crate as a dev dependency for
+# VALID-03, so the two test graphs point at each other and neither build graph
+# does. TODO/driver.md, DRIVER-06.
+b-ids-validator = { path = "../b-ids-validator" }
 serde_json.workspace = true

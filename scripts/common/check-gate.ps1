@@ -236,6 +236,9 @@ $ComparedDirectly = @(
     'check-license-consistency',
     'check-release',
     'check-data-branch',
+    'check-publish',
+    'check-cold-start',
+    'check-support-matrix',
     'check-trust-anchors',
     'check-notes-generator',
     'check-changelog',
@@ -447,6 +450,17 @@ Invoke-PsCheck -Name 'check-release' -Script 'scripts/common/check-release.ps1' 
 # ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER.
 # TODO/publish.md, PUB-02.
 Invoke-PsCheck -Name 'check-data-branch' -Script 'scripts/common/check-data-branch.ps1'
+
+# ⛔ THE TRIGGER, AND THE TWO CONDITIONS THAT STAND BETWEEN IT AND A REWRITTEN
+# BRANCH. TODO/publish.md, PUB-10.
+Invoke-PsCheck -Name 'check-publish' -Script 'scripts/common/check-publish.ps1'
+
+# ⛔ EVERY WARM RUN PASSES OVER A BROKEN COLD PATH, and nothing else in this tree
+# catches one. TODO/ci.md, CI-05.
+Invoke-PsCheck -Name 'check-cold-start' -Script 'scripts/common/check-cold-start.ps1'
+
+# ⛔ A HOLE WHOSE EVIDENCE STOPPED RESOLVING IS A CLAIM. TODO/emitters.md, EMIT-01.
+Invoke-PsCheck -Name 'check-support-matrix' -Script 'scripts/common/check-support-matrix.ps1'
 
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
 # build that carries it gets a published list with its date. TODO/corpus.md,

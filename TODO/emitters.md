@@ -13,7 +13,7 @@ produces here, because they tell a client author what they cannot claim.
 ## EMIT-01. The support matrix, with the holes left in
 
 **Source** the founding brief; the limits are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 9
-**Category** emitters, **Priority** P2, **Effort** L, **Status** open
+**Category** emitters, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
 
@@ -64,10 +64,96 @@ fails the check.
 
 ---
 
+### ⭐ Closed 2026-09-03. Six cells from a run, five holes from a reading, and the check refuses the day a citation stops resolving
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-support-matrix.sh
+support matrix ok: 6 cell(s) over 6 profile(s), every one produced by a run,
+  and 5 of 5 hole(s) still resolving to a file and a line under references/.
+  ⛔ A cell is a run and a hole is a reading, and this check keeps them apart.
+rc=0
+```
+
+```text
+$ sh scripts/common/check-support-matrix.sh --json
+{"schema":"check-support-matrix/1","cells":6,"holes":5,"resolved":5,"profiles":6,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-support-matrix.ps1 -Json
+{"schema":"check-support-matrix/1","cells":6,"holes":5,"resolved":5,"profiles":6,"problems":0}
+```
+
+#### ⛔ A cell is a run and a hole is a reading, and they are different kinds
+
+⚠ **The approach says to fill every cell from a conformance run and never from
+a project's documentation. This tree can RUN exactly one emitter: its own.** So
+the matrix has two kinds rather than one kind with two colours:
+
+| kind | how many | where it comes from |
+| --- | --- | --- |
+| ⭐ `cell`, evidence `run` | 6, one per published profile | `b_ids_emit::client_hello` was actually called on each, and each cell carries the command that reproduces it |
+| ⛔ `hole`, evidence `read` | 5 | a file and a line in [`../references/`](../references/) at the commit its `PROVENANCE.md` names |
+
+⛔ **A stack this tree cannot run gets a hole and NO CELL.** Writing a cell for
+it would be filling the matrix from somebody else's documentation, which the
+approach forbids by name, and a row saying "cannot" with no way to re-check it
+is a claim rather than a finding.
+
+#### The matrix, as generated
+
+```text
+$ b-ids-cli --matrix
+```
+
+| stack | what it can or cannot do | evidence |
+| --- | --- | --- |
+| ⭐ `b-ids-emit` | emits every one of the six profiles whole: 1739 to 1983 bytes, 13 or 14 extensions per profile carrying a codepoint the model gives no field to | `run`, `cargo test -p b-ids-emit escape_hatch` |
+| `rustls` | cannot emit an extension whose codepoint was learned at run time. ⭐ Patchable here: this tree already vendors it | `read`, `client_hello.rs:147` |
+| `rustls` | cannot emit an arbitrary captured extension order: the order is drawn from a sixteen-bit seed | `read`, `client_hello.rs:337` |
+| `h2` | cannot emit the priority block: both send-path constructors hardcode no dependency | `read`, `headers.rs:123`. ⚠ Not vendored here, which is `EMIT-03`'s first step |
+| `impit` | cannot emit any unenumerated codepoint at all | `read`, `types.rs:87` |
+| ⭐ `utls` | **no known hole for the extension model** | `read`, `u_common.go:184` |
+
+⭐ **The `utls` row is the one worth keeping.** A matrix that only listed
+failures would read as an argument; a row saying one stack has no known hole is
+what makes the other four rows a measurement.
+
+#### ⛔ The evidence has to still resolve, and that is the check
+
+⚠ **A reference tree moves when it is re-mined**, and a citation into one is a
+line number that can stop pointing at anything. Both halves open every cited
+file and count its lines, so a hole whose file is gone or whose line is past the
+end fails the gate rather than sitting in a table nobody re-reads. ⛔ That is
+the `TOOL-10` defect, in the one document whose whole content is citations.
+
+#### The guard mutation, both halves, each exit code read unpiped
+
+⛔ **Every mutation was made against a copy under the ignored scratch directory,
+and the live file was compared byte for byte with that copy afterwards.**
+
+| planted | sh | ps | what went red |
+| --- | --- | --- | --- |
+| a cell claims evidence `read` | 1 | 1 | `6 cell(s) are not evidence run, and a cell filled any other way is a hole wearing a cell's clothes` |
+| a hole cites a file that is gone | 1 | 1 | `the evidence for this hole no longer resolves` |
+| a hole cites a line past the end of its file | 1 | 1 | `has 446 line(s) and the hole cites line 8700` |
+| the holes emptied | 1 | 1 | `the matrix declares no hole at all, and a matrix with none is one nobody filled honestly` |
+| a cell loses its reproduce command | 1 | 1 | `6 cell(s) name no command that reproduces them` |
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a cell for any third-party stack | ⛔ Deliberately absent, with the reason above. `VALID-05` is the conformance suite that would produce one, and until it exists a hole is the honest row. |
+| the HTTP/2 and header halves of the matrix | ⚠ The cells cover the `ClientHello` only, because that is what `EMIT-02` made emittable. The `h2` hole names what stands in the way of the other half. |
+| a committed matrix file | ⛔ On purpose. There is nothing to go stale: the check generates it every time, so a hole that closed shows as a changed cell rather than as a table nobody edited. |
+| `PUB-04`'s snippets | The entry this unblocks. Every snippet it generates has to be for a pair this matrix marks emittable, and now there is a matrix to ask. |
+
+---
+
 ## EMIT-02. The escape hatch, and where it has to live
 
 **Source** the founding brief; the escape hatch is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 1
-**Category** emitters, **Priority** P2, **Effort** L, **Status** open
+**Category** emitters, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
 
@@ -108,6 +194,87 @@ cargo test -p b-ids-emit escape_hatch -- --nocapture
 Passing means: a profile carrying two extensions whose codepoints the emitter
 has no name for is emitted with both, in order, with their bodies intact, and
 the emitted bytes compare equal to the profile's raw hex.
+
+---
+
+### ⭐ Closed 2026-09-03. 1871 of 1983 bytes, byte for byte, and the other 112 are why the acceptance needed a correction
+
+#### The acceptance
+
+```text
+$ cargo test -p b-ids-emit escape_hatch
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+```
+
+#### ⛔ The correction: the acceptance as written cannot be satisfied, and the reason is a field nobody should add
+
+⚠ **"the emitted bytes compare equal to the profile's raw hex" is not
+achievable, and finding out why is the finding.** The model does not record the
+`ClientHello` random: `crates/b-ids-harness/src/hello.rs:77` steps over those
+thirty-two bytes without keeping them, deliberately, because a per-connection
+random is the one part of a hello that carries no fingerprint at all.
+
+⛔ **So the acceptance is corrected rather than the model.** Recording the random
+to satisfy a sentence would put thirty-two bytes of noise into every published
+profile, and a consumer comparing two profiles would have to learn to ignore
+them. What is compared instead is the EXTENSIONS BLOCK, which is what the
+escape hatch is actually about, and it is compared against the raw bytes rather
+than against the model.
+
+| | measured over `chrome-152.0.7977.75-linux64-stable` |
+| --- | --- |
+| the raw hello | 1983 bytes |
+| ⭐ the emitted extensions block | **1871 bytes, found in the hello exactly once** |
+| what is not compared | 112 bytes: the record and handshake headers, the versions, the random, the session id, the ciphers and the compression methods |
+
+⚠ **The unmatched 112 bytes are not unreachable**, and saying which is which
+matters: the ciphers, the versions, the session id and the compression methods
+are all in the model and could be emitted. Only the random cannot, and it is the
+only one that should not be.
+
+#### ⭐ Found rather than sliced, and that is the whole assertion
+
+⛔ **Slicing the extensions out of the hello would need a second parser of the
+hello**, and a second parser tests two implementations against each other rather
+than testing the bytes. So the emitted block is SEARCHED FOR in the raw bytes
+and required to occur exactly once. ⚠ A block of 1871 bytes occurring once in
+1983 is not a coincidence, and the reordering case below is what says the search
+can fail.
+
+#### The escape hatch, measured
+
+⭐ **Fourteen of eighteen extensions in a Chrome 152 hello carry a codepoint the
+model gives no field to.** A model with one typed field per extension could hold
+four of them. That is the premise of this entry, asserted by
+`escape_hatch_every_capture_carries_codepoints_the_model_does_not_name` over
+every published profile rather than believed.
+
+⚠ **`unnamed_codepoints` names four as reachable without the list**:
+`supported_groups`, `signature_algorithms`, ALPN and `key_share`, because the
+model carries the whole content of each as a typed field. ⛔
+`supported_versions` is NOT among them: the model reads a value out of its body
+and could not write the body back, and reading is not emitting.
+
+#### The guard, seen to fail
+
+| planted | what went red |
+| --- | --- |
+| two extensions swapped | the block changes, its length does not, and ⛔ the swapped block is found in the hello **zero** times |
+| a declared length raised by one | `extensions_block` refuses with `the capture declares N byte(s) and its body holds M, so an emitter would have to believe one of them` |
+
+⭐ **The first of those is the one worth having.** The order is a fingerprint,
+and a comparison that passed over a reordered list would be a comparison that
+proved only that the bytes were present somewhere.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a whole `ClientHello` on a wire | ⛔ Not emitted, and the record above says which bytes are missing and why one of them should stay missing. `LIB-02` is the entry that puts a profile back on a socket. |
+| a patch to the vendored TLS library | ⚠ None was needed here. This entry is the MODEL half of the escape hatch, and it turns out the model already had the shape: the list is ordered, the codepoint is a plain number and the body is arbitrary bytes. The patch belongs to whichever stack cannot take that list, which is `EMIT-01`'s matrix and `LIB-02`'s first attempt. |
+| the HTTP/2 and header sides | `EMIT-01`. |
 
 ---
 

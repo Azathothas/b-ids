@@ -33,11 +33,11 @@ project says so.** A server deciding whether a caller is a real browser needs
 the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
-⭐ **The corpus holds five profiles**: four Chrome and one Edge, across majors
+⭐ **The corpus holds six profiles**: five Chrome and one Edge, across majors
 `151` and `152`, on `linux64` and `win64`, each with the `ClientHello` it was
-read from beside it. ⭐ Two of them name the URL and the digest of the artefact
+read from beside it. ⭐ Three of them name the URL and the digest of the artefact
 the browser was installed from; the other three record that nobody chose the
-build. ⚠ Five profiles is still not a matrix, and `CORPUS-02` is the entry that
+build. ⚠ Six profiles is still not a matrix, and `CORPUS-02` is the entry that
 makes it one.
 [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next, and
 [`architecture.md`](architecture.md) is what the thing is.

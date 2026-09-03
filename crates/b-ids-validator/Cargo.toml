@@ -24,3 +24,9 @@ b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }
 # argument; only `reachable_dimensions` needs to know what THIS project can
 # resolve, and it is a test. TODO/validator.md, VALID-03.
 b-ids-driver = { path = "../b-ids-driver" }
+# ⚠ A DEV DEPENDENCY, for VALID-04 alone. The JA4 lists are rendered by the
+# model and hashed by the harness, which is where SHA-256 has its one home; this
+# crate holds the suite that checks the published vectors against both. A real
+# dependency here would make every consumer of the validator link the TLS
+# terminator, which is the edge b-ids-corpus names in its own manifest.
+b-ids-harness = { path = "../b-ids-harness" }

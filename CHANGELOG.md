@@ -14,6 +14,47 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-03T09:00:00Z - the trigger, the consumer crate, and a client that puts a profile back on a wire
+
+**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-10`,
+[`TODO/library.md`](TODO/library.md) `LIB-01` and `LIB-02`,
+[`TODO/emitters.md`](TODO/emitters.md) `EMIT-01` and `EMIT-02`,
+[`TODO/validator.md`](TODO/validator.md) `VALID-04`,
+[`TODO/ci.md`](TODO/ci.md) `CI-05`, [`TODO/driver.md`](TODO/driver.md)
+`DRIVER-06`.
+**Deployed:** no. No tag was created, no asset uploaded, no branch pushed and no
+workflow run. ⚠ The publishing workflow now EXISTS, so the next push to the
+default branch is what creates the data branch.
+
+What landed:
+
+- ⛔ **Something triggers the two publishing surfaces at last.** `PUB-01` and
+  `PUB-02` assembled and checked; nothing reached either. A workflow now does,
+  on a manual dispatch, a push to the default branch and a pushed tag, with the
+  write scoped to the two publishing jobs.
+- ⛔ **Two conditions from two sources stand in front of the data branch**: the
+  crate's own rewrite rule, and a push carrying no force flag and no `+`
+  refspec so the remote refuses anything that is not a fast-forward.
+- ⛔ **A defect in the assembler, found by running it two ways.** The published
+  route manifest carried the absolute path of whoever built it, so a build under
+  a relative root and one under an absolute root produced different bytes for
+  one corpus. Fixed, and a case keeps it fixed.
+- ⭐ **A crate hands a program a profile**, with the corpus embedded at build
+  time, no network code at all, and no substitute for a platform this project
+  has not captured.
+- ⭐ **A client puts a profile back on a wire.** 1951 of 1983 bytes are
+  identical to the browser's own captured hello; the 32 that differ are the
+  random the model does not record and never will.
+- ⭐ **JA4, implemented from the published specification** and checked against
+  sixteen vectors whose expected values came from that specification or from a
+  derivation in `jq` and `sha256sum`. ⛔ No JA4+ member is computed anywhere.
+- ⭐ **A support matrix generated from a run**, with five holes each carrying a
+  file and a line that a check resolves.
+- ⭐ **A cold-start job**, with every cache refused and every stage named by a
+  report that runs whatever happened.
+- Three checks joined the gate: `check-publish`, `check-cold-start` and
+  `check-support-matrix`, each with a twin and a comparison row.
+
 ### 2026-09-03T05:40:00Z - one assembler, two publishing surfaces
 
 **Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-01` and `PUB-02`.

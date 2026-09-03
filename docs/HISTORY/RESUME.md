@@ -13,49 +13,47 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s order, largest first. Session ran 2026-09-02T23:21:15Z, unattended, and the operator ended it. |
-| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, which starts at `DRIVER-06`. |
-| in flight | ⛔ Nothing. Six entries closed in place with their acceptance commands run; `DRIVER-06` left open with what landed written into it. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s order, largest first. Session ran 2026-09-03, unattended, and the operator ended it. |
+| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, which starts at `PUB-11`. ⛔ It is gated on the data branch existing and being verified. |
+| in flight | ⛔ Nothing. Eight entries closed in place with their acceptance commands run. |
 | the state of the tree | Clean and pushed on `main`. The gate is green in full, `check-twins` included. |
 | the paste | below |
 
 ---
 
-## ⭐ What changed about this project today
+## ⭐ The one thing to know before anything else
 
-**Everything this project publishes now comes out of one assembler.** A release
-archive and a data branch built by two assemblers is two answers to what the
-project publishes, and the day they differ nobody finds out from either.
+⛔ **The publishing workflow exists now, and a push to the default branch
+triggers it.** Its data-branch job creates `data` from the 198 artefacts the
+assembler produces, appends to it on later runs, and never force-pushes. That is
+the first step of the sequence the operator ruled, and the next session's job
+starts after it: verify the branch, then `PUB-11` moves the eleven check pairs
+that read the corpus from the working tree, and only then does `corpus/` leave
+`main`.
 
-⭐ **Nine published formats, four of them lossless, two declined with their
-reasons published.** A consumer asking for CBOR finds out it was weighed and
-lost rather than that nobody thought of it.
-
-⭐ **Fifty-four flat routes a program reads with `curl`**, each verified against
-the corpus by a check that reads the profiles rather than the generator.
-
-⭐ **The one open question is answered**: `for-testing` is a `Channel`, which
-unblocks the two unbranded matrix cells and `DRIVER-06`.
+⚠ **Nothing has run yet.** No tag, no asset, no branch, no workflow run from
+this machine.
 
 ---
 
 ## The conditions this session leaves
 
-⚠ **`DRIVER-06` is open and its acceptance selects no test.**
-`cargo test -p b-ids-driver branded` matches nothing, so it exits 0 having run
-nothing. The enforcement half already exists in the validator; the driver-side
-pair is what the entry owes.
+⭐ **The corpus is usable rather than only accurate.** `b-ids` hands a program a
+profile with the corpus embedded and no network in it; `b-ids-cli` puts one back
+on a wire and the harness reads back the same profile, field by field, with 1951
+of 1983 bytes identical to the browser's own.
 
-⚠ **Nothing publishes.** `PUB-01` and `PUB-02` assemble and check; no workflow
-cuts a tag, uploads an asset or creates a branch, and adding that trigger is the
-operator's.
-
-⚠ **`CI-04`'s collect job needs a repository setting** this repository's files
-cannot grant: Actions must be allowed to create pull requests. The step reports
-the refusal rather than failing silently.
+⚠ **Two acceptance commands were refuted by their own entries** and both are
+corrected in place: `EMIT-02`'s asked for a byte comparison the model cannot
+make, because it does not record the `ClientHello` random; `LIB-02`'s named a
+profile the corpus does not hold, and the client refuses one by name.
 
 ⚠ **`captured.operator` is still typed**, and **`Shuffle::Observed` is still
 never written**. Both are fields the capture path does not fill.
+
+⚠ **Three of the JA4 specification's ALPN examples cannot be represented**,
+because the model holds a protocol as a string and theirs are not UTF-8.
+Recorded rather than repaired.
 
 ⛔ **A tool that purges browsers lives in `scripts/common/`.** It refuses any
 machine that is not both marked disposable by this project and running on a

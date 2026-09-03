@@ -11,3 +11,17 @@ publish = false
 
 [lints]
 workspace = true
+
+[dependencies]
+# ⭐ THE CORPUS COMES THROUGH LIB-01, so this client selects the way a consumer
+# does rather than reading files of its own.
+b-ids = { path = "../b-ids" }
+b-ids-emit = { path = "../b-ids-emit" }
+b-ids-schema = { path = "../b-ids-schema" }
+serde_json.workspace = true
+
+[dev-dependencies]
+# ⛔ THE HARNESS IS THE THING IT IS POINTED AT, and the acceptance runs the
+# listener in process rather than spawning a binary: a test that orchestrated a
+# process would be testing the orchestration. TODO/library.md, LIB-02.
+b-ids-harness = { path = "../b-ids-harness" }

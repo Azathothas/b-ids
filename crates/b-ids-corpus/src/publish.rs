@@ -174,18 +174,19 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     )?;
 
     // -- the flat routes -----------------------------------------------------
+    //
+    // ⛔ THE PATH IS RELATIVE TO THE CORPUS ROOT, and it is the same
+    // `relative_to` every artefact above is placed with. The route manifest
+    // records which profile each route was read out of, so a path taken from
+    // the caller's argument published the BUILDER'S filesystem: a build under
+    // `--root .` and one under `--root /abs/path` produced different bytes for
+    // the same corpus, which is the reproducibility `PUB-01` asserts, and the
+    // absolute one shipped a home directory into a public artefact. Found by
+    // running the assembler both ways. `TODO/publish.md`, `PUB-10`.
     let with_paths: Vec<(String, Profile)> = published
         .iter()
-        .map(|(path, profile)| {
-            (
-                path.to_string_lossy()
-                    .replace('\\', "/")
-                    .trim_start_matches("./")
-                    .to_owned(),
-                profile.clone(),
-            )
-        })
-        .collect();
+        .map(|(path, profile)| Ok((relative_to(root, path)?, profile.clone())))
+        .collect::<Result<Vec<_>, String>>()?;
     let generated = routes(&with_paths);
     for route in &generated {
         let body = if route.multi_value {
@@ -242,6 +243,21 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
             Err(crate::trust::NotAList::Absent) => {}
             Err(why) => return Err(format!("{}: {why}", profile.id)),
         }
+    }
+
+    // -- the published test vectors ------------------------------------------
+    //
+    // ⛔ COPIED VERBATIM, never regenerated. A vector's expected value comes
+    // from the specification or from a derivation that is not this project's
+    // code, and a build that recomputed one would publish this implementation's
+    // own answer as the thing it is checked against. `TODO/validator.md`,
+    // `VALID-04`.
+    // ⚠ ABSENT IS ABSENT rather than a refusal: a tree with no vectors
+    // publishes none, which is what every build before they existed did.
+    let vectors = Path::new(root).join("vectors").join("ja4").join("v1.json");
+    if vectors.is_file() {
+        let body = std::fs::read(&vectors).map_err(|e| format!("{}: {e}", vectors.display()))?;
+        put(out, "vectors/ja4/v1.json", &body, &mut artefacts)?;
     }
 
     // -- the licence, so the tree says what it is ----------------------------
@@ -322,6 +338,31 @@ fn relative_to(root: &str, path: &Path) -> Result<String, String> {
 #[must_use]
 pub fn tag(layout: &str, date: &str, counter: u32) -> String {
     format!("{layout}.{}.{counter}", date.replace('-', "."))
+}
+
+/// The three parts a release tag is built from.
+///
+/// ⛔ **The inverse of [`tag`], and it exists because a workflow is handed a
+/// tag rather than asked to invent one.** A tag reaches the release job as a
+/// string somebody pushed, and a job that trusted that string would publish
+/// under whatever was typed.
+///
+/// ⚠ **It does not decide whether the parts are GOOD**, only where they are.
+/// [`plan_release`] refuses a malformed date, and the caller re-derives the tag
+/// from what came back: a tag whose parts do not rebuild it is one this
+/// project's rule did not produce, which is what catches `v1.2026.09.03.01`.
+#[must_use]
+pub fn parse_tag(tag: &str) -> Option<(String, String, u32)> {
+    let parts: Vec<&str> = tag.split('.').collect();
+    if parts.len() != 5 {
+        return None;
+    }
+    let counter: u32 = parts[4].parse().ok()?;
+    Some((
+        parts[0].to_owned(),
+        format!("{}-{}-{}", parts[1], parts[2], parts[3]),
+        counter,
+    ))
 }
 
 /// Why a release cannot be cut.

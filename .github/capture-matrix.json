@@ -77,9 +77,9 @@
       "route": "for-testing",
       "branded": false,
       "build": "151.0.7922.76",
-      "enabled": false,
+      "enabled": true,
       "required": false,
-      "why": "The unbranded build of the version the corpus already holds from a laptop, so one build across two platforms and two brands becomes comparable. Planned and not attempted: the channel token this row uses is not in the schema's Channel vocabulary, and the corpus route is keyed by browser, channel, platform and version with no room for branded, so a branded and an unbranded build of one version would publish at one path. TODO/PROGRESS.md carries the question and DRIVER-06 owns the difference."
+      "why": "The unbranded build of the version the corpus already holds from a laptop, so one build across two platforms and two brands becomes comparable. ⭐ Enabled 2026-09-03, by the operator's ruling: Channel::ForTesting landed, so the row publishes at its own route and no branded build shares a path with it. ⚠ NOTHING HAS EXERCISED THIS LANE'S CAPTURE PATH. capture.yml allows every lane to fail alone, so the first attempt reports rather than breaking the run, and DRIVER-06 owns the difference the lane exists to measure."
     },
     {
       "browser": "chrome",
@@ -89,9 +89,9 @@
       "route": "for-testing",
       "branded": false,
       "build": "151.0.7922.76",
-      "enabled": false,
+      "enabled": true,
       "required": false,
-      "why": "The other half of the pair above, and the one that measures whether the TLS half is platform-independent at a build both platforms genuinely run. Blocked on the same vocabulary question."
+      "why": "The other half of the pair above, and the one that measures whether the TLS half is platform-independent at a build both platforms genuinely run. ⭐ Enabled 2026-09-03 with it, and for the same reason. ⚠ Its capture path is equally unexercised."
     },
     {
       "browser": "chrome",

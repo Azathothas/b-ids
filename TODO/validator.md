@@ -470,7 +470,7 @@ project whose product is measurements.
 ## VALID-04. Reference digest implementations, with published test vectors
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** validator, **Priority** P2, **Effort** M, **Status** open
+**Category** validator, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -513,6 +513,139 @@ cargo test -p b-ids-validator digest_vectors -- --nocapture
 Passing means: every published vector's expected value is reproduced by this
 project's implementation, the count of vectors is asserted, and a deliberately
 corrupted vector fails.
+
+---
+
+### ⭐ Closed 2026-09-03. Sixteen vectors, and not one expected value came from running this code
+
+#### The acceptance
+
+```text
+$ cargo test -p b-ids-validator digest_vectors
+running 4 tests
+....
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+#### ⛔ The licence question, answered before a line was written
+
+⛔ **Ruled by this session under the operator's standing instruction, taking
+what the record recommends.**
+[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md)
+finding 5 splits FoxIO's licensing, and the answer follows from it:
+
+| | |
+| --- | --- |
+| ⭐ JA4 itself | BSD-3-Clause, and FoxIO states it holds no patent claim. **Implemented here from the published specification**, at `references/FoxIO-LLC__ja4/tree/technical_details/JA4.md`, commit `02e78ba3ebac`. ⚠ Abbreviated in the published vector file too: a 40-character hex run is refused there by `check-no-secrets --public`, which excludes one inside a markdown code span and not one inside JSON. ⛔ No source was copied. |
+| ⛔ every JA4+ member | FoxIO License 1.1, patent pending, monetisation-restricted. **Nothing in this tree computes one**, and this entry does not change that. |
+| ⚠ JA3 | not implemented and not planned. It is an MD5, this tree links no MD5, and the record's own rule is to record JA3 and never assert on it. |
+
+⚠ **One reading was taken from the reference implementation rather than from the
+specification, and it is recorded as such.** The specification says the version
+falls back to "the Protocol Version" and that "Handshake version (located at the
+top of the packet) should be ignored", which is ambiguous about which of the two
+version fields it means. `references/FoxIO-LLC__ja4/tree/rust/ja4/src/tls.rs:573`
+settles it with a comment saying the field is not to be confused with the record
+version. ⛔ Read to settle an ambiguity, never copied.
+
+#### ⭐ Where the expected values came from, which is the whole point
+
+⛔ **The entry forbids a vector whose expected value came from running one
+implementation**, so the sixteen come from two places and neither is this code:
+
+| kind | count | derived from |
+| --- | --- | --- |
+| `specification` | 10 | the specification's own worked example, which publishes each hash beside the list it belongs to, plus the ALPN rule's examples |
+| `capture` | 6 | this project's six published profiles, derived with `jq` and `sha256sum` |
+
+The capture derivation, which is not this project's code:
+
+```bash
+jq -r -f scripts/fixtures/ja4-derive.jq corpus/v1/chrome/stable/linux64/152.0.7977.75.json
+```
+
+⭐ **And the two agree where they overlap.** Every Chrome and Edge capture in the
+corpus offers the specification's own example cipher list, so its published
+`8daaf6152771` is reproduced from this project's captures by `jq` and
+`sha256sum`, and then again by the Rust implementation. Three paths, one value.
+
+#### ⛔ The ALPN rule reads as a contradiction until it is stated per BYTE
+
+⚠ **The specification lists eight ALPN examples and one of them refutes the
+obvious reading.** `0x30 0xAB 0xCD 0x31` is given as `01`, which no hex-of-the-
+whole-value rule produces. The rule that reproduces all eight is:
+
+- if the first AND last bytes are ASCII alphanumeric, use those two characters;
+- otherwise use the FIRST character of the first byte's hex and the LAST
+  character of the last byte's hex.
+
+⭐ Under that reading `0x30 0xAB 0xCD 0x31` is not a hex case at all: `0x30` is
+`0` and `0x31` is `1`, both alphanumeric, so the answer is `01` by the ordinary
+rule. ⚠ It reads as a counter-example and is a contrast case.
+
+#### ⛔ A finding: the model cannot hold three of the specification's examples
+
+⚠ **`TlsHalf::alpn` is a `Vec<String>`, so a protocol whose bytes are not UTF-8
+cannot be represented at all.** Five of the eight ALPN examples carry `0xAB` or
+`0xCD`, and three of those are unreachable through the model. The vector file
+carries the five that are representable and this entry records the other three
+rather than pretending the branch is covered.
+
+⛔ **Not repaired here.** Changing `alpn` to a byte vector is a schema change
+that moves every published profile's serialisation, and the corpus is
+append-only. It is worth an entry when a capture ever carries one.
+
+#### What the vectors measured, which was not the point and is worth having
+
+⭐ **Six profiles, two distinct JA4 values, and the split is by MAJOR rather
+than by platform or by browser:**
+
+```text
+chrome-151.0.7922.173-linux64-stable  t13i1515h2_8daaf6152771_806a8c22fdea
+chrome-151.0.7922.174-win64-stable    t13i1515h2_8daaf6152771_806a8c22fdea
+chrome-151.0.7922.76-win64-stable     t13i1515h2_8daaf6152771_806a8c22fdea
+edge-151.0.4129.101-linux64-stable    t13i1515h2_8daaf6152771_806a8c22fdea
+chrome-152.0.7977.75-linux64-stable   t13i1516h2_8daaf6152771_cb7bf5808d99
+chrome-152.0.7977.76-win64-stable     t13i1516h2_8daaf6152771_cb7bf5808d99
+```
+
+⚠ **Edge 151 is indistinguishable from Chrome 151 at JA4**, and a Windows
+capture is indistinguishable from a Linux one at the same major. ⛔ That is one
+digest over six captures and it is not a conclusion about platform independence:
+`CORPUS-02`'s premise says the same thing and says it needs a matrix. What it
+does establish is that JA4 hides the difference `VALID-01`'s handshake check
+would need, which is exactly why the raw hello is published beside it.
+
+⚠ **`i` rather than `d` in every one**, because every capture here is against an
+address rather than a name, so no `ClientHello` in this corpus carries SNI.
+
+#### ⭐ The vectors are published
+
+`publish::build` copies `vectors/ja4/v1.json` verbatim into the tree both
+surfaces take, so the release archive and the data branch carry them. ⛔ Copied,
+never regenerated: a build that recomputed a vector would publish this
+implementation's own answer as the thing it is checked against.
+
+```text
+$ sh scripts/common/check-release.sh --dry-run --json
+{"schema":"check-release/1","files":198,"bytes":673814,"cases":11,"tags":0,"archive":"ok","problems":0}
+```
+
+#### The guard, seen to fail
+
+⛔ `digest_vectors_a_corrupted_vector_fails` corrupts one character of the
+expected value and one codepoint of the input list, and asserts the comparison
+refuses both. ⚠ It also asserts the corruption changed something, because a
+"corruption" that produced the same string would make the assertion vacuous.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| digests written into profiles | ⛔ The corpus is append-only and the six published profiles carry `digests: null`. They never will. A digest is derived on demand from the profile, which is what `Digests` being all-`Option` already says. |
+| digest routes under `PUB-03` | ⛔ Declined. A route resolves to a value the corpus HOLDS, and the corpus holds no digest; a route computed at generation time would be exactly the plausible-looking value `PUB-03` refused. `SCHEMA-12`'s note that no digest route exists is still true. |
+| JA3, and every JA4+ member | Above, with the reasons. |
+| a QUIC or DTLS vector | ⚠ The prefix is `t` and nothing here can capture either transport. |
 
 ---
 

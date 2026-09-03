@@ -73,6 +73,13 @@ release ok: 197 artefact(s), 668384 byte(s), identical over two builds.
 rc=0
 ```
 
+⚠ **That byte count no longer reproduces, and two later entries say why.**
+`PUB-10` found that the build it came from was given an absolute root, which the
+route manifest then recorded; `VALID-04` then added a published artefact. ⛔ The
+figure is left as it was measured rather than edited to today's, because a
+pasted output is a measurement and re-running the command is what produces the
+current one.
+
 ⚠ **The digest above is abbreviated at the ellipsis**, for the same reason
 `TOOL-03`'s and `CORPUS-01`'s blocks are: written out it is a 64-character hex
 run in a tracked file, which is what `check-no-secrets --public` refuses. ⛔ It
@@ -248,6 +255,7 @@ and this entry would have been the easiest place in the tree to write one.
 | `formats/` | every generated format and the support matrix, each read back before it is written |
 | `routes/` | the flat tree a program reads with `curl`, and its manifest |
 | `anchors/` | one file per build that carries the root-store extension |
+| `vectors/` | ⭐ the published JA4 test vectors, copied verbatim, so an implementation in any language has something to check itself against. `VALID-04`. |
 | `LICENSE` | ⛔ copied from the repository's own file. A build that wrote its own text would be a second copy of a legal document. |
 | `MANIFEST.json`, `SHA256SUMS` | what a program reads, and what `sha256sum -c` reads |
 
@@ -877,3 +885,267 @@ sh scripts/common/check-signing.sh
 Passing means: a published index verifies against the project's key, a corpus
 file altered after signing fails verification, and the published verification
 command is the one the check runs.
+
+---
+
+## PUB-10. Nothing triggers the two surfaces that were built to publish
+
+**Source** the operator, ruled 2026-09-03 after the previous session wrote its record
+**Category** publish, **Priority** P1, **Effort** L, **Status** done
+
+### Problem
+
+`PUB-01` assembles a release and checks it. `PUB-02` assembles the data branch
+and checks it. Both closed with the same sentence: nothing cuts a tag, uploads
+an asset or creates a branch. So a consumer who reads this project's own
+documentation about its published routes finds no published route, and the
+whole publishing half of the project is a directory this repository can build
+and has never handed to anybody.
+
+### Premise
+
+⭐ **Measured, and the numbers are in the two closings.** `b-ids-corpus publish`
+assembles 197 artefacts and two builds are byte-identical; both checks are green
+and in the gate. What is missing is an event.
+
+### Approach
+
+One workflow, [`../.github/workflows/publish.yml`](../.github/workflows/publish.yml),
+triggered the three ways the operator ruled: `workflow_dispatch`, a push to the
+default branch, and a pushed tag. One job assembles and runs both existing
+checks with `contents: read`; two jobs publish, and only those two declare
+`contents: write`.
+
+- ⛔ **The data branch is append-only and never force-pushed.** Two conditions
+  from two sources: `b_ids_corpus::publish::would_rewrite`, reached through a
+  new `b-ids-corpus data-branch` command, and the remote's own refusal of a
+  push that is not a fast-forward.
+- ⛔ **The release rules stay in the crate.** A new `b-ids-corpus release`
+  parses the pushed tag, plans it against the tags that already carry a
+  release, rebuilds it from its own parts, and writes the body with `PUB-08`'s
+  renderer.
+- ⭐ **A check for the workflow itself**, twinned, so a file that grew a force
+  push or moved its write to the top fails a gate rather than a branch.
+
+Must not: hold a personal access token, force-push anything, or restate a rule
+the crate already holds.
+
+### Decision
+
+**Whether the release job moves the `v1` and `latest` git tags.**
+`publish::moving_tags` names them and `PUB-01`'s approach asks for them, so a
+script can fetch without listing.
+
+⛔ **Recommendation, and the one taken: it does not.** A moving tag is a
+force-update of a ref, and this session was told in the same breath that no
+session force-pushes this remote. `gh release create --latest` gives a consumer
+the same property through a `releases/latest/download/` path, with no ref moved
+and no listing. The alternative lost because it buys nothing a consumer can use
+that the release pointer does not already give them, at the price of the one
+operation this project has ruled against.
+
+### Consumers
+
+⚠ **Nothing is fetched from this repository yet**, which is the state this entry
+ends. After the first run there are two: whoever clones or fetches the `data`
+branch, and whoever downloads a release asset. ⛔ Both contracts are established
+by the first push and are expensive to change afterwards, which is why the
+routes, the manifest and the checksums were built and checked before any of this
+was triggered.
+
+### Prove
+
+```bash
+sh scripts/common/check-publish.sh
+```
+
+Passing means: the workflow declares all three triggers, grants `contents: read`
+at the top and `contents: write` on exactly the two publishing jobs, names no
+secret, carries no force push, consults the rewrite rule before the push, runs
+both existing checks in a job the publishing jobs need, and reads the archive
+epoch from `check-release.sh`; and the ten refusal paths driven against the
+built binary each exit as expected.
+
+---
+
+### ⭐ Closed 2026-09-03. The trigger exists, and the two conditions in front of it are not one condition twice
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-publish.sh
+publish ok: 3 trigger(s) over 3 job(s), 2 job-scoped write(s),
+  no force push and no named secret, and 10 refusal(s) driven against the binary.
+  ⛔ Nothing was tagged, uploaded or pushed.
+rc=0
+```
+
+Both halves agree, and each reads the workflow itself rather than wrapping one
+reading: the POSIX half in `awk`, `sed` and `grep`, the PowerShell half in
+`-match` over the file's lines.
+
+```text
+$ sh scripts/common/check-publish.sh --json
+{"schema":"check-publish/1","triggers":3,"jobs":3,"writes":2,"cases":10,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-publish.ps1 -Json
+{"schema":"check-publish/1","triggers":3,"jobs":3,"writes":2,"cases":10,"problems":0}
+```
+
+#### ⛔ A defect in the assembler, found by running it two ways
+
+⚠ **The published route manifest carried the absolute path of whoever built
+it.** `publish::build` handed `routes()` the path string it got from the
+caller's `--root`, so a build under a relative root and a build under an
+absolute one produced different bytes for one corpus:
+
+| built with | what `routes/routes.json` recorded | total |
+| --- | --- | --- |
+| a relative root | `corpus/v1/chrome/stable/linux64/151.0.7922.173.json` | 666710 bytes |
+| an absolute root | that same path with the whole checkout prefix in front of it | 668384 bytes |
+
+⛔ **Two consequences, and the second is worse than the first.** The build is
+not reproducible across machines, which is the property `PUB-01` asserts; and a
+public data branch and a public release asset would have carried the operator's
+own home directory. ⭐ `check-release` could not see it, because it builds twice
+under **one** root and compares those two.
+
+Fixed by giving the route generator the same `relative_to` every artefact is
+placed with, and `publish_the_tree_names_no_path_outside_itself` is the case
+that keeps it fixed. ⚠ The 668384 in `PUB-01`'s closing is the absolute build;
+666710 is what the corpus derives to now, and the difference is the path prefix
+alone.
+
+#### The two conditions, and why they are two
+
+⛔ **A guard on something irreversible is two conditions from two sources.** A
+force push over the data branch discards every commit a consumer pinned.
+
+| whose condition | what it is |
+| --- | --- |
+| this project's | `b-ids-corpus data-branch --head H --parent P`, which is `would_rewrite` with a command around it. Exit 1 refuses. |
+| the environment's | the push carries no `--force`, no `--force-with-lease` and no `+`, so the remote rejects anything that is not a fast-forward |
+| ⭐ and one that is neither | the commit that landed is read BACK from the remote, and its tree object compared with the one that was built. One tree object is one set of bytes. |
+
+⚠ **The commit is built with plumbing over a temporary index**, so the checkout
+is never touched and a step that fails leaves the working tree as it was. A run
+whose tree object matches what the branch already holds pushes nothing, which is
+the same rule `CI-04` holds about a no-op change.
+
+#### The guard mutation, each exit code read unpiped
+
+⛔ **Every mutation was made against a copy under the ignored scratch
+directory, and the live file was compared byte for byte with that copy
+afterwards.**
+
+| planted | what went red |
+| --- | --- |
+| the `workflow_dispatch` trigger removed | `does not declare workflow_dispatch`, exit **1** |
+| `contents: write` moved to the top of the file | `the top-level permissions block does not grant contents: read`, exit **1** |
+| the push given `--force` | `1 git push line(s) carry a force flag`, exit **1** |
+| ⛔ the refspec given a leading `+` | ⛔ **nothing. The check passed.** Fixed, and then exit **1** in both halves |
+| a secret named instead of the run's own token | `the workflow names a secret`, exit **1** |
+| the rewrite rule removed | `no step calls b-ids-corpus data-branch`, exit **1** |
+| `check-data-branch` no longer run | `a tree that fails it would still publish`, exit **1** |
+| the tar epoch typed instead of read | `does not use the epoch it read`, exit **1** |
+| one job no longer needing the assemble job | `1 job(s) need the assemble job where 2 ... are expected`, exit **1** |
+| the workflow deleted | `there is no .github/workflows/publish.yml`, exit **1** |
+| `would_rewrite` accepting an orphan over an existing branch | `exit 0 where 1 was expected`, from the drive rather than from the suite |
+| the assembler handed the caller's path again | `routes/routes.json names the builder's own filesystem` |
+
+#### ⛔ The finding: this session's own guard passed the mutation it was written for
+
+⚠ **The force-push rule looked for `:+`, which is where a `+` is not.** A
+forcing refspec is `+src:dst`, so the plus sits at the START of the token, and
+the mutation that gave the push a leading `+` was reported clean by both halves.
+⛔ The rule is now that any `+` on a `git push` line is a force, which is blunt
+and correct: that line takes a remote and refspecs, and a `+` in any of them
+means force. ⭐ It is the same class as the previous session's SQLite finding,
+and it is the argument for planting the mutation rather than reading the code.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a run | ⛔ Nothing was published from this machine. No tag was created, no asset uploaded and no branch pushed: this entry is the trigger, and the first run is whatever event reaches it. |
+| the moving `v1` and `latest` git tags | ⛔ Declined above, with the reason. `moving_tags` stays in the crate with its case. |
+| a build provenance attestation | `PUB-09`, which needs a signing identity. |
+| the checks that read the corpus from the working tree | `PUB-11`, and the operator ruled the order: the branch is published and verified first. |
+
+---
+
+## PUB-11. Every check reads the corpus from the working tree, and the corpus is leaving it
+
+**Source** the operator, ruled 2026-09-03
+**Category** publish, **Priority** P2, **Effort** M, **Status** open
+
+### Problem
+
+`corpus/` and `raw/` are to leave the default branch once the data branch
+carries them. Eleven checks read them from the working tree today, so removing
+them turns eleven green checks into eleven that verify nothing or refuse to run,
+and the tempting fix for each is to widen it until it passes.
+
+### Premise
+
+⭐ **Measured 2026-09-03**, over the POSIX halves, and each has a PowerShell
+twin that follows it:
+
+```bash
+grep -lE '(corpus|raw)/v1|b-ids-corpus.*--root|\$BIN.*--root' scripts/common/check-*.sh
+```
+
+```text
+check-corpus check-coverage check-data-branch check-formats
+check-license-consistency check-publish check-release check-routes
+check-staleness check-trust-anchors check-validate
+```
+
+⚠ **Eleven, not the fifteen the ruling names**, and the difference is where the
+line is drawn rather than a disagreement: the prose checks and the secret scan
+walk every tracked file and would see fewer of them rather than fail, and two
+more read fixtures instead of the corpus. ⛔ The number is re-measured by the
+command above rather than carried from here.
+
+### Approach
+
+Give each of them one way to reach a corpus that is not "the working tree", and
+change them together rather than one at a time.
+
+- ⭐ **One resolver, not eleven.** A single helper that answers "where is the
+  corpus", preferring an explicit root, then a fetched copy of the data branch,
+  then the working tree. `Store::at` is already the one read path in the crate;
+  this is its equivalent for the scripts.
+- ⚠ **A check that cannot reach a corpus exits 2**, which is "could not run",
+  and never 0. That distinction is the whole reason this entry is not a
+  one-line deletion.
+- ⛔ **Nothing is deleted in this entry.** It ends with every check reading from
+  the branch and the working tree still holding the corpus, so the step that
+  removes it is separately reversible.
+
+Must not: bake a URL into a check, and must not make a gate depend on the
+network. A fetched copy is a local clone of the branch, and the absence of one
+is exit 2.
+
+### Decision
+
+⛔ **Ruled by the operator 2026-09-03, and it is an ORDER rather than a fork.**
+The data branch is pushed and verified byte for byte first; then this entry
+moves the checks; then `corpus/` and `raw/` leave the default branch. Each step
+is reversible until the last.
+
+### Consumers
+
+⚠ **This entry does not change what is published**, so it breaks nobody. ⛔ The
+step AFTER it does: a consumer reading `corpus/v1/` from the default branch over
+raw file serving would 404, which is the reason `PUB-02` exists and the reason
+the branch is published before anything is removed.
+
+### Prove
+
+```bash
+sh scripts/common/check-gate.sh --fast
+```
+
+Passing means: the gate is green with `corpus/` and `raw/` moved out of the
+working tree and a local copy of the data branch present, and every one of the
+eleven checks above reports on the profiles it found there rather than skipping.

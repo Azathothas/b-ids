@@ -1,0 +1,134 @@
+{
+  "schema": "ja4-vectors/1",
+  "license": "0BSD",
+  "specification": {
+    "document": "references/FoxIO-LLC__ja4/tree/technical_details/JA4.md",
+    "commit": "02e78ba3ebac",
+    "commit_note": "abbreviated: written out it is a 40-character hex run in a tracked file, which this project secret scan refuses under --public. references/FoxIO-LLC__ja4/PROVENANCE.md carries it in full.",
+    "licence": "BSD-3-Clause over JA4 itself. No JA4+ member is computed anywhere in this tree."
+  },
+  "derivation": {
+    "specification": "read out of the document above, which publishes each expected value beside the list it belongs to",
+    "capture": "derived from each profile with jq and sha256sum, which is not this project code. The command is in TODO/validator.md, VALID-04."
+  },
+  "vectors": [
+    {
+      "kind": "specification",
+      "section": "ciphers",
+      "note": "the worked example's cipher list, sorted, with the hash the specification publishes for it",
+      "list": "002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9",
+      "expect": "8daaf6152771"
+    },
+    {
+      "kind": "specification",
+      "section": "extensions",
+      "note": "the worked example's extension list, sorted with SNI and ALPN removed, then the signature algorithms in wire order",
+      "list": "0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01_0403,0804,0401,0503,0805,0501,0806,0601",
+      "expect": "e5627efa2ab1"
+    },
+    {
+      "kind": "specification",
+      "section": "extensions",
+      "note": "the same list with no signature algorithms, which ends without an underscore and hashes to a different value",
+      "list": "0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01",
+      "expect": "6d807ffa2a79"
+    },
+    {
+      "kind": "specification",
+      "section": "ciphers",
+      "note": "a section with no values carries twelve zeroes rather than the hash of an empty string, so a reader can tell an empty field from a hashed one",
+      "list": "",
+      "expect": "000000000000"
+    },
+    {
+      "kind": "specification",
+      "section": "alpn",
+      "note": "the first and last characters of the first protocol",
+      "list": "h2",
+      "expect": "h2"
+    },
+    {
+      "kind": "specification",
+      "section": "alpn",
+      "note": "a longer protocol still contributes two characters",
+      "list": "http/1.1",
+      "expect": "h1"
+    },
+    {
+      "kind": "specification",
+      "section": "alpn",
+      "note": "a single non-alphanumeric byte becomes the two characters of its hex",
+      "list": " ",
+      "expect": "20"
+    },
+    {
+      "kind": "specification",
+      "section": "alpn",
+      "note": "a non-alphanumeric FIRST byte sends both sides to hex: the first character of the first byte's hex and the last of the last byte's",
+      "list": " a",
+      "expect": "21"
+    },
+    {
+      "kind": "specification",
+      "section": "alpn",
+      "note": "and a non-alphanumeric LAST byte does the same from the other end",
+      "list": "a ",
+      "expect": "60"
+    },
+    {
+      "kind": "specification",
+      "section": "alpn",
+      "note": "no protocol at all",
+      "list": "",
+      "expect": "00"
+    },
+    {
+      "kind": "capture",
+      "id": "chrome-151.0.7922.173-linux64-stable",
+      "hello": "raw/v1/chrome/stable/linux64/151.0.7922.173.hello.hex",
+      "ja4": "t13i1515h2_8daaf6152771_806a8c22fdea",
+      "ja4_r": "t13i1515h2_002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9_0005,000a,000b,000d,0012,0017,001b,0023,002b,002d,0033,44cd,fe0d,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_ro": "t13i1515h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_0017,002d,000d,0023,000b,44cd,002b,000a,fe0d,0012,0033,001b,0010,ff01,0005_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601"
+    },
+    {
+      "kind": "capture",
+      "id": "chrome-152.0.7977.75-linux64-stable",
+      "hello": "raw/v1/chrome/stable/linux64/152.0.7977.75.hello.hex",
+      "ja4": "t13i1516h2_8daaf6152771_cb7bf5808d99",
+      "ja4_r": "t13i1516h2_002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9_0005,000a,000b,000d,0012,0017,001b,0023,002b,002d,0033,44cd,ca34,fe0d,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_ro": "t13i1516h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_0033,0017,0005,0010,001b,000a,0012,000d,44cd,fe0d,002b,ca34,002d,0023,000b,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601"
+    },
+    {
+      "kind": "capture",
+      "id": "chrome-151.0.7922.174-win64-stable",
+      "hello": "raw/v1/chrome/stable/win64/151.0.7922.174.hello.hex",
+      "ja4": "t13i1515h2_8daaf6152771_806a8c22fdea",
+      "ja4_r": "t13i1515h2_002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9_0005,000a,000b,000d,0012,0017,001b,0023,002b,002d,0033,44cd,fe0d,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_ro": "t13i1515h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_002b,002d,0017,000a,000b,0012,fe0d,0010,001b,0005,0023,000d,44cd,0033,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601"
+    },
+    {
+      "kind": "capture",
+      "id": "chrome-151.0.7922.76-win64-stable",
+      "hello": "raw/v1/chrome/stable/win64/151.0.7922.76.hello.hex",
+      "ja4": "t13i1515h2_8daaf6152771_806a8c22fdea",
+      "ja4_r": "t13i1515h2_002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9_0005,000a,000b,000d,0012,0017,001b,0023,002b,002d,0033,44cd,fe0d,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_ro": "t13i1515h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_fe0d,002d,0010,0033,44cd,000a,001b,000d,000b,ff01,002b,0017,0012,0005,0023_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601"
+    },
+    {
+      "kind": "capture",
+      "id": "chrome-152.0.7977.76-win64-stable",
+      "hello": "raw/v1/chrome/stable/win64/152.0.7977.76.hello.hex",
+      "ja4": "t13i1516h2_8daaf6152771_cb7bf5808d99",
+      "ja4_r": "t13i1516h2_002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9_0005,000a,000b,000d,0012,0017,001b,0023,002b,002d,0033,44cd,ca34,fe0d,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_ro": "t13i1516h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_fe0d,001b,000b,0023,002d,ca34,0017,0010,ff01,000a,0005,0033,002b,0012,000d,44cd_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601"
+    },
+    {
+      "kind": "capture",
+      "id": "edge-151.0.4129.101-linux64-stable",
+      "hello": "raw/v1/edge/stable/linux64/151.0.4129.101.hello.hex",
+      "ja4": "t13i1515h2_8daaf6152771_806a8c22fdea",
+      "ja4_r": "t13i1515h2_002f,0035,009c,009d,1301,1302,1303,c013,c014,c02b,c02c,c02f,c030,cca8,cca9_0005,000a,000b,000d,0012,0017,001b,0023,002b,002d,0033,44cd,fe0d,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601",
+      "ja4_ro": "t13i1515h2_1301,1302,1303,c02b,c02f,c02c,c030,cca9,cca8,c013,c014,009c,009d,002f,0035_44cd,0017,000b,001b,002d,0023,0033,0005,0012,002b,0010,000d,fe0d,000a,ff01_0904,0905,0906,0403,0804,0401,0503,0805,0501,0806,0601"
+    }
+  ]
+}

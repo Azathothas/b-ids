@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 98  open 20  blocked 0  done 78
+total 100  open 14  blocked 0  done 86
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
-| P1 | 1 | 0 | 42 | 43 |
-| P2 | 16 | 0 | 23 | 39 |
+| P1 | 1 | 0 | 43 | 44 |
+| P2 | 10 | 0 | 30 | 40 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **20** | **0** | **78** | **98** |
+| **all** | **14** | **0** | **86** | **100** |
 
 ---
 
@@ -34,7 +34,7 @@ total 98  open 20  blocked 0  done 78
 | CI-02 | P1 | M | done | Staleness is a schedule, not a push trigger | [`ci.md`](ci.md) |
 | CI-03 | P1 | L | done | The capture matrix, fanned out, with every lane allowed to fail alone | [`ci.md`](ci.md) |
 | CI-04 | P1 | M | done | A scheduled run that finds a change opens a pull request, not an issue | [`ci.md`](ci.md) |
-| CI-05 | P2 | M | open | The cold-start job, which is the only thing that catches rot | [`ci.md`](ci.md) |
+| CI-05 | P2 | M | done | The cold-start job, which is the only thing that catches rot | [`ci.md`](ci.md) |
 | CI-06 | P2 | M | done | No single source of any fact | [`ci.md`](ci.md) |
 | CI-07 | P2 | S | done | Exit 2 means could not run, and it is not a failure | [`ci.md`](ci.md) |
 | CI-08 | P2 | S | done | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
@@ -52,13 +52,13 @@ total 98  open 20  blocked 0  done 78
 | DRIVER-03 | P1 | S | done | Headless changes the User-Agent, and normalising it is reported | [`driver.md`](driver.md) |
 | DRIVER-04 | P2 | S | done | The root store a browser actually reads | [`driver.md`](driver.md) |
 | DRIVER-05 | P2 | M | done | Acquisition, with more than one way to get a build | [`driver.md`](driver.md) |
-| DRIVER-06 | P2 | M | open | Branded and unbranded builds are different products | [`driver.md`](driver.md) |
+| DRIVER-06 | P2 | M | done | Branded and unbranded builds are different products | [`driver.md`](driver.md) |
 | DRIVER-07 | P2 | S | done | The browser's own output is discarded, so a lane that captured nothing says nothing | [`driver.md`](driver.md) |
 | DRIVER-08 | P0 | L | done | Purge the machine's browsers, install the build the cell names | [`driver.md`](driver.md) |
 | DRIVER-09 | P1 | M | done | The most dangerous script in the tree is the one with no twin | [`driver.md`](driver.md) |
 | DRIVER-10 | P1 | L | done | Provisioning is written for one family and the matrix names four | [`driver.md`](driver.md) |
-| EMIT-01 | P2 | L | open | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
-| EMIT-02 | P2 | L | open | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
+| EMIT-01 | P2 | L | done | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
+| EMIT-02 | P2 | L | done | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
 | EMIT-03 | P2 | S | open | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
 | EMIT-04 | P3 | M | open | Emitters for the stacks a consumer already uses | [`emitters.md`](emitters.md) |
 | HARNESS-01 | P0 | L | done | The oracle is a server, not a client | [`harness.md`](harness.md) |
@@ -77,8 +77,8 @@ total 98  open 20  blocked 0  done 78
 | HARNESS-14 | P2 | M | done | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
 | HARNESS-15 | P0 | M | done | A cold hello is thrown away because its own connection carried no HTTP/2 | [`harness.md`](harness.md) |
 | HARNESS-16 | P2 | S | done | The trust store a Windows runner can be made to use without a person | [`harness.md`](harness.md) |
-| LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
-| LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
+| LIB-01 | P2 | M | done | A crate that hands a program a profile | [`library.md`](library.md) |
+| LIB-02 | P2 | M | done | The smallest client that proves a profile is usable | [`library.md`](library.md) |
 | LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
 | PUB-01 | P1 | M | done | Releases, tagged and versioned and immutable | [`publish.md`](publish.md) |
 | PUB-02 | P1 | M | done | The data branch, over raw file serving | [`publish.md`](publish.md) |
@@ -89,6 +89,8 @@ total 98  open 20  blocked 0  done 78
 | PUB-07 | P1 | S | done | The licence stated in three places | [`publish.md`](publish.md) |
 | PUB-08 | P2 | S | done | One generator for the release body and the changelog | [`publish.md`](publish.md) |
 | PUB-09 | P2 | M | open | Signed and attested captures | [`publish.md`](publish.md) |
+| PUB-10 | P1 | L | done | Nothing triggers the two surfaces that were built to publish | [`publish.md`](publish.md) |
+| PUB-11 | P2 | M | open | Every check reads the corpus from the working tree, and the corpus is leaving it | [`publish.md`](publish.md) |
 | SCHEMA-01 | P0 | M | done | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
 | SCHEMA-02 | P0 | M | done | The TLS half, in wire order, with unknown codepoints kept | [`schema.md`](schema.md) |
 | SCHEMA-03 | P0 | S | done | The HTTP/2 half, as an ordered frame sequence | [`schema.md`](schema.md) |
@@ -124,7 +126,7 @@ total 98  open 20  blocked 0  done 78
 | VALID-01 | P0 | M | done | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
 | VALID-02 | P1 | S | done | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | done | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |
-| VALID-04 | P2 | M | open | Reference digest implementations, with published test vectors | [`validator.md`](validator.md) |
+| VALID-04 | P2 | M | done | Reference digest implementations, with published test vectors | [`validator.md`](validator.md) |
 | VALID-05 | P2 | L | open | A conformance suite for impersonating clients | [`validator.md`](validator.md) |
 | VALID-06 | P2 | S | done | Diffs between adjacent versions | [`validator.md`](validator.md) |
 | VENDOR-01 | P1 | L | done | The vendored tree, and the four things that keep it honest | [`vendor.md`](vendor.md) |
