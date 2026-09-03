@@ -1,5 +1,6 @@
 {
   "schema": "corpus-index/1",
+  "license": "0BSD",
   "layout": "v1",
   "profiles": [
     {

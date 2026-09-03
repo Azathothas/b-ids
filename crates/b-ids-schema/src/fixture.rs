@@ -58,6 +58,7 @@ pub fn profile() -> Profile {
 
     Profile {
         schema: SCHEMA_ID.to_owned(),
+        license: crate::LICENSE.to_owned(),
         id,
         browser,
         platform,

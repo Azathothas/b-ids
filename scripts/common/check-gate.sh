@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator"
+COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-license-consistency check-release check-data-branch"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -234,6 +234,23 @@ compared_directly 'check-provisioning' || check_simple 'check-provisioning' sh "
 # ⛔ ONE GENERATOR, CANONICAL JSON IN, EVERY FORMAT OUT, and the round trip is
 # what says a format has a reader as well as a writer. TODO/schema.md, SCHEMA-08.
 compared_directly 'check-formats'      || check_simple 'check-formats'      sh "$HERE/check-formats.sh"
+# ⛔ AN ISSUE IS A REQUEST FOR SOMEBODY ELSE TO DO WORK, and a pull request with
+# the work in it is the deliverable. --fixture is required: there is no pull
+# request to check, and a run with no argument would read as though there were.
+# TODO/ci.md, CI-04.
+compared_directly 'check-pr-body'      || check_simple 'check-pr-body'      sh "$HERE/check-pr-body.sh" --fixture
+# ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. Six places state the
+# licence and one of them is the source every generated one reads.
+# TODO/publish.md, PUB-07.
+compared_directly 'check-license-consistency' ||   check_simple 'check-license-consistency' sh "$HERE/check-license-consistency.sh" --fixture
+# ⛔ A CONSUMER THAT PINS A RELEASE AND GETS DIFFERENT BYTES LATER HAS BEEN
+# BROKEN SILENTLY. --dry-run is required: this publishes nothing.
+# TODO/publish.md, PUB-01.
+compared_directly 'check-release' ||   check_simple 'check-release' sh "$HERE/check-release.sh" --dry-run
+# ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER, and
+# that property is free right up until somebody rewrites the branch.
+# TODO/publish.md, PUB-02.
+compared_directly 'check-data-branch' ||   check_simple 'check-data-branch' sh "$HERE/check-data-branch.sh"
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
 # build that carries it gets a published list with its date. TODO/corpus.md,
 # CORPUS-04.

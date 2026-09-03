@@ -472,6 +472,27 @@ compare_pair "check-provisioning"   check-provisioning.sh   "--json"          ch
 # moved. TODO/schema.md, SCHEMA-08.
 compare_pair "check-formats"        check-formats.sh        "--json"          check-formats.ps1        "-Json"
 
+# ⚠ BOTH HALVES DRIVE THE SAME GENERATOR AND THE SAME SUITE, as the row above
+# does, and each also reads the generated bodies itself: one in grep and one in
+# String.Contains. ⛔ Both refuse without the fixture flag at exit 2 rather than
+# reading as though a real pull request had been checked. TODO/ci.md, CI-04.
+compare_pair "check-pr-body"        check-pr-body.sh        "--fixture --json" check-pr-body.ps1        "-Fixture -Json"
+
+# ⚠ EACH HALF READS THE SIX STATEMENTS ITSELF, one in jq and one in
+# ConvertFrom-Json, so this row compares two readings of the tree rather than
+# two wrappers over one. TODO/publish.md, PUB-07.
+compare_pair "check-license-consistency" check-license-consistency.sh "--fixture --json" check-license-consistency.ps1 "-Fixture -Json"
+
+# ⚠ ONE ASSEMBLER, TWO WRAPPERS, AND EACH COMPARES THE TWO BUILDS ITSELF: the
+# POSIX half in `diff -r` and the PowerShell half by hashing every file on both
+# sides. ⛔ Both refuse without the dry-run flag at exit 2. TODO/publish.md,
+# PUB-01.
+compare_pair "check-release"        check-release.sh        "--dry-run --json" check-release.ps1        "-DryRun -Json"
+
+# ⚠ AND EACH READS THE MANIFEST ITSELF, one in jq and one in ConvertFrom-Json.
+# TODO/publish.md, PUB-02.
+compare_pair "check-data-branch"    check-data-branch.sh    "--json"          check-data-branch.ps1    "-Json"
+
 # ⚠ EACH HALF COUNTS THE CARRIERS ITSELF, in jq and in ConvertFrom-Json, so this
 # row compares two readings of the corpus rather than two wrappers over one.
 # ⛔ Both refuse a corpus with no carrier at exit 2 rather than passing over an

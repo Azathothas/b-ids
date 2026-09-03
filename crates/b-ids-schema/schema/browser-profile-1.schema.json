@@ -23,6 +23,11 @@
     "schema": {
       "const": "browser-profile/1"
     },
+    "license": {
+      "type": "string",
+      "const": "0BSD",
+      "description": "The licence this profile is published under, as an SPDX identifier. OPTIONAL: the six profiles published before 2026-09-03 do not carry it, because the corpus is append-only and adding it to them would be an edit of a published file. A reader that does not find it may take the project licence."
+    },
     "id": {
       "type": "string",
       "description": "Derived from the four keys, not a hash, so a published path can be built without an index."
@@ -112,9 +117,10 @@
             "dev",
             "nightly",
             "canary",
-            "esr"
+            "esr",
+            "for-testing"
           ],
-          "description": "latest is not a channel. It means stable and nothing else."
+          "description": "latest is not a channel. It means stable and nothing else. for-testing is the vendor automation channel, and a build on it is unbranded."
         },
         "branded": {
           "type": "boolean"

@@ -238,11 +238,24 @@ jobs:
   # matters most.
   collect:
     # manual: sh scripts/common/check-coverage.sh
+    # manual: sh scripts/common/check-pr-body.sh --fixture
     name: collect
     needs: [plan, lane, fuzz]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # ⛔ THE WRITE IS JOB-SCOPED AND IT IS THE RUN'S OWN TOKEN. Ruled by the
+    # operator 2026-09-02: `contents: write` and `pull-requests: write` on this
+    # job alone, never at the top of the file and never a personal access token.
+    # Every lane above keeps `contents: read`, because a lane runs a browser it
+    # downloaded. TODO/ci.md, CI-04.
+    #
+    # ⚠ IT ALSO NEEDS A REPOSITORY SETTING THIS FILE CANNOT GRANT: Actions must
+    # be allowed to create pull requests. That is the operator's to enable, and
+    # the step below reports the refusal rather than failing the run silently.
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -283,3 +296,125 @@ jobs:
           set -e
           echo "coverage exit=$rc"
           [ "$rc" != 1 ] || echo "a required row has no capture at all"
+
+      # ⭐ THE STATE THIS RUN WOULD PUBLISH, BESIDE THE ONE THAT IS PUBLISHED.
+      # `before` is the checkout and `after` is the checkout with this run's
+      # lane artefacts merged over it, so the generator compares two corpus
+      # states rather than being told what changed.
+      # ⛔ NOTHING IS MERGED INTO THE WORKING TREE HERE. A copy is built under
+      # .tmp, which is ignored, so a step that fails leaves the checkout as it
+      # was.
+      - name: the corpus this run would publish
+        id: merge
+        shell: bash
+        run: |
+          mkdir -p .tmp/collect/before .tmp/collect/after
+          cp -r corpus raw .tmp/collect/before/ 2>/dev/null || true
+          cp -r corpus raw .tmp/collect/after/ 2>/dev/null || true
+          if [ -d lanes ]; then
+            for d in lanes/*/; do
+              [ -d "$d" ] || continue
+              [ -d "$d/corpus" ] && cp -r "$d/corpus" .tmp/collect/after/
+              [ -d "$d/raw" ] && cp -r "$d/raw" .tmp/collect/after/
+            done
+          fi
+          before=$(find .tmp/collect/before/corpus -name '*.json' 2>/dev/null | wc -l)
+          after=$(find .tmp/collect/after/corpus -name '*.json' 2>/dev/null | wc -l)
+          echo "profile files before=$before after=$after"
+
+      # ⛔ EVERY FIELD IS A FACT THIS RUN MEASURED. The generator refuses a run
+      # file missing one, so nothing here can produce a body with a blank where
+      # a run identifier belongs.
+      # ⚠ WHAT THE RUN COULD NOT DO IS NAMED, and a lane result that is not
+      # `success` is exactly that.
+      - name: what this run would open
+        id: requests
+        shell: bash
+        run: |
+          set +e
+          sh scripts/common/check-formats.sh > .tmp/collect/formats.log 2>&1
+          formats_rc=$?
+          cargo run -q -p b-ids-corpus -- validate --root .tmp/collect/after > .tmp/collect/validate.log 2>&1
+          set -e
+          findings=$(awk -F'findings:' '/^corpus=validate /{ split($2, a, / /); n = a[1] } END { print n + 0 }' .tmp/collect/validate.log)
+          unavailable='[]'
+          if [ "${{ needs.lane.result }}" != "success" ]; then
+            unavailable='["at least one capture lane did not succeed: see the lane jobs of this run"]'
+          fi
+          jq -n \
+            --arg run_id "${{ github.run_id }}" \
+            --arg image "$ImageOS-$ImageVersion" \
+            --arg validator "$(cat .tmp/collect/validate.log)" \
+            --argjson findings "$findings" \
+            --argjson unavailable "$unavailable" \
+            --argjson formats "$([ "$formats_rc" = 0 ] && echo true || echo false)" \
+            '{workflow: "capture.yml", run_id: $run_id,
+              images: [["collect", $image]],
+              harness: "b-ids-harness 0.0.0",
+              command: "sh experiments/10-first-profile.sh --headless --browser BROWSER",
+              unavailable: $unavailable, validator_output: $validator,
+              validator_findings: $findings, formats_round_trip: $formats}' \
+            > .tmp/collect/run.json
+          cargo run -q -p b-ids-corpus -- pull-request \
+            --before .tmp/collect/before --after .tmp/collect/after \
+            --run .tmp/collect/run.json --out .tmp/collect/requests | tee .tmp/collect/requests.log
+          n=$(awk -F'requests:' '/^corpus=pull-request /{ split($2, a, / /); r = a[1] } END { print r + 0 }' .tmp/collect/requests.log)
+          echo "requests=$n" >> "$GITHUB_OUTPUT"
+
+      # ⭐ A NO-OP RUN OPENS NOTHING AND COMMENTS NOTHING. Silence is the correct
+      # output for a browser that did not change, and a bot that writes on a
+      # schedule trains people to ignore it. The `if` is that rule.
+      #
+      # ⛔ IT NEVER FORCE-PUSHES OVER A COMMIT THAT IS NOT ITS OWN. The bot
+      # branch is checked for a commit whose author is not the platform's own
+      # actor, and a lane that finds one stops with a message rather than
+      # destroying somebody's work.
+      - name: open or update one pull request per route
+        if: steps.requests.outputs.requests != '0'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          base=$(git rev-parse --abbrev-ref HEAD)
+          for dir in .tmp/collect/requests/*/; do
+            [ -d "$dir" ] || continue
+            branch=$(cat "$dir/branch")
+            title=$(cat "$dir/title")
+            echo "== $branch =="
+            if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+              git fetch origin "$branch"
+              author=$(git log -1 --format='%an' "origin/$branch")
+              if [ "$author" != 'github-actions[bot]' ]; then
+                echo "⛔ $branch has a commit by $author, so this run will not touch it"
+                continue
+              fi
+              git checkout -B "$branch" "origin/$branch"
+            else
+              git checkout -B "$branch" "$base"
+            fi
+            cp -r .tmp/collect/after/corpus .tmp/collect/after/raw .
+            git add corpus raw
+            if git diff --cached --quiet; then
+              echo "nothing to commit on $branch"
+              git checkout "$base"
+              continue
+            fi
+            git commit -m "$title"
+            git push --force-with-lease origin "$branch"
+            if gh pr view "$branch" >/dev/null 2>&1; then
+              gh pr edit "$branch" --title "$title" --body-file "$dir/body.md"
+            else
+              # ⚠ A refusal here is usually the repository setting that lets
+              # Actions create pull requests, which this file cannot grant.
+              gh pr create --base "$base" --head "$branch" --title "$title" \
+                --body-file "$dir/body.md" \
+                || echo "⛔ could not open a pull request. Allow GitHub Actions to create pull requests in the repository settings"
+            fi
+            while read -r label; do
+              [ -n "$label" ] || continue
+              gh pr edit "$branch" --add-label "$label" || echo "no label $label"
+            done < "$dir/labels"
+            git checkout "$base"
+          done

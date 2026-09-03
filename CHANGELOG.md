@@ -14,6 +14,153 @@ repository changes, not published artefacts, and every one says so.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-03T05:40:00Z - one assembler, two publishing surfaces
+
+**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-01` and `PUB-02`.
+**Deployed:** no. No release was cut, no tag created and no branch pushed. Both
+acceptances are local and say so in their own output.
+
+What landed:
+
+- ⭐ **`PUB-01` and `PUB-02` publish the same bytes**, because there is one
+  assembler and both surfaces take what it produced. Two surfaces built by two
+  assemblers is two answers to what this project publishes.
+- ⛔ **Nothing in the assembler reads a clock.** A build is stamped with a
+  digest of the corpus, so a rebuild is byte-identical and a change is not.
+- ⛔ **A tag that already exists is refused**, along with a malformed date and
+  an empty build. A published release is immutable and consumers pin releases.
+- ⛔ **The source, the vendored trees and the reference corpus are not on the
+  data branch**, and both halves of the check assert each of seven directories
+  is absent.
+
+The story of two findings, kept here because the documents say what is true
+rather than what happened:
+
+- ⚠ **The two halves of a check can resolve different `tar` binaries on one
+  machine.** GNU tar wants `--owner=0` and refuses `--uid`; the bsdtar Windows
+  ships wants `--uid 0` and refuses `--force-local`; and one of the two date
+  formats is a parse error to one of them. The archive leg skipped on every host
+  until both spellings were probed.
+- ⛔ **A leg that always skips is a leg nobody knows works**, and this change
+  had two candidates for that: the archive comparison, which was fixed, and the
+  comparison against the published data branch, which genuinely cannot run
+  because the branch does not exist and is reported as a skip with the reason.
+
+### 2026-09-03T04:20:00Z - the licence stated in seven places, from one home
+
+**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-07`.
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **One home for the identifier**, `b_ids_schema::LICENSE`, with every
+  generated statement reading it and a check asserting the seven agree. A file
+  that travels alone still has to say what it is.
+- ⛔ **The field is OPTIONAL in the published JSON Schema**, and the check
+  asserts it is not in `required`. A schema requiring it would refuse every
+  profile in the corpus, because the six published before today predate the
+  field and the corpus is append-only.
+- ⭐ **The leg that can fail is what the WRITER emits**, not what the corpus
+  holds: a loop over the published set finds nobody carrying the field today,
+  and the entry says so rather than reporting a pass.
+
+### 2026-09-03T03:10:00Z - fifty-four routes a program can read with curl
+
+**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-03`.
+**Deployed:** no. The tree is generated into an ignored directory and checked
+there; `PUB-02` is the surface that will serve it.
+
+What landed:
+
+- ⭐ **One file per value, at every permutation the corpus holds a value for**,
+  with an `index.txt` per directory and `latest` as a real file rather than a
+  redirect. A single-value file carries the value and nothing else, so a
+  consumer never strips anything.
+- ⭐ **The check reads the corpus rather than the generator.** A manifest names
+  the profile and the property behind every route, and each half goes and reads
+  the value out of the profile: one in jq, one in ConvertFrom-Json.
+- ⛔ **Nothing is published for a value the corpus does not hold.** No JA3, JA4
+  or Akamai route exists, because nothing here computes one.
+
+The story of three findings, kept here because the documents say what is true
+rather than what happened:
+
+- ⛔ **jq on Windows writes CRLF, for the second time in this tree.** Every one
+  of the 54 value comparisons failed while both sides were correct.
+- ⛔ **The generated tree lives under an ignored directory**, so the git-based
+  walk answered with nothing and the check reported a clean tree it had never
+  opened. It is the same defect the check's own header already described for
+  the fixture path, arriving from the other direction.
+- ⛔ **A list file and a single-value file both end in `txt`**, so a classifier
+  reading the last dot would have refused the newline a list needs.
+
+### 2026-09-03T01:40:00Z - a scheduled run that finds a change opens a pull request
+
+**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-04`.
+**Deployed:** no. Nothing is published from this repository yet, and no pull
+request has been opened by anything in this change.
+
+What landed:
+
+- ⭐ **The body, the branch, the labels and the five merge conditions come out
+  of the crate**, as the third renderer of the model the release body and the
+  changelog already use. The workflow holds the token and does the opening, so
+  the generator is testable without a network.
+- ⭐ **Three of the five merge conditions are computed from the published
+  profiles** rather than claimed by the run: agreement across two independent
+  sources, a provenance regression, and whether the diff touched a field the
+  change class predicts. The other two are facts about the run, and every field
+  of the run file is required.
+- ⛔ **The write is job-scoped**, on the collect job alone, using the run's own
+  token. ⚠ It also needs a repository setting this file cannot grant, and the
+  step says so rather than failing silently.
+
+The story of two findings, kept here because the documents say what is true
+rather than what happened:
+
+- ⚠ **`CI-04` predicted that a version bump moves the User-Agent and the brand
+  list**, and the field-level diff compares header positions rather than header
+  values, so neither is a field it can report. The predicted set for a bump is
+  the version and nothing else, which is the strict reading and the safe one.
+- ⛔ **A guard added in this change turned out not to be the thing enforcing its
+  own rule.** Removing the early return that makes a no-op change produce
+  nothing changed no behaviour at all, because a change with no movement has
+  nothing for the loop below it to iterate. The line is kept as the explicit
+  statement of the invariant and its comment now says which of the two holds it.
+
+### 2026-09-02T23:55:00Z - four more formats, two declined, and a support matrix nobody types
+
+**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-12`.
+**Deployed:** no. Nothing is published from this repository yet.
+
+What landed:
+
+- ⭐ **YAML, TOML, a SQLite dump and a protobuf definition**, from the one
+  generator `SCHEMA-08` established, each with a reader beside its writer. CBOR
+  and MessagePack were weighed and declined, and the reason for each is
+  published rather than left to a consumer to guess at.
+- ⭐ **The support matrix is generated from the generator**, so a format added,
+  renamed or declined moves it in the same change, and both halves of
+  `check-formats` read it as their catalogue rather than carrying a second copy
+  of the list.
+- ⭐ **The dump loads into a real database**, which is the one reader in this
+  check that is not this project's own.
+
+The story of two fixes, kept here because the documents say what is true rather
+than what happened:
+
+- ⛔ **Two of `SCHEMA-08`'s readers split their input into LINES**, and both
+  formats allow a newline inside a quoted value. The published corpus carries no
+  such value, so neither defect was reachable from real data; rendering a
+  profile whose values carry a quote, an apostrophe, a tab, a newline, a
+  backslash and a non-ASCII character took both red at once. Both readers are
+  quote-aware across newlines now.
+- ⛔ **A guard added in this change passed over the mutation that should have
+  taken it red.** The SQLite leg asked one question and read any error from it
+  as "this host has no JSON1", so a dump whose `CREATE TABLE` no longer declared
+  the column the format promises reported `ok-no-json1` and exited 0. The
+  capability is probed separately from the question now.
+
 ### 2026-09-02T15:30:00Z - the corpus stopped recording builds nobody chose
 
 **Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and the eight entries it

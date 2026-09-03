@@ -72,18 +72,53 @@ try {
     # ⛔ The extensions this project defines as carrying one value.
     $singleValue = @('hex')
 
+    $generated = Join-Path $root '.tmp' | Join-Path -ChildPath 'check-routes-ps' | Join-Path -ChildPath 'routes'
+    $manifest = Join-Path $generated 'routes.json'
+    $generate = $true
+
     if ($Fixtures) {
         if (-not (Test-Path -LiteralPath $Fixtures -PathType Container)) {
             [Console]::Error.WriteLine("check-routes: no directory at $Fixtures")
             exit 2
         }
         $routeDirs = @($Fixtures)
+        # ⚠ A fixture run checks the FIXTURE and nothing else.
+        $generate = $false
+    }
+
+    if ($generate) {
+        if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
+            [Console]::Error.WriteLine('check-routes: cargo not found, so the route tree could not be generated')
+            exit 2
+        }
+        if (Test-Path -LiteralPath $generated) { Remove-Item -Recurse -Force -LiteralPath $generated }
+        $work = Split-Path -Parent $generated
+        New-Item -ItemType Directory -Force -Path $work | Out-Null
+        & cargo build -q -p b-ids-corpus
+        if ($LASTEXITCODE -ne 0) {
+            [Console]::Error.WriteLine('check-routes: the corpus crate did not build')
+            exit 2
+        }
+        $bin = Join-Path $root 'target' | Join-Path -ChildPath 'debug' | Join-Path -ChildPath 'b-ids-corpus'
+        if (-not (Test-Path -LiteralPath $bin)) { $bin = $bin + '.exe' }
+        if (-not (Test-Path -LiteralPath $bin)) {
+            [Console]::Error.WriteLine("check-routes: $bin is not there")
+            exit 2
+        }
+        $generateLog = Join-Path $work 'generate.log'
+        & $bin routes --root $root --out $generated > $generateLog 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            [Console]::Error.WriteLine("check-routes: the route generator exited $LASTEXITCODE")
+            Get-Content -LiteralPath $generateLog | ForEach-Object { [Console]::Error.WriteLine($_) }
+            exit 1
+        }
+        $routeDirs = @('raw', '.tmp/check-routes-ps/routes')
     }
 
     $present = @($routeDirs | Where-Object { Test-Path -LiteralPath $_ -PathType Container })
     if ($present.Count -eq 0) {
         if ($Json) {
-            Write-Output '{"schema":"check-routes/1","files":0,"problems":0,"routes":false}'
+            Write-Output '{"schema":"check-routes/2","files":0,"verified":0,"problems":0,"routes":false}'
         }
         else {
             [Console]::Error.WriteLine('check-routes: no published route tree exists yet, so nothing was checked.')
@@ -108,6 +143,15 @@ try {
     else {
         foreach ($dir in $routeDirs) {
             if (-not (Test-Path -LiteralPath $dir -PathType Container)) { continue }
+            if ($dir -like '.tmp/*') {
+                # ⛔ THE GENERATED TREE IS UNDER .tmp, WHICH IS IGNORED, so
+                # `git ls-files --others --exclude-standard` answers with
+                # NOTHING and the walk reports a clean tree it never opened.
+                foreach ($f in @(Get-ChildItem -LiteralPath $dir -Recurse -File)) {
+                    [void]$files.Add(($f.FullName.Substring($root.Length + 1) -replace '\\', '/'))
+                }
+                continue
+            }
             foreach ($f in @(& git ls-files -- $dir)) { if ($f) { [void]$files.Add($f) } }
             foreach ($f in @(& git ls-files --others --exclude-standard -- $dir)) { if ($f) { [void]$files.Add($f) } }
         }
@@ -120,8 +164,16 @@ try {
     $problems = New-Object System.Collections.ArrayList
     $checked = 0
     foreach ($file in ($unique | Sort-Object -CaseSensitive)) {
+        # ⚠ THE WHOLE SUFFIX, not the last dot. A list file and a single-value
+        # file both end in `txt`, and a classifier reading only the last dot
+        # would call a list single-valued and refuse the newline a list needs.
+        $base = [System.IO.Path]::GetFileName($file)
         $extension = [System.IO.Path]::GetExtension($file).TrimStart('.')
-        if ($singleValue -notcontains $extension) { continue }
+        $single = $singleValue -contains $extension
+        if ($base -eq 'index.txt') { $single = $false }
+        elseif ($base -like '*.list.txt') { $single = $false }
+        elseif ($base -like '*.txt') { $single = $true }
+        if (-not $single) { continue }
         if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { continue }
         $checked++
         # ⛔ The LAST BYTE, read from the file rather than from a line count. A
@@ -132,6 +184,79 @@ try {
         $last = $bytes[$bytes.Length - 1]
         if ($last -eq 0x0a -or $last -eq 0x0d) {
             [void]$problems.Add("  ${file}: ends with a line ending, and it carries exactly one value")
+        }
+    }
+
+    # -- ⭐ every route's value, read back out of the corpus ---------------
+    #
+    # ⛔ THIS IS THE LEG A GENERATOR CANNOT RUN ON ITSELF. The manifest names
+    # the profile and the property behind every route, and this reads the value
+    # out of the profile with ConvertFrom-Json. ⚠ THE READING IS THIS HALF'S
+    # OWN, where the sh twin uses jq: two readings of the corpus rather than two
+    # wrappers over one.
+    $verified = 0
+    if ($generate) {
+        if (-not (Test-Path -LiteralPath $manifest) -or (Get-Item -LiteralPath $manifest).Length -eq 0) {
+            [Console]::Error.WriteLine("check-routes: the generator wrote no manifest at $manifest")
+            exit 2
+        }
+        $entries = (Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json).routes
+        # ⚠ Each profile is parsed ONCE. Re-parsing per route would read one
+        # file 54 times for six answers.
+        $parsed = @{}
+        foreach ($entry in $entries) {
+            $verified++
+            if (-not $parsed.ContainsKey($entry.profile)) {
+                $parsed[$entry.profile] = Get-Content -LiteralPath $entry.profile -Raw | ConvertFrom-Json
+            }
+            $profileJson = $parsed[$entry.profile]
+            $want = $null
+            switch ($entry.property) {
+                { $_ -in @('user-agent', 'sec-ch-ua', 'accept-language') } {
+                    $set = @($profileJson.http.variants | Where-Object { $_.variant -eq $entry.variant })
+                    if ($set.Count -gt 0) {
+                        $header = @($set[0].headers | Where-Object { $_.name -eq $entry.property })
+                        if ($header.Count -gt 0) { $want = $header[0].value }
+                    }
+                    break
+                }
+                'header-order' {
+                    $set = @($profileJson.http.variants | Where-Object { $_.variant -eq $entry.variant })
+                    if ($set.Count -gt 0) { $want = ($set[0].headers | ForEach-Object { $_.name }) -join "`n" }
+                    break
+                }
+                'alpn' { $want = ($profileJson.tls.alpn) -join "`n"; break }
+                'client-hello-hex' { $want = $profileJson.raw.client_hello_hex; break }
+                default {
+                    # ⛔ A property added to the generator with no reader here is
+                    # a refusal rather than a skip.
+                    [void]$problems.Add("  $($entry.path): the property $($entry.property) has no reader in this check")
+                    continue
+                }
+            }
+            $path = Join-Path $generated $entry.path
+            $got = ''
+            if (Test-Path -LiteralPath $path) {
+                $got = [System.IO.File]::ReadAllText($path)
+            }
+            # ⚠ TRAILING LINE ENDINGS ARE STRIPPED ON BOTH SIDES, deliberately.
+            # A list file ends with one and a single-value file does not; the
+            # newline rule is the loop above and this leg is about the VALUE.
+            if (("$want").TrimEnd("`r", "`n") -ne $got.TrimEnd("`r", "`n")) {
+                [void]$problems.Add("  $($entry.path): the file is not what $($entry.profile) holds for $($entry.property)")
+            }
+            if ($entry.path -like '*/latest/*') {
+                # ⛔ A CONSUMER FOLLOWING `latest` MUST NEVER BE HANDED A
+                # PRE-RELEASE BUILD, and the route names the profile it came
+                # from, so this asks the profile rather than the path.
+                if ($profileJson.browser.channel -ne 'stable') {
+                    [void]$problems.Add("  $($entry.path): latest names a $($profileJson.browser.channel) profile")
+                }
+            }
+        }
+        if ($verified -eq 0) {
+            [Console]::Error.WriteLine('check-routes: the manifest named no route, so nothing was read back')
+            exit 2
         }
     }
 
@@ -179,7 +304,7 @@ try {
     # tree is.
     if ($checked -eq 0) {
         if ($Json) {
-            Write-Output '{"schema":"check-routes/1","files":0,"problems":0,"routes":false}'
+            Write-Output '{"schema":"check-routes/2","files":0,"verified":0,"problems":0,"routes":false}'
         }
         else {
             [Console]::Error.WriteLine('check-routes: the route tree holds no single-value file, so nothing')
@@ -190,7 +315,8 @@ try {
     }
 
     if ($Json) {
-        Write-Output ('{"schema":"check-routes/1","files":' + $checked +
+        Write-Output ('{"schema":"check-routes/2","files":' + $checked +
+                      ',"verified":' + $verified +
                       ',"problems":' + $problems.Count + ',"routes":true}')
         if ($problems.Count -gt 0) { exit 1 }
         exit 0
@@ -207,7 +333,8 @@ try {
     }
 
     $suffix = if ($AssertLatestIsStable) { ', and every latest pointer names a stable profile' } else { '' }
-    Write-Output "routes ok: $checked single-value file(s), none ends with a line ending$suffix"
+    Write-Output "routes ok: $checked single-value file(s), none ends with a line ending,"
+    Write-Output "  and $verified generated route(s) each carry the value the corpus holds$suffix"
     exit 0
 }
 finally {

@@ -1356,7 +1356,7 @@ capture-path change and it is not in this entry.
 ## SCHEMA-12. The six formats that need a decoder as well as an encoder
 
 **Source** ruled by the operator 2026-09-01, splitting `SCHEMA-08`
-**Category** schema, **Priority** P2, **Effort** L, **Status** open
+**Category** schema, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
 
@@ -1414,6 +1414,211 @@ corpus and read back, each lossless one to byte-identical canonical JSON; every
 format the ruling declined is absent from the generator AND named in the support
 matrix as declined, with its reason; and the check exits non-zero when a required
 row produced no output at all.
+
+---
+
+### ⭐ Closed 2026-09-02. Four published, two declined, and the ruling is a table
+
+⛔ **The operator's standing instruction for this session was that an open
+question is answered by whatever the record recommends**, so the ruling below is
+this entry's own recommendation column taken as the decision. Each row says what
+it cost, which is the part the premise said was not measured.
+
+| format | ruled | what it cost |
+| --- | --- | --- |
+| YAML | ⭐ published, **lossless** | a writer and a reader here, 240 lines. ⛔ No dependency: `serde_yaml` was withdrawn by its author and what remains are forks, so taking one would put an unmaintained parser between this project's product and its consumers. |
+| TOML | published, **every field that is not null** | a writer and a reader here, 330 lines. ⛔ TOML has no null and the model carries them, so losslessness was not available at any price. |
+| SQLite | ⭐ published as a **text dump**, lossless | 200 lines and no library. The canonical JSON is a column, so nothing is lost, and the eight flat columns beside it are there for a query. |
+| CBOR | ⛔ **declined** | a codec dependency and a decoder owned forever, for a consumer nobody has. |
+| MessagePack | ⛔ **declined** | the same trade, and two binary encodings of one model with nothing choosing between them. |
+| Protobuf | ⭐ published as a **definition**, no binaries | 320 lines. A typed consumer generates its own decoder and this project owes no codec. |
+
+⚠ **The two declined rows are recorded rather than forgotten.**
+`b_ids_corpus::formats::Declined` carries both with their reasons, the generated
+support matrix prints them, and both halves of the check refuse a tree where a
+declined format is generable or is named with no reason.
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-formats.sh --require-rows yaml,toml,sqlite,protobuf
+formats ok: 10 file(s) from 6 profile(s), byte-identical over two runs,
+  9 format(s) published and 2 declined with a reason, every lossless one
+  round-tripping to canonical JSON and every partial one carrying its subset.
+  sqlite3 load: ok
+rc=0
+```
+
+⛔ **And it refuses**, which is what makes it an acceptance rather than a report:
+
+```text
+$ sh scripts/common/check-formats.sh --require-rows yaml,cbor
+formats check failed, 1 problem(s):
+
+  cbor: required, and the support matrix does not publish it
+
+One generator, canonical JSON in, every format out. Never hand-edit a
+generated file. TODO/schema.md, SCHEMA-08 and SCHEMA-12.
+rc=1
+```
+
+Both halves agree, which is the twin comparison rather than a second reading:
+
+```text
+  ok     check-formats: both say {"schema":"check-formats/2","files":10,"profiles":6,
+         "published":9,"declined":2,"required":0,"sqlite":"ok","problems":0}, exit 0
+```
+
+#### ⭐ The support matrix is generated, so it cannot drift
+
+⛔ **A support matrix written by hand states what somebody believed on the day
+they wrote it.** This one is derived from `Format::all()` and `Declined::all()`,
+written beside the formats it describes, and **the check reads it as its
+catalogue** rather than carrying a second copy of the list. A format added,
+renamed or declined moves the matrix and the check follows without being edited.
+
+```text
+| ask for | file | carries |
+| --- | --- | --- |
+| `json` | `corpus.json` | lossless |
+| `ndjson` | `corpus.ndjson` | lossless |
+| `yaml` | `corpus.yaml` | lossless |
+| `toml` | `corpus.toml` | every field that is not null |
+| `sqlite` | `corpus.sql` | lossless |
+| `csv` | `corpus.csv` | the eight flat columns |
+| `tsv` | `corpus.tsv` | the eight flat columns |
+| `md` | `corpus.md` | the eight flat columns |
+| `protobuf` | `corpus.proto` | a definition, not values |
+```
+
+#### ⛔ Lossless is four answers, not a boolean
+
+`SCHEMA-08` had `Format::lossless()`, and it gave one answer to two questions. A
+spreadsheet carrying eight columns and a TOML file carrying every field but the
+null ones are both "not lossless", and a consumer asking "what will I not get"
+needs to be told which. `Fidelity` is the value now, `lossless()` reads it, and
+each subset is a thing in the code rather than a sentence: `FLAT_COLUMNS` for
+the three flat ones, `strip_nulls` for TOML, and `proto::Definition` for the
+definition.
+
+#### ⭐ The generator reads every file back before it writes it
+
+⛔ **The round-trip suite renders its own fixture.** So a format could be correct
+over two invented profiles and wrong over the published corpus, and the file
+would still be on disk. `formats::verify` is called per format inside
+`b-ids-corpus formats`, against the profiles actually loaded, and a format that
+does not come back is a refusal at exit 1 rather than an artefact.
+
+#### ⭐ A reader that is not this project's
+
+⛔ **A format only this project can read back is a format only this project has
+checked.** The dump is text so that something else can read it, and the check
+loads it into a real database where `sqlite3` is on the host:
+
+```text
+$ sqlite3 corpus.db < corpus.sql
+$ sqlite3 corpus.db "select count(*), sum(length(canonical_json)) from profile;"
+6|79770
+$ sqlite3 corpus.db "select id, browser, version, channel, branded, os from profile order by id;"
+chrome-151.0.7922.173-linux64-stable|Chrome|151.0.7922.173|stable|1|linux
+chrome-151.0.7922.174-win64-stable|Chrome|151.0.7922.174|stable|1|windows
+chrome-151.0.7922.76-win64-stable|Chrome|151.0.7922.76|stable|1|windows
+chrome-152.0.7977.75-linux64-stable|Chrome|152.0.7977.75|stable|1|linux
+chrome-152.0.7977.76-win64-stable|Chrome|152.0.7977.76|stable|1|windows
+edge-151.0.4129.101-linux64-stable|Edge|151.0.4129.101|stable|1|linux
+```
+
+⚠ **A skip is reported as a skip.** On a host with no `sqlite3` the check prints
+`sqlite3 load: skipped` and says in the next line that a skip is not a pass.
+
+#### ⛔ The definition is derived from the corpus, and it says so
+
+⚠ **A field absent from every published profile is absent from `corpus.proto`,
+and a field null in every published profile is an `unmeasured` comment rather
+than a field with a type nobody measured.** That is the honest limit of a
+definition generated from data. The alternative loses on a worse axis: a
+hand-written definition drifts from the model the first time a field moves and
+nothing notices.
+
+```text
+message Profile {
+  ProfileBrowser browser = 1;
+  ProfileCaptured captured = 2;
+  ProfileDigests digests = 3;
+  ProfileHttp http = 4;
+  ProfileHttp2 http2 = 5;
+  string id = 6;
+  ProfilePlatform platform = 7;
+  map<string, string> provenance = 8;
+  ProfileRaw raw = 9;
+  string schema = 10;
+  ProfileTls tls = 11;
+  // unmeasured: supersedes
+}
+```
+
+⭐ **`provenance` is a `map` because a proto field name may not carry a dot**,
+and which paths are maps is a **table in the code** rather than a look at
+whether the keys happen to be identifier-shaped. A generator that decided by
+looking would change the published shape the day a profile's keys changed, which
+is a contract moving under a consumer for a reason nobody chose. ⛔ An object
+with non-identifier keys at a path that is not in that table is a refusal.
+
+#### ⛔ Two defects in `SCHEMA-08`'s own readers, found by rendering a hostile value
+
+⭐ **The published corpus carries no apostrophe, measured over all six
+profiles**, so the SQL quote doubling, the TOML basic-string escapes and the
+delimited quoting were all unexercised by real data. The suite now renders a
+profile whose values carry a quote, an apostrophe, a tab, a newline, a backslash
+and a non-ASCII character, and two readers went red at once:
+
+| reader | what it did |
+| --- | --- |
+| ⛔ `read_flat` | split the file into LINES first. A delimited format quotes a value carrying a newline, which the writer already did correctly, so a row was cut in two and reported as `a row has 1 values and the subset has 8`. |
+| ⛔ `sql::parse` | the same shape. SQL allows a newline inside a string literal, so one insert read as `an insert that is not terminated`. |
+
+Both readers are quote-aware across newlines now, and
+`formats_a_value_carrying_a_newline_does_not_split_a_record` is the named
+regression. ⚠ Neither was reachable from today's corpus and both were latent
+silent-corruption paths for the first value that carried a newline.
+
+#### The guard mutation, each exit code read unpiped
+
+| planted | what went red |
+| --- | --- |
+| the YAML writer drops the last key of every mapping | the generator refused before writing the file, exit **1**, `line 27 has neither a value nor a block under it` |
+| `support_matrix` stops naming the declined formats | `the support matrix declines nothing, so its reasons are unchecked`, exit **1** |
+| `corpus.toml` is not written while the matrix still names it | two problems, the catalogue's and the caller's, exit **1** |
+| the dump's inserts lose their terminator | the generator refused, exit **1**, `insert 1: no semicolon after its values` |
+| ⛔ the dump's `CREATE TABLE` renames `canonical_json` | ⛔ **nothing. The check passed.** See below. |
+| the same, after the check was fixed | `sqlite3 has json_valid and could not read canonical_json from the loaded dump, exit 1`, exit **1** |
+| a field deleted from the generated definition | the definition's round trip, inside the suite |
+
+⛔ **The fifth row is the pass earning its place, and the defect was this
+check's own.** The `sqlite3` leg asked one question, `select count(*) from
+profile where json_valid(canonical_json)`, and treated ANY error from it as "this
+sqlite3 was built without JSON1", which is a fact about the host. A dump whose
+`CREATE TABLE` no longer declares the column the format promises produces exactly
+that error, and the check reported `sqlite3 load: ok-no-json1` and exited 0. It
+is the "a step that exits 0 having done nothing it was asked to do" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+written by the session that was proving the guards. ⭐ The capability is probed
+separately from the question now, so "no JSON1 here" and "the column is not
+there" are two answers.
+
+⚠ **And the first attempt at the terminator mutation did not apply at all.** The
+patch asserted its own match count and refused, so the run that followed was
+over an unmutated tree and its green result meant nothing. That is why the
+assertion is there.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a general YAML or TOML parser | ⛔ Deliberately not written, which is what the entry asked. Each reader reads back exactly what its writer produces and refuses everything else by name, and `formats_the_yaml_reader_refuses_a_document_it_did_not_write` is where that is a behaviour rather than a claim. |
+| encoded protobuf | Nothing publishes bytes. The definition is the product. |
+| a binary database | ⛔ The dump is text. `sqlite3 corpus.db < corpus.sql` is the one command a consumer runs, and this tree ships no database code. |
+| these formats on a published route | `PUB-02` and `PUB-03` are the surfaces. The generator writes into a throwaway directory and nothing in this repository publishes its output yet. |
 
 ---
 

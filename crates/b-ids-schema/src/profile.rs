@@ -30,12 +30,35 @@ pub enum Channel {
     Canary,
     /// Extended support release.
     Esr,
+    /// The vendor's automation-build channel.
+    ///
+    /// ⭐ **A CHANNEL rather than a fifth path component**, which is the ruling
+    /// taken 2026-09-03. The channel is already part of the published route and
+    /// of the `latest` key, so nothing about the layout changes and no
+    /// consumer's pin moves; and it is true, because the automation index is a
+    /// channel the vendor publishes separately from stable.
+    ///
+    /// ⛔ **`branded: false` FOLLOWS from it rather than becoming a path
+    /// component.** The alternative, `branded` as a fifth component, would have
+    /// changed `corpus/v1/` for every consumer to carry a dimension only one
+    /// browser family has. `TODO/driver.md`, `DRIVER-06`.
+    ///
+    /// ⚠ **It is never `latest`.** `CORPUS-03` says `latest` means stable and
+    /// nothing else, and the pointer map is built from stable profiles alone,
+    /// so an automation build cannot be mistaken for one.
+    ///
+    /// ⛔ **RENAMED EXPLICITLY.** The container's `rename_all = "snake_case"`
+    /// would serialise this as `for_testing`, which is not what `as_str`
+    /// answers and not what the matrix, the published schema and the route
+    /// spell. One word in two spellings is the class this project refuses.
+    #[serde(rename = "for-testing")]
+    ForTesting,
 }
 
 impl Channel {
     /// Every channel, in the order the vocabulary is written down.
     #[must_use]
-    pub fn all() -> [Self; 6] {
+    pub fn all() -> [Self; 7] {
         [
             Self::Stable,
             Self::Beta,
@@ -43,6 +66,7 @@ impl Channel {
             Self::Nightly,
             Self::Canary,
             Self::Esr,
+            Self::ForTesting,
         ]
     }
 
@@ -56,6 +80,7 @@ impl Channel {
             Self::Nightly => "nightly",
             Self::Canary => "canary",
             Self::Esr => "esr",
+            Self::ForTesting => "for-testing",
         }
     }
 }
@@ -636,6 +661,20 @@ fn decode_hex(text: &str) -> Result<Vec<u8>, ()> {
 pub struct Profile {
     /// The schema this profile is written against.
     pub schema: String,
+    /// The licence this profile is published under, as an SPDX identifier.
+    ///
+    /// ⛔ **A file that travels alone still has to say what it is.** A consumer
+    /// who downloads one profile should not have to find this repository to
+    /// learn they may use it. `TODO/publish.md`, `PUB-07`.
+    ///
+    /// ⚠ **Defaulted rather than required, and that is not laziness.** The six
+    /// profiles published before 2026-09-03 do not carry the field in their
+    /// bytes and never will: the corpus is append-only and adding it to them
+    /// would be an edit of a published file. Reading one fills the default in,
+    /// every profile written from now on carries it literally, and the
+    /// published JSON Schema lists it as OPTIONAL for exactly that reason.
+    #[serde(default = "default_license")]
+    pub license: String,
     /// The identifier, derived from the four keys.
     pub id: ProfileId,
     /// Which browser, at which build, in which channel.
@@ -661,6 +700,11 @@ pub struct Profile {
     /// ⛔ A published profile is immutable. A correction is a NEW profile naming
     /// the one it replaces, never an edit of the old one.
     pub supersedes: Option<String>,
+}
+
+/// The licence a profile written before the field existed reads back as.
+fn default_license() -> String {
+    crate::LICENSE.to_owned()
 }
 
 impl Profile {

@@ -1,63 +1,50 @@
 # SUMMARY.md
 
-The last session's table. ⚠ **A snapshot, never an authority.**
+⚠ **The last session's table. A snapshot, never an authority.**
 [`PROGRESS.md`](PROGRESS.md) is the record and it is what a session reads first.
 
-⛔ Overwritten every session. Every cell here is grounded in something a reader
-can point at, including the cells that say nothing moved.
+Session ran 2026-09-02T23:21:15Z to 2026-09-03T06:00Z, unattended, ended by the
+operator.
 
----
+| row | before | after | measured by |
+| --- | --- | --- | --- |
+| Elapsed | 2026-09-02T23:21:15Z | about 6h 40m | the recorded start instant against `date -u` |
+| Commits | 3c1be00 | one squashed commit on `main` | `git log --oneline` |
+| Work | 26 open, 72 done | 20 open, 78 done. **6 completed, 0 deferred, 0 failed** | `sh scripts/common/check-record.sh` |
+| Effort | 0 of 20 points | **13 of 20**: one `L`, four `M`, one `S` | [`RULES.md`](RULES.md) section 10's own scale |
+| Changes | | 48 files, +7837 / -179 | `git diff --shortstat` over the session range |
+| Size | 5454 tracked files | 5471 tracked files, +17 | `git ls-files \| wc -l` |
+| Tests | 353 passing in 38 files | 374 passing in 40 files, 0 failing | `cargo test --workspace`, exit 0 |
+| Checks | 30 passed, 1 skipped, 31 registered | 34 passed, 1 skipped, 35 registered | `check-gate.ps1 -Fast`, exit 0 |
+| Twin pairs | 27 agreeing | 31 agreeing | `check-twins.sh`, exit 0 |
+| Corpus | 6 profiles | 6 profiles, unchanged | ⛔ No capture was taken. Nothing was added to the corpus. |
+| Cost | | ⛔ Not measured. No runner was dispatched, nothing was downloaded and no release or branch was pushed. | |
+| Health | | 4 gate pairs added, 4 defects in this session's own code fixed, 2 pre-existing readers fixed, tree clean, nothing deployed | the review passes in [`PROGRESS.md`](PROGRESS.md) |
 
-## 2026-09-02, unattended, from 11:22:03Z
+## What closed
 
-| | |
-| --- | --- |
-| entries closed | **8**, for **20** effort points on [`RULES.md`](RULES.md) section 10's scale |
-| entries now | total 98, open 26, blocked 0, done 72 |
-| corpus | 3 profiles to **6**. Two browsers, two majors, two platforms |
-| gate | 26 checks to **30**, plus `check-twins`, and about 600 seconds to **179** |
-| tests | 309 to **344**, in 37 files |
-| runner runs | 9 dispatched, 9 read |
-
-### What closed
-
-| entry | effort | what it took to close it |
+| entry | effort | what it is |
 | --- | --- | --- |
-| `DRIVER-08` | L | the purge and the install executed on hosted runners, both platforms and both routes. `provision.yml` run 33628209454 |
-| `DRIVER-10` | L | a second browser family, from a route table rather than branches. Edge captured for the first time |
-| `SCHEMA-08` | L | five formats, one generator, a reader for each round trip |
-| `HARNESS-15` | M | the two halves selected independently, proved against the navigation that could not publish under the old rule |
-| `TOOL-18` | M | the gate's cost, and the cause was not the one the premise named |
-| `CORPUS-04` | M | the trust-anchor list measured here and published per build, with the trade stated and no preference asserted |
-| `HARNESS-16` | S | `certutil -addstore -user Root` returns **124** on `windows-latest`: it never answers |
-| `PUB-08` | S | one model, two renderers, and a check whose comparison was seen to fail |
+| `SCHEMA-12` | `L` | YAML, TOML, a SQLite dump and a protobuf definition from the one generator; CBOR and MessagePack declined with published reasons |
+| `CI-04` | `M` | the pull-request body, branch, labels and five merge conditions, three computed from the published profiles |
+| `PUB-03` | `M` | 54 flat routes with a check that reads the corpus rather than the generator |
+| `PUB-01` | `M` | one assembler, a byte-identical build, and a tag that cannot overwrite a pinned one |
+| `PUB-02` | `M` | the same assembler for the data branch, every file checksummed twice |
+| `PUB-07` | `S` | the licence in seven places from one home |
 
-### What moved without closing
-
-| entry | what changed about it |
-| --- | --- |
-| `CORPUS-02` | its acceptance refused three rows this morning and refuses two now. Both are blocked on `b_ids_driver::Family` knowing two families |
-| `EMIT-03` | its measurement is in: all six profiles carry the priority block and agree exactly, so it takes the branch that needs the HTTP/2 library vendored |
-| `CI-08` | amended: `check-manual-path` read tracked files only, so a workflow written and never staged escaped it |
-| `DRIVER-06` | unblocked by nothing and blocked by the open question below |
-
-### ⛔ What is not true, said plainly
+## ⚠ What did not move, and how that was established
 
 | | |
 | --- | --- |
-| the corpus is not a matrix | 6 profiles, two families of four planned. `chromium` and `firefox` cannot be resolved at all |
-| no capture has gone through an unbranded build | the two `for-testing` cells are planned and not attempted, on the open question below |
-| `captured.operator` is still typed | the identity writer leaves it empty and a person fills it in, this session's three profiles included |
-| `Shuffle::Observed` is still never written | a field the model carries that the capture path never fills |
-| the PowerShell half of the gate did not get `TOOL-18`'s speedup | `check-control-bytes.ps1` is 27 s against its twin's 1 s |
-| ⛔ one commit bypassed `git-sync` | it is compliant, verified afterwards, and that is luck rather than method |
+| the corpus | ⛔ **6 profiles, unchanged.** No browser was launched and no capture taken. `b-ids-corpus verify` reports the same six. |
+| `DRIVER-06` | open. `Channel::ForTesting` landed and the suite is green over it; its acceptance command selects no test yet, and the entry says so. |
+| `CORPUS-02` | open and unchanged. Still blocked on `b_ids_driver::Family` knowing `firefox` and `chromium`. |
+| anything outside this machine | ⛔ **Nothing.** No workflow dispatched, no tag, no release, no branch, no pull request, no issue. |
+| the two `for-testing` matrix cells | still `enabled: false`. The vocabulary no longer blocks them; enabling one is the operator's or the next session's call. |
 
-### The one open question
+## ⛔ Where a number is absent
 
-**Where does an unbranded build live in the corpus?** The published route is
-`browser/channel/platform/version` and carries no `branded`, and `Channel` is a
-closed vocabulary that does not include the vendor's automation channel, so a
-branded and an unbranded build of one version publish at one path.
-**Recommendation: add `for-testing` to the `Channel` vocabulary.**
-[`PROGRESS.md`](PROGRESS.md) carries the reasoning and the alternative that
-loses.
+- **Cost** is not measured because nothing was spent: no runner minutes, no
+  downloads, no publishes.
+- **The gate's full (non-`--fast`) wall time** was not taken this session. The
+  `--fast` half and `check-twins` were both run to green; timing them was not.

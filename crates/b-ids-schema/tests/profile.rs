@@ -214,3 +214,29 @@ fn a_profile_with_a_vendor_field_is_a_draft() {
         vec!["http2.stream_priority"]
     );
 }
+
+#[test]
+fn profile_a_freshly_written_one_carries_the_licence_and_an_old_one_reads_it_back() {
+    // ⛔ THE LEG THE CORPUS CANNOT PROVE TODAY. Every profile published before
+    // 2026-09-03 predates the field and the corpus is append-only, so a check
+    // over the published set finds nobody carrying it. This is where the rule
+    // is held instead: what the writer produces, and what a reader does with a
+    // profile written before the field existed. TODO/publish.md, PUB-07.
+    let profile = b_ids_schema::fixture::profile();
+    let text = serde_json::to_string(&profile).expect("it serialises");
+    assert!(
+        text.contains(&format!("\"license\":\"{}\"", b_ids_schema::LICENSE)),
+        "a freshly written profile does not carry the licence: {text}"
+    );
+
+    // ⚠ AND AN OLD ONE STILL READS. A required field would refuse every profile
+    // in the published corpus, which is why the schema lists it as optional.
+    let mut value: serde_json::Value = serde_json::from_str(&text).expect("it parses");
+    value
+        .as_object_mut()
+        .expect("a profile is an object")
+        .remove("license");
+    let older: b_ids_schema::Profile =
+        serde_json::from_value(value).expect("a profile written before the field still reads");
+    assert_eq!(older.license, b_ids_schema::LICENSE);
+}

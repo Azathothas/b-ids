@@ -27,13 +27,22 @@
 pub mod capture;
 pub mod formats;
 pub mod notes;
+pub mod publish;
+pub mod pull_request;
 pub mod route;
+pub mod routes;
 pub mod store;
 pub mod trust;
 
 pub use capture::{Identity, Refusal, profile_from};
-pub use formats::{FLAT_COLUMNS, Format, flat_row, read_back, read_flat, render};
+pub use formats::{
+    Declined, FLAT_COLUMNS, Fidelity, Format, SUPPORT_MATRIX_FILE, flat_row, read_back, read_flat,
+    read_tree, render, strip_nulls, support_matrix, verify,
+};
 pub use notes::{Change, Movement, changelog_entry, facts, model, release_body};
+pub use publish::{Artefact, Built, build};
+pub use pull_request::{ChangeClass, Condition, Conditions, Request, Run, requests};
 pub use route::{CORPUS_DIR, LAYOUT, NoRoute, RAW_DIR, Route, route};
+pub use routes::{Manifest, Property, indexes, manifest, routes};
 pub use store::{Added, Index, IndexEntry, Pointers, Published, STABLE, Store};
 pub use trust::{AnchorList, NotAList, TRUST_ANCHORS, anchor_list, anchor_lists};

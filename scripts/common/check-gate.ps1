@@ -232,6 +232,10 @@ $ComparedDirectly = @(
     'check-manual-path',
     'check-provisioning',
     'check-formats',
+    'check-pr-body',
+    'check-license-consistency',
+    'check-release',
+    'check-data-branch',
     'check-trust-anchors',
     'check-notes-generator',
     'check-changelog',
@@ -423,6 +427,26 @@ Invoke-PsCheck -Name 'check-provisioning' -Script 'scripts/common/check-provisio
 # ⛔ ONE GENERATOR, CANONICAL JSON IN, EVERY FORMAT OUT, and the round trip is
 # what says a format has a reader as well as a writer. TODO/schema.md, SCHEMA-08.
 Invoke-PsCheck -Name 'check-formats' -Script 'scripts/common/check-formats.ps1'
+
+# ⛔ AN ISSUE IS A REQUEST FOR SOMEBODY ELSE TO DO WORK, and a pull request with
+# the work in it is the deliverable. -Fixture is required: there is no pull
+# request to check, and a run with no argument would read as though there were.
+# TODO/ci.md, CI-04.
+Invoke-PsCheck -Name 'check-pr-body' -Script 'scripts/common/check-pr-body.ps1' -Arguments @('-Fixture')
+
+# ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. Six places state the
+# licence and one of them is the source every generated one reads.
+# TODO/publish.md, PUB-07.
+Invoke-PsCheck -Name 'check-license-consistency' -Script 'scripts/common/check-license-consistency.ps1' -Arguments @('-Fixture')
+
+# ⛔ A CONSUMER THAT PINS A RELEASE AND GETS DIFFERENT BYTES LATER HAS BEEN
+# BROKEN SILENTLY. -DryRun is required: this publishes nothing.
+# TODO/publish.md, PUB-01.
+Invoke-PsCheck -Name 'check-release' -Script 'scripts/common/check-release.ps1' -Arguments @('-DryRun')
+
+# ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER.
+# TODO/publish.md, PUB-02.
+Invoke-PsCheck -Name 'check-data-branch' -Script 'scripts/common/check-data-branch.ps1'
 
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
 # build that carries it gets a published list with its date. TODO/corpus.md,

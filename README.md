@@ -104,9 +104,9 @@ formats, the flat fetchable routes and the ready-to-paste client snippets are
 generated from the canonical corpus rather than maintained beside it.
 
 ⚠ **None of that exists today**, and the entries that build it are named so the
-gap is visible rather than implied: `SCHEMA-08` is the generator and its
-formats, `PUB-01` the releases, `PUB-02` the data branch, `PUB-03` the routes,
-and `PUB-04` the artefacts that are not data files.
+gap is visible rather than implied: `SCHEMA-08` and `SCHEMA-12` are the
+generator and its nine formats, `PUB-01` the releases, `PUB-02` the data branch,
+`PUB-03` the routes, and `PUB-04` the artefacts that are not data files.
 [`TODO/PROGRESS.md`](TODO/PROGRESS.md) carries the order.
 
 ---

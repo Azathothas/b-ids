@@ -10,7 +10,7 @@ program with nothing but `curl` can read.
 ## PUB-01. Releases, tagged and versioned and immutable
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** publish, **Priority** P1, **Effort** M, **Status** open
+**Category** publish, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -54,10 +54,105 @@ an existing tag exits non-zero.
 
 ---
 
+### ⭐ Closed 2026-09-03. One assembler, and a build that is the same twice
+
+⛔ **`PUB-01` and `PUB-02` publish the SAME BYTES**, and that is the design
+decision this entry actually turned on. A release archive and a data branch
+built by two assemblers is two answers to what this project publishes, and the
+day they differ nobody finds out from either. `b_ids_corpus::publish::build` is
+the one assembler; this entry archives what it produced and `PUB-02` pushes it.
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-release.sh --dry-run
+release ok: 197 artefact(s), 668384 byte(s), identical over two builds.
+  built from corpus 91d175e84340...
+  v1.2026.09.03.1 would be free, over 0 existing tag(s). archive: ok
+  ⛔ Nothing was tagged, uploaded or pushed.
+rc=0
+```
+
+⚠ **The digest above is abbreviated at the ellipsis**, for the same reason
+`TOOL-03`'s and `CORPUS-01`'s blocks are: written out it is a 64-character hex
+run in a tracked file, which is what `check-no-secrets --public` refuses. ⛔ It
+is a CONTENT ADDRESS rather than a credential, and abbreviating it was chosen
+over widening a security rule for a cosmetic reason.
+
+⛔ **`--dry-run` is REQUIRED**, for the reason `latest` requires
+`--assert-stable`: this check publishes nothing, and a run with no argument
+would read as though it had cut a release. It exits **2** without it.
+
+Both halves agree, and each compares the two builds itself: the POSIX half in
+`diff -r`, the PowerShell half by hashing every file on both sides.
+
+```text
+{"schema":"check-release/1","files":197,"bytes":668384,"cases":9,"tags":0,"archive":"ok","problems":0}
+```
+
+#### ⛔ Nothing in the assembler reads a clock
+
+⚠ **A build stamped with the time it ran produces a different archive every
+run**, and a consumer then cannot tell a real change from a rebuild. The
+manifest's `generated_from` is a digest over the corpus artefacts alone, so a
+change to a GENERATOR moves the files and not the stamp, and a change to the
+CORPUS moves the stamp. Two builds are byte-identical, file for file, and so are
+two archives of them.
+
+#### The tag, and the immutability rule
+
+| | |
+| --- | --- |
+| shape | `v1.2026.09.03.1`: the schema major, the date, and a counter. The first says which schema a consumer is getting without opening anything, the date says how fresh the data is, the counter allows more than one release a day, and the whole thing sorts. |
+| ⛔ a tag that exists | **refused.** A published release is immutable: cut a new one that supersedes it rather than re-uploading an asset. Consumers pin releases, and a mutated asset breaks them silently. |
+| ⛔ a date that is not one | refused. A tag built from a malformed date sorts wrongly forever, and the tag is the thing consumers pin. |
+| ⛔ an empty build | refused. A release with no artefact is the "step that exits 0 having done nothing" row wearing a version number. |
+| moving tags | `v1` and `latest`, one per schema major and one overall, so a script fetches without listing. ⚠ They MOVE, which is why the dated tag exists beside them. |
+
+⛔ **The existing tags are the CALLER'S**, read from the repository by whoever
+asks. `plan_release` takes them as an argument, so the naming rule is testable
+and is not tied to a working directory. The check reads them with `git tag` and
+asserts the tag this build would take is free.
+
+#### ⛔ Two tars, two spellings, one date format
+
+⚠ **The two halves of this check resolve DIFFERENT tar binaries on this
+machine**, and the archive leg is where that showed. Measured 2026-09-03:
+
+| | |
+| --- | --- |
+| GNU tar 1.35, which Git Bash resolves | wants `--owner=0 --group=0` and **refuses** `--uid`. And it reads a Windows path as a REMOTE HOST SPEC: `-cf C:/x.tar` produced `Cannot connect to C: resolve failed` until `--force-local` was added |
+| the bsdtar Windows ships, which PowerShell resolves | wants `--uid 0 --gid 0` and **refuses** `--force-local` |
+| ⛔ the date | `2026-01-01T00:00:00Z` is `Invalid argument to --mtime (bad date string)` to bsdtar. `2026-01-01 00:00:00` is accepted by both |
+
+⭐ **The first version of this leg skipped on every host**, reporting
+`archive: skipped` and a line saying a skip is not a pass, which is honest and
+useless. Both halves probe the two spellings now and the leg runs.
+
+#### The guard mutation, each exit code read unpiped
+
+| planted | what went red |
+| --- | --- |
+| no `--dry-run` | exit **2**, in both halves, with the reason |
+| a tag that already exists, passed to `plan_release` | `publish_a_tag_that_already_exists_is_refused` |
+| a malformed date | `publish_a_date_that_is_not_one_is_refused`, over four shapes |
+| a build with no artefact | `publish_a_build_with_no_artefact_is_not_releasable` |
+| ⛔ the archive leg's first flag set | **it skipped rather than failing**, on every host, and a leg that always skips is a leg nobody knows works. Both spellings are probed now and the leg reports `ok` on this machine |
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a release | ⛔ None was cut. No tag was created, no asset uploaded and no remote written to. The acceptance is a dry run and says so in its own output. |
+| a workflow that releases on a schedule | ⚠ Deliberately absent. A workflow that cut a release would be an outward-facing action taken by a session rather than by the operator, and the trigger is theirs to add. |
+| a build provenance attestation | Named in the approach and not built. It needs a signing identity, which is `PUB-09`. |
+
+---
+
 ## PUB-02. The data branch, over raw file serving
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** publish, **Priority** P1, **Effort** M, **Status** open
+**Category** publish, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -107,10 +202,94 @@ would rewrite history is refused.
 
 ---
 
+### ⭐ Closed 2026-09-03. The branch's content is decided, and the leg that cannot run says so
+
+⛔ **The same assembler as `PUB-01`.** Publishing both surfaces from one build
+is what makes "with the same content" a property rather than a promise, and
+`b_ids_corpus::publish::build` is that build.
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-data-branch.sh
+data branch ok: 199 file(s) regenerated, identical over two builds,
+  197 of them with a checksum in the manifest and in SHA256SUMS, and no
+  source, vendored dependency or reference corpus among them.
+  ⚠ A SKIP IS NOT A PASS: the data branch is absent, so the regenerated tree was
+  compared against nothing. Push it once and this leg starts running.
+  ⛔ Nothing was pushed and no branch was created.
+rc=0
+```
+
+```text
+{"schema":"check-data-branch/1","files":197,"present":199,"recorded":197,"cases":9,"published":"absent","problems":0}
+```
+
+⚠ **199 files against 197 recorded**, and the two that are not is the point: a
+file cannot carry its own digest, so `MANIFEST.json` and `SHA256SUMS` are the
+two that every other file is checked against.
+
+#### ⛔ The leg that cannot run, reported as a skip
+
+⚠ **"the branch's content compares byte-identical to what is published" has
+nothing to compare against**, because the branch does not exist. The check reads
+git for it, reports `published: absent`, and says in its own output that a skip
+is not a pass and what would make the leg start running. ⛔ Reporting a pass
+over a branch nobody has made is the "step that exits 0 having done nothing" row
+of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+and this entry would have been the easiest place in the tree to write one.
+
+#### What the branch carries, and what it must never
+
+| on it | why |
+| --- | --- |
+| `corpus/v1/` and `raw/v1/` | ⛔ **copied verbatim**, never re-serialised. A published profile is immutable and its content address is the file's own bytes. |
+| `formats/` | every generated format and the support matrix, each read back before it is written |
+| `routes/` | the flat tree a program reads with `curl`, and its manifest |
+| `anchors/` | one file per build that carries the root-store extension |
+| `LICENSE` | ⛔ copied from the repository's own file. A build that wrote its own text would be a second copy of a legal document. |
+| `MANIFEST.json`, `SHA256SUMS` | what a program reads, and what `sha256sum -c` reads |
+
+⛔ **Not on it: `crates/`, `vendor/`, `references/`, `scripts/`, `docs/`,
+`TODO/` or `target/`.** A consumer of the data never has to reason about
+somebody else's licence, because none of it is in what they downloaded, and both
+halves of the check assert each of those seven is absent.
+
+#### ⛔ Append-only, and what "would rewrite" means
+
+`publish::would_rewrite` takes what the remote holds and what the new commit was
+built on, and answers in four cases:
+
+| head | parent | verdict |
+| --- | --- | --- |
+| absent | anything | ⭐ not a rewrite. The first push creates the branch. |
+| a commit | the same commit | not a rewrite. This is an append. |
+| a commit | a different commit | ⛔ a rewrite. The new commit was built on something the branch has moved past. |
+| a commit | none | ⛔ a rewrite, and the one worth naming: an ORPHAN commit pushed over an existing branch discards every commit on it, which is exactly how a branch built with `--orphan` destroys itself on the second run. |
+
+#### The guard mutation, each exit code read unpiped
+
+| planted | what went red |
+| --- | --- |
+| each of the four rewrite cases | `publish_a_push_that_would_rewrite_the_data_branch_is_refused` |
+| a file written into the tree with no manifest entry | the loop over what is on disk, which reads the FILES rather than the manifest, so an unrecorded file is a finding rather than an absence nobody counted |
+| the suite's cases renamed | both halves name the five they expect |
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| the branch | ⛔ It was not created and nothing was pushed. Creating an orphan branch on this repository's remote is an outward-facing action, and it is the operator's. |
+| a workflow that pushes it | ⚠ Deliberately absent, for the same reason. The assembler and the checks are here; the trigger is theirs. |
+| the cache documented next to the URL | Named in the approach. There is no URL yet, and a documented cache duration for a service nobody is serving from would be a number nobody measured. |
+
+---
+
 ## PUB-03. Routes a program with nothing but `curl` can read
 
 **Source** the operator; [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 9
-**Category** publish, **Priority** P1, **Effort** M, **Status** open
+**Category** publish, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -187,6 +366,100 @@ Passing means: for every generated single-value route the last byte is not a
 newline; every route resolves to a value present in the corpus; `latest`
 resolves to a stable channel; and a fixture route deliberately given a trailing
 newline fails the check.
+
+---
+
+### ⭐ Closed 2026-09-03. Fifty-four routes, and a check that reads the corpus rather than the generator
+
+⛔ **The decision this entry left open is taken as its own recommendation**, per
+the operator's standing instruction for this session: **only the permutations
+the corpus HOLDS a value for**, with an `index.txt` per directory so a consumer
+can discover rather than construct. A route that resolves to a plausible-looking
+wrong value is worse than one that 404s, and that is the corpus's own rule.
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-routes.sh
+routes ok: 42 single-value file(s), none ends with a line ending,
+  and 54 generated route(s) each carry the value the corpus holds
+rc=0
+```
+
+```text
+$ b-ids-corpus routes --root . --out .tmp/routes
+corpus=routes files:170 single:36 profiles:6
+```
+
+⚠ **42 single-value files against 36 routes**: the other six are the committed
+raw captures, which this check has always walked.
+
+#### ⭐ The check reads the CORPUS, not the generator
+
+⛔ **Comparing a generated file with the generator's own manifest asks only
+whether the generator agrees with itself**, which it always does. The manifest
+names the profile and the property behind every route, and each half goes and
+reads the value out of the profile: the POSIX half in `jq`, the PowerShell half
+in `ConvertFrom-Json`. ⭐ **Two readings of the corpus rather than two wrappers
+over one**, which is what makes the twin row worth having.
+
+```text
+$ sh scripts/common/check-routes.sh --json
+{"schema":"check-routes/2","files":42,"verified":54,"problems":0,"routes":true}
+$ pwsh -NoProfile -File scripts/common/check-routes.ps1 -Json
+{"schema":"check-routes/2","files":42,"verified":54,"problems":0,"routes":true}
+```
+
+#### What the routes are, and what has none
+
+| property | file | what it carries |
+| --- | --- | --- |
+| `user-agent`, `sec-ch-ua`, `accept-language` | `.txt` | one header value of one request variant |
+| `header-order` | `.list.txt` | the header names in wire order |
+| `alpn` | `.list.txt` | the protocols offered, in order |
+| `client-hello-hex` | `.txt` | the bytes this project read off the wire |
+| ⛔ `ja3`, `ja4`, `akamai` | none | **null in every published profile.** Nothing here computes one, so nothing is published, and `VALID-04` is the entry that changes that. |
+
+⚠ **The platform is the corpus's own token**, `win64` rather than `windows`, so
+a consumer that knows the corpus route knows this one. The entry's sketch used
+the other spelling and a second spelling would be a value in two places with
+nothing checking that they agree.
+
+⭐ **`latest` is a real file** rather than a redirect, so one fetch is one round
+trip, and it is derived from the routes rather than from a second walk of the
+corpus. Both halves assert that every `latest` route names a **stable** profile,
+read from the profile rather than from the path.
+
+#### ⛔ Three defects, and two of them were in the check rather than the generator
+
+| what | how it showed |
+| --- | --- |
+| ⛔ **jq on Windows writes CRLF** | Every one of the 54 comparisons failed while both sides were correct: the carriage return lands on the last field of every `@tsv` line AND on the end of every value. ⚠ This is the SECOND time it has bitten here; `CORPUS-02` carries the first. Every jq read in this check is stripped now. |
+| ⛔ **the generated tree is under `.tmp`, which is ignored** | `git ls-files --others --exclude-standard` answers with NOTHING for an ignored path, so the walk reported a clean tree it had never opened: `files:6`, which is the committed raw captures alone. ⚠ Same class as the fixture defect this check's own header already describes, arriving from the other direction. |
+| ⛔ **a list file and a single-value file both end in `txt`** | The classifier read the last dot, so `navigate.list.txt` would have been refused for the newline a list needs. Both halves read the whole suffix now, and `index.txt` is a listing rather than a route. |
+
+#### The guard mutation, each exit code read unpiped
+
+| planted | what went red |
+| --- | --- |
+| the generator reads the `user-agent` header for the `accept-language` property | ⛔ 9 problems and exit **1**, in BOTH halves, with identical messages |
+| a fixture route given a trailing newline | `ends with a line ending, and it carries exactly one value`, exit **1** |
+| a `.list.txt` fixture with a trailing newline beside it | ⭐ **not** flagged, which is what proves the classifier distinguishes the two rather than refusing everything |
+
+⚠ **And one exit code in this session's own measurement was read through a
+pipe** while proving the first row, which reported `rc=0` over a check that had
+plainly failed. It is the same defect
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+carries a row for, made by the session doing the proving, and the row above is
+the re-run without the pipe.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| the routes on a published surface | The tree is generated into `.tmp` and checked there. `PUB-02` is the data branch that serves it and `PUB-01` the release that ships it. |
+| every permutation | ⛔ Only those the corpus holds a value for, which is this entry's own recommendation taken as the ruling. |
+| a `beta` or `canary` route | The corpus holds one channel. The generator is keyed on the channel a profile carries, so a beta profile produces beta routes on the day one lands. |
 
 ---
 
@@ -314,7 +587,7 @@ a comment identifying it as synthesised.
 ## PUB-07. The licence stated in three places
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** publish, **Priority** P1, **Effort** S, **Status** open
+**Category** publish, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
 
@@ -356,6 +629,97 @@ sh scripts/common/check-license-consistency.sh
 
 Passing means: the three statements agree, and a fixture where one disagrees
 fails with a message naming all three.
+
+---
+
+### ⭐ Closed 2026-09-03. Seven statements, one home, and the six that predate the field
+
+⛔ **The identifier has ONE home**, `b_ids_schema::LICENSE`, and every other
+statement is generated from it or checked against it. A check carrying its own
+copy would be an eighth place for it to disagree, so both halves read the
+constant out of the source file.
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-license-consistency.sh
+licence ok: every statement says 0BSD.
+
+  crates/b-ids-schema/src/lib.rs: 0BSD
+  Cargo.toml: 0BSD
+  crates/b-ids-schema/schema/browser-profile-1.schema.json: 0BSD
+  corpus/v1/index.json: 0BSD
+  corpus profiles: 0 carrying it, 6 published before the field existed
+  crates/b-ids-corpus/tests/notes.rs: asserted by notes_the_release_body_states_the_licence
+  crates/b-ids-schema/tests/profile.rs: asserted by profile_a_freshly_written_one_carries_the_licence
+
+⚠ 6 profile(s) were published before the field existed and do not carry it.
+  The corpus is append-only, so they never will.
+rc=0
+```
+
+Both halves agree, and each reads the seven statements itself:
+
+```text
+{"schema":"check-license-consistency/1","license":"0BSD","stated":7,"profiles":6,"carrying":0,"predating":6,"problems":0}
+```
+
+#### ⛔ The six published profiles do not carry the field, and never will
+
+⚠ **This is the entry's honest limit and it is reported rather than
+repaired.** The corpus is append-only, so adding `license` to a published
+profile would be an edit of a published file, which
+[`../docs/AGENTS.md`](../docs/AGENTS.md) forbids and `check-corpus`'s history
+leg refuses. The field is therefore:
+
+| | |
+| --- | --- |
+| ⭐ **defaulted on the model** | reading a profile written before the field fills in the project licence, so a consumer using this crate always gets an answer |
+| ⛔ **OPTIONAL in the published JSON Schema** | a schema requiring it would refuse every profile in the corpus. The check asserts that it is NOT in `required`, so nobody tightens it by accident |
+| ⭐ **written literally by every profile from today** | and that is the leg that can actually fail now |
+
+⛔ **A loop over the published corpus therefore proves nothing today**, and
+saying so is the point rather than a caveat. The rule that CAN be broken is what
+the writer emits, and `profile_a_freshly_written_one_carries_the_licence`
+asserts both directions: a fresh profile carries the identifier, and a profile
+with the field removed still reads back.
+
+#### Where the licence is stated, and why each place
+
+| place | who sees it |
+| --- | --- |
+| `LICENSE` at the repository root | somebody who opens the repository |
+| `Cargo.toml` | a builder of the code |
+| ⭐ `b_ids_schema::LICENSE` | **the one home.** Everything generated reads it |
+| the published JSON Schema | a consumer validating a profile |
+| `corpus/v1/index.json` | a consumer who fetches only the index |
+| every profile written from today | ⭐ a consumer who fetches ONE file, which is what the entry is about |
+| the release body | a consumer who downloads an asset |
+
+⛔ **The data branch is NOT checked, because it does not exist.** `PUB-02` is
+the entry that creates it, and reporting a pass over a branch nobody has made is
+the "step that exits 0 having done nothing" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+The check says so in its own header rather than counting it.
+
+#### The guard mutation, each exit code read unpiped
+
+| planted | what went red |
+| --- | --- |
+| `Cargo.toml` states `MIT` | `Cargo.toml says MIT and crates/b-ids-schema/src/lib.rs says 0BSD`, exit **1** |
+| a fixture schema stating `MIT`, run through the same comparison | the `--fixture` leg, which asserts the comparison REFUSES it rather than only that the fixture differs |
+| the release-body case removed from its suite | the check names the case, so a deleted test is caught rather than passed over |
+
+⚠ **The mutation on `Cargo.toml` was a copy-and-restore on this machine**, and
+the file was compared byte for byte with its pre-mutation copy afterwards.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| the `LICENSE` on the data branch | `PUB-02`. The check's header names it as the leg it will grow. |
+| a restricted digest variant | ⛔ Nothing emits one, and `VALID-04`'s licence question comes first. That caveat was in this entry and it is still open. |
+| a licence on the vendored tree | Each vendored tree is under its own terms, and the data this project publishes carries none of it. |
 
 ---
 

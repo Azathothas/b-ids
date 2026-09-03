@@ -775,6 +775,36 @@ rejected by the validator with a message naming the brand list.
 
 ---
 
+### ⚠ Still open. What landed 2026-09-03, and what it unblocked
+
+⭐ **The blocker named in [`PROGRESS.md`](PROGRESS.md) is gone.** The open
+question was where an unbranded build lives in the corpus, and the answer taken
+is this entry's own recommendation: **`for-testing` is a `Channel`**, and
+`branded: false` follows from it rather than becoming a fifth path component.
+
+| what landed | |
+| --- | --- |
+| `b_ids_schema::Channel::ForTesting` | ⛔ renamed explicitly to `for-testing`, because the container's `rename_all = "snake_case"` would have written `for_testing`, which is not what `as_str`, the matrix, the published schema or the route spell |
+| the published JSON Schema | its channel enum carries the seventh value, with the sentence saying a build on it is unbranded |
+| ⭐ nothing about the layout moved | the channel is already part of the route and of the `latest` key, so no consumer's pin moves |
+| ⚠ `latest` is unaffected | the pointer map is built from stable profiles alone, so an automation build cannot be mistaken for one. `CORPUS-03` is the rule |
+
+⛔ **What is NOT done, and it is the whole acceptance.** There is no test named
+`branded` in `b-ids-driver`, and `cargo test -p b-ids-driver branded` therefore
+selects nothing rather than passing. The enforcement half already exists:
+`b_ids_validator`'s check 3 refuses a profile whose `browser.branded` disagrees
+with its brand list, and its message names the brand list. What this entry still
+owes is the driver-side pair that drives an unbranded acquisition and asserts
+that refusal end to end.
+
+⚠ **And the two `for-testing` matrix cells are still `enabled: false`.** The
+vocabulary no longer blocks them; enabling one is a single field in
+[`../.github/capture-matrix.json`](../.github/capture-matrix.json) and it makes
+the next scheduled run attempt a lane whose capture path nothing here has
+exercised, which is a change with an outward effect rather than a code change.
+
+---
+
 ## DRIVER-07. The browser's own output is discarded, so a lane that captured nothing says nothing
 
 **Source** found while working `CORPUS-02`, 2026-09-02; authored on the operator's ruling the same day

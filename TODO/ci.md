@@ -551,7 +551,7 @@ named as its blocker.
 ## CI-04. A scheduled run that finds a change opens a pull request, not an issue
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** ci, **Priority** P1, **Effort** M, **Status** open
+**Category** ci, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
 
@@ -625,6 +625,153 @@ sh scripts/common/check-pr-body.sh --fixture
 Passing means: given a fixture corpus change, the generated body contains a
 field-level diff, the full provenance, the validator output and a named list of
 what the run could not do; and a fixture no-op change generates nothing at all.
+
+---
+
+### ⭐ Closed 2026-09-02. The body is generated, the write is job-scoped, and a quiet night writes nothing
+
+⛔ **The generator opens nothing.** `b_ids_corpus::pull_request` produces the
+branch, the title, the body, the labels and the five merge conditions;
+`capture.yml`'s collect job holds the token and does the opening. A module that
+also called an API would be one component with two reasons to fail, and the
+interesting half is the text.
+
+#### The acceptance
+
+```text
+$ sh scripts/common/check-pr-body.sh --fixture
+pr body ok: 9 suite case(s), 3 request(s) generated from the corpus,
+  0 of them mergeable without a human, every body carrying its seven
+  sections, and a no-op change opening nothing at all.
+rc=0
+```
+
+⛔ **`--fixture` is REQUIRED**, for the reason `latest` requires
+`--assert-stable`: there is no pull request to check, and a run with no argument
+would read as though there had been one.
+
+```text
+$ sh scripts/common/check-pr-body.sh
+check-pr-body: --fixture is required. There is no pull request to check:
+  this checks a generator against a fixture, and a run with no argument
+  would read as though it had checked a real one.
+rc=2
+```
+
+#### ⭐ A body over two REAL corpus states, which is what this entry is for
+
+⛔ **Not a fixture.** `before` is this tree's corpus with
+`chrome/stable/win64/152.0.7977.76` removed and `after` is the tree as it
+stands, so both profiles in the comparison were measured here:
+
+```text
+$ b-ids-corpus pull-request --before .tmp/pr/before --after . --run run.json --out .tmp/pr/out
+capture/chrome/stable/win64/v1 -> .tmp/pr/out/capture_chrome_stable_win64_v1
+corpus=pull-request requests:1 auto:0
+```
+
+```text
+## What changed
+
+- advanced: chrome/stable/win64 from 151.0.7922.174 to 152.0.7977.76
+  - browser.version
+  - tls.extensions.set
+
+## The fields that differ
+
+chrome-151.0.7922.174-win64-stable -> chrome-152.0.7977.76-win64-stable
+
+⛔ these two captures do not differ only in version, so nothing below can be
+   attributed to the version alone:
+     captured.resumption: not recorded against offered
+
+2 field(s) differ:
+  browser.version: 151.0.7922.174 -> 152.0.7977.76
+  tls.extensions.set: ...,0x44cd,0xfe0d,0xff01 -> ...,0x44cd,0xca34,0xfe0d,0xff01
+
+## Merging
+
+Change class: major-bump.
+
+- ✅ the validator passes with no findings: 0 finding(s)
+- ❌ the capture agrees across two independent sources: win64 via github-actions hosted runner, capture.yml run 33644513513
+- ✅ no field regressed to vendor or became unreproducible: none
+- ❌ the diff touches only fields this change class predicts: class major-bump, unpredicted: tls.extensions.set
+- ✅ every generated format round-trips: every format read back
+
+At least one condition does not hold, so this needs review.
+```
+
+⚠ The two long extension lists are abbreviated at the ellipsis. ⭐ **The one
+that matters is `0xca34`, which Chrome `152` sends and `151` did not**, and it
+is exactly the case the fourth condition exists for: a version bump that also
+moves a TLS list is a human's decision.
+
+#### ⭐ Three of the five conditions are computed and two are stated
+
+⛔ **A caller cannot claim agreement across two sources.** That is a question
+about the published profiles, so this module reads them: a source is a platform
+and an operator together, and two profiles of one build taken by one operator on
+one platform are one source measured twice. The same for the provenance
+regression, which compares the two profiles' own maps, and for the predicted
+fields, which read the diff.
+
+⚠ **Two are facts about the RUN that only the run knows**: the validator's
+finding count and whether the formats round-tripped. Those happened in steps
+this module did not watch, and `Run` carries them with every field required.
+⛔ There is no `Default`: a run file missing a field is a refusal at exit **2**
+rather than a body with a blank where a run identifier belongs.
+
+#### ⛔ What `CI-04` predicted about condition 4, and what is actually true
+
+⚠ **The entry says a version bump may move the User-Agent and the brand list.**
+[`../crates/b-ids-validator/src/diff.rs`](../crates/b-ids-validator/src/diff.rs)
+compares header POSITIONS and not header VALUES, so **neither is a field the
+diff can report**, and a table of predicted fields naming them would name two
+fields nothing produces.
+
+⭐ **So the predicted set for a version bump is `browser.version` and nothing
+else**, which is the strict reading and the safe one: anything else is a human's
+decision. `ChangeClass::predicted_fields` is a table rather than a branch, and
+it is where the prediction grows when the diff learns to compare a header value.
+
+#### The workflow leg
+
+| | |
+| --- | --- |
+| ⛔ the write | `contents: write` and `pull-requests: write` **on the collect job alone**, using the run's own `GITHUB_TOKEN`. Every lane keeps `contents: read`, because a lane runs a browser it downloaded. |
+| ⚠ what this file cannot grant | the repository setting that lets Actions create pull requests. The step reports that refusal in its own words rather than failing silently, and it is the operator's to enable. |
+| ⭐ a quiet night | the opening step is gated on `steps.requests.outputs.requests != '0'`, so a run that found nothing opens nothing and comments nothing |
+| ⛔ never over a human's commit | the bot branch's tip author is read before anything is pushed, and a branch whose last commit is not the platform's own actor is skipped with a message |
+| ⚠ nothing is merged into the checkout | the two corpus states are built under `.tmp`, which is ignored, so a step that fails leaves the tree as it was |
+
+#### The guard mutation, each exit code read unpiped
+
+| planted | what went red |
+| --- | --- |
+| a run file carrying only `workflow` | exit **2**, asserted as that code rather than as any nonzero one. It is a leg of the check rather than a mutation, and it runs every time |
+| `pull_request_the_merge_conditions_can_fail_and_say_which` renamed | `... is not in the suite`, exit **1**. Both halves name the nine cases they expect, so a deleted test is caught rather than passed over |
+| each of the five conditions taken down on its own | inside the suite, and the body names the one that went |
+| ⭐ every condition holding | `pull_request_every_condition_holding_is_reachable_rather_than_impossible`. ⚠ **The other half of that test**: a set of conditions that can only fail is a merge gate nothing passes, which reads as caution and is a feature nobody has |
+| ⛔ the early return on a no-op change removed | ⛔ **nothing. The check passed.** See below. |
+| a no-op change made to open one request per published route | three problems at once, exit **1**: the suite, `a no-op change produced 6 request(s), and it must produce none`, and `a no-op change wrote files into the output directory` |
+
+⛔ **The fifth row is the pass earning its place.** `requests` opens with
+`if change.is_empty() { return Vec::new(); }`, and deleting it changes nothing:
+a change with no movement has nothing for the loop below to iterate, so the
+silence rule was already enforced by the loop. ⭐ The line is kept as the
+explicit statement of an invariant a reader should not have to derive from a
+loop, and its doc comment says which of the two is the guard. The mutation that
+actually breaks silence is the row under it, and it is caught three ways.
+
+#### ⚠ What is NOT in this entry
+
+| | |
+| --- | --- |
+| a real pull request | ⛔ None was opened. The acceptance is a body generator driven by a fixture, which is what the operator ruled on 2026-09-02, and the repository setting the workflow needs is not this session's to enable. |
+| an issue for anything | `CI-04` reserves issues for questions, and nothing here opens one. |
+| superseding a stale request | ⚠ Named in the approach and not built. The branch is deterministic and per route, so a newer capture UPDATES the open request rather than accumulating beside it, which is the half that removes the accumulation. Closing a request a newer route made stale needs a query against the remote and belongs with `PUB-09`'s signing work rather than here. |
+| the field-level diff over an `Advanced` movement, end to end in the check | ⚠ The check's end-to-end leg drives the case that is deterministic whatever the corpus holds: every route new. An `Advanced` movement needs two builds at ONE route and which two depends on what the corpus holds today, so the suite owns that half and the block above is the same generator run over two real states by hand. |
 
 ---
 

@@ -14,7 +14,10 @@
 
 use std::process::ExitCode;
 
-use b_ids_corpus::{Format, Identity, Store, profile_from, render};
+use b_ids_corpus::{
+    Format, Identity, Run, SUPPORT_MATRIX_FILE, Store, build, indexes, manifest, profile_from,
+    render, requests, routes, support_matrix, verify as verify_format,
+};
 use b_ids_harness::Capture;
 use b_ids_schema::Profile;
 
@@ -26,6 +29,9 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
        b-ids-corpus index --write [--root DIR]
        b-ids-corpus formats --out DIR [--root DIR]
        b-ids-corpus anchors --out DIR [--root DIR]
+       b-ids-corpus routes --out DIR [--root DIR]
+       b-ids-corpus publish --out DIR [--root DIR]
+       b-ids-corpus pull-request --before DIR --after DIR --run FILE --out DIR
 
   add              turn the cold connection of a navigation into a profile and
                    publish it, with its ClientHello beside it and the index
@@ -49,18 +55,55 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    did the job.
   index --write    rewrite the index and the pointer file from the tree. The
                    only writer of either.
-  formats          generate every published format from the canonical JSON:
-                   json, ndjson, csv, tsv and md. ⚠ The last three are LOSSY
-                   and each says so in its own header. ⛔ Never hand-edit a
-                   generated file: the generator has lost if you do, and
-                   scripts/common/check-formats is what says so. Its LAST line
-                   is a fixed `corpus=formats files:N profiles:N`.
+  formats          generate every published format from the canonical JSON,
+                   with the support matrix beside them saying what each one
+                   carries and which two were declined. ⚠ Four are LOSSLESS,
+                   TOML carries every field that is not null, three are the flat
+                   columns and the protobuf one is a DEFINITION rather than
+                   values; each says so in its own header. ⛔ Every file is read
+                   back before it is written, so a format the generator cannot
+                   parse is a refusal rather than an artefact. ⛔ Never
+                   hand-edit a generated file: the generator has lost if you do,
+                   and scripts/common/check-formats is what says so. Its LAST
+                   line is a fixed `corpus=formats files:N profiles:N`.
   anchors          publish every build's trust-anchor list as its own artefact,
                    with the capture date and the identifiers in the browser's
                    own order. ⚠ Most profiles do not carry the extension and
                    that is a fact about the builds; a body that IS there and
                    does not decode is a refusal. Its LAST line is a fixed
                    `corpus=anchors lists:N profiles:N`.
+  routes           generate the flat route tree a program with nothing but curl
+                   can read: one file per value, at every permutation the corpus
+                   HOLDS a value for. ⛔ A single-value file carries the value
+                   and nothing else, with no trailing newline, so a consumer
+                   never strips anything; a multi-value one says so by its
+                   extension. ⛔ Nothing falls back to a neighbouring platform: a
+                   missing route is a fact and a substituted value is a lie. Its
+                   LAST line is a fixed
+                   `corpus=routes files:N single:N profiles:N`.
+  publish          assemble the publishable tree: the corpus and its raw
+                   sidecars copied verbatim, every generated format, the flat
+                   routes, every build's trust-anchor list, the licence, a
+                   manifest and a SHA256SUMS file. ⭐ ONE assembler, so a
+                   release archive and the data branch cannot publish different
+                   bytes. ⛔ Nothing here reads a clock: a build is stamped with
+                   the corpus's own digest. ⛔ It writes a directory and pushes
+                   nothing. Its LAST line is a fixed
+                   `corpus=publish files:N bytes:N profiles:N from:DIGEST`.
+  pull-request     what a scheduled run that found a change should open: one
+                   request per route that moved, each with a deterministic
+                   branch, a body a reviewer can read without checking anything
+                   out, labels, and the five merge conditions with the ones that
+                   failed named. ⛔ A NO-OP CHANGE PRODUCES NOTHING: silence is
+                   the correct output for a browser that did not change. It
+                   opens nothing itself; the workflow does. Its LAST line is a
+                   fixed `corpus=pull-request requests:N auto:N`.
+  --before DIR     the corpus root as it is published today.
+  --after DIR      the corpus root with this run's captures merged in.
+  --run FILE       what the run knows and the corpus cannot say, as JSON: the
+                   workflow, the run identifier, the images, the harness, the
+                   command that reproduces this, what the run could not do, and
+                   the validator's output. ⛔ Every field is required.
   --out DIR        where the generated formats or lists are written.
   --captures FILE  what `b-ids-harness --json` printed. Its first line is the
                    base URL and is not a capture; every other line is one.
@@ -417,6 +460,14 @@ fn formats(root: &str, out_dir: &str) -> ExitCode {
                 return ExitCode::from(1);
             }
         };
+        // ⛔ READ BACK BEFORE IT IS WRITTEN. The round-trip suite renders its
+        // own fixture, so a format could be correct over two invented profiles
+        // and wrong over the published corpus, and the file would still be on
+        // disk. `TODO/schema.md`, `SCHEMA-12`.
+        if let Err(why) = verify_format(format, &profiles, &text) {
+            eprintln!("b-ids-corpus: {why}");
+            return ExitCode::from(1);
+        }
         let path = std::path::Path::new(out_dir).join(format.file_name());
         if let Err(why) = std::fs::write(&path, text.as_bytes()) {
             eprintln!("b-ids-corpus: {}: {why}", path.display());
@@ -426,7 +477,250 @@ fn formats(root: &str, out_dir: &str) -> ExitCode {
         written += 1;
     }
 
+    // ⛔ GENERATED BESIDE THE FORMATS IT DESCRIBES. A support matrix kept by
+    // hand states what somebody believed on the day they wrote it, and a
+    // consumer reading it has no way to tell. `TODO/schema.md`, `SCHEMA-12`.
+    let matrix = support_matrix();
+    let path = std::path::Path::new(out_dir).join(SUPPORT_MATRIX_FILE);
+    if let Err(why) = std::fs::write(&path, matrix.as_bytes()) {
+        eprintln!("b-ids-corpus: {}: {why}", path.display());
+        return ExitCode::from(1);
+    }
+    println!("wrote {} ({} bytes)", path.display(), matrix.len());
+    written += 1;
+
     println!("corpus=formats files:{written} profiles:{}", profiles.len());
+    ExitCode::SUCCESS
+}
+
+/// Generate the flat route tree a program with nothing but `curl` can read.
+///
+/// ⛔ **The last line is a fixed `corpus=routes files:N single:N profiles:N`**,
+/// which is what `scripts/common/check-routes` reads.
+///
+/// ⛔ **A single-value file is written with NO trailing newline**, which is the
+/// whole of this entry. `TODO/publish.md`, `PUB-03`.
+fn routes_command(root: &str, out_dir: &str) -> ExitCode {
+    let store = Store::at(root);
+    if !store.exists() {
+        eprintln!("b-ids-corpus: there is no corpus under {root}, so there is nothing to publish");
+        return ExitCode::from(2);
+    }
+    let published = match store.profiles() {
+        Ok(found) => found
+            .into_iter()
+            .map(|(path, profile)| {
+                (
+                    // ⚠ Written with forward slashes whatever the host uses and
+                    // with no leading `./`, so a manifest generated on Windows
+                    // names the same path a reader on Linux opens, and one
+                    // generated with `--root .` names the same path as one
+                    // generated with an absolute root.
+                    path.to_string_lossy()
+                        .replace('\\', "/")
+                        .trim_start_matches("./")
+                        .to_owned(),
+                    profile,
+                )
+            })
+            .collect::<Vec<_>>(),
+        Err(why) => {
+            eprintln!("b-ids-corpus: {why}");
+            return ExitCode::from(1);
+        }
+    };
+
+    let generated = routes(&published);
+    let mut single = 0_usize;
+    let mut written = 0_usize;
+    for route in &generated {
+        let path = std::path::Path::new(out_dir).join(&route.path);
+        if let Some(parent) = path.parent()
+            && let Err(why) = std::fs::create_dir_all(parent)
+        {
+            eprintln!("b-ids-corpus: cannot create {}: {why}", parent.display());
+            return ExitCode::from(1);
+        }
+        // ⛔ THE BYTES ARE THE VALUE. A single-value file gets no newline at
+        // all; a list gets one after every entry including the last, so a
+        // consumer reading lines sees exactly its entries.
+        let body = if route.multi_value {
+            format!("{}\n", route.value)
+        } else {
+            route.value.clone()
+        };
+        if let Err(why) = std::fs::write(&path, body.as_bytes()) {
+            eprintln!("b-ids-corpus: {}: {why}", path.display());
+            return ExitCode::from(1);
+        }
+        if !route.multi_value {
+            single += 1;
+        }
+        written += 1;
+    }
+
+    for (path, body) in indexes(&generated) {
+        let path = std::path::Path::new(out_dir).join(path);
+        if let Some(parent) = path.parent()
+            && let Err(why) = std::fs::create_dir_all(parent)
+        {
+            eprintln!("b-ids-corpus: cannot create {}: {why}", parent.display());
+            return ExitCode::from(1);
+        }
+        if let Err(why) = std::fs::write(&path, body.as_bytes()) {
+            eprintln!("b-ids-corpus: {}: {why}", path.display());
+            return ExitCode::from(1);
+        }
+        written += 1;
+    }
+
+    let manifest = manifest(generated);
+    let path = std::path::Path::new(out_dir).join(b_ids_corpus::routes::MANIFEST_FILE);
+    let text = match serde_json::to_string_pretty(&manifest) {
+        Ok(text) => format!("{text}\n"),
+        Err(why) => {
+            eprintln!("b-ids-corpus: serialising the manifest: {why}");
+            return ExitCode::from(1);
+        }
+    };
+    if let Err(why) = std::fs::write(&path, text.as_bytes()) {
+        eprintln!("b-ids-corpus: {}: {why}", path.display());
+        return ExitCode::from(1);
+    }
+    written += 1;
+
+    println!(
+        "corpus=routes files:{written} single:{single} profiles:{}",
+        published.len()
+    );
+    ExitCode::SUCCESS
+}
+
+/// Assemble the publishable tree.
+///
+/// ⛔ **The last line is a fixed `corpus=publish files:N bytes:N profiles:N
+/// from:DIGEST`**, which is what `scripts/common/check-release` and
+/// `scripts/common/check-data-branch` both read.
+///
+/// ⛔ **It writes a directory and pushes nothing.** A release workflow archives
+/// what this produced and a data-branch workflow commits it; a command that did
+/// either would be one thing with two jobs. `TODO/publish.md`, `PUB-01` and
+/// `PUB-02`.
+fn publish_command(root: &str, out_dir: &str) -> ExitCode {
+    let out = std::path::Path::new(out_dir);
+    if let Err(why) = std::fs::create_dir_all(out) {
+        eprintln!("b-ids-corpus: cannot create {out_dir}: {why}");
+        return ExitCode::from(2);
+    }
+    match build(root, out) {
+        Ok(built) => {
+            println!(
+                "corpus=publish files:{} bytes:{} profiles:{} from:{}",
+                built.artefacts.len(),
+                built.bytes(),
+                built.profiles,
+                built.generated_from
+            );
+            ExitCode::SUCCESS
+        }
+        Err(why) => {
+            eprintln!("b-ids-corpus: {why}");
+            // ⛔ 2 for a tree with no corpus, 1 for a corpus that would not
+            // build. Those are different facts about whether you can publish.
+            if why.starts_with("there is no corpus") {
+                ExitCode::from(2)
+            } else {
+                ExitCode::from(1)
+            }
+        }
+    }
+}
+
+/// What a scheduled run that found a change should open.
+///
+/// ⛔ **It opens nothing.** The workflow holds the token and this holds the
+/// text, so a generator that could not reach a network is testable and a step
+/// that calls an API is one thing with one job. `TODO/ci.md`, `CI-04`.
+///
+/// ⛔ **The last line is a fixed `corpus=pull-request requests:N auto:N`**,
+/// which is what `scripts/common/check-pr-body` and the workflow both read.
+fn pull_request_command(before: &str, after: &str, run_file: &str, out_dir: &str) -> ExitCode {
+    let load = |root: &str| -> Result<Vec<Profile>, String> {
+        let store = Store::at(root);
+        if !store.exists() {
+            // ⚠ An ABSENT corpus is an empty one here rather than a refusal,
+            // and that is deliberate: the first run of this on a fresh tree has
+            // no published state to compare against, and every route is then
+            // new. A refusal would make the first change the one nobody sees.
+            return Ok(Vec::new());
+        }
+        store
+            .profiles()
+            .map(|found| found.into_iter().map(|(_, profile)| profile).collect())
+    };
+    let (before, after) = match (load(before), load(after)) {
+        (Ok(before), Ok(after)) => (before, after),
+        (Err(why), _) | (_, Err(why)) => {
+            eprintln!("b-ids-corpus: {why}");
+            return ExitCode::from(1);
+        }
+    };
+    let run_text = match std::fs::read_to_string(run_file) {
+        Ok(text) => text,
+        Err(err) => return fail(&format!("{run_file}: {err}")),
+    };
+    let run: Run = match serde_json::from_str(&run_text) {
+        Ok(run) => run,
+        // ⛔ 2, not 1. A run file this reader cannot parse means nothing was
+        // asked about the corpus, which is a different fact from a corpus with
+        // something wrong in it.
+        Err(err) => return fail(&format!("{run_file}: not a run: {err}")),
+    };
+
+    if let Err(why) = std::fs::create_dir_all(out_dir) {
+        eprintln!("b-ids-corpus: cannot create {out_dir}: {why}");
+        return ExitCode::from(2);
+    }
+
+    let opened = requests(&before, &after, &run);
+    let mut auto = 0_usize;
+    for request in &opened {
+        // ⚠ The branch is a path, so the directory it is written under replaces
+        // the separators. Two routes never collide because the branch itself is
+        // unique.
+        let dir = std::path::Path::new(out_dir).join(request.branch.replace('/', "_"));
+        if let Err(why) = std::fs::create_dir_all(&dir) {
+            eprintln!("b-ids-corpus: cannot create {}: {why}", dir.display());
+            return ExitCode::from(1);
+        }
+        let files = [
+            ("branch", request.branch.clone()),
+            ("title", request.title.clone()),
+            ("body.md", request.body.clone()),
+            ("labels", request.labels.join("\n")),
+            (
+                "mergeable",
+                if request.conditions.met() {
+                    "auto".to_owned()
+                } else {
+                    request.conditions.failed().join("\n")
+                },
+            ),
+        ];
+        for (name, text) in files {
+            let path = dir.join(name);
+            if let Err(why) = std::fs::write(&path, text.as_bytes()) {
+                eprintln!("b-ids-corpus: {}: {why}", path.display());
+                return ExitCode::from(1);
+            }
+        }
+        if request.conditions.met() {
+            auto += 1;
+        }
+        println!("{} -> {}", request.branch, dir.display());
+    }
+
+    println!("corpus=pull-request requests:{} auto:{auto}", opened.len());
     ExitCode::SUCCESS
 }
 
@@ -521,6 +815,9 @@ fn main() -> ExitCode {
     let mut write = false;
     let mut assert_stable = false;
     let mut out_dir: Option<String> = None;
+    let mut before: Option<String> = None;
+    let mut after: Option<String> = None;
+    let mut run_file: Option<String> = None;
     while let Some(arg) = argv.next() {
         match arg.as_str() {
             "--write" => write = true,
@@ -540,6 +837,18 @@ fn main() -> ExitCode {
             "--identity" => match argv.next() {
                 Some(value) => identity = Some(value),
                 None => return fail("--identity needs a path"),
+            },
+            "--before" => match argv.next() {
+                Some(value) => before = Some(value),
+                None => return fail("--before needs a directory"),
+            },
+            "--after" => match argv.next() {
+                Some(value) => after = Some(value),
+                None => return fail("--after needs a directory"),
+            },
+            "--run" => match argv.next() {
+                Some(value) => run_file = Some(value),
+                None => return fail("--run needs a path"),
             },
             "-h" | "--help" => {
                 println!("{USAGE}");
@@ -562,11 +871,31 @@ fn main() -> ExitCode {
             };
             formats(&root, &out_dir)
         }
+        "publish" => {
+            let Some(out_dir) = out_dir else {
+                return fail("publish needs --out, the directory to assemble into");
+            };
+            publish_command(&root, &out_dir)
+        }
+        "routes" => {
+            let Some(out_dir) = out_dir else {
+                return fail("routes needs --out, the directory to generate into");
+            };
+            routes_command(&root, &out_dir)
+        }
         "anchors" => {
             let Some(out_dir) = out_dir else {
                 return fail("anchors needs --out, the directory to publish into");
             };
             anchors(&root, &out_dir)
+        }
+        "pull-request" => {
+            let (Some(before), Some(after), Some(run_file), Some(out_dir)) =
+                (before, after, run_file, out_dir)
+            else {
+                return fail("pull-request needs --before, --after, --run and --out");
+            };
+            pull_request_command(&before, &after, &run_file, &out_dir)
         }
         "verify" => verify(&root),
         "validate" => validate_corpus(&root),

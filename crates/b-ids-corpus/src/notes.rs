@@ -173,6 +173,13 @@ pub fn release_body(change: &Change) -> String {
         "\nThe corpus holds {} profile(s) after this change.\n",
         change.profiles_after
     ));
+    // ⛔ EVERY RELEASE BODY STATES THE LICENCE, read from the one home rather
+    // than typed. A release asset that travels alone still has to say what it
+    // is. `TODO/publish.md`, `PUB-07`.
+    out.push_str(&format!(
+        "\nPublished under {}. Every profile and the index carry the same identifier.\n",
+        b_ids_schema::LICENSE
+    ));
     out
 }
 

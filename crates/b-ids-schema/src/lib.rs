@@ -52,3 +52,15 @@ pub use provenance::{Provenance, ProvenanceEntry, ProvenanceKind};
 /// persisted carries a version and enough structure to be evolved, so old data
 /// still reads and new code knows which version it is looking at.
 pub const SCHEMA_ID: &str = "browser-profile/1";
+
+/// The licence every published artefact of this project carries, as an SPDX
+/// identifier.
+///
+/// ⛔ **ONE HOME, and every other statement of it is checked against this one.**
+/// A file that travels alone still has to say what it is: a consumer who
+/// downloads one profile should not have to find this repository to learn they
+/// may use it. `scripts/common/check-license-consistency.sh` is what asserts
+/// that the repository's own `LICENSE`, the workspace manifest, the published
+/// JSON Schema, the corpus index, every profile and the release body all agree.
+/// `TODO/publish.md`, `PUB-07`.
+pub const LICENSE: &str = "0BSD";

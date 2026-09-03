@@ -307,6 +307,10 @@ pub fn profile_from(
     };
     let mut profile = Profile {
         schema: SCHEMA_ID.to_owned(),
+        // ⛔ READ FROM THE ONE HOME, never typed. A licence identifier a
+        // capture path carried its own copy of would be a second answer to a
+        // question the project has one answer to. `TODO/publish.md`, `PUB-07`.
+        license: b_ids_schema::LICENSE.to_owned(),
         // ⚠ A placeholder that is immediately overwritten by the derivation
         // below. `Profile::derived_id` needs a profile to read the four keys
         // off, and `Profile::check` refuses the two disagreeing, so this can

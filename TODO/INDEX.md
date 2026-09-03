@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 98  open 26  blocked 0  done 72
+total 98  open 20  blocked 0  done 78
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
-| P1 | 6 | 0 | 37 | 43 |
-| P2 | 17 | 0 | 22 | 39 |
+| P1 | 1 | 0 | 42 | 43 |
+| P2 | 16 | 0 | 23 | 39 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **26** | **0** | **72** | **98** |
+| **all** | **20** | **0** | **78** | **98** |
 
 ---
 
@@ -33,7 +33,7 @@ total 98  open 26  blocked 0  done 72
 | CI-01 | P1 | M | done | Every push: validate, with no network and no browser | [`ci.md`](ci.md) |
 | CI-02 | P1 | M | done | Staleness is a schedule, not a push trigger | [`ci.md`](ci.md) |
 | CI-03 | P1 | L | done | The capture matrix, fanned out, with every lane allowed to fail alone | [`ci.md`](ci.md) |
-| CI-04 | P1 | M | open | A scheduled run that finds a change opens a pull request, not an issue | [`ci.md`](ci.md) |
+| CI-04 | P1 | M | done | A scheduled run that finds a change opens a pull request, not an issue | [`ci.md`](ci.md) |
 | CI-05 | P2 | M | open | The cold-start job, which is the only thing that catches rot | [`ci.md`](ci.md) |
 | CI-06 | P2 | M | done | No single source of any fact | [`ci.md`](ci.md) |
 | CI-07 | P2 | S | done | Exit 2 means could not run, and it is not a failure | [`ci.md`](ci.md) |
@@ -80,13 +80,13 @@ total 98  open 26  blocked 0  done 72
 | LIB-01 | P2 | M | open | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | open | The smallest client that proves a profile is usable | [`library.md`](library.md) |
 | LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
-| PUB-01 | P1 | M | open | Releases, tagged and versioned and immutable | [`publish.md`](publish.md) |
-| PUB-02 | P1 | M | open | The data branch, over raw file serving | [`publish.md`](publish.md) |
-| PUB-03 | P1 | M | open | Routes a program with nothing but `curl` can read | [`publish.md`](publish.md) |
+| PUB-01 | P1 | M | done | Releases, tagged and versioned and immutable | [`publish.md`](publish.md) |
+| PUB-02 | P1 | M | done | The data branch, over raw file serving | [`publish.md`](publish.md) |
+| PUB-03 | P1 | M | done | Routes a program with nothing but `curl` can read | [`publish.md`](publish.md) |
 | PUB-04 | P2 | M | open | The formats that are not data files | [`publish.md`](publish.md) |
 | PUB-05 | P2 | L | open | Language packages that embed the corpus | [`publish.md`](publish.md) |
 | PUB-06 | P3 | M | open | A packet capture per profile | [`publish.md`](publish.md) |
-| PUB-07 | P1 | S | open | The licence stated in three places | [`publish.md`](publish.md) |
+| PUB-07 | P1 | S | done | The licence stated in three places | [`publish.md`](publish.md) |
 | PUB-08 | P2 | S | done | One generator for the release body and the changelog | [`publish.md`](publish.md) |
 | PUB-09 | P2 | M | open | Signed and attested captures | [`publish.md`](publish.md) |
 | SCHEMA-01 | P0 | M | done | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
@@ -100,7 +100,7 @@ total 98  open 26  blocked 0  done 72
 | SCHEMA-09 | P1 | S | done | Name every field for the wire, because three quantities have two units | [`schema.md`](schema.md) |
 | SCHEMA-10 | P2 | M | done | Record the shuffle as a property, and consider recording its seed | [`schema.md`](schema.md) |
 | SCHEMA-11 | P2 | S | done | The multipart boundary, which is a per-browser surface nobody listed | [`schema.md`](schema.md) |
-| SCHEMA-12 | P2 | L | open | The six formats that need a decoder as well as an encoder | [`schema.md`](schema.md) |
+| SCHEMA-12 | P2 | L | done | The six formats that need a decoder as well as an encoder | [`schema.md`](schema.md) |
 | SCHEMA-13 | P1 | S | done | The published schema accepts 999 for a byte | [`schema.md`](schema.md) |
 | SCHEMA-14 | P1 | M | done | A credential's presence is a fingerprint, and it is currently a hole | [`schema.md`](schema.md) |
 | TOOL-01 | P1 | S | done | There is no toolchain, and the minimum version is measured rather than chosen | [`tooling.md`](tooling.md) |

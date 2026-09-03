@@ -109,11 +109,24 @@ pub struct IndexEntry {
     pub hello: Published,
 }
 
+/// The licence an index written before the field existed reads back as.
+fn default_license() -> String {
+    b_ids_schema::LICENSE.to_owned()
+}
+
 /// Every profile in the corpus, with its content address.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Index {
     /// The schema this index is written against.
     pub schema: String,
+    /// The licence every profile in it is published under, as an SPDX
+    /// identifier.
+    ///
+    /// ⛔ **Read from `b_ids_schema::LICENSE`, never typed.** A consumer that
+    /// fetches the index and nothing else still learns what they may do with
+    /// what it names. `TODO/publish.md`, `PUB-07`.
+    #[serde(default = "default_license")]
+    pub license: String,
     /// The layout version every path in it is under.
     pub layout: String,
     /// The profiles, ordered by route.
@@ -384,6 +397,7 @@ impl Store {
         profiles.sort_by(|a, b| a.profile.path.cmp(&b.profile.path));
         Ok(Index {
             schema: INDEX_SCHEMA.to_owned(),
+            license: b_ids_schema::LICENSE.to_owned(),
             layout: LAYOUT.to_owned(),
             profiles,
         })

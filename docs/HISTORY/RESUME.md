@@ -13,9 +13,9 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Read the artefacts of capture run 33615327503, then `DRIVER-08`, `TOOL-18`, `HARNESS-15`, `DRIVER-10` and `CORPUS-02`. Session started 2026-09-02T11:22:03Z, unattended. |
-| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, which starts at `CORPUS-02`. |
-| in flight | ⛔ Nothing. Eight entries closed in place with their acceptance commands run; everything else left open with its blocker named. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s order, largest first. Session ran 2026-09-02T23:21:15Z, unattended, and the operator ended it. |
+| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, which starts at `DRIVER-06`. |
+| in flight | ⛔ Nothing. Six entries closed in place with their acceptance commands run; `DRIVER-06` left open with what landed written into it. |
 | the state of the tree | Clean and pushed on `main`. The gate is green in full, `check-twins` included. |
 | the paste | below |
 
@@ -23,52 +23,43 @@ than a document about the project.
 
 ## ⭐ What changed about this project today
 
-**The corpus stopped recording builds nobody chose.** Six profiles now, two
-browsers, two majors, two platforms, and three of them name the URL and the
-digest of the artefact the browser was installed from. Before today every
-profile carried `captured.acquisition: null`.
+**Everything this project publishes now comes out of one assembler.** A release
+archive and a data branch built by two assemblers is two answers to what the
+project publishes, and the day they differ nobody finds out from either.
 
-⭐ **The purge and the install ran on hosted runners**, both platforms and both
-routes, which is the leg that had never executed anywhere.
+⭐ **Nine published formats, four of them lossless, two declined with their
+reasons published.** A consumer asking for CBOR finds out it was weighed and
+lost rather than that nobody thought of it.
 
-⭐ **A browser that is not Chrome is in the corpus.** Edge `151.0.4129.101`,
-provisioned from the vendor's enterprise index, which publishes a SHA-256 per
-artefact that the tool checks what arrived against. It could not capture at all
-before: its SUID sandbox helper was not configured on the runner image, and the
-browser's own log said so.
+⭐ **Fifty-four flat routes a program reads with `curl`**, each verified against
+the corpus by a check that reads the profiles rather than the generator.
 
-⭐ **A cold hello is no longer thrown away because its own connection carried no
-HTTP/2.** The two halves are selected independently now, and the Edge lane is
-the proof: its only cold hello arrived on a connection that reached no HTTP/2,
-so under the old rule that navigation published nothing.
-
-⭐ **The gate costs 213 seconds where it cost about 600.** Three causes, and the
-largest was not a per-file loop: a command substitution in a `while read`
-assignment prefix is re-evaluated once per line read.
+⭐ **The one open question is answered**: `for-testing` is a `Channel`, which
+unblocks the two unbranded matrix cells and `DRIVER-06`.
 
 ---
 
 ## The conditions this session leaves
 
-⚠ **Two matrix cells are blocked on a question the operator has**, and it is the
-only open question: an unbranded build and a branded build of one version
-publish at one path, because the corpus route carries no `branded` and `Channel`
-is a closed vocabulary. [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)
-carries it with a recommendation.
+⚠ **`DRIVER-06` is open and its acceptance selects no test.**
+`cargo test -p b-ids-driver branded` matches nothing, so it exits 0 having run
+nothing. The enforcement half already exists in the validator; the driver-side
+pair is what the entry owes.
 
-⚠ **`captured.operator` is still typed.** The identity writer leaves it empty
-and it is filled in by hand for every runner profile, this session's two
-included.
+⚠ **Nothing publishes.** `PUB-01` and `PUB-02` assemble and check; no workflow
+cuts a tag, uploads an asset or creates a branch, and adding that trigger is the
+operator's.
 
-⚠ **`Shuffle::Observed` is still never written.** Nothing in the capture path
-produces a shuffle observation, so a field the model carries is one the capture
-path never fills.
+⚠ **`CI-04`'s collect job needs a repository setting** this repository's files
+cannot grant: Actions must be allowed to create pull requests. The step reports
+the refusal rather than failing silently.
 
-⛔ **A tool that purges browsers lives in `scripts/common/` and its success path
-is measured now.** It still refuses any machine that is not both marked
-disposable by this project and running on a hosted runner. ⛔ Run it with
-`--plan` and nothing else on a machine you keep, and do not lift a condition to
-see what happens.
+⚠ **`captured.operator` is still typed**, and **`Shuffle::Observed` is still
+never written**. Both are fields the capture path does not fill.
+
+⛔ **A tool that purges browsers lives in `scripts/common/`.** It refuses any
+machine that is not both marked disposable by this project and running on a
+hosted runner. ⛔ Run it with `--plan` and nothing else on a machine you keep.
 
 ---
 
