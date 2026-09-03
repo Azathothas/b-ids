@@ -16,7 +16,7 @@ operator.
 | Size | 5454 tracked files | 5471 tracked files, +17 | `git ls-files \| wc -l` |
 | Tests | 353 passing in 38 files | 374 passing in 40 files, 0 failing | `cargo test --workspace`, exit 0 |
 | Checks | 30 passed, 1 skipped, 31 registered | 34 passed, 1 skipped, 35 registered | `check-gate.ps1 -Fast`, exit 0 |
-| Twin pairs | 27 agreeing | 31 agreeing | `check-twins.sh`, exit 0 |
+| Twin pairs | 30 agreeing | 34 agreeing | `check-twins.sh`, exit 0, counted from its own rows |
 | Corpus | 6 profiles | 6 profiles, unchanged | ⛔ No capture was taken. Nothing was added to the corpus. |
 | Cost | | ⛔ Not measured. No runner was dispatched, nothing was downloaded and no release or branch was pushed. | |
 | Health | | 4 gate pairs added, 4 defects in this session's own code fixed, 2 pre-existing readers fixed, tree clean, nothing deployed | the review passes in [`PROGRESS.md`](PROGRESS.md) |
