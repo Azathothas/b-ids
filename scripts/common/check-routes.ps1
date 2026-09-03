@@ -64,6 +64,22 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 $root = ($root | Select-Object -First 1).Trim()
 
 Push-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-routes: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 try {
     # ⛔ THE PUBLISHED ROUTE TREES, named rather than "everything", and the list
     # is identical to the sh twin's. PUB-03 adds its generated tree to both in
@@ -106,7 +122,7 @@ try {
             exit 2
         }
         $generateLog = Join-Path $work 'generate.log'
-        & $bin routes --root $root --out $generated > $generateLog 2>&1
+        & $bin routes --root $corpusRoot --out $generated > $generateLog 2>&1
         if ($LASTEXITCODE -ne 0) {
             [Console]::Error.WriteLine("check-routes: the route generator exited $LASTEXITCODE")
             Get-Content -LiteralPath $generateLog | ForEach-Object { [Console]::Error.WriteLine($_) }
@@ -276,7 +292,7 @@ try {
         $latestProblems = 0
         $latestOut = @()
         if (Get-Command cargo -ErrorAction SilentlyContinue) {
-            $latestOut = @(& cargo run -q -p b-ids-corpus -- latest --assert-stable --root . 2>&1)
+            $latestOut = @(& cargo run -q -p b-ids-corpus -- latest --assert-stable --root $corpusRoot 2>&1)
             $latestRc = $LASTEXITCODE
             $line = @($latestOut | Where-Object { "$_" -like 'corpus=latest *' } | Select-Object -Last 1)
             if (($latestRc -eq 0 -or $latestRc -eq 1) -and $line.Count -gt 0) {

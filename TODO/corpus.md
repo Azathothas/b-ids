@@ -964,3 +964,148 @@ checkout is not a tree this project keeps.
 expensive defect. ⭐ So the verdict names what would settle it: the engine source
 at a named commit here, or a specification draft read against the recorded body.
 
+
+---
+
+## CORPUS-06. The headless normalisation has no caller, and six published profiles say so
+
+**Source** found by this session's consolidation pass, 2026-09-03, reading the published routes against the code
+**Category** corpus, **Priority** P1, **Effort** M, **Status** done
+
+### Problem
+
+Every profile in the corpus carries a User-Agent ending
+`HeadlessChrome/<version> Safari/537.36`, and so does every `user-agent` route
+the data branch publishes. ⛔ **A consumer who pastes one is announcing
+automation**, which is the exact trap `DRIVER-03` was written to remove.
+
+### Premise
+
+⭐ **Measured on this tree, 2026-09-03**, and it is a dead-caller defect rather
+than a wrong decision.
+
+```bash
+grep -rn "headless::normalise\|normalise(&mut" crates/*/src/*.rs
+```
+
+The function, its five tests and its provenance reason are all in
+[`../crates/b-ids-driver/src/headless.rs`](../crates/b-ids-driver/src/headless.rs),
+and ⛔ **nothing outside that module calls it.** The last paragraph of
+[`driver.md`](driver.md)'s `DRIVER-03` names the seam this belongs at and says
+it was left unwired because no capture path wrote a profile yet.
+⚠ `CORPUS-01` landed and nothing went back for it.
+
+⚠ **The profiles are not dishonest.** `captured.switches` records
+`--headless=new` on every one of them, so the condition is published. What is
+missing is the substitution `DRIVER-03` specified, with its provenance entry.
+
+### Approach
+
+Call it where `DRIVER-03` said it belongs, in the path that turns a capture into
+a profile, and record what it changed.
+
+- ⭐ **In [`../crates/b-ids-corpus/src/capture.rs`](../crates/b-ids-corpus/src/capture.rs)**,
+  beside the switch redaction, which is the same shape: a published value that
+  differs from the captured one, with a reason in the provenance map.
+- ⛔ **The raw bytes are untouched.** `raw.http2_frames_hex` keeps the frames the
+  browser sent, so the un-normalised value stays recoverable, which is what makes
+  the substitution a publication choice rather than a loss.
+- ⚠ **A field carrying a headless marker the module does not know is recorded
+  rather than guessed at.** That rule already exists in the function and this
+  entry must not weaken it.
+
+⛔ Must not: edit a published profile. The corpus is append-only, so the six
+profiles keep the value they carry and a corrected one arrives as a new capture.
+⛔ Must not: normalise when the launch was not headless.
+
+### Decision
+
+⚠ **Two ways to reach the same published value, and the recommendation is the
+first.**
+
+| | |
+| --- | --- |
+| ⭐ **normalise at capture** | the profile carries the browser-shaped value with a `substituted` provenance entry, and every surface downstream is right because there is one value. This is what `DRIVER-03` specified. |
+| normalise at emit | the corpus keeps the wire value and each surface decides. ⛔ It loses: a route is generated only where the corpus holds a value, so this would put the decision in every emitter rather than in one place, and a consumer reading the profile JSON directly would still get the headless token with nothing saying so. |
+
+⚠ **What it does not settle**: whether a headless capture should be published at
+all rather than captured with a window. That is `CORPUS-02`'s matrix question
+and this entry does not answer it.
+
+### Consumers
+
+⛔ **The data branch republishes on the next push to the default branch**, so a
+consumer reading `routes/user-agent/...` gets the corrected value for any
+profile captured after this lands. ⚠ The six profiles published before it keep
+theirs, and nothing rewrites them.
+
+### Prove
+
+```bash
+cargo test -p b-ids-corpus headless
+```
+
+Passing means: a capture taken with `--headless=new` produces a profile whose
+`user-agent` carries the windowed product token and whose provenance map marks
+that field `substituted` with the headless reason, and a capture taken with a
+window produces a profile the normalisation did not touch.
+
+### Closing
+
+**Closed 2026-09-03T13:07:00Z.** The seam is wired in
+[`../crates/b-ids-corpus/src/capture.rs`](../crates/b-ids-corpus/src/capture.rs),
+gated on the launch rather than on the value, and five cases hold it.
+
+```text
+$ cargo test -p b-ids-corpus headless
+     Running tests\corpus.rs (target\debug\deps\corpus-f6ba89506dce22fa.exe)
+
+running 5 tests
+test headless_a_capture_taken_without_a_window_publishes_the_windowed_product_token ... ok
+test headless_a_windowed_launch_is_left_alone_even_where_the_value_carries_the_token ... ok
+test headless_a_windowed_value_from_a_headless_launch_is_not_marked_substituted ... ok
+test headless_the_switch_that_says_so_is_published_beside_the_substitution ... ok
+test headless_the_substitution_is_recorded_with_its_reason ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 27 filtered out; finished in 0.00s
+exit=0
+```
+
+⚠ The five other targets in the same invocation match nothing and print
+`0 passed` each; the block above is the one that ran the cases.
+
+### The three mutations, and each was read unpiped
+
+⛔ **Every mutation was made against a copy of the file under the ignored
+scratch directory, the live file restored from that copy, and the restored file
+compared against `HEAD` before anything else ran.**
+
+| planted | what went red |
+| --- | --- |
+| the `normalise` call deleted from the capture path | the product token case and the provenance case, 2 of 5 |
+| the launch gate replaced with `if true` | the windowed-launch case, which is the one that says a value nobody caused is never rewritten |
+| the provenance `insert` in `b_ids_driver::headless` made unreachable | the provenance case alone, with the value still rewritten, which is exactly the shape `DRIVER-03` calls unshippable |
+
+⭐ **The second is the one worth having.** A normalisation that fired on every
+capture would look correct on every profile in the corpus today, because every
+one of them was taken headless.
+
+### ⚠ What this does NOT do, and the corpus says so
+
+⛔ **The six published profiles are unchanged**, and every `user-agent` route on
+the data branch still carries `HeadlessChrome`. The corpus is append-only: a
+correction is a new capture of the same build, not an edit. ⚠ So the defect is
+fixed forward and the published half stays wrong until the capture lane runs
+again, which is a run on a hosted runner rather than anything this session can
+do on this machine.
+
+⭐ **A reader can already tell**, and could before this entry: every one of those
+profiles carries `--headless=new` in `captured.switches`, so the condition was
+published even while the substitution was missing.
+
+### ⛔ The dependency this added, stated rather than buried
+
+`b-ids-corpus` now depends on `b-ids-driver`. ⚠ The edge is worth naming because
+this tree writes its dependency directions down: the driver depends on
+`b-ids-schema` and nothing else, so this adds no third-party linkage, and the
+alternative was moving a module `DRIVER-03` cites at a file and a line.

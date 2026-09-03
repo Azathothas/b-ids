@@ -21,8 +21,9 @@
 # ⚠ THE SIX PROFILES PUBLISHED BEFORE 2026-09-03 DO NOT CARRY THE FIELD, and
 # that is recorded rather than repaired. The corpus is append-only.
 #
-# ⛔ THE DATA BRANCH IS NOT CHECKED HERE BECAUSE IT DOES NOT EXIST. PUB-02 is
-# the entry that creates it.
+# ⭐ AND THE DATA BRANCH, from a LOCAL ref rather than a fetch: its manifest
+# identifier and the bytes of its LICENSE. ⚠ NO LOCAL REF IS A SKIP naming the
+# branch, never a pass. TODO/publish.md, PUB-12.
 #
 # ⚠ THE READING IS THIS HALF'S OWN: ConvertFrom-Json where the twin uses jq, so
 # the pair compares two readings rather than two wrappers over one.
@@ -64,6 +65,22 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 }
 $root = ($root | Select-Object -First 1).Trim()
 Set-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-license-consistency: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 
 $problems = New-Object System.Collections.ArrayList
 $seen = New-Object System.Collections.ArrayList
@@ -118,7 +135,7 @@ if (@($schemaJson.required | Where-Object { $_ -eq 'license' }).Count -ne 0) {
 }
 
 # -- the corpus index --------------------------------------------------------
-$indexFile = 'corpus/v1/index.json'
+$indexFile = Join-Path $corpusRoot 'corpus/v1/index.json'
 if (Test-Path -LiteralPath $indexFile) {
     $indexJson = Get-Content -LiteralPath $indexFile -Raw | ConvertFrom-Json
     $index = 'absent'
@@ -139,9 +156,18 @@ else {
 $profiles = 0
 $carrying = 0
 $predating = 0
-foreach ($file in @(& git ls-files -- 'corpus/v1/*/*/*/*.json')) {
+# ⚠ A FILESYSTEM WALK RATHER THAN `git ls-files`, because once the corpus
+# leaves the default branch the root is a materialised copy of the data branch,
+# which git knows nothing about as a working tree. TODO/publish.md, PUB-11.
+foreach ($file in @(Get-ChildItem -LiteralPath (Join-Path $corpusRoot 'corpus/v1') -Recurse -File -Filter '*.json' -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.FullName } | Sort-Object)) {
     if (-not $file) { continue }
-    if ($file -like '*/index.json' -or $file -like '*/latest.json') { continue }
+    # ⚠ ON THE LEAF NAME, never on the path. $_.FullName is BACKSLASH-separated
+    # on Windows, so a '*/index.json' pattern matches nothing there and the two
+    # derived files were counted as profiles: the twin said 8 where the POSIX
+    # half said 6. Found by comparing the two answers. TODO/publish.md, PUB-11.
+    $leaf = [System.IO.Path]::GetFileName($file)
+    if ($leaf -eq 'index.json' -or $leaf -eq 'latest.json') { continue }
     $profiles++
     $profileJson = Get-Content -LiteralPath $file -Raw | ConvertFrom-Json
     if ($profileJson.PSObject.Properties.Name -notcontains 'license') { $predating++; continue }
@@ -151,6 +177,54 @@ foreach ($file in @(& git ls-files -- 'corpus/v1/*/*/*/*.json')) {
 Add-Statement 'corpus profiles' "$carrying carrying it, $predating published before the field existed"
 if ($profiles -eq 0) {
     [void]$problems.Add('  no published profile was read, so nothing about the corpus was checked')
+}
+
+# -- ⭐ the branch a consumer actually fetches --------------------------------
+#
+# ⛔ A LOCAL REF, NEVER A FETCH. ⚠ NO LOCAL REF AT ALL IS A SKIP naming the
+# branch, never a pass. TODO/publish.md, PUB-12.
+$dataBranch = 'data'
+$dataRef = ''
+& git rev-parse -q --verify "refs/heads/$dataBranch" 2>$null | Out-Null
+if ($LASTEXITCODE -eq 0) {
+    $dataRef = "refs/heads/$dataBranch"
+}
+else {
+    & git rev-parse -q --verify "refs/remotes/origin/$dataBranch" 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { $dataRef = "refs/remotes/origin/$dataBranch" }
+}
+$data = 'skipped'
+if ($dataRef -ne '') {
+    $manifestText = (& git show ($dataRef + ':MANIFEST.json') 2>$null) -join "`n"
+    $data = 'absent'
+    if ($manifestText.Trim() -ne '') {
+        try {
+            $parsed = $manifestText | ConvertFrom-Json
+            if ($parsed.PSObject.Properties.Name -contains 'license' -and $parsed.license) {
+                $data = "$($parsed.license)"
+            }
+        }
+        catch {
+            $data = 'absent'
+        }
+    }
+    if ($data -ne $want) {
+        [void]$problems.Add("  the data branch manifest says $data and $homeFile says $want")
+    }
+    # ⛔ AND THE TEXT, not only the identifier. A branch naming 0BSD over some
+    # other licence file is the failure an identifier comparison cannot see.
+    $branchText = (& git rev-parse ($dataRef + ':LICENSE') 2>$null | Select-Object -First 1)
+    $localText = (& git hash-object LICENSE 2>$null | Select-Object -First 1)
+    if (-not $branchText) {
+        [void]$problems.Add("  the $dataBranch branch carries no LICENSE at its root")
+    }
+    elseif ("$branchText".Trim() -ne "$localText".Trim()) {
+        [void]$problems.Add("  the LICENSE on $dataBranch is not the LICENSE in this tree")
+    }
+    Add-Statement "the $dataBranch branch" "$data, over the same LICENSE text"
+}
+else {
+    Add-Statement "the $dataBranch branch" "skipped: no local ref for $dataBranch"
 }
 
 # -- the release body --------------------------------------------------------
@@ -200,10 +274,10 @@ $count = $problems.Count
 $stated = $seen.Count
 
 if ($Json) {
-    Write-Output ('{"schema":"check-license-consistency/1","license":"' + $want +
+    Write-Output ('{"schema":"check-license-consistency/2","license":"' + $want +
                   '","stated":' + $stated + ',"profiles":' + $profiles +
                   ',"carrying":' + $carrying + ',"predating":' + $predating +
-                  ',"problems":' + $count + '}')
+                  ',"data_branch":"' + $data + '","problems":' + $count + '}')
     if ($count -gt 0) { exit 1 }
     exit 0
 }

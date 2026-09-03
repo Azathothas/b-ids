@@ -13,9 +13,9 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s order, largest first. Session ran 2026-09-03, unattended, and the operator ended it. |
-| the resume point | [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s work order, which starts at `PUB-11`. ⛔ It is gated on the data branch existing and being verified. |
-| in flight | ⛔ Nothing. Eight entries closed in place with their acceptance commands run. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s order, which starts at `PUB-11`. Session ran 2026-09-03, unattended, and the operator ended it. |
+| the resume point | `PUB-11`, which is worked and open. Its entry names three legs that still reach the corpus through code resolving the workspace root. |
+| in flight | ⛔ Nothing half-edited. Three entries closed in place; `PUB-11` open with its state written into the entry. |
 | the state of the tree | Clean and pushed on `main`. The gate is green in full, `check-twins` included. |
 | the paste | below |
 
@@ -23,38 +23,33 @@ than a document about the project.
 
 ## The one thing to know before anything else
 
-⭐ **The `data` branch exists.** The push that landed `PUB-10` triggered the
-workflow, its data-branch job created the branch, and the tree it carries was
-compared object for object with a local build of this corpus. Every later push
-to the default branch APPENDS to it and never force-pushes.
+⭐ **The documents describe the tree again.** They had stopped: four sessions
+built the corpus, the emitters, the library and both publishing surfaces without
+re-reading the reference pages, so the README said this repository could run its
+own checks and nothing else. Nine documents and three script headers are
+amended, and
+[`stale-documents.md`](stale-documents.md) keeps every superseded passage.
 
-⛔ **So the next step is `PUB-11`**, which moves the eleven check pairs that
-read the corpus from the working tree. Only after that does `corpus/` leave
-`main`, and that step is the operator's.
-
-⚠ **No release has been cut**, because no tag has been pushed. The release job
-of the same workflow skipped, which is what it should do.
+⛔ **A check holds that now.** `check-catalogues` refuses a script with no
+section in [`../../scripts/README.md`](../../scripts/README.md) and a document
+with no row in the index that routes to it. ⚠ It cannot read prose, so a
+sentence that is merely wrong is still the review's job.
 
 ---
 
 ## The conditions this session leaves
 
-**The corpus is usable rather than only accurate.** `b-ids` hands a program a
-profile with the corpus embedded and no network in it; `b-ids-cli` puts one back
-on a wire and the harness reads back the same profile, field by field, with 1951
-of 1983 bytes identical to the browser's own.
+**`PUB-11` is the resume point and it is half a change.**
+[`../../scripts/common/corpus-root.sh`](../../scripts/common/corpus-root.sh)
+answers where the corpus is, twelve check pairs ask it, and the resolved root is
+exported so `cargo` and the `b-ids` build script see the same one. ⚠ Seven of
+ten checks pass with `corpus/` moved out of the working tree; three fail because
+their legs reach the corpus through Rust that resolves the workspace root, and
+the entry names each.
 
-⚠ **Two acceptance commands were refuted by their own entries** and both are
-corrected in place: `EMIT-02`'s asked for a byte comparison the model cannot
-make, because it does not record the `ClientHello` random; `LIB-02`'s named a
-profile the corpus does not hold, and the client refuses one by name.
-
-⚠ **`captured.operator` is still typed**, and **`Shuffle::Observed` is still
-never written**. Both are fields the capture path does not fill.
-
-⚠ **Three of the JA4 specification's ALPN examples cannot be represented**,
-because the model holds a protocol as a string and theirs are not UTF-8.
-Recorded rather than repaired.
+⚠ **The corpus publishes a `HeadlessChrome` User-Agent** on all six profiles and
+every `user-agent` route, and always will: the normalisation is wired for the
+next capture and the corpus is append-only.
 
 ⛔ **A tool that purges browsers lives in `scripts/common/`.** It refuses any
 machine that is not both marked disposable by this project and running on a

@@ -27,8 +27,9 @@
 //! ⛔ **A route is generated only where the corpus HOLDS the value.** A route
 //! that resolves to a plausible-looking wrong value is worse than one that
 //! 404s, which is the same rule the corpus itself has. So `ja3` and `ja4` have
-//! no routes at all today: nothing here computes one, and `VALID-04` is the
-//! entry that will.
+//! no routes at all: `digests` is null on every published profile, and JA4 is
+//! derived from a profile on demand rather than stored in one. `VALID-04`
+//! closed with the derivation and deliberately without a route.
 //!
 //! ⛔ **Nothing falls back to a neighbouring platform.** A missing route is a
 //! fact; a substituted value is a lie.

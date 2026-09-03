@@ -64,9 +64,25 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 $root = ($root | Select-Object -First 1).Trim()
 
 Push-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-coverage: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 try {
     $planPath = '.github/capture-matrix.json'
-    $indexPath = 'corpus/v1/index.json'
+    $indexPath = Join-Path $corpusRoot 'corpus/v1/index.json'
 
     if (-not (Test-Path -LiteralPath $planPath -PathType Leaf)) {
         [Console]::Error.WriteLine("check-coverage: there is no $planPath, so there is no plan to report against")

@@ -81,11 +81,27 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 $root = ($root | Select-Object -First 1).Trim()
 
 Push-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-validate: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 try {
     $corpusDir = 'corpus'
     $rawDir = 'raw'
 
-    if (-not (Test-Path -LiteralPath $corpusDir -PathType Container)) {
+    if (-not (Test-Path -LiteralPath (Join-Path $corpusRoot $corpusDir) -PathType Container)) {
         Write-Absent "there is no $corpusDir/ directory, so nothing was validated"
     }
     if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
@@ -97,7 +113,7 @@ try {
     # ⛔ THE NUMBERS COME FROM THE FIXED STATUS LINE, never from the prose above
     # it. `b-ids-corpus validate` prints `corpus=validate profiles:N findings:N
     # notcheckable:N` as its last line and its usage says that is the contract.
-    $validateOut = @(& cargo run -q -p b-ids-corpus -- validate --root . 2>&1)
+    $validateOut = @(& cargo run -q -p b-ids-corpus -- validate --root $corpusRoot 2>&1)
     $validateRc = $LASTEXITCODE
     if ($validateRc -ne 0 -and $validateRc -ne 1) {
         Write-Absent 'the coherence leg did not run. cargo is absent, the workspace did not build, or the corpus holds no profile'
@@ -124,7 +140,7 @@ try {
     $null = New-Item -ItemType Directory -Path (Join-Path $scratch 'root') -Force
     $null = New-Item -ItemType Directory -Path (Join-Path $scratch 'first') -Force
     try {
-        Copy-Item -LiteralPath $corpusDir -Destination (Join-Path $scratch 'root') -Recurse -Force
+        Copy-Item -LiteralPath (Join-Path $corpusRoot $corpusDir) -Destination (Join-Path $scratch 'root') -Recurse -Force
         if (Test-Path -LiteralPath $rawDir -PathType Container) {
             Copy-Item -LiteralPath $rawDir -Destination (Join-Path $scratch 'root') -Recurse -Force
         }

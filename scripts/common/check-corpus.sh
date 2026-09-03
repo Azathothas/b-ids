@@ -61,10 +61,29 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 # and the same reason.
 cd "$REPO_ROOT" || { printf 'check-corpus: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.sh is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-corpus: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
+# ⛔ AND THE REF THAT CARRIES IT, because this check's one question is about a
+# HISTORY rather than about files on disk. Empty means the working tree, whose
+# history is this repository's own; a ref means the corpus lives on that branch
+# and its history is the one to read.
+CORPUS_REF=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --ref)
+
 CORPUS_DIR="corpus"
 RAW_DIR="raw"
 
-if [ ! -d "$CORPUS_DIR" ]; then
+if [ ! -d "$CORPUS_ROOT/$CORPUS_DIR" ]; then
   if [ "$JSON" = 1 ]; then
     printf '{"schema":"check-corpus/2","corpus":false,"shallow":false,"profiles":0,"edits":0,"problems":0}\n'
   else
@@ -126,7 +145,10 @@ fi
 #
 # ⛔ Narrow, and by exact name at the layout root. A profile cannot collide with
 # either: one lives four components deep and these live at one.
-EDITS=$(git log --diff-filter=MDR --name-status --format='commit %h' -- \
+# ⚠ ${CORPUS_REF:+...} EXPANDS TO NOTHING when the corpus is the working tree,
+# which is `git log` over HEAD, and to the branch ref when it is not. A default
+# of HEAD written out would be a second spelling of the same thing.
+EDITS=$(git log --diff-filter=MDR --name-status --format='commit %h' ${CORPUS_REF:+"$CORPUS_REF"} -- \
   "$CORPUS_DIR" "$RAW_DIR" \
   ":(exclude)$CORPUS_DIR/*/index.json" ":(exclude)$CORPUS_DIR/*/latest.json" 2>/dev/null)
 EDIT_COUNT=$(printf '%s' "$EDITS" | awk 'NF && $1 != "commit"' | wc -l | tr -d ' ')
@@ -147,7 +169,7 @@ PROBLEMS=0
 VERIFY_RAN=0
 VERIFY_OUT=""
 if command -v cargo >/dev/null 2>&1; then
-  VERIFY_OUT=$(cargo run -q -p b-ids-corpus -- verify --root . 2>&1)
+  VERIFY_OUT=$(cargo run -q -p b-ids-corpus -- verify --root "$CORPUS_ROOT" 2>&1)
   VERIFY_RC=$?
   STATUS_LINE=$(printf '%s\n' "$VERIFY_OUT" | awk '/^corpus=/{ line = $0 } END { print line }')
   case "$VERIFY_RC" in

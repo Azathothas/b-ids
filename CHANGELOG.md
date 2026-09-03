@@ -2,8 +2,10 @@
 
 What shipped, when, and where the evidence is. Newest first.
 
-⛔ **Nothing in this project has been released.** The entries below are
-repository changes, not published artefacts, and every one says so.
+⛔ **No release has been cut**, and a pushed tag is the only thing that produces
+one. Most entries below are repository changes rather than published artefacts,
+and ⛔ **every entry says which it was**: the `data` branch is the one surface
+anything here has reached.
 [`TODO/PROGRESS.md`](TODO/PROGRESS.md) is where the work stands.
 
 ---
@@ -13,6 +15,58 @@ repository changes, not published artefacts, and every one says so.
 ⛔ **Nothing here has been released.** The section exists because an entry is a
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
+
+### 2026-09-03T13:07:00Z - the documents were checked against the tree, and nine of them were wrong about what it does
+
+**Record:** [`TODO/tooling.md`](TODO/tooling.md) `TOOL-19`,
+[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-06`,
+[`TODO/publish.md`](TODO/publish.md) `PUB-12` and `PUB-11`.
+**Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch
+rebuilds on the next push to the default branch, and the profiles it carries are
+unchanged by this.
+
+What landed:
+
+- ⛔ **Nine documents and three script headers described a smaller project than
+  the one on disk.** The reference pages still said there was no corpus, nothing
+  published and no digest computed, four sessions after each became false. Every
+  one is amended in place and the superseded wording is in
+  [`docs/HISTORY/stale-documents.md`](docs/HISTORY/stale-documents.md).
+- ⭐ **A check now holds both catalogues.** `check-catalogues` asserts every
+  script is named by [`scripts/README.md`](scripts/README.md) and every document
+  by the index that routes to it. Pointed at this repository as it stood before
+  the pass, it refuses thirteen scripts that had no section at all.
+- ⛔ **The headless normalisation had no caller.** `DRIVER-03` built it and named
+  the seam; `CORPUS-01` landed and nothing wired it, so every published profile
+  and every published `user-agent` route carries `HeadlessChrome`. It is wired
+  now, gated on the launch rather than on the value, and the six published
+  profiles keep what they have because the corpus is append-only.
+- ⭐ **The licence check reads the branch a consumer actually fetches**, both the
+  manifest identifier and the bytes of the `LICENSE` beside it, from a local ref
+  rather than a fetch.
+- **One resolver answers where the corpus is**, and twelve check pairs ask it
+  instead of assuming the working tree. ⚠ `PUB-11` stays open: three legs reach
+  the corpus through Rust that still resolves the workspace root, and the entry
+  names each at a file.
+
+The story of four findings, kept here because the documents say what is true
+rather than what happened:
+
+- ⚠ **A check's own first run found a defect in the check.** `check-catalogues`
+  asked `git ls-files` alone and reported a clean catalogue of 43 scripts while
+  its own half sat beside it, written that minute and untracked.
+- ⛔ **A `[switch]` parameter and a lower-case local are one variable in
+  PowerShell.** A script-scope `$ref = Get-BranchRef` assigned a string to the
+  `[switch]$Ref` parameter and threw a type-conversion error before anything
+  ran.
+- ⛔ **A `'*/index.json'` pattern matches nothing on Windows**, because
+  `$_.FullName` is backslash-separated. The twin counted the two derived files
+  as profiles and said 8 where the POSIX half said 6, which is what comparing
+  two answers is for.
+- ⚠ **The shell ate a backticked payload inside a `node -e` string**, and a
+  paragraph reached a document with three code spans emptied. The tree's own
+  note says a payload goes through `write-file.mjs` from a file, and it does
+  now.
 
 ### 2026-09-03T09:00:00Z - the trigger, the consumer crate, and a client that puts a profile back on a wire
 

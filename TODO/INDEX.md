@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 100  open 14  blocked 0  done 86
+total 103  open 14  blocked 0  done 89
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
-| P1 | 1 | 0 | 43 | 44 |
-| P2 | 10 | 0 | 30 | 40 |
+| P1 | 1 | 0 | 45 | 46 |
+| P2 | 10 | 0 | 31 | 41 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **14** | **0** | **86** | **100** |
+| **all** | **14** | **0** | **89** | **103** |
 
 ---
 
@@ -43,6 +43,7 @@ total 100  open 14  blocked 0  done 86
 | CORPUS-03 | P2 | S | done | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
 | CORPUS-04 | P2 | M | done | Per-build trust-anchor lists, and a recommendation | [`corpus.md`](corpus.md) |
 | CORPUS-05 | P3 | S | done | Name the unidentified extension | [`corpus.md`](corpus.md) |
+| CORPUS-06 | P1 | M | done | The headless normalisation has no caller, and six published profiles say so | [`corpus.md`](corpus.md) |
 | DOC-01 | P2 | S | done | There is no technical reference, and one document is pretending not to notice | [`docs.md`](docs.md) |
 | DOC-02 | P2 | S | open | The operator's side is unwritten because there is nothing to operate | [`docs.md`](docs.md) |
 | DOC-03 | P2 | S | open | There is no threat model, and publishing a corpus will need one | [`docs.md`](docs.md) |
@@ -91,6 +92,7 @@ total 100  open 14  blocked 0  done 86
 | PUB-09 | P2 | M | open | Signed and attested captures | [`publish.md`](publish.md) |
 | PUB-10 | P1 | L | done | Nothing triggers the two surfaces that were built to publish | [`publish.md`](publish.md) |
 | PUB-11 | P2 | M | open | Every check reads the corpus from the working tree, and the corpus is leaving it | [`publish.md`](publish.md) |
+| PUB-12 | P2 | S | done | The licence check declines the one surface a consumer actually fetches | [`publish.md`](publish.md) |
 | SCHEMA-01 | P0 | M | done | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
 | SCHEMA-02 | P0 | M | done | The TLS half, in wire order, with unknown codepoints kept | [`schema.md`](schema.md) |
 | SCHEMA-03 | P0 | S | done | The HTTP/2 half, as an ordered frame sequence | [`schema.md`](schema.md) |
@@ -123,6 +125,7 @@ total 100  open 14  blocked 0  done 86
 | TOOL-16 | P1 | S | done | A tree that moved under the comparison reads as a drift | [`tooling.md`](tooling.md) |
 | TOOL-17 | P1 | S | done | The gate's line-endings filter cannot see the working tree | [`tooling.md`](tooling.md) |
 | TOOL-18 | P1 | M | done | The gate is slow because of how it reads files, not because of what it reads | [`tooling.md`](tooling.md) |
+| TOOL-19 | P1 | M | done | A catalogue nothing checks stops being a catalogue | [`tooling.md`](tooling.md) |
 | VALID-01 | P0 | M | done | The coherence checks, as a library and a command and a schema | [`validator.md`](validator.md) |
 | VALID-02 | P1 | S | done | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | done | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |

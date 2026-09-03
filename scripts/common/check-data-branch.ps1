@@ -18,9 +18,9 @@
 #   4. a push that would rewrite history is refused, which is a rule in the
 #      crate with its own case.
 #
-# ⛔ WHAT IT CANNOT ASSERT YET, AND SAYS SO. The branch does not exist, so the
-# comparison against what is published has nothing to compare against, and that
-# leg is reported as a SKIP.
+# ⭐ AND IT COMPARES AGAINST WHAT IS PUBLISHED, as two git tree objects, with
+# the answer in the JSON as `matched`. ⚠ WITH NO BRANCH AT ALL that leg is a
+# SKIP naming the branch that would make it run.
 #
 # ⛔ IT PUSHES NOTHING and creates no branch.
 #
@@ -62,6 +62,34 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 }
 $root = ($root | Select-Object -First 1).Trim()
 Set-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-data-branch: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
+# ⛔ THIS CHECK RESOLVES THE ROOT AND THEN REFUSES ONE ANSWER. Its question is
+# whether the published branch equals what the CANONICAL corpus derives to, so
+# a run that resolved to the branch would compare it against itself and pass
+# without asking anything. ⚠ Once corpus/ leaves the default branch that is
+# this check's honest state: exit 2, "could not run". TODO/publish.md, PUB-11.
+$corpusRef = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Ref | Select-Object -First 1)
+if ($null -eq $corpusRef) { $corpusRef = '' }
+if ("$corpusRef".Trim() -ne '') {
+    [Console]::Error.WriteLine('check-data-branch: the canonical corpus is not in this tree, so the')
+    [Console]::Error.WriteLine("branch has nothing to be compared against. It resolved to $corpusRef.")
+    exit 2
+}
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     [Console]::Error.WriteLine('check-data-branch: cargo not found')
     exit 2
@@ -111,9 +139,9 @@ if (-not (Test-Path -LiteralPath $bin)) {
 # -- 1: regenerate, twice ----------------------------------------------------
 $logA = Join-Path $out 'a.log'
 $logB = Join-Path $out 'b.log'
-& $bin publish --root $root --out (Join-Path $out 'a') > $logA 2>&1
+& $bin publish --root $corpusRoot --out (Join-Path $out 'a') > $logA 2>&1
 $rcA = $LASTEXITCODE
-& $bin publish --root $root --out (Join-Path $out 'b') > $logB 2>&1
+& $bin publish --root $corpusRoot --out (Join-Path $out 'b') > $logB 2>&1
 $rcB = $LASTEXITCODE
 if ($rcA -ne 0 -or $rcB -ne 0) {
     [Console]::Error.WriteLine("check-data-branch: the build exited $rcA then $rcB")

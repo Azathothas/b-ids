@@ -50,6 +50,13 @@ const USER_DATA_DIR: &str = "--user-data-dir=";
 /// with nothing, which is a different launch from the one that happened.
 const REDACTED_DIR: &str = "(throwaway)";
 
+/// The switch prefix that says a capture was taken without a window.
+///
+/// ⚠ **A prefix, because the flag has two spellings.** `--headless` and
+/// `--headless=new` are the same launch mode to this question, and a match on
+/// the exact string would miss whichever one a future lane passes.
+const HEADLESS_SWITCH: &str = "--headless";
+
 /// Why a capture did not become a profile.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Refusal {
@@ -352,16 +359,34 @@ pub fn profile_from(
         tls,
         http2: http2.half,
         http,
-        // ⚠ EMPTY, and that is honest. Nothing in this tree computes JA3 or
-        // JA4 yet; `VALID-04` is the entry that does, with published test
-        // vectors. A digest computed by an unverified implementation and
-        // published as a field is exactly the fabricated value this project
-        // refuses.
+        // ⚠ EMPTY, and that is the ruling rather than a gap. JA4 and its raw
+        // forms are DERIVED from a profile on demand, by `b_ids_schema::tls`
+        // and `b_ids_harness::digest`; the corpus is append-only, so a derived
+        // value stored in it could never be corrected. `TODO/validator.md`
+        // carries the decision, and ⛔ JA3 is not computed anywhere.
         digests: Digests::default(),
         raw,
         provenance,
         supersedes: None,
     };
+
+    // ⭐ THE SEAM `DRIVER-03` NAMED, wired where it said it belonged. Its
+    // closing left the normalisation callerless because no capture path wrote a
+    // profile yet; this is that path. `TODO/corpus.md`, `CORPUS-06`.
+    //
+    // ⛔ GATED ON THE LAUNCH, NEVER ON THE VALUE. A windowed build that
+    // announced a headless product token would be announcing its own value, and
+    // rewriting that is the failure this whole project is about. The switch is
+    // what says the capture was taken headless, and it is published in
+    // `captured.switches` beside the substitution.
+    if identity
+        .switches
+        .iter()
+        .any(|s| s.starts_with(HEADLESS_SWITCH))
+    {
+        b_ids_driver::headless::normalise(&mut profile);
+    }
+
     profile.id = profile.derived_id();
     Ok(profile)
 }

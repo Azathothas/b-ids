@@ -19,11 +19,13 @@
 #   4. a push that would rewrite history is refused, which is a rule in the
 #      crate with its own case rather than a sentence in a workflow.
 #
-# ⛔ WHAT IT CANNOT ASSERT YET, AND SAYS SO. The branch does not exist, so
-# "compares byte-identical to what is published" has nothing to compare against.
-# That leg is reported as a SKIP with the name of the branch that would make it
-# run. Reporting a pass over a branch nobody has made is the "step that exits 0
-# having done nothing" row of docs/conventions/forbidden-patterns.md.
+# ⭐ AND IT COMPARES AGAINST WHAT IS PUBLISHED. The regenerated tree and the
+# branch's own tree are compared as two git tree objects, which is what "byte
+# for byte" means for a branch. The answer is in the JSON as `matched`, so the
+# twin comparison can see whether both halves did it. ⚠ WITH NO BRANCH AT ALL
+# that leg is a SKIP naming the branch that would make it run: reporting a pass
+# over a branch nobody has made is the "step that exits 0 having done nothing"
+# row of docs/conventions/forbidden-patterns.md.
 #
 # ⛔ IT PUSHES NOTHING and creates no branch.
 #
@@ -54,6 +56,28 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 }
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-data-branch: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
+
+# ⛔ THIS CHECK RESOLVES THE CORPUS ROOT AND THEN REFUSES ONE ANSWER. Its
+# question is whether the published branch equals what the CANONICAL corpus
+# derives to, so a run that resolved to the branch would compare the branch
+# against itself and pass without asking anything. ⚠ Once corpus/ leaves the
+# default branch that is the honest state of this check: exit 2, "could not
+# run", which CI-07 rules is not a failure. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-data-branch: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
+CORPUS_REF=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --ref)
+if [ -n "$CORPUS_REF" ]; then
+  printf 'check-data-branch: the canonical corpus is not in this tree, so the\n' >&2
+  printf 'branch has nothing to be compared against. It resolved to %s.\n' "$CORPUS_REF" >&2
+  exit 2
+fi
 command -v cargo >/dev/null 2>&1 || { printf 'check-data-branch: cargo not found\n' >&2; exit 2; }
 
 # ⛔ THE BRANCH IS NAMED ONCE, here and in the twin, so a rename moves both.
@@ -97,9 +121,9 @@ BIN="$REPO_ROOT/target/debug/b-ids-corpus"
 # -- 1: regenerate, twice ----------------------------------------------------
 #
 # ⛔ READ FROM THE PROCESS, UNPIPED.
-"$BIN" publish --root "$REPO_ROOT" --out "$OUT/a" > "$OUT/a.log" 2>&1
+"$BIN" publish --root "$CORPUS_ROOT" --out "$OUT/a" > "$OUT/a.log" 2>&1
 rc_a=$?
-"$BIN" publish --root "$REPO_ROOT" --out "$OUT/b" > "$OUT/b.log" 2>&1
+"$BIN" publish --root "$CORPUS_ROOT" --out "$OUT/b" > "$OUT/b.log" 2>&1
 rc_b=$?
 if [ "$rc_a" != 0 ] || [ "$rc_b" != 0 ]; then
   printf 'check-data-branch: the build exited %s then %s\n' "$rc_a" "$rc_b" >&2

@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-license-consistency check-release check-data-branch check-publish check-cold-start check-support-matrix"
+COMPARED_DIRECTLY="check-docs check-markers check-catalogues check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-license-consistency check-release check-data-branch check-publish check-cold-start check-support-matrix"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -213,6 +213,7 @@ compared_directly 'check-docs'          || check_simple 'check-docs'          sh
 # which is what "run both" costs when it is advice rather than a line here.
 compared_directly 'check-markers'       || check_simple 'check-markers'       sh "$HERE/check-markers.sh"
 compared_directly 'check-one-home'      || check_simple 'check-one-home'      sh "$HERE/check-one-home.sh"
+compared_directly 'check-catalogues'    || check_simple 'check-catalogues'    sh "$HERE/check-catalogues.sh"
 compared_directly 'check-placeholders'  || check_simple 'check-placeholders'  sh "$HERE/check-placeholders.sh"
 compared_directly 'check-control-bytes' || check_simple 'check-control-bytes' sh "$HERE/check-control-bytes.sh"
 compared_directly 'check-record'        || check_simple 'check-record'        sh "$HERE/check-record.sh"

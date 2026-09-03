@@ -217,6 +217,7 @@ function Invoke-Check {
 $ComparedDirectly = @(
     'check-docs',
     'check-markers',
+    'check-catalogues',
     'check-one-home',
     'check-placeholders',
     'check-control-bytes',
@@ -361,6 +362,7 @@ else {
 Invoke-PsCheck -Name 'check-docs'          -Script 'scripts/common/check-docs.ps1'
 Invoke-PsCheck -Name 'check-markers'       -Script 'scripts/common/check-markers.ps1'
 Invoke-PsCheck -Name 'check-one-home'      -Script 'scripts/common/check-one-home.ps1'
+Invoke-PsCheck -Name 'check-catalogues'    -Script 'scripts/common/check-catalogues.ps1'
 Invoke-PsCheck -Name 'check-placeholders'  -Script 'scripts/common/check-placeholders.ps1'
 Invoke-PsCheck -Name 'check-control-bytes' -Script 'scripts/common/check-control-bytes.ps1'
 Invoke-PsCheck -Name 'check-record'        -Script 'scripts/common/check-record.ps1'

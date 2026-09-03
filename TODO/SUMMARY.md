@@ -12,12 +12,13 @@ list. ⛔ Overwritten every session.
 
 | | |
 | --- | --- |
-| entries closed | 8 |
-| effort points | 22, against the 20 [`RULES.md`](RULES.md) section 10 asks for |
-| entries now | 100 total, 14 open, 0 blocked, 86 done |
-| tests | 380 at the start, 401 at the end |
-| gate | 35 at the start with one of them skipped, 38 at the end with none skipped and `check-twins` included. `check-publish`, `check-cold-start` and `check-support-matrix` joined it, each with a twin and a comparison row |
-| published | ⭐ the `data` branch, 200 files, by the first run of `publish.yml` on the push that landed it, verified tree-for-tree against a local build. ⛔ No tag, no asset and no release: a tag is the only thing that cuts one |
+| entries closed | 3, and one worked and left open |
+| effort points | 5, under the 20 [`RULES.md`](RULES.md) section 10 asks for. ⚠ The operator's first instruction was to consolidate the documents against the tree, which is not an entry and scores nothing |
+| entries now | 103 total, 14 open, 0 blocked, 89 done |
+| tests | 401 at the start, 406 at the end |
+| gate | 38 checks at the start, 39 at the end. `check-catalogues` joined the gate, and both it and `corpus-root` joined the twin comparison |
+| documents amended | 9, plus 3 script headers, with every superseded passage in [`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md) |
+| published | ⛔ nothing new. The `data` branch is unchanged, no tag was pushed and no release cut |
 
 ---
 
@@ -25,14 +26,10 @@ list. ⛔ Overwritten every session.
 
 | entry | effort | what closed it |
 | --- | --- | --- |
-| `PUB-10` | `L` | `sh scripts/common/check-publish.sh`: 3 triggers over 3 jobs, 2 job-scoped writes, no force push, no named secret, 10 refusals driven against the binary |
-| `EMIT-01` | `L` | `sh scripts/common/check-support-matrix.sh`: 6 cells from a run over 6 profiles, 5 holes each resolving to a file and a line |
-| `EMIT-02` | `L` | `cargo test -p b-ids-emit escape_hatch`: 5 cases. 1871 of a hello's 1983 bytes emitted and found in the raw capture exactly once |
-| `LIB-01` | `M` | `cargo test -p b-ids`: 7 cases and a doctest. The corpus embedded at build time, no network, no substitute |
-| `LIB-02` | `M` | `cargo test -p b-ids-cli`: 4 cases, plus a driven pass with the real binaries. 1951 of 1983 bytes identical to the browser's own |
-| `VALID-04` | `M` | `cargo test -p b-ids-validator digest_vectors`: 4 cases over 16 published vectors |
-| `CI-05` | `M` | `sh scripts/common/check-cold-start.sh`: 11 stages, every cache refused, 9 of 9 programs present |
-| `DRIVER-06` | `M` | `cargo test -p b-ids-driver branded`: 4 cases where the command previously selected none |
+| `TOOL-19` | `M` | `sh scripts/common/check-catalogues.sh`: 45 scripts and 28 documents named by their catalogues, and the same check pointed at `8f031a6` refuses 13 |
+| `CORPUS-06` | `M` | `cargo test -p b-ids-corpus headless`: 5 cases, and 3 planted mutations each taking a different one red |
+| `PUB-12` | `S` | `sh scripts/common/check-license-consistency.sh --json`: 8 statements including the data branch, driven against a branch rewritten to `MIT` |
+| ⚠ `PUB-11` | `M` | **not closed.** One resolver, 12 check pairs wired, 7 of 10 passing with `corpus/` moved out of the working tree. The entry names the 3 that do not |
 
 ---
 
@@ -40,10 +37,9 @@ list. ⛔ Overwritten every session.
 
 | pass | finding |
 | --- | --- |
-| the door sweep | ⛔ two `git push` lines exist in this tree's workflows and the new rule governed one. Widened to every workflow, with the force-pushing count pinned at one |
-| the guard mutation | ⛔ 28 planted, 27 red on the first attempt. The one that passed was this session's own force-push rule, which looked for `:+` where a forcing refspec puts the plus first |
-| the claim audit | ⛔ five documents said the corpus holds five profiles and it holds six; two pasted blocks had a line removed; one byte range was read off the wrong rows. All three corrected against a re-run |
-| the gate itself | ⛔ two more, from running it in full: one half of `check-placeholders` is case-insensitive where its twin is not, and shellcheck refused three lines of a check written this session |
+| the claim audit | ⛔ 9 documents and 3 script headers described a smaller project than the one on disk, one of them contradicting itself two sections apart |
+| the dead-caller sweep | ⛔ `b_ids_driver::headless::normalise` had five passing tests, a documented reason and no caller, so every published profile carries `HeadlessChrome` |
+| the guard mutation | ⛔ 8 planted across four entries, all red. The strongest was moving `corpus/` out of the tree entirely, which is what found the three legs that still resolve the workspace root |
 
 ---
 
@@ -51,6 +47,6 @@ list. ⛔ Overwritten every session.
 
 | | |
 | --- | --- |
-| ⭐ measured | six profiles emit whole, 1739 to 1983 bytes; four of the six share one JA4 and the split is by major rather than by platform or browser; the specification's own `8daaf6152771` reproduced from this project's captures by three independent paths |
-| ⚠ not measured | the release half of the publishing workflow has never run, because no tag has been pushed; the `for-testing` capture lane has never run; the cold-start job has never run on a cold machine |
-| ⛔ not done | no release was cut, and `corpus/` and `raw/` were not touched. Removing them is sequenced after `PUB-11` |
+| ⭐ measured | the pre-consolidation tree refuses 13 scripts under the new check, in both halves, with the same exit code; a headless capture publishes the windowed token with `substituted` provenance and a windowed one is untouched; a data branch rewritten to `MIT` is refused by both halves; 7 of 10 checks read the corpus off the branch with none in the working tree |
+| ⚠ not measured | no capture was taken, so `CORPUS-06` is proved by its suite rather than by a browser; the `for-testing` lane has still never run; the publishing workflow was not exercised, because running it writes to the remote |
+| ⛔ not done | `PUB-11` is open; the six published profiles still carry `HeadlessChrome` and always will, because the corpus is append-only |

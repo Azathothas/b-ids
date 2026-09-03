@@ -1238,3 +1238,183 @@ sh scripts/common/check-gate.sh --fast
 Passing means: the gate is green with `corpus/` and `raw/` moved out of the
 working tree and a local copy of the data branch present, and every one of the
 eleven checks above reports on the profiles it found there rather than skipping.
+
+### ⚠ Worked 2026-09-03 and NOT closed. What landed, and what is left
+
+⛔ **This entry stays open**, with the residue measured and named at a file and
+a line rather than described. What follows is the state the tree is in, not a
+plan.
+
+**The resolver exists and is the one answer.**
+[`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh) and its
+twin resolve `B_IDS_CORPUS_ROOT`, then the working tree, then a materialised
+copy of the data branch, and print one path.
+
+```text
+$ sh scripts/common/corpus-root.sh --json
+{"schema":"corpus-root/1","source":"working-tree","ref":"","profiles":6}
+
+$ sh scripts/common/corpus-root.sh --fixture
+corpus-root fixture ok: a tree with no corpus resolves to the data branch,
+carrying 6 profile(s).
+```
+
+⛔ **The order in the Approach above is wrong and was not followed.** It puts the
+branch before the working tree; that would have every check read the PUBLISHED
+corpus while a session is adding a profile to the working one, and report green
+over the corpus it is about to publish. The resolver prefers the working tree
+for exactly as long as that holds a corpus. ⚠ The Approach keeps its wording and
+this is the correction, by the rule in
+[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md).
+
+**Twelve check pairs resolve rather than assume**, and the root is EXPORTED as
+well as passed, because
+[`../crates/b-ids/build.rs`](../crates/b-ids/build.rs) embeds the corpus at
+build time from that same variable and already calls it the seam this entry
+needs. A check that resolved a root and did not export it would build against
+one corpus and report on another.
+
+### ⭐ Driven with `corpus/` and `raw/` moved out of the working tree
+
+⛔ **The measurement, not a prediction.** Both directories were moved to a
+scratch copy, the checks were run, and both were restored and compared against
+`HEAD` byte for byte afterwards.
+
+| | |
+| --- | --- |
+| resolve off the branch and pass | `check-coverage`, `check-corpus`, `check-formats`, `check-routes`, `check-support-matrix`, `check-license-consistency`, `check-publish` |
+| ⚠ still fail | `check-validate`, `check-release`, `check-trust-anchors` |
+| ⛔ refuses by design | `check-data-branch`, which exits 2 rather than comparing the branch against itself |
+
+### ⛔ What is left, and it is one shape rather than three
+
+**The Rust side has the coupling the scripts just lost.** `check-release` and
+`check-validate` fail on their suite and determinism legs, and
+`check-trust-anchors` finds no carrier, because each of those legs reaches the
+corpus through code that resolves the WORKSPACE root rather than
+`B_IDS_CORPUS_ROOT`:
+
+- [`../crates/b-ids-corpus/tests/publish.rs`](../crates/b-ids-corpus/tests/publish.rs),
+  run by `check-release`, opens the corpus relative to the crate;
+- the determinism leg of `check-validate` re-runs the generator inside a scratch
+  root it copied, and the copy is now of the resolved root while the run is not;
+- `check-trust-anchors` generates lists with `--root "$CORPUS_ROOT"` and then
+  looks for carriers in a walk that the materialised copy does not satisfy.
+
+⭐ **What would close this entry**: give those three legs the same resolved root
+the rest of the check already has, then re-run the driven pass above and get ten
+of ten. ⛔ It is not a blocker on anything outside this tree and needs no
+ruling.
+
+⚠ **And one thing the operator's sequence has to settle before the step AFTER
+this one.** Once `corpus/` leaves the default branch, the data branch becomes
+the canonical corpus rather than a derivation of it, and `check-data-branch`'s
+comparison stops meaning anything. That is a question about where a NEW capture
+is written, and it is recorded in [`PROGRESS.md`](PROGRESS.md) rather than
+answered here.
+
+---
+
+## PUB-12. The licence check declines the one surface a consumer actually fetches
+
+**Source** found by this session's consolidation pass, 2026-09-03, reading the check headers against the tree
+**Category** publish, **Priority** P2, **Effort** S, **Status** done
+
+### Problem
+
+[`../scripts/common/check-license-consistency.sh`](../scripts/common/check-license-consistency.sh)
+compares six places that state this project's licence and skips the data
+branch, saying in its own header that the branch does not exist. ⛔ **It does**,
+and it carries a `LICENSE` file nothing compares against the one home.
+
+### Premise
+
+⭐ **Read from the branch, 2026-09-03.**
+
+```bash
+git ls-tree --name-only origin/data
+```
+
+The branch's root carries a `LICENSE`, and the check's header says the file "is
+this file's to check on the day it does" exist. ⚠ That day was 2026-09-03, and
+the sentence stayed. This is the same shape `check-data-branch` was corrected
+for in the same session: a leg whose condition had been met still reporting a
+skip.
+
+### Approach
+
+Add the branch to the places compared, under the rule the check already uses
+for a subject it cannot reach.
+
+- ⭐ **A local ref, never the network.** `refs/heads/data` then
+  `refs/remotes/origin/data`, which is what `check-data-branch` already does,
+  so a gate does not acquire a network dependency.
+- ⚠ **No branch at all is a SKIP naming the branch**, not a pass and not a
+  failure. A clone with no data branch fetched is a machine that cannot answer
+  the question.
+- ⛔ **Both halves**, and a row in `check-twins`, because a leg added to one
+  half is a second behaviour.
+
+⛔ Must not: fetch. A check that reaches the network is a check that is red when
+somebody else's host is down.
+
+### Prove
+
+```bash
+sh scripts/common/check-license-consistency.sh --json
+```
+
+Passing means: exit 0, and the JSON names the data branch among the places
+compared with the licence it carries, rather than omitting it.
+
+### Closing
+
+**Closed 2026-09-03T13:07:00Z.** Two legs, in both halves, over a local ref.
+The schema moves to `check-license-consistency/2` because the object gained a
+field.
+
+```text
+$ sh scripts/common/check-license-consistency.sh --json
+{"schema":"check-license-consistency/2","license":"0BSD","stated":8,"profiles":6,"carrying":0,"predating":6,"data_branch":"0BSD","problems":0}
+exit=0
+```
+
+⭐ **Two legs rather than one, and the second is the one an identifier cannot
+see.** The manifest's `license` field is compared against the one home, and the
+`LICENSE` at the branch's root is compared as a git object against this tree's
+own, so a branch naming `0BSD` over somebody else's licence text is a failure
+rather than a pass.
+
+### ⛔ It was driven against a branch that disagrees
+
+**A local `data` branch was built off `origin/data` with its manifest rewritten
+to `MIT`**, using a temporary index so nothing in this repository's own index
+moved, and deleted afterwards. ⛔ Nothing was pushed and the published branch was
+not touched.
+
+```text
+$ sh scripts/common/check-license-consistency.sh
+licence check failed, 1 problem(s):
+
+  the data branch manifest says MIT and crates/b-ids-schema/src/lib.rs says 0BSD
+exit=1
+```
+
+⭐ **The PowerShell half read the same branch and exited 1 with
+`"data_branch":"MIT","problems":1`**, which is what says both halves grew the
+leg rather than one of them.
+
+A second run of the same fixture, with the branch's `LICENSE` replaced as well,
+produced **two** problems: the identifier and the text are separate findings.
+
+### ⚠ What the leg cannot answer, and it says so rather than passing
+
+⛔ **A clone that has not fetched the branch gets a SKIP naming it**, not a pass
+and not a failure. The check reads `refs/heads/data`, then
+`refs/remotes/origin/data`, and never fetches: a gate that reaches the network is
+red the day somebody else's host is down.
+
+⚠ **So on a fresh CI checkout this leg reports `skipped`**, and that is visible
+in the JSON rather than hidden. Making it fetch would be the wrong repair; the
+right one is a checkout that fetched the branch, which is what
+`check-data-branch` already needs for its own comparison.

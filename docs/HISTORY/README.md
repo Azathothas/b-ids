@@ -33,11 +33,11 @@ things the live pages now state differently, which is the point of it.
 | --- | --- |
 | this file | the rules, and the withdrawn-claims list below |
 | ⭐ [`RESUME.md`](RESUME.md) | ⚠ **the one file here that IS read to do work.** It lives in this directory rather than at the repository root because it is a record of a session rather than a document about the project, and the root is for what a person opens first. [`../../TODO/RULES.md`](../../TODO/RULES.md) section 6 is the rule. |
+| [`stale-documents.md`](stale-documents.md) | what nine documents and three script headers said before 2026-09-03, when they were read against the tree and found to describe a smaller project than the one on disk |
 
-⚠ **The directory is otherwise empty and that is correct on day one.** Pages
-arrive when something is superseded, reversed, or found to be a dead end. A
-review that swept and found nothing writes what would have had to be true for it
-to fire, and that goes here too.
+⚠ **Pages arrive when something is superseded, reversed, or found to be a dead
+end.** A review that swept and found nothing writes what would have had to be
+true for it to fire, and that goes here too.
 
 ⚠ Two subdirectories are created on first use rather than now: `reviews/` for
 what each deep review swept and did not look at, and `sessions/` where a session

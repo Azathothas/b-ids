@@ -177,7 +177,7 @@ replaced by a code-graph query.
 | file | answers |
 | --- | --- |
 | ⭐ [`inherited-claims.md`](inherited-claims.md) | every value carried from somewhere else, with its source and its status. **When another document disagrees with it about provenance, this one wins.** |
-| ⭐ [`architecture.md`](architecture.md) | **the technical reference.** What a profile is, what the five components do to one, the state a capture passes through, and the limits. ⛔ When two documents disagree about a technical fact, this one settles it. |
+| ⭐ [`architecture.md`](architecture.md) | **the technical reference.** What a profile is, what the eight crates do to one, the state a capture passes through, and the limits. ⛔ When two documents disagree about a technical fact, this one settles it. |
 | ⭐ [`glossary.md`](glossary.md) | the terms, with the caveat attached to each rather than to the page that uses it |
 | [`reference-sweeps/findings.md`](reference-sweeps/findings.md) | what eighteen repositories were read at, and what was true in them. ⭐ One of them is the origin this project's values came from. |
 | [`reference-sweeps/usable.md`](reference-sweeps/usable.md) | the mechanisms from those repositories, at file and line, for the session doing the work |

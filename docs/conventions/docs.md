@@ -25,6 +25,7 @@ its place, and a role listed here with no file behind it is a defect.
 | [`../../TODO/SUMMARY.md`](../../TODO/SUMMARY.md) | the last session's table. ⚠ A snapshot, never an authority. |
 | [`../../CHANGELOG.md`](../../CHANGELOG.md) | what shipped, when, and where the evidence is |
 | [`../HISTORY/RESUME.md`](../HISTORY/RESUME.md) | ⚠ written at the START of a session and refreshed as work moves, so a session that dies mid-task still hands something over. Overwritten every session, never appended to. |
+| ⭐ [`../architecture.md`](../architecture.md) | **the technical reference.** What a profile is, what each crate does to one, the state a capture passes through, and the limits. `DOC-01`. |
 | ⭐ [`../glossary.md`](../glossary.md) | the terms this project uses without stopping to define them |
 | ⭐ [`../inherited-claims.md`](../inherited-claims.md) | every value this project carries that was measured somewhere else. **When a document states a fingerprint, a version or a codepoint, this file is where its provenance lives, and when the two disagree this one wins.** |
 | [`../agent-tooling.md`](../agent-tooling.md) | what tool does what job, and where each one lives |
@@ -34,12 +35,13 @@ its place, and a role listed here with no file behind it is a defect.
 | [`../reference-sweeps/usable.md`](../reference-sweeps/usable.md) | which of those findings this project can actually use, and where each one lands |
 | ⭐ [`../HISTORY/README.md`](../HISTORY/README.md) | **the story.** Superseded wording, reversed decisions, dead ends, review passes. ⛔ Everything above says what is true now; this says what was believed and why that changed. |
 
-⚠ **Three roles this set deliberately leaves empty**, because a skeleton with
-nothing in it outlives the session that wrote it. There is no technical
-reference for a schema nobody has written, no operator runbook for a pipeline
-that does not run, and no threat model for a corpus that does not exist.
-[`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md) carries each as an open
-question rather than an empty file.
+⚠ **Two roles this set still leaves empty**, because a skeleton with nothing in
+it outlives the session that wrote it: no operator runbook for a pipeline a
+person does not drive, and no threat model for a published corpus nobody
+consumes yet. `DOC-02` and `DOC-03` are those two, each open with the condition
+that would make writing it worth doing.
+⭐ **The third was filled**: the technical reference above is `DOC-01`, written
+once there was a schema to describe.
 
 ⛔ **`docs/HISTORY/` exists so that none of the rows above fill up with
 narrative.** ⚠ The instinct to record the story is right, which is why

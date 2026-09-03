@@ -63,7 +63,16 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 }
 Set-Location -LiteralPath $root
 
-if (-not $Corpus) { $Corpus = 'corpus/v1' }
+# ⭐ THE DEFAULT IS THE RESOLVED ROOT rather than the working tree.
+# TODO/publish.md, PUB-11.
+if (-not $Corpus) {
+    $resolved = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+    if ($LASTEXITCODE -ne 0 -or -not $resolved) {
+        [Console]::Error.WriteLine('check-staleness: no corpus is reachable, so nothing was checked')
+        exit 2
+    }
+    $Corpus = Join-Path ("$resolved".Trim()) 'corpus/v1'
+}
 $pointerPath = Join-Path $Corpus 'latest.json'
 if (-not (Test-Path -LiteralPath $pointerPath)) {
     [Console]::Error.WriteLine('check-staleness: no pointer file at ' + $pointerPath)

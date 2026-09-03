@@ -8,10 +8,11 @@ measured, never derived and never inherited.** Every row here is `vendor`
 provenance by the definition in [`glossary.md`](glossary.md), which makes it a
 draft, a starting point and a test case, and never a corpus entry.
 
-⚠ **One row has been measured here, and section 12 says what happens to it.**
-Section 5 carries the first quantity this project read off a browser's own
-wire, on 2026-09-01, beside the reading it inherited. ⛔ It is still not in the
-corpus, because there is no corpus: `CORPUS-01` is the entry that builds one.
+⚠ **Two sections carry a measurement taken here, and section 12 says what
+happens to a row that gets one.** Section 5 is the first quantity this project
+read off a browser's own wire, on 2026-09-01, beside the reading it inherited,
+and ⭐ **it has since left this file**: the block is published, in the profile
+that section names. Section 7 re-asked the version endpoints from this machine.
 
 ⛔ **Nothing here may be copied into a published profile.** A value nobody here
 can re-measure is a value nobody should trust, and copying one across would put

@@ -58,6 +58,22 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
     exit 2
 }
 Set-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-trust-anchors: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     [Console]::Error.WriteLine('check-trust-anchors: cargo not found')
     exit 2
@@ -68,7 +84,7 @@ if (-not (Test-Path -LiteralPath $doc)) {
     [Console]::Error.WriteLine('check-trust-anchors: no recommendation at ' + $doc)
     exit 2
 }
-if (-not (Test-Path -LiteralPath (Join-Path $root 'corpus'))) {
+if (-not (Test-Path -LiteralPath (Join-Path $corpusRoot 'corpus'))) {
     [Console]::Error.WriteLine('check-trust-anchors: there is no corpus, so no list can be published')
     exit 2
 }
@@ -90,7 +106,7 @@ if (-not (Test-Path -LiteralPath $bin)) {
 }
 
 $log = Join-Path $root '.tmp' | Join-Path -ChildPath 'check-trust-anchors-ps.log'
-& $bin anchors --root $root --out $out > $log 2>&1
+& $bin anchors --root $corpusRoot --out $out > $log 2>&1
 if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-trust-anchors: publishing the lists exited ' + $LASTEXITCODE)
     Get-Content -LiteralPath $log | ForEach-Object { [Console]::Error.WriteLine($_) }
@@ -104,7 +120,7 @@ $profiles = [int][regex]::Match($status, 'profiles:(\d+)').Groups[1].Value
 # publisher's own answer. A publisher that skipped a carrier would otherwise
 # agree with itself.
 $carriers = 0
-foreach ($file in (Get-ChildItem -LiteralPath (Join-Path $root 'corpus') -Recurse -Filter '*.json')) {
+foreach ($file in (Get-ChildItem -LiteralPath (Join-Path $corpusRoot 'corpus') -Recurse -Filter '*.json')) {
     if ($file.Name -eq 'index.json' -or $file.Name -eq 'latest.json') { continue }
     # ⚠ NOT $profile: it is an automatic variable in PowerShell, and assigning
     # to it is the same trap docs/conventions/shell.md names for $args.

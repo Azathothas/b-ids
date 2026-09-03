@@ -17,14 +17,15 @@ the entries themselves. Do not add a "previous sessions" section.
 
 ```text
 session ran      2026-09-03, unattended, ended by the operator
-baseline         gate ok: 34 passed, 1 skipped (check-twins, which --fast skips)
-                 on this Windows host at the start. 380 tests.
-entries          total 100  open 14  blocked 0  done 86
-published        the data branch exists: 200 files on origin/data since
-                 2026-09-03, pushed by publish.yml and verified tree-for-tree
-gate             three checks joined it today: check-publish, check-cold-start
-                 and check-support-matrix, each with a twin and a comparison row.
-                 Closing run: gate ok, all 38 checks passed. 401 tests.
+baseline         gate ok: 37 passed, 1 skipped (check-twins, which --fast skips)
+                 on this Windows host at the start. 401 tests.
+entries          total 103  open 14  blocked 0  done 89
+published        the data branch: 200 files on origin/data, unchanged by this
+                 session. ⚠ No release: a pushed tag is the only thing that
+                 cuts one.
+gate             check-catalogues joined it, taking the gate from 38 checks to
+                 39, and two pairs joined the twin comparison. The closing run
+                 is in SUMMARY.md and its output is below.
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -32,38 +33,62 @@ gate             three checks joined it today: check-publish, check-cold-start
 hand to make a check pass; fix whichever file is wrong.
 ⭐ `node scripts/common/set-record.mjs recount` moves them for you.
 
+### The closing gate, run twice and both readings kept
+
+⛔ **The full run came first, over the code, and it is the one that includes
+`check-twins`.**
+
+```text
+$ pwsh -NoProfile -File scripts/common/check-gate.ps1
+gate ok: all 39 checks passed
+```
+
+⚠ **The record was still being written when that started**, so a second run
+covers the documents it did not see. `--fast` skips exactly one check, and that
+check compares implementations rather than reading prose: nothing under
+`scripts/` or `crates/` changed between the two runs.
+
+```text
+$ pwsh -NoProfile -File scripts/common/check-gate.ps1 -Fast
+gate ok: 38 passed, but 1 SKIPPED on this host: check-twins
+```
+
+⚠ **And the full run is slower than it was**, measurably: every PowerShell check
+that reads the corpus now spawns a `pwsh` to resolve the root, and `check-twins`
+runs the gate's PowerShell half inside itself. `TOOL-07` is the entry that owns
+the gate's cost and the next session that touches it should re-time it.
+
+
 ---
 
-## Eight entries closed, twenty-two effort points
+## Three entries closed, five effort points, and one worked and left open
 
-**Two over the twenty [`RULES.md`](RULES.md) section 10 asks for.** Each is
-closed in place with its acceptance command actually run and its real output
-pasted underneath.
+⚠ **Under the twenty [`RULES.md`](RULES.md) section 10 asks for**, and the
+reason is stated rather than hidden: the operator's first instruction was to
+consolidate the documents against the tree, which is not an entry and scores
+nothing, and it took the first third of the session. The operator then ended it.
 
 | | |
 | --- | --- |
-| `PUB-10` `L` | the publishing workflow, three triggers, the write scoped to two jobs, and two conditions from two sources in front of the data branch |
-| `EMIT-01` `L` | a support matrix generated from a run, with five holes each carrying a file and a line a check resolves |
-| `EMIT-02` `L` | the escape hatch: 1871 of a hello's 1983 bytes emitted and found in the raw capture exactly once |
-| `LIB-01` `M` | a crate that hands a program a profile, with no network in it and no fallback behind it |
-| `LIB-02` `M` | the smallest client, and 1951 of 1983 bytes identical to what the browser sent |
-| `VALID-04` `M` | JA4 from the specification, and sixteen vectors none of whose expected values came from running this code |
-| `CI-05` `M` | the cold-start job, every cache refused and every stage named by a report |
-| `DRIVER-06` `M` | the branded pair end to end, and both `for-testing` matrix cells enabled |
+| `TOOL-19` `M` | a check pair holding both catalogues, which refuses thirteen scripts on the tree as it stood this morning |
+| `CORPUS-06` `M` | the headless normalisation wired where `DRIVER-03` said it belonged, four sessions after `CORPUS-01` landed without it |
+| `PUB-12` `S` | the licence check reads the branch a consumer fetches, driven against a branch that disagrees |
+| ⚠ `PUB-11` `M` | worked and **open**. One resolver, twelve check pairs wired, seven of ten passing with the corpus moved out of the working tree. Its entry names the three that do not and why. |
 
 ---
 
 ## ⭐ What changed about this project today
 
-**Nothing this project builds had ever been publishable by an event.** `PUB-01`
-and `PUB-02` assembled and checked two surfaces and no trigger reached either.
-There is one now, on the three events the operator ruled, and ⛔ **the first push
-to the default branch after this lands creates the `data` branch.** That is the
-first step of the sequence the operator wrote, and it is intended.
+**The documents had stopped describing the tree.** Four sessions built the
+schema, the harness, the corpus, the emitters, the library and both publishing
+surfaces, moved [`INDEX.md`](INDEX.md) and the changelog with each of them, and
+never re-read the reference pages those name. ⛔ The README told a reader this
+repository could run its own checks and nothing else; the technical reference
+said nothing was published and no digest was computed; the document set table
+said there was no technical reference, two sections above the rule naming it.
 
-**And the corpus is usable rather than only accurate.** A crate hands a
-program a profile; a client puts one back on a wire and the harness reads back
-the same profile, field by field.
+⭐ **A check holds both catalogues now**, so the next session that adds a script
+or a document without listing it fails the gate rather than the reading.
 
 ---
 
@@ -71,21 +96,15 @@ the same profile, field by field.
 
 | what | how it showed |
 | --- | --- |
-| ⛔ the published route manifest carried the ABSOLUTE PATH of whoever built it | so a build under a relative root and one under an absolute root produced different bytes for one corpus, and a public artefact would have carried a home directory. `check-release` could not see it: it builds twice under ONE root |
-| ⛔ a guard added this session passed the mutation it was written for | the force-push rule looked for `:+`, and a forcing refspec is `+src:dst`, so the plus is at the START of the token |
-| ⛔ that rule was gated on one workflow and not its sibling | `capture.yml` carries a force push that nothing asserted anything about. The rule now reads every workflow and pins the count at one |
-| ⛔ five documents said the corpus holds FIVE profiles and it holds six | and one said a single profile carries the trust-anchor extension where two do. A sixth profile landed and nothing compared the prose against the tree |
-| ⛔ two pasted acceptance blocks had a line removed | both commands print more than one target's result, and dropping the empty ones is an edited paste. Rewritten to what the command prints, with the elision stated |
-| ⛔ `EMIT-01`'s byte range was read off the first two cells | 1803 where the measured minimum is 1739. Corrected by re-running the generator |
-| ⚠ the model cannot hold three of the specification's ALPN examples | `alpn` is a list of strings, so a protocol whose bytes are not UTF-8 is unrepresentable. Recorded rather than repaired: changing it moves every published profile's serialisation |
-| ⚠ `EMIT-02`'s acceptance could not be satisfied as written | comparing the emitted bytes with the raw hex needs the `ClientHello` random, which the model does not record and should not |
-| ⚠ `LIB-02`'s acceptance named a profile the corpus does not hold | and the client refuses one by name rather than substituting, so the acceptance refuted itself |
-| ⚠ check 3 answers not-checkable over a profile that keeps header names only | which is the default. The enforcement half `DRIVER-06` called existing fires only on a capture that turned values on |
-| ⛔ this session own placeholder check fired in one half and not the other | PowerShell `-match` is case-INSENSITIVE and the twin `grep -E` is not, so an ordinary sentence containing three lower-case words was a template instruction to one half. Found by `check-twins`, fixed with `-cmatch` |
-| ⛔ shellcheck refused three lines of a check written this session | `A && B || C` is not if-then-else, and the gate treats that as a failure rather than a note. Rewritten as a function with an explicit `if` |
-| ⛔ a skip whose own condition had been met still reported a skip | `check-data-branch` said the branch was `remote` and printed "push it once and this leg starts running" in the same breath. The branch was there and nothing compared against it |
-| ⛔ two PowerShell argument traps in one line, found by the twin disagreeing | `--git-dir=(expr)` passes two arguments rather than one, and a bare `--` is consumed before a native command sees it. The half staged nothing and produced the empty tree, which compares unequal to everything |
-| a heredoc ate a backslash in a Rust literal, twice | the tree's own tooling note says a heredoc is not reliably literal here, and the payload has to go through `write-file.mjs` |
+| ⛔ the headless normalisation had no caller at all | `DRIVER-03` built it, named the seam, and said so; `CORPUS-01` landed and nothing wired it. Every published profile and every published `user-agent` route carries `HeadlessChrome` |
+| ⛔ a check written this session passed over its own missing entry | `check-catalogues` asked `git ls-files` alone, so the one file most likely to be unlisted, the one written that minute, was outside its scope |
+| ⛔ a `[switch]` parameter and a lower-case local are ONE variable in PowerShell | a script-scope `$ref = Get-BranchRef` assigned a string to `[switch]$Ref` and threw before anything ran |
+| ⛔ a `'*/index.json'` pattern matches nothing on Windows | `$_.FullName` is backslash-separated, so the twin counted the derived files as profiles and said 8 where the POSIX half said 6 |
+| ⛔ `check-license-consistency` declined the one surface a consumer fetches | its header said the data branch did not exist, on the day after it was pushed |
+| ⛔ two script headers described behaviour their own bodies no longer had | `check-data-branch` still said its comparison could not run, and `check-formats` still said nothing published a generated format |
+| ⚠ the entry's own resolution order was wrong | `PUB-11` puts the data branch before the working tree; that reads the PUBLISHED corpus while a session is adding to the working one |
+| ⚠ the shell ate a backticked payload inside a `node -e` string | a paragraph reached a document with three code spans emptied. The payload goes through `write-file.mjs` from a file now |
+| ⚠ `check-one-home` fired twice on this session's own prose | once on a sentence quoted from another entry, once on a phrase copied from a script's comment. Both are pointers now |
 
 ---
 
@@ -95,107 +114,110 @@ the same profile, field by field.
 [`../docs/methodology/reviews.md`](../docs/methodology/reviews.md) is the
 specification. ⭐ All three found something.
 
-### 1. The door sweep: what other door reaches this
+### 1. The claim audit: which document sentence is not backed by the tree
 
-Swept by grep rather than from memory: every caller of `ja4_lists`, `ja4_r`,
-`ja4_ro`, `ja4_prefix`, `ja4_alpn`, `ja4_version`, `extensions_block`,
-`client_hello`, `unnamed_codepoints`, `support_matrix`, `parse_tag`,
-`would_rewrite`, `plan_release` and `differences`; every workflow that declares
-a write; every `git push` in every workflow; every `gh` command that mutates;
-and every reference to a secret.
+Swept: every markdown file under [`../docs/`](../docs/), the README, the
+scripts contract, the experiments index, the changelog's front matter, and the
+header comment of every script the session touched. The method was to read each
+absence claim and check it against the tree rather than against another
+document.
 
-**Confirmed, by counting:** exactly two workflows can write and both scope it
-to a job; no workflow names a secret at all; `publish::build` has one production
-caller.
+⛔ **Finding: nine documents and two script headers were wrong**, every one of
+them by having been true once. The full list, with the original wording, is
+[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
+⭐ The worst was a document contradicting itself two sections apart.
 
-⛔ **Finding: two `git push` lines exist and only one was governed.** The new
-check read the publishing workflow alone, while the capture workflow
-force-pushes a bot branch. That is the one-gated-door class exactly. The rule
-now reads every workflow, pins the force-pushing count at one, and refuses any
-force naming the data branch or the default branch. ⚠ Planting a force push at
-the data branch in the SIBLING file takes both halves red.
+**What the other passes did not look at:** the prose. Neither of the others
+reads a sentence for whether it is true.
 
-**What the other passes did not look at:** the callers and the sibling files.
-Both of the others read what was written; this one asked what else reaches it.
+### 2. The dead-caller sweep: what is built, tested, documented and unreachable
 
-### 2. The guard mutation: can the new guards actually fail
+Swept by grep rather than from memory: every `pub fn` in
+`b-ids-driver`, every function the capture path could call, and every entry
+closing that says a seam was left for later. The question was not "does this
+work" but "does anything reach it".
 
-Twenty-eight mutations, each read unpiped in the half that owns the guard.
-⛔ Every mutation of a tracked file was made against a copy under the ignored
-scratch directory, and the live file was compared byte for byte with that copy
-afterwards. Each entry's closing carries its own table.
+⛔ **Finding: `b_ids_driver::headless::normalise` had no caller outside its own
+module**, with five passing tests and a closing paragraph naming the seam it was
+waiting for. That seam had existed for two sessions. `CORPUS-06`.
+
+⚠ **What it did not find, and saying so is the point:** every other function
+checked has a production caller, and the sweep cannot see a caller that exists
+but is unreachable at run time. That is the driven pass's question.
+
+**What the other passes did not look at:** reachability. The claim audit reads
+documents and the guard mutation reads guards.
+
+### 3. The guard mutation: can the new guards actually fail
+
+⛔ **Every mutation of a tracked file was made against a copy under the ignored
+scratch directory, the live file restored from that copy, and the restored file
+compared against `HEAD` before anything else ran.**
 
 | where | planted | red |
 | --- | --- | --- |
-| `PUB-10` | ten in the workflow, plus the crate's orphan rule and the assembler's path handling | ⛔ eleven of twelve on the first attempt; the `+` refspec passed and was fixed |
-| `CI-05` | seven in the workflow, plus a program made absent | all eight, in both halves |
-| `EMIT-01` | five in the generator | all five, in both halves |
-| `LIB-01` | the release identifier, and a fallback in the selector | both |
-| `LIB-02` | a missing profile, a swapped extension, a dropped cipher, a constant random | all four |
-| `VALID-04` | a corrupted expectation and a corrupted input | both |
-| `EMIT-02` | a reordered list and a length that disagrees with its body | both |
+| `CORPUS-06` | the `normalise` call deleted; the launch gate replaced with `if true`; the provenance `insert` made unreachable | all three, and each took a different case |
+| `TOOL-19` | the check pointed at this repository at `8f031a6`, where thirteen scripts were unlisted | both halves, same thirteen, same exit code |
+| `PUB-12` | a local `data` branch built off `origin/data` with its manifest rewritten to `MIT`, then with its `LICENSE` replaced too | both halves, one problem and then two |
+| `PUB-11` | `corpus/` and `raw/` moved out of the working tree entirely | seven of ten checks resolved off the branch and passed; the three that did not are named in the entry |
 
 ⚠ **Guards NOT mutated, and saying so is the point:** nothing exercised the
-publishing workflow itself, because running it writes to the remote; the
-`for-testing` capture lane has never run; and the cold-start job has never run
-on a cold machine, because this one is warm by definition.
-
-### 3. The claim audit: which sentence is not backed by an artefact
-
-Swept: every number and every pasted block in the eight closings, this file, the
-changelog, the README, the router, the technical reference and the two documents
-the work made stale.
-
-⛔ **Finding: the profile count was wrong in five places.** A sixth profile
-landed and the prose was never compared against the tree, which is the defect
-[`RULES.md`](RULES.md) section 3 exists for, in the five most-read documents.
-Corrected against `b-ids-corpus verify` and `b-ids-corpus anchors`, each of
-whose last line is a fixed count.
-
-⛔ **Finding: two pasted blocks were edited and one number was read off the
-wrong rows.** Both corrected by re-running the command and pasting what came
-back, with the elision stated where a paste genuinely drops lines.
-
-**Claims checked that stood, by re-running the command:** 198 artefacts at
-673814 bytes; 3 triggers over 3 jobs with 2 job-scoped writes and 10 refusals
-driven; 11 cold-start stages over 9 programs; 6 matrix cells and 5 resolving
-holes; 4 vector cases, 5 escape-hatch cases and 4 client cases; the record at
-100 entries, 14 open, 86 done.
+publishing workflow, because running it writes to the remote; the `for-testing`
+capture lane has still never run; and no capture was taken this session, so
+`CORPUS-06`'s fix is proved by its suite rather than by a browser.
 
 ---
 
 ## ⚠ What is in progress
 
-⛔ **Nothing half-edited.** Every entry this session touched is closed in place.
+⛔ **Nothing half-edited.** `PUB-11` is worked and open, and its entry carries
+what landed, what was driven, and the three legs that still reach the corpus
+through code resolving the workspace root.
 
 ---
 
 ## Open questions for the operator
 
-### ⭐ None about the data branch any more, because it exists
+### 1. ⭐ Where does a new capture go once `corpus/` leaves the default branch?
 
-⛔ **The workflow ran and the branch is published.** The push that landed
-`PUB-10` triggered it: the assemble job and the data-branch job both succeeded,
-the release job skipped because no tag was pushed, and `origin/data` carries
-200 files committed by the platform's own actor.
+⚠ **The sequence has an unanswered step in it.** Publish the branch, verify it,
+move the checks, remove `corpus/`: after that last step the data branch is the
+canonical corpus rather than a derivation of it, and two things stop meaning
+what they mean today.
 
-⭐ **Verified, not assumed.** The tree object the branch carries is the tree a
-local build of this corpus produces, compared object for object, which is what
-"byte for byte" means for a branch. `check-data-branch` does that comparison
-now in both halves and reports it as `matched` in its JSON, so the twin row
-proves both halves did it.
+- `check-data-branch` compares the branch against what the canonical corpus
+  derives to. With no canonical corpus in the tree it would compare the branch
+  against itself, so it refuses instead and exits 2.
+- The capture workflow adds a profile by writing `corpus/v1/...` in the working
+  tree and committing it. With the directory gone there is nowhere to write.
 
-⛔ **The next step is the operator's sequence, not a question**: `PUB-11` moves
-the eleven check pairs that read the corpus from the working tree, and only then
-does `corpus/` leave the default branch.
+⭐ **Recommendation: the capture lane opens its pull request against a branch
+that still carries the corpus, and the default branch keeps `corpus/` until a
+capture path that writes to the data branch exists.** ⛔ That makes the removal
+step the LAST one rather than the fourth, and it is a smaller change than making
+a workflow push data.
 
-### ⚠ Two things this session deliberately did not do
+### 2. ⚠ Two documents disagree about whether a session prints a prompt
 
-- ⛔ **No release was cut and no tag pushed.** A tag is the operator's own act,
-  which is why it is the only thing that produces a release.
-- ⛔ **The moving `v1` and `latest` GIT tags are not wired**, and `PUB-10`'s
-  decision says why: a moving tag is a force-update of a ref, and the release
-  pointer gives a consumer the same fetch without listing anything.
+[`RULES.md`](RULES.md) section 10 and [`../docs/AGENTS.md`](../docs/AGENTS.md)
+section 6 both refuse one, in as many words.
+[`../docs/methodology/work-todo.md`](../docs/methodology/work-todo.md) listed one
+as owed at every session boundary. ⭐ **Amended to defer to this project's own
+rule**, so the tree now has one answer.
+
+⚠ **The operator asks for a kick-off prompt at the end of every session**, which
+is the opposite of what the rule says. ⭐ **Recommendation: keep printing it and
+soften the rule to "no prompt is written into the tree"**, which is the defect
+the rule was actually written against: a second copy of the work order going
+stale in a file. A prompt printed in chat and never committed cannot go stale.
+
+### 3. ⚠ The corpus publishes a `HeadlessChrome` User-Agent and will keep doing so
+
+⛔ **Six profiles and every `user-agent` route carry it**, and the corpus is
+append-only, so `CORPUS-06`'s fix reaches only the next capture. ⭐
+**Recommendation: run the capture lane once on each enabled cell**, which
+produces new profiles at new versions carrying the normalised value, rather than
+anything that edits what is published.
 
 ---
 
@@ -203,14 +225,14 @@ does `corpus/` leave the default branch.
 
 ⚠ **Take these in order.**
 
-1. **`PUB-11`**, which is authored and unstarted, and which the operator's
-   sequence puts after the data branch is pushed and verified. Eleven check
-   pairs read the corpus from the working tree.
+1. **`PUB-11`**, which is worked and open. Its entry names three legs that reach
+   the corpus through Rust resolving the workspace root; give them the resolved
+   root and re-run the driven pass for ten of ten.
 2. **`CORPUS-02`**, whose acceptance names four rows and refuses on two.
    ⛔ Both are blocked on one thing: `b_ids_driver::Family` knows two families.
    `firefox` is the higher value: a genuinely different TLS stack.
-3. **`PUB-04`**, which `EMIT-01` has just unblocked: there is a support matrix
-   to ask before a snippet is generated.
+3. **`PUB-04`**, which `EMIT-01` unblocked: there is a support matrix to ask
+   before a snippet is generated.
 4. **`VALID-05`**, the conformance suite, which is what would turn a hole in
    that matrix into a cell for somebody else's stack.
 5. **`HARNESS-11`**, the p0f layer. ⚠ Establish the capability first: a raw
@@ -237,8 +259,8 @@ secret, no release needs a signing key, and no release has shipped.
   data branch is append-only and never force-pushed.
 - **Removing `corpus/` and `raw/` from `main` is sequenced, data branch
   first.** ⛔ Nothing was deleted. The order is: push the data branch and verify
-  it byte for byte; then move the checks that read the corpus from the working
-  tree; then remove it. `PUB-11` is authored for the middle step.
+  it byte for byte; then move the checks that read the corpus; then remove it.
+  ⚠ `PUB-11` is the middle step and open question 1 above is about the last one.
 - **The history reset on `main` is not yet.** ⛔ It is the operator's action,
   after the data is published and verified, and no session force-pushes this
   remote.

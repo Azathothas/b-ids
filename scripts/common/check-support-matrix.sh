@@ -57,6 +57,20 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 }
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-support-matrix: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.sh is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-support-matrix: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
 command -v cargo >/dev/null 2>&1 || { printf 'check-support-matrix: cargo not found\n' >&2; exit 2; }
 command -v jq >/dev/null 2>&1 || { printf 'check-support-matrix: jq not found\n' >&2; exit 2; }
 
@@ -135,7 +149,7 @@ while IFS="$(printf '\t')" read -r stack evidence file line; do
 done < "$OUT/holes.tsv"
 
 # -- 4: every published profile has a cell -----------------------------------
-PROFILES=$(find corpus/v1 -name '*.json' ! -name index.json ! -name latest.json 2>/dev/null | wc -l | tr -d ' ')
+PROFILES=$(find "$CORPUS_ROOT/corpus/v1" -name '*.json' ! -name index.json ! -name latest.json 2>/dev/null | wc -l | tr -d ' ')
 [ "$CELLS" = "$PROFILES" ] ||
   note "the matrix carries $CELLS cell(s) over $PROFILES published profile(s)"
 

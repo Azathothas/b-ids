@@ -64,13 +64,29 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
     exit 2
 }
 Set-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-formats: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     [Console]::Error.WriteLine('check-formats: cargo not found')
     exit 2
 }
 
 # ⛔ 2, not 1. A tree with no corpus has verified nothing about the generator.
-if (-not (Test-Path -LiteralPath (Join-Path $root 'corpus'))) {
+if (-not (Test-Path -LiteralPath (Join-Path $corpusRoot 'corpus'))) {
     [Console]::Error.WriteLine('check-formats: there is no corpus under ' + $root + ', so there is nothing to generate')
     exit 2
 }
@@ -97,9 +113,9 @@ $problems = @()
 # -- 1 and 2: generate twice, and compare the bytes --------------------------
 $logA = Join-Path $out 'a.log'
 $logB = Join-Path $out 'b.log'
-& $bin formats --root $root --out (Join-Path $out 'a') > $logA 2>&1
+& $bin formats --root $corpusRoot --out (Join-Path $out 'a') > $logA 2>&1
 $rcA = $LASTEXITCODE
-& $bin formats --root $root --out (Join-Path $out 'b') > $logB 2>&1
+& $bin formats --root $corpusRoot --out (Join-Path $out 'b') > $logB 2>&1
 $rcB = $LASTEXITCODE
 if ($rcA -ne 0 -or $rcB -ne 0) {
     [Console]::Error.WriteLine('check-formats: the generator exited ' + $rcA + ' then ' + $rcB)

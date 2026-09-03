@@ -62,6 +62,22 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 }
 $root = ($root | Select-Object -First 1).Trim()
 Set-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-publish: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     [Console]::Error.WriteLine('check-publish: cargo not found')
     exit 2
@@ -286,7 +302,7 @@ Invoke-Rule 1 'an orphan commit pushed over an existing branch discards every co
 Invoke-Rule 2 'data-branch with no --parent must not answer append' @('data-branch', '--head', 'abc123')
 
 $tree = Join-Path $out 'tree'
-& $bin publish --root $root --out $tree *> (Join-Path $out 'publish.log')
+& $bin publish --root $corpusRoot --out $tree *> (Join-Path $out 'publish.log')
 if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine("check-publish: the assembler exited $LASTEXITCODE")
     Get-Content -LiteralPath (Join-Path $out 'publish.log') | ForEach-Object { [Console]::Error.WriteLine($_) }

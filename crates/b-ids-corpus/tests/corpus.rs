@@ -595,3 +595,138 @@ fn corpus_takes_each_half_from_its_own_connection() {
         "the decrypted first message belongs to the connection that carried it"
     );
 }
+
+// -- CORPUS-06. The headless normalisation, wired where DRIVER-03 said -------
+//
+// ⛔ Every test name starts with `headless`, because
+// `cargo test -p b-ids-corpus headless` is this entry's acceptance.
+
+/// A capture whose header set carries values, with `user-agent` set to `value`.
+///
+/// ⚠ **The committed fixture is parsed names-only**, which is the default and
+/// what the published corpus mostly holds. A capture that turned values on is
+/// what the normalisation has anything to act on, so this builds one rather
+/// than pretending the default case exercises it.
+fn capture_announcing(value: &str) -> b_ids_harness::Capture {
+    let mut capture = cold_capture();
+    let http2 = capture.http2.as_mut().expect("the fixture reached HTTP/2");
+    http2.headers.retain(|h| h.name != "user-agent");
+    http2.headers.push(b_ids_harness::hpack::HeaderRecord {
+        name: "user-agent".to_owned(),
+        value: Some(value.to_owned()),
+        name_huffman: Some(false),
+        value_huffman: Some(false),
+        indexing: b_ids_harness::hpack::Indexing::Incremental,
+    });
+    capture
+}
+
+/// The identity above, launched without a window.
+fn headless_identity() -> b_ids_corpus::Identity {
+    let mut identity = identity();
+    identity.switches.push("--headless=new".to_owned());
+    identity
+}
+
+/// What the profile publishes for one header, if anything.
+fn header_value(profile: &b_ids_schema::Profile, name: &str) -> Option<String> {
+    profile
+        .http
+        .variants
+        .first()?
+        .headers
+        .iter()
+        .find(|h| h.name == name)
+        .and_then(|h| h.value.clone())
+}
+
+const HEADLESS_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+     HeadlessChrome/999.0.0.0 Safari/537.36";
+
+const WINDOWED_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+     Chrome/999.0.0.0 Safari/537.36";
+
+#[test]
+fn headless_a_capture_taken_without_a_window_publishes_the_windowed_product_token() {
+    let capture = capture_announcing(HEADLESS_UA);
+    let profile = profile_from(&capture, &capture, &headless_identity())
+        .expect("the headless capture converts");
+    assert_eq!(
+        header_value(&profile, "user-agent").as_deref(),
+        Some(WINDOWED_UA),
+        "the product token is the one a windowed build announces"
+    );
+}
+
+#[test]
+fn headless_the_substitution_is_recorded_with_its_reason() {
+    // ⛔ THE MUTATION THIS TEST EXISTS FOR. A normalisation with no provenance
+    // entry beside it is a rewritten capture, which is the one thing this
+    // project cannot ship. Deleting the `insert` in b_ids_driver::headless
+    // leaves the assertion above green and this one red.
+    let capture = capture_announcing(HEADLESS_UA);
+    let profile = profile_from(&capture, &capture, &headless_identity())
+        .expect("the headless capture converts");
+    let entry = profile
+        .provenance
+        .get("http.headers.user-agent")
+        .expect("the rewritten field carries a provenance entry");
+    assert_eq!(entry.kind, b_ids_schema::ProvenanceKind::Substituted);
+    assert_eq!(
+        entry.reason.as_deref(),
+        Some(b_ids_driver::headless::REASON)
+    );
+}
+
+#[test]
+fn headless_a_windowed_launch_is_left_alone_even_where_the_value_carries_the_token() {
+    // ⛔ THE GATE IS THE LAUNCH, NOT THE VALUE. A build that announced a
+    // headless token with a window on screen is announcing its own value, and
+    // rewriting one this project did not cause is the failure it is about.
+    let capture = capture_announcing(HEADLESS_UA);
+    let profile =
+        profile_from(&capture, &capture, &identity()).expect("the windowed capture converts");
+    assert_eq!(
+        header_value(&profile, "user-agent").as_deref(),
+        Some(HEADLESS_UA),
+        "a windowed capture is published exactly as it arrived"
+    );
+    assert!(
+        profile.provenance.get("http.headers.user-agent").is_none(),
+        "and nothing claims a substitution that did not happen"
+    );
+}
+
+#[test]
+fn headless_a_windowed_value_from_a_headless_launch_is_not_marked_substituted() {
+    // ⚠ The capture-with-values path exists on a lane that turned values on;
+    // a headless launch whose User-Agent carries no headless token is a build
+    // that did not rewrite it, and marking that field substituted would be a
+    // claim about a value nobody changed.
+    let capture = capture_announcing(WINDOWED_UA);
+    let profile = profile_from(&capture, &capture, &headless_identity())
+        .expect("the headless capture converts");
+    assert_eq!(
+        header_value(&profile, "user-agent").as_deref(),
+        Some(WINDOWED_UA)
+    );
+    assert!(profile.provenance.get("http.headers.user-agent").is_none());
+}
+
+#[test]
+fn headless_the_switch_that_says_so_is_published_beside_the_substitution() {
+    // ⭐ A consumer can see the condition the substitution was made under,
+    // because the launch mode reaches `captured.switches` unredacted.
+    let capture = capture_announcing(HEADLESS_UA);
+    let profile = profile_from(&capture, &capture, &headless_identity())
+        .expect("the headless capture converts");
+    assert!(
+        profile
+            .captured
+            .switches
+            .iter()
+            .any(|s| s == "--headless=new"),
+        "the switches are {:?}",
+        profile.captured.switches
+    );
+}

@@ -1,6 +1,6 @@
 # architecture.md
 
-⭐ **The technical reference.** What a profile is, what the five components do to
+⭐ **The technical reference.** What a profile is, what the eight crates do to
 one, what state a capture passes through, and where the limits are. ⛔ When two
 documents in this tree disagree about a technical fact, this one settles it;
 [`conventions/docs.md`](conventions/docs.md) is the rule that says so.
@@ -29,7 +29,7 @@ gone. [`../crates/b-ids-schema/src/provenance.rs`](../crates/b-ids-schema/src/pr
 | `http` | one header set per request kind, in wire order | [`../crates/b-ids-schema/src/http.rs`](../crates/b-ids-schema/src/http.rs) |
 | `raw` | the bytes, so this project's own parser can be checked against them | [`../crates/b-ids-schema/src/profile.rs`](../crates/b-ids-schema/src/profile.rs) |
 | `captured` | the conditions: when, by what, under which trust and resumption configuration, with which switches | the same file |
-| `digests` | ⚠ empty. Nothing here computes JA3 or JA4 yet, and a digest from an unverified implementation is the fabricated value this project refuses. `VALID-04`. | the same file |
+| `digests` | ⚠ null on every published profile, and it stays null. A digest is DERIVED from a profile on demand rather than stored in it, so the append-only corpus never carries a value a later reading might correct. ⛔ JA3 is not implemented and no JA4+ member is. Section 4 says where the derivation lives. | the same file |
 
 ⛔ **The published contract is a file, not a doc comment.**
 [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json)
@@ -38,14 +38,14 @@ types about every integer's width.
 
 ---
 
-## 2. Five components, and what each is not
+## 2. Eight crates, and what each is not
 
 | crate | what it does | ⛔ what it is not |
 | --- | --- | --- |
-| [`b-ids-schema`](../crates/b-ids-schema/) | the model, its refusals, and the published JSON schema | it captures nothing and reaches no network |
-| [`b-ids-harness`](../crates/b-ids-harness/) | a SERVER that accepts connections and reads what arrived: the hello, the frames, the headers | ⛔ not a client. It never asks a browser what it sends; it reads what the browser put on a socket. |
+| [`b-ids-schema`](../crates/b-ids-schema/) | the model, its refusals, the published JSON schema, and the rendered digest lists | it captures nothing and reaches no network |
+| [`b-ids-harness`](../crates/b-ids-harness/) | a SERVER that accepts connections and reads what arrived: the hello, the frames, the headers. It also hashes a JA4, because SHA-256 has one home and it is here | ⛔ not a client. It never asks a browser what it sends; it reads what the browser put on a socket. |
 | [`b-ids-driver`](../crates/b-ids-driver/) | resolves a browser on the machine, reports what the vendor is serving, and launches one at a URL into a profile nobody keeps | it parses no bytes |
-| [`b-ids-corpus`](../crates/b-ids-corpus/) | turns a capture into a profile, publishes it at its route, and verifies the whole store | ⛔ it never edits a published profile. A correction is a NEW profile naming the one it replaces. |
+| [`b-ids-corpus`](../crates/b-ids-corpus/) | turns a capture into a profile, publishes it at its route, verifies the whole store, and assembles the tree that leaves this repository | ⛔ it never edits a published profile. A correction is a NEW profile naming the one it replaces. |
 | [`b-ids-validator`](../crates/b-ids-validator/) | pure logic over the model: could a real browser have sent this? | ⛔ it does not warn. Every check answers passed, failed, or not-checkable. |
 | [`b-ids-emit`](../crates/b-ids-emit/) | turns a profile back into the bytes a `ClientHello` carries, and generates the support matrix from a run | ⛔ it refuses rather than approximating. A hello it cannot write byte for byte is a refusal naming every reason. |
 | [`b-ids`](../crates/b-ids/) | hands a program a profile, with the corpus embedded at build time | ⛔ it never fetches and never substitutes. A platform this project has not captured returns nothing. |
@@ -98,16 +98,36 @@ project's rules are mostly about one of them.**
 
 ## 4. What is published, and what is derived
 
+⭐ **One assembler builds everything that leaves this repository, and both
+surfaces take what it produced.**
+[`../crates/b-ids-corpus/src/publish.rs`](../crates/b-ids-corpus/src/publish.rs)
+writes a tree carrying the corpus, the raw bytes, the generated formats, the
+flat routes, the per-build anchor lists, the digest vectors, a manifest and a
+checksums file. ⛔ It reads no clock and it writes to no remote: a workflow
+pushes what it built, and the manifest is stamped with a digest of the corpus,
+so a rebuild is byte-identical and a change is not.
+
+| surface | state |
+| --- | --- |
+| the `data` branch | ⭐ published. `origin/data` carries that tree. Every push to the default branch appends to it, a push that would change nothing is a no-op, and ⛔ it is never force-pushed. |
+| a tagged release | ⚠ none. A pushed tag is the only thing that cuts one, and pushing one is the operator's act. |
+
+⭐ **A digest is derived, never stored.**
+[`../crates/b-ids-schema/src/tls.rs`](../crates/b-ids-schema/src/tls.rs) renders
+JA4's sorted lists and its two raw forms and
+[`../crates/b-ids-harness/src/digest.rs`](../crates/b-ids-harness/src/digest.rs)
+hashes them, both from the model rather than from bytes, so one parser answers
+for every consumer. ⛔ **No digest route is generated**, because a route exists
+only where the corpus holds the value and the corpus holds none.
+[`../TODO/publish.md`](../TODO/publish.md) and
+[`../TODO/validator.md`](../TODO/validator.md) carry both rules.
+
 | path | written by | ⛔ rule |
 | --- | --- | --- |
 | `corpus/v1/<route>/<version>.json` | `b-ids-corpus add` | append-only. Never edited, never deleted. |
 | `raw/v1/<route>/<version>.hello.hex` | the same | the bytes the profile was read from, one line, no trailing newline |
 | `corpus/v1/index.json` | `b-ids-corpus index --write` | ⭐ DERIVED. It is rewritten from the tree and is exempt from the append-only rule. |
 | `corpus/v1/latest.json` | the same | DERIVED, and `latest` means the newest STABLE build. `CORPUS-03`. |
-
-⚠ **Nothing is published outside this repository yet.** There is no release, no
-data branch and no fetchable route; `PUB-01`, `PUB-02` and `PUB-03` are those
-three surfaces. [`../TODO/publish.md`](../TODO/publish.md).
 
 ---
 
@@ -118,8 +138,9 @@ three surfaces. [`../TODO/publish.md`](../TODO/publish.md).
   runner image shipped and record `captured.acquisition: null`; three name the
   URL and the digest they were installed from.
   [`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`, is the matrix.
-- **No digest is computed.** `digests` is empty on every profile and will stay
-  empty until a reference implementation is verified against published vectors.
+- **No digest is stored in a profile**, by the rule in section 4, and ⛔ JA3 is
+  not computed anywhere: it is an MD5, this tree links no MD5, and a digest that
+  changes with a browser's per-connection shuffle is not one to assert on.
 - **Every capture went through a per-launch key pin**, and on ONE platform that
   is now measured to cost nothing: on `ubuntu-latest` with Chrome `151`, 19 TLS
   fields compared against a root in the store the browser reads, 0 differing.

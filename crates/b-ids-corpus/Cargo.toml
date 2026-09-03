@@ -35,6 +35,12 @@ b-ids-harness = { path = "../b-ids-harness" }
 # ⚠ The reverse edge would have cost the harness: b-ids-validator would have
 # had to link this crate, and this crate links the TLS terminator.
 b-ids-validator = { path = "../b-ids-validator" }
+# ⛔ THE SEAM DRIVER-03 NAMED. Turning a capture into a profile is this crate's
+# job, and what a headless launch did to a header is the driver's knowledge of
+# its own launch mode. The edge is cheap: b-ids-driver depends on b-ids-schema
+# and nothing else, so this adds no third-party linkage at all.
+# TODO/corpus.md, CORPUS-06.
+b-ids-driver = { path = "../b-ids-driver" }
 serde.workspace = true
 serde_json.workspace = true
 

@@ -16,10 +16,11 @@ tool for it lives upstream rather than here.
 [`../docs/agent-tooling.md`](../docs/agent-tooling.md) is where it lives.
 
 ⚠ **`common/mine-repo` is here and has no section of its own below.** It fetches
-what a reference sweep needs and keeps it;
+what a reference sweep needs and keeps it, and
 [`../docs/methodology/references.md`](../docs/methodology/references.md) is the
-procedure it serves, and `TOOL-04` in [`../TODO/tooling.md`](../TODO/tooling.md)
-is an open defect in it found by running it.
+procedure it serves. ⭐ Its twin is compared on its offline self-test rather
+than on a fetch: the tool needs the network and the self-test does not, so what
+the comparison covers is the argument handling and the refusals.
 
 ---
 
@@ -78,7 +79,6 @@ with a fixture, not by trusting the comparison to notice.
 | [`common/set-record.mjs`](common/) | ⛔ **It does not need one**, and for the same reason as `write-file.mjs` below: it is node. ⚠ What it would cost to give it one is the thing to notice: a twin here means a second implementation of table arithmetic, which is a second place for that arithmetic to be wrong, in the one file whose whole job is that the arithmetic is right. |
 | [`common/write-file.mjs`](common/) | ⛔ **It does not need one.** It is node, and node is the same program on every host: no `sed`, no `sort`, no shell built-ins, no aliases. The reason the sh checks needed twins does not apply to it. ⚠ What it needs instead is node itself, which is the one dependency anything under `scripts/` has, and the reason a project may decline this helper rather than inherit it. |
 | [`common/check-twins.sh`](common/) | ⛔ **It cannot have one.** It works by running both halves of every pair, so it needs a POSIX shell to run the sh half no matter what language it is written in. A PowerShell twin would still require `sh`, which is the exact dependency a twin exists to remove. It is a maintainer's tool and it runs where both implementations do: this machine, and the CI job that has `pwsh` on an Ubuntu runner. |
-| [`common/mine-repo.sh`](common/) | ⚠ **It has a twin and the pair is NOT compared**, which is a defect rather than a decision. It needs the network, which is why it was left off the list. ⭐ Its offline self-test does not, and comparing that is `TOOL-05`. |
 
 ⭐ **The question to ask is whether the JOB exists on the other platform, not
 whether the language does.** Every check in `common/` passes that test, which is
@@ -250,6 +250,37 @@ differently, and the corpus is somebody else's writing.
 
 ⚠ **It compares sentences**, so a fact restated in different words passes here
 and fails a review instead. That is the same split every other prose rule has.
+
+### `common/check-catalogues.sh`
+
+Is every script and every document named by the catalogue that claims to list
+it?
+
+⛔ **A catalogue nothing checks stops being a catalogue.**
+[`../docs/AGENTS.md`](../docs/AGENTS.md) calls this file the contract every
+script is held to, and carries its own table of what each document owns. Neither
+was ever compared against the tree: measured 2026-09-03, thirteen of the checks
+the gate runs had no section here at all, and the gate had been green over that
+for four sessions. [`../TODO/tooling.md`](../TODO/tooling.md), `TOOL-19`.
+
+Two rules, and they are the only two. Every script under
+[`.`](.) is named here, with a twin pair collapsing to one base name because a
+pair is one contract. Every document under [`../docs/`](../docs/) is named by
+its index: the router for the tree, and
+[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) for the history
+directory, which has its own because a superseded page is not routed to.
+
+⛔ **It does not read the prose.** Whether a section is any good is a review, and
+a guard that tried to judge one would either pass vacuously or refuse legitimate
+writing. What it holds is that the row exists.
+
+⚠ **The other direction is already held.** `check-docs` resolves every cited
+path in every markdown file here, so a catalogue naming a file the tree does not
+have fails there rather than twice.
+
+⭐ **It counts untracked files too**, and that was found by running it: the first
+version asked `git ls-files` alone and reported a clean catalogue while its own
+half sat unlisted and uncommitted beside it.
 
 ### `common/check-twins.sh`
 
@@ -611,6 +642,262 @@ run: no runner has executed the purge or the install. Seven green refusals over
 a tool whose working path is unmeasured is exactly as much as it claims and no
 more.
 
+### `common/check-workflows.sh`
+
+Does every workflow declare the four things that decide whether a run produces
+data or nothing?
+
+⛔ **A matrix cancels every lane when one fails, by default**, so a workflow
+acquires that behaviour by saying nothing and the cost is invisible until the
+night a run that captured twenty-seven profiles publishes none of them. The
+four are `fail-fast: false` on every matrix job, a `timeout-minutes` on every
+job, `if: always()` on a job whose `needs` names one that fans out, and a
+40-character commit on every `uses:`. A fifth is not about matrices: a workflow
+with no top-level `permissions:` inherits whatever the repository grants.
+
+⚠ **It reads the block structure rather than grepping**, because
+`fail-fast: false` appearing anywhere in a file says nothing about which job
+carries it. ⛔ It is not a YAML parser and does not pretend to be: the CI step
+that runs a real YAML library over every workflow is what proves they parse.
+
+### `common/check-coverage.sh`
+
+Which cells of the planned capture matrix have a profile, and which have none?
+
+⭐ **One matrix, two readers.** [`../.github/capture-matrix.json`](../.github/capture-matrix.json)
+is the plan; the capture workflow builds its job matrix from it and this reads
+the same file to say what landed, so the plan and the report cannot disagree.
+
+⛔ **A planned cell that was not attempted is reported, never dropped.** Every
+cell gets a row: `captured`, `absent`, or `not-attempted` where the plan says
+the cell is not enabled. A report listing only what was tried cannot show what
+is missing, which is the one thing a coverage report is for.
+
+⚠ **The corpus side comes from the derived index**, not from a shell walk of
+the directory, because a second implementation of the layout rule is the thing
+[`common/check-corpus.sh`](common/) already refuses to be.
+
+### `common/check-formats.sh`
+
+Does every published format come out of the one generator, round-trip, and
+produce the same bytes twice?
+
+⛔ **JSON is one consumer, not the consumer.** A corpus reachable only by
+writing a JSON walker is one most people copy values out of by hand, and a
+value copied by hand stops matching the day the build moves.
+[`../TODO/schema.md`](../TODO/schema.md), `SCHEMA-08` and `SCHEMA-12`.
+
+Six assertions: every format regenerates from the canonical corpus; two runs
+are byte-identical; the lossless ones round-trip to byte-identical canonical
+JSON; the partial ones carry the documented subset and say what they leave out;
+every format the support matrix names has a file and every one it records as
+declined has none; and the SQLite dump loads into a real database where
+`sqlite3` is present.
+
+⚠ **It generates into a throwaway directory and never into the tree.** The
+published copies are assembled by the publish path from the same generator, so
+⛔ **a generated format is never hand-edited**: if one ever is, the generator
+has lost and this is what says so.
+
+### `common/check-line-endings.sh`
+
+Do the index **and** the working tree carry the line endings this repository
+declares?
+
+⭐ **Two columns, and they are different facts.** `git ls-files --eol` reports
+both: the index column says what a commit will contain, the working-tree column
+says what an editor, a compiler and Windows PowerShell 5.1 actually read. The
+rule used to read the index alone, and eight files became CRLF on disk in one
+session with the gate green throughout.
+[`../TODO/tooling.md`](../TODO/tooling.md), `TOOL-17`.
+
+⛔ **The rule is what the attributes declare, never a fixed value.** A rule
+matching `*.ps1` here would be a second answer to a question git already
+answers, and it would be wrong: the reference corpus carries its own
+`.gitattributes` files. Four states are out of scope and each says why in the
+script: declared binary, detected binary, no line ending at all, and no
+declared `eol`.
+
+### `common/check-license-consistency.sh`
+
+Do the places that state this project's licence all state the same one?
+
+⛔ **A file that travels alone still has to say what it is.** A consumer who
+downloads one profile should not have to find this repository to learn they may
+use it. [`../TODO/publish.md`](../TODO/publish.md), `PUB-07`.
+
+⭐ **One home, and everything generated reads it**: the constant in
+`b_ids_schema`. The workspace manifest, the published JSON schema, the corpus
+index, every published profile and the release body are compared against it.
+
+⚠ **The six profiles published before 2026-09-03 do not carry the field**, and
+that is recorded rather than repaired: the corpus is append-only, so adding it
+would be an edit of a published file. A profile that carries the field must
+agree; one that does not is counted and reported.
+
+⭐ **And the data branch, which is the one surface a consumer fetches.** Both
+its manifest identifier and the bytes of the `LICENSE` it carries are compared,
+from a local ref rather than a fetch, so the gate acquires no network
+dependency. ⚠ No local ref is a skip naming the branch.
+[`../TODO/publish.md`](../TODO/publish.md), `PUB-12`.
+
+### `common/check-support-matrix.sh`
+
+Is every cell in the support matrix produced by a run, and does every hole
+still point at something?
+
+⛔ **A published table somebody maintains by hand goes stale the day a hole
+closes and nobody notices**, so there is no committed matrix: this runs the
+generator. [`../TODO/emitters.md`](../TODO/emitters.md), `EMIT-01`.
+
+Five assertions, and the last is the one that keeps the table honest: every
+cell is evidence `run` and carries the command that reproduces it; every hole
+is evidence `read`, names a path under [`../references/`](../references/) and a
+line, and that path and line still resolve; every published profile has a cell;
+and ⭐ **there is at least one hole**, because a matrix with none is one nobody
+filled honestly.
+
+⚠ **A hole is not a cell.** This tree can run exactly one emitter, its own.
+Every other stack was read, at a file and a line, in a tree held at a named
+commit, and those are different kinds of knowledge.
+
+### `common/check-trust-anchors.sh`
+
+Does every profile carrying the trust-anchor extension have a published list
+with a capture date, and does the recommendation state all three options?
+
+⛔ **One extension carries a snapshot of the browser's own root store**, so a
+client copying one build's list is advertising which build it copied. It
+changes on a different schedule from everything else a profile carries, which
+is why the lists are published beside the corpus rather than inside a profile.
+[`../docs/trust-anchors.md`](../docs/trust-anchors.md) is the page,
+[`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-04`, is the entry.
+
+⚠ **It refuses a vacuous pass.** A corpus in which no profile carried the
+extension would satisfy the first rule by having nothing to check, which is the
+acceptance-that-cannot-fail row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+It exits 2 there and says so.
+
+### `common/check-pr-body.sh`
+
+Would a scheduled run that found a change open a pull request a reviewer can
+act on, and would a run that found nothing stay silent?
+
+⛔ **An issue is a request for somebody else to do work.** A pull request with
+the work already in it is the deliverable.
+[`../TODO/ci.md`](../TODO/ci.md), `CI-04`.
+
+⚠ **The assertions are the crate's**, and this runs that suite rather than
+re-stating them: a second idea of what a body must carry would disagree with
+the crate's the first time either moved. On top of it, an end-to-end leg drives
+the generator over the real corpus, and ⛔ **a no-op change opens nothing at
+all**, because a bot that writes on a schedule trains people to ignore it.
+
+⛔ **`--fixture` is required**, for the same reason `latest` requires
+`--assert-stable`: a run with no argument would read as though it had checked a
+real pull request.
+
+### `common/check-release.sh`
+
+Would a release build produce the same bytes twice, and would it refuse to
+overwrite a tag somebody has already pinned?
+
+⛔ **A consumer that pins a release and gets different bytes later has been
+broken silently.** [`../TODO/publish.md`](../TODO/publish.md), `PUB-01`.
+
+Four assertions: two builds over one corpus are byte-identical artefact by
+artefact; the crate's own release suite passes; the tag this build would take
+does not already exist, read from git rather than assumed; and a deterministic
+archive is byte-identical over two runs where this host's `tar` can make one.
+⚠ **A skip is reported as a skip.**
+
+⛔ **It publishes nothing.** `--dry-run` is required and is the only mode, so a
+run with no argument cannot read as though it had cut a release.
+
+### `common/check-data-branch.sh`
+
+Is what the data branch would carry exactly what the corpus derives to, and
+would a push that rewrote it be refused?
+
+⛔ **A consumer pinning a commit on the data branch keeps working forever**, and
+that property is free right up until somebody rewrites the branch.
+[`../TODO/publish.md`](../TODO/publish.md), `PUB-02`.
+
+It regenerates the tree from the canonical corpus and nothing else, asserts two
+builds are byte-identical, requires every file to carry a checksum in both the
+manifest and the checksums file, asserts the source and the vendored and
+reference trees are absent, and drives the crate's rewrite refusal.
+
+⭐ **And it compares against what is actually published**, as two git tree
+objects rather than file by file. [`../TODO/publish.md`](../TODO/publish.md),
+`PUB-02`, says what that comparison covers. ⚠ That leg
+reported a skip for as long as the branch did not exist, and kept reporting one
+for a while after it did; the answer is in the JSON as `matched` now, so the
+twin comparison can see whether both halves did it.
+
+### `common/check-publish.sh`
+
+Does the workflow that publishes this project declare what it must, and do the
+rules it defers to actually refuse?
+
+⛔ **The first thing a trigger can get wrong is irreversible**: a force push
+over the data branch discards every commit a consumer pinned.
+[`../TODO/publish.md`](../TODO/publish.md), `PUB-10`.
+
+Eight assertions. The three ruled triggers are declared; the write is
+job-scoped, so the job that decides whether a push may happen cannot itself
+push; the word for a personal access token does not appear at all; no `git push`
+line carries a force flag or a leading `+` in its refspec; the crate's rule is
+consulted before the push by line order; both publishing jobs need the job that
+runs the release and data-branch checks; the archive epoch is read from
+[`common/check-release.sh`](common/) rather than typed twice; and ⭐ **the
+refusals are driven against the built binary**, each exit code read from the
+process that produced it.
+
+⚠ **The force-push rule reads one line at a time.** A `git push` split across a
+backslash continuation would hide a flag from it, and no such line exists here.
+
+### `common/check-cold-start.sh`
+
+Is the cold-start job still cold, and does everything a cold pipeline names
+still resolve on this host?
+
+⛔ **Every warm run passes over a broken cold path.** A dead URL, a removed
+field or a renamed flag is invisible until the day somebody needs a capture.
+[`../TODO/ci.md`](../TODO/ci.md), `CI-05`.
+
+Five assertions: the workflow exists, runs on a schedule and can be dispatched
+by hand; ⛔ **no cache of any kind**, because a cold-start job that shares one
+has stopped being one while continuing to report as one; its concurrency group
+is its own; every stage carries an id and the report step names all of them and
+runs whatever happened; and ⭐ **the resolution probe**, which is the one list
+of the programs a cold pipeline needs, read by the workflow's own first step so
+it does not live in two places.
+
+⚠ **On a laptop a missing tool is a report and not a failure**, and on a runner
+`--require-tools` makes it a failure, which is the same split `--strict` makes
+in the gate.
+
+### `common/check-notes-generator.sh`
+
+Do the release body and the changelog entry come out of one generator, and do
+they agree fact for fact?
+
+⛔ **Release notes and a changelog written separately drift**, and the reader
+who trusts the wrong one is the one who was doing something careful.
+[`../TODO/publish.md`](../TODO/publish.md), `PUB-08`.
+
+Four assertions: over one corpus change the two outputs carry every fact the
+model holds; two runs produce identical text; a no-op change produces nothing
+at all, because silence is the correct output for a browser that did not
+change; and ⛔ **the comparison can fail**, proved by a fixture whose two
+outputs are generated from different inputs and asserted not to agree.
+
+⚠ **The assertions are the crate's.** A second comparison written here would be
+a second idea of what "agree" means, disagreeing with the crate's the first time
+either moved.
+
 ### `common/check-gate.sh`
 
 ⭐ **Run every local gate this host can run, in one command.** Part (a) of
@@ -685,6 +972,38 @@ deliberately not to "read only": writing is what they are for.
 ⛔ **A helper refuses rather than guessing.** Both of the ones below stop and
 write nothing when what they were asked for does not match what they found, and
 that is the property that matters more than which list they appear in.
+
+### `common/corpus-root.sh`
+
+Where is the corpus this run should read?
+
+⛔ **Twelve checks read the corpus and every one of them assumed the working
+tree**, which is leaving the default branch.
+[`../TODO/publish.md`](../TODO/publish.md), `PUB-11`. This is the one answer to
+the question, and no check carries a second one.
+
+The order, and ⚠ **it is not the order the entry proposed**:
+`B_IDS_CORPUS_ROOT` if it is set, then the working tree if that holds a corpus,
+then a materialised copy of the data branch under `.tmp/`. Preferring the branch
+while both exist would have every check read the PUBLISHED corpus and report
+green over the one the session is about to publish.
+
+⛔ **An explicit root is never second guessed.** A `B_IDS_CORPUS_ROOT` holding
+no corpus exits 2 rather than falling through to something the caller did not
+ask for.
+
+⭐ **It exports nothing and prints one path**, so a caller reads it through a
+command substitution. `--ref` prints the ref the answer came from, which is
+empty for the working tree and is what `check-corpus` needs: its own question is
+about a history rather than about files on disk. `--json` reports the source and
+the profile count, and `--fixture` drives the branch fallback against a tree
+with no corpus in it.
+
+⚠ **The branch is materialised through a temporary index and
+`git checkout-index`**, never `tar` and never a pipe: the two `tar` builds this
+project meets disagree about flags, PowerShell is not byte-exact through a
+native pipe, and a worktree would have to be unregistered afterwards. ⛔ This
+repository's own index is never opened.
 
 ### `common/write-file.mjs`
 

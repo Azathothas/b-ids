@@ -67,9 +67,18 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-staleness: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.sh is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-staleness: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+
 command -v node >/dev/null 2>&1 || { printf 'check-staleness: node not found\n' >&2; exit 2; }
 
-[ -n "$CORPUS" ] || CORPUS="corpus/v1"
+[ -n "$CORPUS" ] || CORPUS="$CORPUS_ROOT/corpus/v1"
 POINTER="$CORPUS/latest.json"
 [ -f "$POINTER" ] || {
   printf 'check-staleness: no pointer file at %s\n' "$POINTER" >&2

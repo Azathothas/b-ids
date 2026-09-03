@@ -2284,3 +2284,155 @@ this entry is still listed.
 ⭐ **The fast gate went from about 600 seconds to 246**, measured on this host
 with `check-provisioning` newly inside it, so the comparison is against a gate
 that now runs one more check than the one that cost 600.
+
+---
+
+## TOOL-19. A catalogue nothing checks stops being a catalogue
+
+**Source** found by this session's consolidation pass, 2026-09-03, comparing the documents against the tree
+**Category** tooling, **Priority** P1, **Effort** M, **Status** done
+
+### Problem
+
+[`../docs/AGENTS.md`](../docs/AGENTS.md) sends a session writing a script to
+[`README.md`](../scripts/README.md), calling it the contract every script is
+held to, and sends a session writing a document to the router's own table of
+what each document owns. ⛔ **Neither catalogue is checked against the tree**,
+so a script or a document arrives, the catalogue is not touched, and the gate
+stays green over a contract that no longer covers the thing it claims to.
+
+### Premise
+
+⭐ **Measured on this tree, 2026-09-03, before the consolidation pass ran.**
+
+```bash
+for f in $(ls scripts/common | sed 's/\.\(sh\|ps1\|mjs\)$//' | sort -u); do
+  grep -q "$f" scripts/README.md || echo "$f"
+done
+```
+
+```text
+check-cold-start
+check-coverage
+check-data-branch
+check-formats
+check-license-consistency
+check-line-endings
+check-notes-generator
+check-pr-body
+check-publish
+check-release
+check-support-matrix
+check-trust-anchors
+check-workflows
+```
+
+⚠ **Thirteen of the checks the gate runs had no section at all**, and two more
+carried rows naming entries that had closed four sessions earlier. The document
+half was the same shape: the technical reference had no row in the set table of
+[`../docs/conventions/docs.md`](../docs/conventions/docs.md), which is the
+document that says a role with no file behind it is a defect.
+
+### Approach
+
+One check pair, `check-catalogues`, holding the two rules a machine can hold.
+
+- ⭐ **Every script is named by [`README.md`](../scripts/README.md).** Twins
+  collapse to one base name, because a pair is one contract.
+- ⭐ **Every document under [`../docs/`](../docs/) is named by its index**:
+  [`../docs/AGENTS.md`](../docs/AGENTS.md) for the tree, and
+  [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) for the history
+  directory, which has its own because a superseded page is not routed to.
+- ⚠ **Both directions, on the paths.** A catalogue naming a file the tree does
+  not have is the `TOOL-10` defect, and it is the same reading.
+
+⛔ Must not: assert prose. Whether a section is any good is a review, and a
+guard that tried would either pass vacuously or refuse legitimate writing.
+⛔ Must not: exempt by a list that grows. An exemption is a row somebody has to
+delete, and this tree has had one of those go stale already.
+
+### Prove
+
+```bash
+sh scripts/common/check-catalogues.sh
+```
+
+Passing means exit 0 with every script and every document named by its
+catalogue, and the refusal fixtures reporting that a missing script section and
+a missing document row are each refused.
+
+### Closing
+
+**Closed 2026-09-03T13:07:00Z.** One check pair, in the gate and in
+`check-twins`, holding the two rules a machine can hold.
+
+```text
+$ sh scripts/common/check-catalogues.sh
+catalogues ok: 44 script(s) named by scripts/README.md, 28 document(s)
+named by the index that owns each one.
+exit=0
+
+$ sh scripts/common/check-catalogues.sh --fixture
+check-catalogues fixture ok: an unlisted script and an unlisted document
+are both refused.
+exit=0
+```
+
+### ⭐ It was run against the tree it was written for, and it refuses it
+
+⛔ **A guard that has only ever been seen to pass is theatre**, so the check was
+pointed at this repository as it stood before the consolidation, at commit
+`8f031a6`, exported into a scratch directory and read with `--fixtures`. ⚠ That
+mode walks the filesystem rather than asking git, because a tree that is not
+this repository has no index to ask.
+
+```text
+$ git archive 8f031a6 scripts docs | tar -x -C .tmp/head-tree
+$ sh scripts/common/check-catalogues.sh --fixtures .tmp/head-tree
+catalogue check failed, 13 of 43 script(s) and 27 document(s):
+
+  check-cold-start has no mention in scripts/README.md
+  check-coverage has no mention in scripts/README.md
+  check-data-branch has no mention in scripts/README.md
+  check-formats has no mention in scripts/README.md
+  check-license-consistency has no mention in scripts/README.md
+  check-line-endings has no mention in scripts/README.md
+  check-notes-generator has no mention in scripts/README.md
+  check-pr-body has no mention in scripts/README.md
+  check-publish has no mention in scripts/README.md
+  check-release has no mention in scripts/README.md
+  check-support-matrix has no mention in scripts/README.md
+  check-trust-anchors has no mention in scripts/README.md
+  check-workflows has no mention in scripts/README.md
+
+A script gets a section in scripts/README.md and a document gets a row
+in the index that routes to it. docs/conventions/docs.md.
+exit=1
+```
+
+⭐ **The PowerShell half prints the same thirteen and the same exit code** over
+the same directory, which is how the pair was compared before `check-twins` ran
+over it.
+
+### ⛔ The check's own first run found a defect in the check
+
+**It asked `git ls-files` alone**, and reported a clean catalogue of 43 scripts
+while its own half sat beside it, written that minute, unlisted and uncommitted.
+⛔ **A script written this minute is the one most likely to be missing from the
+catalogue**, and it was the one the scope could not see.
+
+`check-docs` had already learned this and says so in its own header. Both halves
+now read the tracked list plus the untracked-but-not-ignored one, and the count
+went from 43 to 44 the moment it could see itself.
+
+### ⚠ What this does NOT hold, and the boundary is the point
+
+| | |
+| --- | --- |
+| whether a section says anything true | ⛔ a reading. A guard over prose either passes vacuously or refuses legitimate writing, and [`../docs/methodology/reviews.md`](../docs/methodology/reviews.md) lens 3 is what owns it |
+| whether a catalogue names a file that is gone | `check-docs`, which resolves every cited path in every markdown file here. ⛔ Two checks holding one rule is two places for it to be wrong |
+| whether an entry a document cites is still open | ⚠ nothing holds it, and this session found three rows naming closed entries as open. A grep for that shape has no honest form: the phrasing is prose |
+
+⛔ **And it does not exempt anything.** An allowlist is a row somebody has to
+delete, and [`RULES.md`](RULES.md) section 4 already carries what a stale
+exemption cost here.

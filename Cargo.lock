@@ -76,6 +76,7 @@ version = "0.0.0"
 name = "b-ids-corpus"
 version = "0.0.0"
 dependencies = [
+ "b-ids-driver",
  "b-ids-harness",
  "b-ids-schema",
  "b-ids-validator",

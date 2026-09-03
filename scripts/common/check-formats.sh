@@ -27,9 +27,9 @@
 # generator has lost, and this is what says so.
 #
 # ⚠ IT GENERATES INTO A THROWAWAY DIRECTORY under .tmp and never into the tree.
-# Nothing in this repository publishes generated formats yet: PUB-02 and PUB-03
-# are the surfaces that will, and this check exists before them so the generator
-# is proved before anything depends on it.
+# The published copies are assembled by the publish path from this same
+# generator, which is what makes them checkable here before anything fetches
+# them. TODO/publish.md, PUB-02 and PUB-03, are the surfaces that carry them.
 #
 # Usage:
 #   sh scripts/common/check-formats.sh
@@ -65,11 +65,25 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 }
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-formats: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.sh is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-formats: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
 command -v cargo >/dev/null 2>&1 || { printf 'check-formats: cargo not found\n' >&2; exit 2; }
 
 # ⛔ 2, not 1. A tree with no corpus has verified nothing about the generator,
 # which is a different fact from a generator that produced a bad file.
-[ -d "$REPO_ROOT/corpus" ] || {
+[ -d "$CORPUS_ROOT/corpus" ] || {
   printf 'check-formats: there is no corpus under %s, so there is nothing to generate\n' \
     "$REPO_ROOT" >&2
   exit 2
@@ -99,9 +113,9 @@ note() {
 #
 # ⛔ READ FROM THE PROCESS, UNPIPED. A guard on the left of a pipe reports the
 # pipeline's status, so one that failed reads as green.
-"$BIN" formats --root "$REPO_ROOT" --out "$OUT/a" > "$OUT/a.log" 2>&1
+"$BIN" formats --root "$CORPUS_ROOT" --out "$OUT/a" > "$OUT/a.log" 2>&1
 rc_a=$?
-"$BIN" formats --root "$REPO_ROOT" --out "$OUT/b" > "$OUT/b.log" 2>&1
+"$BIN" formats --root "$CORPUS_ROOT" --out "$OUT/b" > "$OUT/b.log" 2>&1
 rc_b=$?
 if [ "$rc_a" != 0 ] || [ "$rc_b" != 0 ]; then
   printf 'check-formats: the generator exited %s then %s\n' "$rc_a" "$rc_b" >&2

@@ -72,6 +72,20 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 # check does not depend on who called it.
 cd "$REPO_ROOT" || { printf 'check-validate: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.sh is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-validate: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
+
 CORPUS_DIR="corpus"
 RAW_DIR="raw"
 
@@ -84,7 +98,7 @@ report_absent() {
   exit 2
 }
 
-[ -d "$CORPUS_DIR" ] || report_absent "there is no $CORPUS_DIR/ directory, so nothing was validated"
+[ -d "$CORPUS_ROOT/$CORPUS_DIR" ] || report_absent "there is no $CORPUS_DIR/ directory, so nothing was validated"
 command -v cargo >/dev/null 2>&1 || report_absent "cargo is not on this host, so no profile was validated"
 
 # -- leg one: is every published profile coherent ----------------------------
@@ -93,7 +107,7 @@ command -v cargo >/dev/null 2>&1 || report_absent "cargo is not on this host, so
 # `b-ids-corpus validate` prints `corpus=validate profiles:N findings:N
 # notcheckable:N` as its last line and its usage says that is the contract.
 # check-corpus carries the identical discipline for the identical reason.
-VALIDATE_OUT=$(cargo run -q -p b-ids-corpus -- validate --root . 2>&1)
+VALIDATE_OUT=$(cargo run -q -p b-ids-corpus -- validate --root "$CORPUS_ROOT" 2>&1)
 VALIDATE_RC=$?
 STATUS_LINE=$(printf '%s\n' "$VALIDATE_OUT" | awk '/^corpus=validate /{ line = $0 } END { print line }')
 case "$VALIDATE_RC" in
@@ -124,7 +138,7 @@ DETAIL=""
 SCRATCH="${TMPDIR:-/tmp}/b-ids-check-validate.$$"
 rm -rf "$SCRATCH"
 if mkdir -p "$SCRATCH/root" "$SCRATCH/first" 2>/dev/null; then
-  cp -R "$CORPUS_DIR" "$SCRATCH/root/" 2>/dev/null
+  cp -R "$CORPUS_ROOT/$CORPUS_DIR" "$SCRATCH/root/" 2>/dev/null
   [ -d "$RAW_DIR" ] && cp -R "$RAW_DIR" "$SCRATCH/root/" 2>/dev/null
 
   if cargo run -q -p b-ids-corpus -- index --write --root "$SCRATCH/root" >/dev/null 2>&1; then

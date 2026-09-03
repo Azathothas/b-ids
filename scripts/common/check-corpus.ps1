@@ -73,11 +73,33 @@ $root = ($root | Select-Object -First 1).Trim()
 # ⛔ Every path below is relative to the repository root, so the scope of the
 # check does not depend on who called it.
 Push-Location -LiteralPath $root
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.ps1 is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-corpus: no corpus is reachable, so nothing was checked')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable; a check that resolved a root and did not export it would build
+# against one corpus and report on another.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
+# ⛔ AND THE REF THAT CARRIES IT. This check's one question is about a HISTORY
+# rather than about files on disk: empty means the working tree, whose history
+# is this repository's own, and a ref means the corpus lives on that branch.
+$corpusRef = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Ref | Select-Object -First 1)
+if ($null -eq $corpusRef) { $corpusRef = '' }
+$corpusRef = "$corpusRef".Trim()
 try {
     $corpusDir = 'corpus'
     $rawDir = 'raw'
 
-    if (-not (Test-Path -LiteralPath $corpusDir -PathType Container)) {
+    if (-not (Test-Path -LiteralPath (Join-Path $corpusRoot $corpusDir) -PathType Container)) {
         if ($Json) {
             Write-Output '{"schema":"check-corpus/2","corpus":false,"shallow":false,"profiles":0,"edits":0,"problems":0}'
         }
@@ -133,7 +155,14 @@ try {
     # which re-derives both from the profiles and compares. ⛔ Keep this
     # identical to the sh twin.
     $scope = @($corpusDir, $rawDir, ":(exclude)$corpusDir/*/index.json", ":(exclude)$corpusDir/*/latest.json")
-    $editLines = @(& git log --diff-filter=MDR --name-status --format='commit %h' -- @scope 2>$null)
+    # ⚠ THE REF IS PREPENDED ONLY WHEN THERE IS ONE, which is `git log` over
+    # HEAD when the corpus is the working tree and over the branch when it is
+    # not. A default of HEAD written out would be a second spelling of it.
+    $logArgs = @('log', '--diff-filter=MDR', '--name-status', '--format=commit %h')
+    if ($corpusRef -ne '') { $logArgs += $corpusRef }
+    $logArgs += '--'
+    $logArgs += $scope
+    $editLines = @(& git @logArgs 2>$null)
     $edits = @($editLines | Where-Object { $_ -and -not $_.StartsWith('commit ') })
     $editCount = $edits.Count
 
@@ -148,7 +177,7 @@ try {
     $verifyRan = $false
     $verifyOut = @()
     if (Get-Command cargo -ErrorAction SilentlyContinue) {
-        $verifyOut = @(& cargo run -q -p b-ids-corpus -- verify --root . 2>&1)
+        $verifyOut = @(& cargo run -q -p b-ids-corpus -- verify --root $corpusRoot 2>&1)
         $verifyRc = $LASTEXITCODE
         $statusLine = @($verifyOut | Where-Object { "$_" -like 'corpus=*' } | Select-Object -Last 1)
         if (($verifyRc -eq 0 -or $verifyRc -eq 1) -and $statusLine.Count -gt 0) {

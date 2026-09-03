@@ -40,9 +40,10 @@ sample count and the trust configuration the capture was taken under. A number
 without those cannot be compared to anything, which makes it worse than an
 absence.
 
-⚠ **And the trust configuration is not a detail.** Every capture this project
-has taken went through a per-launch key pin rather than a trust store, which is
-a condition of the measurement. ⭐ `20-` measured the capture SURFACE and found
-it changes nothing a raw capture can see; what a real trust anchor would do is
-still unmeasured, and answering it needs a root installed into the host's own
-trust store.
+⚠ **And the trust configuration is not a detail.** Every capture in the corpus
+went through a per-launch key pin rather than a trust store, which is a
+condition of the measurement. ⭐ `20-` measured the capture SURFACE and found it
+changes nothing a raw capture can see, and `50-` has since measured the pin
+itself against a real root, on one platform.
+[`../docs/architecture.md`](../docs/architecture.md) section 5 carries what that
+run found and which platform is still unanswered.

@@ -20,11 +20,13 @@
 # to them would be an edit of a published file. A profile that carries the field
 # must agree; one that does not is counted and reported.
 #
-# ⛔ THE DATA BRANCH IS NOT CHECKED HERE BECAUSE IT DOES NOT EXIST. PUB-02 is the
-# entry that creates it, and the LICENSE it carries is this file's to check on
-# the day it does. Reporting a pass over a branch nobody has made is the "step
-# that exits 0 having done nothing" row of
-# docs/conventions/forbidden-patterns.md.
+# ⭐ AND THE DATA BRANCH, WHICH IS THE ONE SURFACE A CONSUMER FETCHES. Both its
+# manifest identifier and the bytes of its LICENSE are compared, from a LOCAL
+# ref rather than a fetch, because a check that reaches the network is red when
+# somebody else's host is down. ⚠ NO LOCAL REF IS A SKIP naming the branch,
+# never a pass: reporting a pass over a branch nobody fetched is the "step that
+# exits 0 having done nothing" row of docs/conventions/forbidden-patterns.md.
+# TODO/publish.md, PUB-12.
 #
 # Usage:
 #   sh scripts/common/check-license-consistency.sh
@@ -62,6 +64,20 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 }
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-license-consistency: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
+
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.sh is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-license-consistency: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
 command -v jq >/dev/null 2>&1 || {
   printf 'check-license-consistency: jq not found\n' >&2
   exit 2
@@ -113,7 +129,7 @@ REQUIRED=$(jq -r '[.required[] | select(. == "license")] | length' "$SCHEMA_FILE
 [ "$REQUIRED" = "0" ] || note "the published schema REQUIRES license, which refuses every profile published before it existed"
 
 # -- the corpus index --------------------------------------------------------
-INDEX_FILE="corpus/v1/index.json"
+INDEX_FILE="$CORPUS_ROOT/corpus/v1/index.json"
 if [ -f "$INDEX_FILE" ]; then
   INDEX=$(jq -r '.license // "absent"' "$INDEX_FILE" 2>/dev/null | tr -d '\r')
   state "$INDEX_FILE" "$INDEX"
@@ -130,7 +146,11 @@ fi
 PROFILES=0
 CARRIES=0
 PREDATES=0
-for file in $(git ls-files -- 'corpus/v1/*/*/*/*.json' | LC_ALL=C sort); do
+# ⚠ A FILESYSTEM WALK RATHER THAN `git ls-files`, because the corpus is not
+# always a tracked path of THIS repository: once it leaves the default branch
+# the root resolves to a materialised copy of the data branch, which git knows
+# nothing about as a working tree. TODO/publish.md, PUB-11.
+for file in $(find "$CORPUS_ROOT/corpus/v1" -type f -name '*.json' 2>/dev/null | LC_ALL=C sort); do
   case "$file" in
     */index.json | */latest.json) continue ;;
   esac
@@ -146,6 +166,40 @@ for file in $(git ls-files -- 'corpus/v1/*/*/*/*.json' | LC_ALL=C sort); do
 done
 state "corpus profiles" "$CARRIES carrying it, $PREDATES published before the field existed"
 [ "$PROFILES" -gt 0 ] || note "no published profile was read, so nothing about the corpus was checked"
+
+# -- ⭐ the branch a consumer actually fetches --------------------------------
+#
+# ⛔ A LOCAL REF, NEVER A FETCH. A check that reaches the network is a check
+# that is red when somebody else's host is down, and check-data-branch already
+# reads the branch this way. ⚠ NO LOCAL REF AT ALL IS A SKIP naming the branch,
+# never a pass: a clone that has not fetched it cannot answer the question.
+# TODO/publish.md, PUB-12.
+DATA_BRANCH=data
+DATA_REF=""
+if git rev-parse -q --verify "refs/heads/$DATA_BRANCH" >/dev/null 2>&1; then
+  DATA_REF="refs/heads/$DATA_BRANCH"
+elif git rev-parse -q --verify "refs/remotes/origin/$DATA_BRANCH" >/dev/null 2>&1; then
+  DATA_REF="refs/remotes/origin/$DATA_BRANCH"
+fi
+DATA=skipped
+if [ -n "$DATA_REF" ]; then
+  DATA=$(git show "$DATA_REF:MANIFEST.json" 2>/dev/null | jq -r '.license // "absent"' 2>/dev/null | tr -d '\r')
+  [ -n "$DATA" ] || DATA=absent
+  [ "$DATA" = "$WANT" ] || note "the data branch manifest says $DATA and $HOME_FILE says $WANT"
+  # ⛔ AND THE TEXT, not only the identifier. A branch naming 0BSD over some
+  # other licence file is the failure an identifier comparison cannot see, and
+  # the text is what a consumer who downloads one file actually reads.
+  BRANCH_TEXT=$(git rev-parse "$DATA_REF:LICENSE" 2>/dev/null)
+  LOCAL_TEXT=$(git hash-object LICENSE 2>/dev/null)
+  if [ -z "$BRANCH_TEXT" ]; then
+    note "the $DATA_BRANCH branch carries no LICENSE at its root"
+  elif [ "$BRANCH_TEXT" != "$LOCAL_TEXT" ]; then
+    note "the LICENSE on $DATA_BRANCH is not the LICENSE in this tree"
+  fi
+  state "the $DATA_BRANCH branch" "$DATA, over the same LICENSE text"
+else
+  state "the $DATA_BRANCH branch" "skipped: no local ref for $DATA_BRANCH"
+fi
 
 # -- the release body --------------------------------------------------------
 #
@@ -197,8 +251,8 @@ if [ "$FIXTURE" = 1 ]; then
 fi
 
 if [ "$JSON" = 1 ]; then
-  printf '{"schema":"check-license-consistency/1","license":"%s","stated":%s,"profiles":%s,"carrying":%s,"predating":%s,"problems":%s}\n' \
-    "$WANT" "$STATED" "$PROFILES" "$CARRIES" "$PREDATES" "$COUNT"
+  printf '{"schema":"check-license-consistency/2","license":"%s","stated":%s,"profiles":%s,"carrying":%s,"predating":%s,"data_branch":"%s","problems":%s}\n' \
+    "$WANT" "$STATED" "$PROFILES" "$CARRIES" "$PREDATES" "$DATA" "$COUNT"
   [ "$COUNT" = 0 ] || exit 1
   exit 0
 fi

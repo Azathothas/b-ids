@@ -54,7 +54,9 @@ as data.
 
 ## Quick start
 
-⚠ **These are all this repository can do today**: run its own checks, and read.
+⚠ **The first three need `git` and a shell and nothing else.** Building the
+crates needs the pinned toolchain in [`rust-toolchain.toml`](rust-toolchain.toml),
+which `rustup` installs the first time `cargo` is run in this tree.
 
 ```bash
 git clone https://github.com/Azathothas/b-ids
@@ -86,10 +88,11 @@ passed check. On Windows, run the `.ps1` twin of either command.
 | `jq` | comparing the two halves of a check pair | that comparison reports a skip |
 | `shellcheck` | linting the shell scripts | that check reports a skip |
 | `gh` | studying an external repository through an authenticated route | a credential-free public route is used instead |
+| the pinned Rust toolchain | building, testing and running the crates | `rustup` reads [`rust-toolchain.toml`](rust-toolchain.toml) and installs it on the first `cargo` command |
 
 ---
 
-## Where the data lives, and where it will be published
+## Where the data lives, and where it is published
 
 ⭐ **The canonical corpus is committed on the default branch**, as JSON, one file
 per profile, with the raw bytes beside it. That is deliberate and it is what
@@ -97,18 +100,22 @@ makes an automated capture reviewable: a change to a profile shows up as a diff
 a person reads, rather than as an opaque artefact somebody has to fetch and
 compare.
 
-⛔ **The default branch is not the publishing surface.** Nothing is published
-from this repository yet. When it is, it goes to an orphan **data branch**
-carrying only generated artefacts, with dated snapshots, a `latest` pointer, an
-index and a checksums file, append-only and never force-pushed. The generated
-formats, the flat fetchable routes and the ready-to-paste client snippets are
-generated from the canonical corpus rather than maintained beside it.
+⛔ **The default branch is not the publishing surface.** An orphan **data
+branch** carries only generated artefacts: the corpus, the raw bytes, the
+generated formats, the flat fetchable routes, the per-build trust-anchor lists,
+an index, a manifest and a checksums file. It is append-only, ⛔ it is never
+force-pushed, and a build that would change nothing writes nothing.
 
-⚠ **None of that exists today**, and the entries that build it are named so the
-gap is visible rather than implied: `SCHEMA-08` and `SCHEMA-12` are the
-generator and its nine formats, `PUB-01` the releases, `PUB-02` the data branch,
-`PUB-03` the routes, and `PUB-04` the artefacts that are not data files.
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md) carries the order.
+⭐ **That branch exists**, and a push to the default branch is what updates it.
+
+```bash
+git fetch origin data
+```
+
+⚠ **No release has been cut**, because a pushed tag is the only thing that cuts
+one. `PUB-04`, the ready-to-paste snippets for somebody else's client, is the
+surface that does not exist yet. [`TODO/PROGRESS.md`](TODO/PROGRESS.md) carries
+the order.
 
 ---
 
@@ -141,19 +148,16 @@ sh scripts/common/check-routes.sh --assert-latest-is-stable
 
 ---
 
-## What it will do
+## What it does, and how far each part has got
 
-- **Capture** from a real browser, off a socket, from outside the client, so
-  the reading is what the browser sent rather than what it intended.
-- **Record everything the wire carried**, including the raw bytes, so a later
-  parser can rebuild the corpus when this one turns out to be wrong.
-- **Validate** a claimed fingerprint for coherence: version against version,
-  platform against platform, brand against build, and a handshake against the
-  version it claims.
-- **Publish** in two ways that fail differently: tagged releases, and flat
-  fetchable paths a `curl` one-liner can read with no index and no token.
-- **Say what it cannot do**, per stack, as a support matrix with the holes left
-  in. A hole is the most useful cell in it.
+| | where it stands |
+| --- | --- |
+| **Capture** from a real browser, off a socket, from outside the client, so the reading is what the browser sent rather than what it intended. | ⭐ done, over three hosts and two browser families |
+| **Record everything the wire carried**, including the raw bytes, so a later parser can rebuild the corpus when this one turns out to be wrong. | ⭐ done. Every profile has the `ClientHello` it was read from beside it |
+| **Validate** a claimed fingerprint for coherence: version against version, platform against platform, brand against build, and a handshake against the version it claims. | ⭐ done, as a library, a command and a published JSON schema |
+| **Publish** in two ways that fail differently: tagged releases, and flat fetchable paths a `curl` one-liner can read with no index and no token. | ⚠ half. The flat paths are on the data branch; no release has been cut |
+| **Say what it cannot do**, per stack, as a support matrix with the holes left in. A hole is the most useful cell in it. | ⭐ done, generated from a run rather than maintained by hand |
+| **Hand a program a profile**, with no network in the path and no substitute for a platform nobody captured. | ⭐ done, as a crate with the corpus embedded at build time |
 
 ## What it does not do
 
@@ -191,9 +195,10 @@ a notice file.
   [`docs/reference-sweeps/findings.md`](docs/reference-sweeps/findings.md)
   finding 5 has the detail.
 - **The corpus in [`references/`](references/) is not this project's.** It is
-  eighteen other repositories' trees, kept as the evidence behind that document,
-  each under its own licence. 0BSD covers what this project writes and
-  generates, not what it quotes.
+  nineteen other repositories' trees: eighteen are the evidence behind that
+  document and one is a corpus of test vectors a check here runs against. Each
+  is under its own licence, and 0BSD covers what this project writes and
+  generates rather than what it quotes.
 - **The vendored source in [`vendor/`](vendor/) is not this project's either.**
   It is compiled by this tree and patched here, under its own licence, at the
   commit [`vendor/upstream.json`](vendor/upstream.json) records.
@@ -218,7 +223,7 @@ a notice file.
 
 ## Contributing
 
-⚠ **Not yet.** There is nothing to contribute to until the schema and the
-harness exist. When that changes, two rules apply from the first contribution:
-contributed data is 0BSD, and a contributed profile the project cannot
+⚠ **The project is in beta and nobody consumes its data yet**, so there is no
+process to point at. Two rules apply from the first contribution whenever it
+comes: contributed data is 0BSD, and a contributed profile the project cannot
 re-measure is a draft and stays one.

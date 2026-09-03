@@ -85,6 +85,20 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 # check does not depend on who called it.
 cd "$REPO_ROOT" || { printf 'check-routes: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
+# as long as that holds a corpus, and a materialised copy of the data branch
+# once it does not. corpus-root.sh is the one answer to the question and this
+# check does not carry a second one. TODO/publish.md, PUB-11.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-routes: no corpus is reachable, so nothing was checked\n' >&2
+  exit 2
+}
+# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
+
 # ⛔ THE PUBLISHED ROUTE TREES, named rather than "everything". A check over the
 # whole tree would refuse the committed `.hex` fixtures the harness tests read,
 # which are inputs rather than routes and are not served to anybody.
@@ -123,7 +137,7 @@ if [ "$GENERATE" = 1 ]; then
   [ -x "$BIN" ] || BIN="$BIN.exe"
   [ -x "$BIN" ] || { printf 'check-routes: %s is not executable\n' "$BIN" >&2; exit 2; }
   # ⛔ READ FROM THE PROCESS, UNPIPED.
-  "$BIN" routes --root "$REPO_ROOT" --out "$GENERATED" \
+  "$BIN" routes --root "$CORPUS_ROOT" --out "$GENERATED" \
     > "$REPO_ROOT/.tmp/check-routes/generate.log" 2>&1
   rc_gen=$?
   if [ "$rc_gen" != 0 ]; then
@@ -319,7 +333,7 @@ if [ "$LATEST" = 1 ]; then
     exit 2
   fi
   if command -v cargo >/dev/null 2>&1; then
-    LATEST_OUT=$(cargo run -q -p b-ids-corpus -- latest --assert-stable --root . 2>&1)
+    LATEST_OUT=$(cargo run -q -p b-ids-corpus -- latest --assert-stable --root "$CORPUS_ROOT" 2>&1)
     LATEST_RC=$?
     LATEST_LINE=$(printf '%s\n' "$LATEST_OUT" | awk '/^corpus=latest /{ line = $0 } END { print line }')
     case "$LATEST_RC" in

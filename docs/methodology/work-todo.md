@@ -145,7 +145,10 @@ separately. What still has to exist at every session boundary:
   instant, the measured baseline, the counts, what this session did, what is in
   progress, the work order, and open questions for the operator.
 - **The summary table**, in chat and saved.
-- **The next prompt**, in chat only.
+- ⚠ **A prompt for whoever comes next, where the project wants one.** ⛔ This
+  project does not: [`../../TODO/RULES.md`](../../TODO/RULES.md) section 10
+  refuses it, because a prompt restating the work order is a second copy of it
+  going stale the moment an entry closes.
 
 [`sessions.md`](sessions.md) is the full specification of all three.
 
