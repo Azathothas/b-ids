@@ -27,7 +27,7 @@ list. ⛔ Overwritten every session.
 | entry | effort | what closed it |
 | --- | --- | --- |
 | `TOOL-19` | `M` | `sh scripts/common/check-catalogues.sh`: 45 scripts and 28 documents named by their catalogues, and the same check pointed at `8f031a6` refuses 13 |
-| `CORPUS-06` | `M` | `cargo test -p b-ids-corpus headless`: 5 cases, and 3 planted mutations each taking a different one red |
+| `CORPUS-06` | `M` | `cargo test -p b-ids-corpus headless`: 5 cases, and 3 planted mutations all red |
 | `PUB-12` | `S` | `sh scripts/common/check-license-consistency.sh --json`: 8 statements including the data branch, driven against a branch rewritten to `MIT` |
 | ⚠ `PUB-11` | `M` | **not closed.** One resolver, 12 check pairs wired, 7 of 10 passing with `corpus/` moved out of the working tree. The entry names the 3 that do not |
 

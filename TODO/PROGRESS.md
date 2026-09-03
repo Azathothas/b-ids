@@ -156,7 +156,7 @@ compared against `HEAD` before anything else ran.**
 
 | where | planted | red |
 | --- | --- | --- |
-| `CORPUS-06` | the `normalise` call deleted; the launch gate replaced with `if true`; the provenance `insert` made unreachable | all three, and each took a different case |
+| `CORPUS-06` | the `normalise` call deleted; the launch gate replaced with `if true`; the provenance `insert` made unreachable | all three. ⭐ The launch gate is the one no other case covers: a normalisation that fired on every capture would look correct on every profile in the corpus, because every one of them was taken headless |
 | `TOOL-19` | the check pointed at this repository at `8f031a6`, where thirteen scripts were unlisted | both halves, same thirteen, same exit code |
 | `PUB-12` | a local `data` branch built off `origin/data` with its manifest rewritten to `MIT`, then with its `LICENSE` replaced too | both halves, one problem and then two |
 | `PUB-11` | `corpus/` and `raw/` moved out of the working tree entirely | seven of ten checks resolved off the branch and passed; the three that did not are named in the entry |
