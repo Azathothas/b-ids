@@ -368,6 +368,19 @@ Two separate causes in one command:
 ⭐ **Neither is visible by reading**, and the sh half is correct with the same
 words. The twin comparison is what said so.
 
+#### ⭐ And the no-op rule fired on a real run rather than in a test
+
+The SECOND push to the default branch found the branch already holding those
+bytes and pushed nothing:
+
+```text
+the branch already holds these bytes, so this run pushes nothing
+```
+
+⚠ **That is what stops the branch growing an empty commit on every push**, and
+it is the same rule `CI-04` holds about a change that moved nothing. ⛔ It was
+designed rather than measured until this run; now it is measured.
+
 ---
 
 ## PUB-03. Routes a program with nothing but `curl` can read
