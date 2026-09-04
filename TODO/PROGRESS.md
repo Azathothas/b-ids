@@ -19,7 +19,7 @@ the entries themselves. Do not add a "previous sessions" section.
 session ran      2026-09-04, attended, started 2026-09-04T00:07:59Z
 baseline         gate ok: 38 passed, 1 skipped (check-twins, which --fast skips)
                  on this Windows host at the start. 401 tests.
-entries          total 107  open 12  blocked 0  done 95
+entries          total 107  open 11  blocked 0  done 96
 published        the data branch: 237 files on origin/data, up from 200.
                  PUB-04's configs/ tree was pushed by publish.yml on this
                  session's own commit, and check-data-branch reports

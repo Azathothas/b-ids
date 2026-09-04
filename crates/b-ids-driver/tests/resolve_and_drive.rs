@@ -145,6 +145,7 @@ fn resolve_and_drive_completes_a_capture_against_the_harness() {
         timeout: Duration::from_secs(30),
         log: None,
         disable_verification: false,
+        ca_pem: None,
     };
     let browser_for_thread = browser.clone();
     let launcher = std::thread::spawn(move || drive(&browser_for_thread, &launch));
@@ -349,6 +350,7 @@ fn resolve_and_drive_log_records_what_the_browser_said() {
         timeout: Duration::from_secs(5),
         log: Some(log.clone()),
         disable_verification: false,
+        ca_pem: None,
     };
     let driven = drive(browser, &launch).expect("the browser launched");
     assert!(
@@ -394,6 +396,7 @@ fn resolve_and_drive_log_refuses_a_path_it_cannot_write() {
                 .join("browser.log"),
         ),
         disable_verification: false,
+        ca_pem: None,
     };
     let refused = drive(browser, &launch).expect_err("an unwritable log is refused");
     assert!(
@@ -616,3 +619,159 @@ fn resolve_and_drive_a_family_with_no_index_gets_no_index_candidate() {
         "the control: Chrome does have an index, so this test can fail"
     );
 }
+
+#[test]
+fn resolve_and_drive_gecko_is_given_its_own_switches_and_none_of_chromium_s() {
+    // ⛔ MEASURED FROM `firefox --help` ON 154.0.1, 2026-09-04, not carried
+    // from anywhere. Firefox takes `--profile PATH` as two arguments and spells
+    // headless without a mode; it has no `--user-data-dir` and reads a bare
+    // `--no-first-run` as a file to open, so a Chromium switch passed here
+    // navigates somewhere nobody asked for and the capture is of the wrong
+    // thing. TODO/driver.md, DRIVER-11.
+    let exe = layout_dir("gecko-switches").join("firefox.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    let browser = b_ids_driver::Resolved {
+        family: Family::Firefox,
+        name: "Firefox",
+        path: exe.clone(),
+        version: "154.0.1".to_owned(),
+        answers: vec![(Source::ApplicationIni, "154.0.1".to_owned())],
+        disagreement: false,
+    };
+    let launch = Launch {
+        url: "https://127.0.0.1:1/".to_owned(),
+        headless: true,
+        timeout: Duration::from_millis(200),
+        ca_pem: Some(AUTHORITY_PEM.to_owned()),
+        ..Launch::default()
+    };
+    // ⚠ The stand-in is not an executable, so the spawn fails and the switch
+    // list is unreachable through the result. It is asserted through the same
+    // table the launch builds from instead, which is what the launch reads.
+    let driven = drive(&browser, &launch);
+    assert!(driven.is_err(), "a file that is not a browser launched");
+
+    assert_eq!(
+        b_ids_driver::trust_route(Family::Firefox),
+        b_ids_driver::TrustRoute::ProfileDatabase,
+        "Gecko is not routed to the profile database"
+    );
+    for family in Family::all() {
+        let route = b_ids_driver::trust_route(family);
+        if family.is_chromium() {
+            assert_eq!(route, b_ids_driver::TrustRoute::Switch, "{family}");
+        } else {
+            assert_eq!(route, b_ids_driver::TrustRoute::ProfileDatabase, "{family}");
+        }
+    }
+    let _ = std::fs::remove_dir_all(exe.parent().expect("a parent"));
+}
+
+#[test]
+fn resolve_and_drive_a_trust_configuration_an_engine_cannot_reach_is_refused() {
+    // ⛔ A KEY PIN ON GECKO IS REFUSED, not passed and hoped over. Firefox reads
+    // an unknown argument as a file to open, so the browser would navigate to a
+    // path instead of the harness and the run would report a capture of
+    // nothing. The refusal names the engine and the route it does have.
+    let exe = layout_dir("gecko-refusal").join("firefox.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    let gecko = b_ids_driver::Resolved {
+        family: Family::Firefox,
+        name: "Firefox",
+        path: exe.clone(),
+        version: "154.0.1".to_owned(),
+        answers: vec![(Source::ApplicationIni, "154.0.1".to_owned())],
+        disagreement: false,
+    };
+    let pinned = Launch {
+        url: "https://127.0.0.1:1/".to_owned(),
+        spki_pin: Some("irrelevant".to_owned()),
+        ..Launch::default()
+    };
+    let why = drive(&gecko, &pinned).expect_err("a pin on Gecko launched");
+    assert!(
+        why.contains("no certificate switch"),
+        "unexpected refusal: {why}"
+    );
+
+    let chromium = b_ids_driver::Resolved {
+        family: Family::Chrome,
+        ..gecko.clone()
+    };
+    let seeded = Launch {
+        url: "https://127.0.0.1:1/".to_owned(),
+        ca_pem: Some(AUTHORITY_PEM.to_owned()),
+        ..Launch::default()
+    };
+    let why = drive(&chromium, &seeded).expect_err("an authority on a Chromium launched");
+    assert!(
+        why.contains("on the command line"),
+        "unexpected refusal: {why}"
+    );
+
+    // ⛔ TWO AT ONCE IS REFUSED WHATEVER THE ENGINE. A capture taken under two
+    // trust configurations is one whose condition nobody can name.
+    let both = Launch {
+        url: "https://127.0.0.1:1/".to_owned(),
+        spki_pin: Some("irrelevant".to_owned()),
+        ca_pem: Some(AUTHORITY_PEM.to_owned()),
+        ..Launch::default()
+    };
+    let why = both
+        .trust()
+        .expect_err("two trust configurations were accepted");
+    assert!(why.contains("one trust configuration"), "{why}");
+    let _ = std::fs::remove_dir_all(exe.parent().expect("a parent"));
+}
+
+#[test]
+fn resolve_and_drive_a_seeded_profile_carries_the_authority_and_its_trust_record() {
+    // ⛔ THE TRUST RECORD IS THE POINT. A certificate object alone is a
+    // certificate the browser knows and does not trust, and NSS discards a
+    // delegator record whose certificate hash is absent or wrong without
+    // saying so. references/mozilla__nss/tree/lib/pki/certificate.c:1022.
+    let dir = layout_dir("seeded-profile");
+    let seeded = b_ids_driver::seed(&dir, AUTHORITY_PEM, "b-ids capture authority")
+        .expect("the authority seeds");
+    let bytes = std::fs::read(&seeded.cert9).expect("the database was written");
+    assert_eq!(&bytes[..16], b"SQLite format 3\0");
+    let sha1 = seeded.sha1;
+    assert!(
+        bytes.windows(sha1.len()).any(|w| w == sha1),
+        "the trust record does not carry the certificate hash"
+    );
+    // CKO_NSS_TRUST and CKT_NSS_TRUSTED_DELEGATOR, four big-endian bytes each.
+    assert!(
+        bytes.windows(4).any(|w| w == [0xce, 0x53, 0x43, 0x53]),
+        "no trust object in the database"
+    );
+    assert!(
+        bytes.windows(4).any(|w| w == [0xce, 0x53, 0x43, 0x52]),
+        "no delegator trust value in the database"
+    );
+    // ⛔ key4.db is NOT written: Firefox creates it, and a profile that differs
+    // from an ordinary one by more than the added authority is a profile
+    // measuring something else.
+    assert!(!dir.join("key4.db").exists(), "key4.db was written");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// A self-signed authority, so a seeding test needs no key generation.
+///
+/// ⚠ **A FIXTURE, and it is not a measurement.** It was minted by this
+/// project's own harness on 2026-09-04 and is committed so the tests above run
+/// with no crypto in them. Nothing serves it and no capture is taken through
+/// it.
+const AUTHORITY_PEM: &str = "\
+    -----BEGIN CERTIFICATE-----\n\
+    MIIBiTCCATCgAwIBAgIULEJQrUqhXevnsrBM53YEZuQofikwCgYIKoZIzj0EAwIw\n\
+    IjEgMB4GA1UEAwwXYi1pZHMgY2FwdHVyZSBhdXRob3JpdHkwIBcNNzUwMTAxMDAw\n\
+    MDAwWhgPNDA5NjAxMDEwMDAwMDBaMCIxIDAeBgNVBAMMF2ItaWRzIGNhcHR1cmUg\n\
+    YXV0aG9yaXR5MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPVlSMdxFIX7DGCbU\n\
+    QFRxzZA25FNoKj6249P6qnZFLsH55pdyn9LccH1lcQQ4i+X3AjNjRZCTwQ5TQgsk\n\
+    8YOsgqNCMEAwDgYDVR0PAQH/BAQDAgGGMB0GA1UdDgQWBBRdNMNs/gIcw2lukIGn\n\
+    Oi5jj6G9zzAPBgNVHRMBAf8EBTADAQH/MAoGCCqGSM49BAMCA0cAMEQCIBTeCuqt\n\
+    WJkEHNtZKnyEGJo6XobcDaG4CPisILu1OjYnAiAzl88J9qXV+ZIHJMm5cuKYwwBh\n\
+    PsUbOzvZ7syxshMHEw==\n\
+    -----END CERTIFICATE-----\n\
+    ";

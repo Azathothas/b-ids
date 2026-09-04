@@ -29,7 +29,7 @@ use crate::routes::{MANIFEST_FILE, indexes, manifest as route_manifest, routes};
 use crate::store::Store;
 
 /// The manifest's own schema identifier.
-pub const MANIFEST_SCHEMA: &str = "corpus-publish/1";
+pub const MANIFEST_SCHEMA: &str = "corpus-publish/2";
 
 /// The file the manifest is written to.
 pub const MANIFEST: &str = "MANIFEST.json";
@@ -51,6 +51,23 @@ pub struct Artefact {
     pub sha256: String,
     /// How many bytes it holds.
     pub bytes: usize,
+    /// Whether this file is derived from the whole set rather than owned by
+    /// one profile.
+    ///
+    /// ⛔ **This is what tells an immutable artefact from one that MUST move.**
+    /// A published profile and its raw sidecar are append-only: their bytes
+    /// never change, and a change to either is a rewritten branch. Every index,
+    /// route, format dump and generated config is a function of the whole
+    /// corpus, so adding one profile changes all of them, and a check that
+    /// called that a broken immutability promise would refuse every capture
+    /// this project ever takes again.
+    ///
+    /// ⚠ **Found 2026-09-04, by adding the seventh profile.**
+    /// `scripts/common/check-data-branch` reported nineteen published
+    /// artefacts as having changed their bytes, and all nineteen were
+    /// aggregates. `TODO/publish.md`, `PUB-14`, and `TODO/driver.md`,
+    /// `DRIVER-11`, is the entry that surfaced it.
+    pub derived: bool,
 }
 
 /// What one build produced.
@@ -84,7 +101,13 @@ impl Built {
 }
 
 /// Write one file and record it.
-fn put(out: &Path, path: &str, body: &[u8], artefacts: &mut Vec<Artefact>) -> Result<(), String> {
+fn write_artefact(
+    out: &Path,
+    path: &str,
+    body: &[u8],
+    derived: bool,
+    artefacts: &mut Vec<Artefact>,
+) -> Result<(), String> {
     let full = out.join(path);
     if let Some(parent) = full.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
@@ -94,8 +117,24 @@ fn put(out: &Path, path: &str, body: &[u8], artefacts: &mut Vec<Artefact>) -> Re
         path: path.to_owned(),
         sha256: hex(&sha256(body)),
         bytes: body.len(),
+        derived,
     });
     Ok(())
+}
+
+/// Write one file a profile owns, whose bytes never change again.
+fn put_profile(
+    out: &Path,
+    path: &str,
+    body: &[u8],
+    artefacts: &mut Vec<Artefact>,
+) -> Result<(), String> {
+    write_artefact(out, path, body, false, artefacts)
+}
+
+/// Write one file derived from the whole corpus, which moves when it grows.
+fn put(out: &Path, path: &str, body: &[u8], artefacts: &mut Vec<Artefact>) -> Result<(), String> {
+    write_artefact(out, path, body, true, artefacts)
 }
 
 /// Assemble the publishable tree under `out`.
@@ -124,7 +163,7 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     for (path, _) in &published {
         let body = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
         let relative = relative_to(root, path)?;
-        put(out, &relative, &body, &mut artefacts)?;
+        put_profile(out, &relative, &body, &mut artefacts)?;
     }
     // ⚠ THE SIDECAR IS DERIVED FROM THE PROFILE'S OWN ROUTE, never walked
     // separately. A walk would publish a `.hex` with no profile beside it, and
@@ -143,7 +182,7 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
             return Err(format!("{} has no raw sidecar at {sidecar}", profile.id));
         }
         let body = std::fs::read(&full).map_err(|e| format!("{}: {e}", full.display()))?;
-        put(out, &sidecar, &body, &mut artefacts)?;
+        put_profile(out, &sidecar, &body, &mut artefacts)?;
     }
     for name in ["index.json", "latest.json"] {
         let path = Path::new(root).join("corpus").join("v1").join(name);
@@ -293,10 +332,12 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     // alone, so a change to a generator moves the artefacts and not this.
     let corpus_digest = {
         let mut joined = String::new();
-        for artefact in artefacts
-            .iter()
-            .filter(|a| a.path.starts_with("corpus/") || a.path.starts_with("raw/"))
-        {
+        // ⛔ OVER THE ARTEFACTS A PROFILE OWNS, read from what the writer
+        // recorded rather than from a path prefix. The prefix form counted
+        // corpus/v1/index.json and corpus/v1/latest.json, which are derived
+        // from the whole set, so a change to the index generator alone moved a
+        // digest whose own comment says it does not.
+        for artefact in artefacts.iter().filter(|a| !a.derived) {
             joined.push_str(&artefact.path);
             joined.push(' ');
             joined.push_str(&artefact.sha256);

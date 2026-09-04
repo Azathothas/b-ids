@@ -1624,7 +1624,7 @@ to fix.
 ## DRIVER-11. The launcher speaks Chromium, and the highest-value lane is not one
 
 **Source** found while working `CORPUS-02`, 2026-09-04, once the resolver could name the family
-**Category** driver, **Priority** P1, **Effort** L, **Status** open
+**Category** driver, **Priority** P1, **Effort** L, **Status** done
 
 ### Problem
 
@@ -1751,3 +1751,199 @@ the driver already creates and removes.
 ⚠ **`captured.trust` still records which configuration the capture was taken
 under**, and a Gecko capture whose trust nobody can name is a profile this
 corpus must not publish.
+
+### ⭐ Closed 2026-09-04. The corpus has a non-Chromium profile, and it was measured here
+
+⛔ **The premise's third route was overtaken.** The entry recommended
+`cert_override.txt` and the operator ruled for an NSS `certutil` instead. ⚠ The
+operator then ruled again during the work: **do not vendor a niche third-party
+tree, write it in Rust here, and mine `mozilla/nss` as the reference.** That is
+what was done, and the vendoring was backed out before anything was committed.
+
+⭐ **`mozilla/nss` is in [`../references/mozilla__nss/`](../references/mozilla__nss/)
+at commit `7db8de42431841b214b49fd2cb7122a07aa631b8`**, trimmed by deletion, and
+every constant below is cited against it at file and line.
+
+#### What the launcher does now
+
+| | |
+| --- | --- |
+| the switch list | a table per engine in `b_ids_driver::drive`, not a second arm of a case statement. Gecko is given `--profile PATH` as two arguments, `--headless`, and `--new-instance` |
+| the trust route | `b_ids_driver::trust_route` answers `switch` or `profile-database` for a family, and `b-ids-driver trust-route` is the command a capture script asks rather than mapping a family itself |
+| the trust | `--ca-file` seeds the throwaway profile's `cert9.db` with the run's own authority and a trust record for it |
+| what is recorded | `Driven::trust`, reported by the launch rather than inferred by a caller, and `captured.trust` reads `trust-store` |
+
+⛔ **A trust configuration an engine has no route for is refused**, by name: a
+key pin on Gecko and an authority on a Chromium both exit with a message saying
+which route that engine does have. Firefox reads an unknown argument as a file
+to open, so passing one navigates somewhere nobody asked for and the capture is
+of the wrong thing.
+
+#### ⭐ The finding that decides whether any of this works
+
+⛔ **A trust record without the certificate's SHA-1 is discarded in silence.**
+`nssTrust_Create` in
+`references/mozilla__nss/tree/lib/pki/certificate.c:1022` accepts a record with
+no hash only when `nssTrust_IsSafeToIgnoreCertHash` says every purpose on it is
+unknown or distrusted, so a delegator record must carry
+`CKA_NSS_CERT_SHA1_HASH` and it must match. Nothing reports a mismatch: the
+browser simply does not trust the authority.
+
+⚠ **That is why this tree now carries a SHA-1.** It is not a security primitive
+here and the module says so; the algorithm is chosen by the reader, in
+`references/mozilla__nss/tree/lib/dev/ckhelper.c:441`.
+
+⛔ **And a certificate object alone is not trust.** The lookup is by issuer and
+serial number, on a second object of class `CKO_NSS_TRUST`:
+`nssToken_FindTrustForCertificate` in
+`references/mozilla__nss/tree/lib/dev/devtoken.c:1124`.
+
+#### What was written, and what it deliberately is not
+
+| | |
+| --- | --- |
+| `nssdb::sqlite` | a SQLite database **writer** and nothing else. It creates a file; it cannot open one, and that is why it is small enough to be correct. A row that would need an overflow page is refused rather than truncated. |
+| `nssdb::der` | the four fields NSS indexes, read off the DER and never re-encoded. `CKA_SERIAL_NUMBER` is the whole INTEGER, tag and length included. |
+| `nssdb::sha1` | the one digest NSS reads back |
+| ⛔ not written | `key4.db`. Firefox creates it, and a profile differing from an ordinary one by more than the added authority is a profile measuring something else. |
+
+⚠ **The DDL differs from NSS's own by one word and the reason is measured.**
+NSS declares `id PRIMARY KEY UNIQUE ON CONFLICT ABORT`, which is not an integer
+primary key, so SQLite builds an implicit index a writer would have to produce a
+b-tree for. `id INTEGER PRIMARY KEY` makes the column the row id: the uniqueness
+NSS relies on is kept and no index exists to write. Measured 2026-09-04 with
+sqlite3 3.53.4, the first form creates `sqlite_autoindex_nssPublic_1` and the
+second creates no index at all. ⭐ NSS reads column NAMES rather than this text,
+and `sdb_update_column` in
+`references/mozilla__nss/tree/lib/softoken/sdb.c:2001` adds every attribute
+column it does not find, so a narrow table is completed by NSS on first write.
+
+#### ⛔ Two defects this found in code that was already green
+
+⚠ **The record encoding lost a column and the file still passed an integrity
+check.** SQLite keeps a slot in every record for the row-id column and takes the
+value from the cell key, so a record that omitted it read back one column to the
+left. Found by reading the produced file with `sqlite3` rather than with this
+project's own code: `CKA_CLASS` came back as the label and the label as the
+certificate. The writer now derives the `CREATE TABLE` statement from the column
+list, so a statement and a row width cannot disagree.
+
+⚠ **The launch tore down the profile while the browser was still starting.** A
+Firefox parent process that exits at 158 ms is a launcher stub, and the profile
+was removed under the real process, which recreated an empty one and reported
+`UnknownCA`. ⭐ The cause was measured rather than guessed: the browser had
+updated itself from 148.0.2 to 154.0.1 mid-session and the launcher was running
+the updater. The removal is bounded-retry now, because a killed browser has not
+finished exiting and Windows refuses to delete a file any process still holds.
+
+#### The driven pass, which is what proves it
+
+⛔ **Firefox 154.0.1 completed a TLS 1.3 handshake against this project's own
+terminator on one Windows host, 2026-09-04**, and the capture is published:
+
+```text
+firefox 154.0.1 exited=false elapsed_ms=45047 profile_removed=true trust=trust-store
+  --profile
+  --new-instance
+  --headless
+harness exit=1 driver exit=0
+resumption: offered
+b-ids-harness: 1 of 8 handshake(s) completed, from 1 accepted connection(s)
+connections recorded: 1
+```
+
+⚠ **The harness exits 1 because it asked for eight handshakes and one
+navigation gave it one.** That is the sampling shortfall it is designed to
+report, not a failed capture.
+
+⭐ **The hello is Gecko's and not a Chromium's**, which is the check the entry
+asked for: the cipher list is Firefox's own order, the groups carry
+`X25519MLKEM768` with `4588` first, the extensions include encrypted client
+hello and delegated credentials, and the HTTP/2 half opens on stream 3 with a
+priority block and the pseudo-header order `:method :path :authority :scheme`.
+⛔ A run producing something that looked like Chromium would have been a finding
+about the harness rather than a result.
+
+#### ⛔ A third defect, in a check, and it would have refused every future capture
+
+⚠ **`check-data-branch` called nineteen changed aggregates a rewritten
+branch.** Adding the seventh profile changes every index, route, format dump and
+generated config, because each is a function of the whole corpus. The check
+exempted two files by name, so under it no capture could ever be published
+again and `PUB-14`'s pending path was unreachable for the one case it exists
+for.
+
+⭐ **Fixed at the producer.** The publish manifest is `corpus-publish/2` and
+records `derived` per artefact: false for a profile and its raw sidecar, true
+for everything derived from the set. Both halves of the check read it, and the
+corpus digest is now taken over the artefacts a profile owns rather than over a
+path prefix that swept in two aggregates.
+
+⛔ **Mutation-proved on both halves**, against a copy under the ignored scratch
+directory, with the live file restored from that copy and compared byte for
+byte afterwards:
+
+```text
+planted at byte 3541
+sh rc=1
+  1 published artefact(s) changed their bytes, and a published artefact is immutable
+ps1 rc=1
+  1 published artefact(s) changed their bytes, and a published artefact is immutable
+restored identical: yes
+git sees no change: yes
+```
+
+#### ⚠ And a fourth: a captured cell outside the plan was invisible
+
+`check-coverage` reported over the plan alone, so the corpus held seven profiles
+and the report accounted for six with nothing saying so. Both halves report an
+`unplanned` row now, which is the rule the tool already states for a planned
+cell that was not attempted, applied from the other side.
+
+#### Prove
+
+```bash
+cargo test -p b-ids-driver --test resolve_and_drive
+```
+
+```text
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.23s
+```
+
+```bash
+sh scripts/common/check-coverage.sh --require-rows chrome,edge,firefox
+```
+
+```text
+coverage over 9 planned cell(s):
+
+  captured       chrome/stable/linux64              2 profile(s) required
+  captured       chrome/stable/win64                3 profile(s) required
+  captured       edge/stable/linux64                1 profile(s) required
+  absent         chrome/for-testing/linux64         0 profile(s)
+  absent         chrome/for-testing/win64           0 profile(s)
+  not-attempted  chrome/stable/macos-arm64          0 profile(s)
+  not-attempted  chrome/beta/linux64                0 profile(s)
+  absent         firefox/stable/linux64             0 profile(s) required
+  not-attempted  chromium/stable/linux64            0 profile(s)
+  unplanned      firefox/stable/win64               1 profile(s)
+
+3 captured, 3 absent, 3 not attempted, 1 outside the plan.
+```
+
+⚠ **Exit 0 read from the process, unpiped**, on both. ⭐ The second one can
+fail: `--require-rows chromium` exits 1 and names the row, which is how the flag
+was proved to bite.
+
+#### ⛔ What is still not measured, and it is the cell rather than the engine
+
+⚠ **Nothing has run a Gecko lane on a hosted runner.** The cell
+`firefox/stable/linux64` is enabled now and its route is `installed`, which
+takes whatever the image ships rather than a build this project named. ⭐ The
+capture that exists was taken on one Windows host and is published as
+`firefox/stable/win64`, a cell the plan does not carry, which is why the
+coverage report shows it outside the plan.
+
+⚠ **And the browser updated under this session**, 148.0.2 to 154.0.1 within one
+hour, which is the hazard `DRIVER-08` exists for: a lane that takes what is
+installed is a lane whose subject can change between two runs of it.

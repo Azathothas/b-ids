@@ -173,10 +173,31 @@ if [ -z "$PIN" ] || [ -z "$BASE" ]; then
 fi
 printf 'harness at %s\n' "$BASE"
 
+# -- which trust route this engine has, asked of the driver ------------------
+# ⭐ ASKED, NEVER MAPPED HERE. Chromium takes the authority as a key pin on the
+# command line and Gecko takes no certificate switch at all, so the trust goes
+# into the certificate database of the profile the launch creates. A case
+# statement here keyed on a family name would be a second family list, which is
+# the defect DRIVER-10 records. TODO/driver.md, DRIVER-11.
+# shellcheck disable=SC2086 # BROWSER_FLAG is a flag and its value, or empty
+TRUST_ROUTE=$("$DRIVER" trust-route $BROWSER_FLAG 2>"$OUT/trust-route.err")
+case "$TRUST_ROUTE" in
+  switch) TRUST_FLAGS="--pin $PIN" ;;
+  profile-database) TRUST_FLAGS="--ca-file $OUT/ca.pem" ;;
+  *)
+    printf '10-first-profile: the driver named no trust route: %s\n' \
+      "$(cat "$OUT/trust-route.err")" >&2
+    kill "$HARNESS_PID" 2>/dev/null
+    wait "$HARNESS_PID" 2>/dev/null
+    exit 2
+    ;;
+esac
+printf 'trust route: %s\n' "$TRUST_ROUTE"
+
 # -- the browser, in the foreground, which is the hold -----------------------
 printf '\nlaunching the browser at it\n'
-# shellcheck disable=SC2086 # both are a flag and its value, or empty
-"$DRIVER" drive --url "$BASE" --pin "$PIN" --timeout-ms 45000 \
+# shellcheck disable=SC2086 # each is a flag and its value, or empty
+"$DRIVER" drive --url "$BASE" $TRUST_FLAGS --timeout-ms 45000 \
   --log "$OUT/browser.log" $HEADLESS $BROWSER_FLAG \
   > "$OUT/driven.txt" 2>&1
 DRIVER_RC=$?
@@ -220,7 +241,7 @@ printf '\nconditions\n'
 printf '  host      %s\n' "$(uname -s -r 2>/dev/null || printf 'unknown')"
 printf '  rustc     %s\n' "$(rustc --version 2>/dev/null || printf 'unknown')"
 printf '  taken     %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-printf '  trust     spki-pin, one key for one launch, no trust store changed\n'
+printf '  trust     %s, read from what the driver reported\n' "$(awk 'NR==1 { for (i = 1; i <= NF; i++) if ($i ~ /^trust=/) { sub(/^trust=/, "", $i); print $i } }' "$OUT/driven.txt")"
 printf '  resumption %s, read from what the harness reported\n' "$RESUMPTION"
 printf '  headless  %s\n' "${HEADLESS:-no}"
 printf '  switches  %s\n' "$(wc -l < "$OUT/switches.txt" | tr -d ' ')"
@@ -253,8 +274,8 @@ printf '  acquisition %s\n' "${ACQUISITION:-none, this build was already on the 
 IDENTITY="$OUT/identity.json"
 node -e '
 const fs = require("fs");
-const [resolvedPath, switchesPath, out, headless, resumption, acquisitionPath] =
-  process.argv.slice(1);
+const [resolvedPath, switchesPath, out, headless, resumption, acquisitionPath,
+  drivenPath] = process.argv.slice(1);
 const resolved = fs.readFileSync(resolvedPath, "utf8").split(/\r?\n/)
   .filter(Boolean).map((l) => JSON.parse(l));
 // ⛔ THE FIRST LINE, whatever family it is. The driver was given the same
@@ -276,10 +297,17 @@ fs.writeFileSync(out, JSON.stringify({
   method: "host",
   harness: "b-ids-harness 0.0.0",
   operator: "",
-  // ⛔ Read from the switch list the driver reported, never asserted here. The
-  // pin flag being present IS the trust configuration.
-  trust: fs.readFileSync(switchesPath, "utf8")
-    .includes("--ignore-certificate-errors-spki-list=") ? "spki-pin" : "not-applicable",
+  // ⛔ READ FROM WHAT THE DRIVER REPORTED, never inferred from the switch
+  // list. Inferring it held only while every engine took its trust on the
+  // command line: a Gecko launch passes no certificate switch at all, so the
+  // same rule read not-applicable over a completed handshake, which is a
+  // combination the schema refuses. The driver names the configuration it
+  // actually used. TODO/driver.md, DRIVER-11.
+  trust: (() => {
+    const m = fs.readFileSync(drivenPath, "utf8").match(/(?:^|[ ])trust=([^ \r\n]+)/);
+    if (!m) { throw new Error("the driver reported no trust configuration"); }
+    return m[1];
+  })(),
   switches: fs.readFileSync(switchesPath, "utf8").split(/\r?\n/).filter(Boolean),
   // ⛔ Read from what the HARNESS reported, never from what this script
   // asked for. A run whose switch was refused would otherwise record a
@@ -296,7 +324,7 @@ fs.writeFileSync(out, JSON.stringify({
     : null,
 }, null, 2) + "\n");
 ' "$OUT/resolved.jsonl" "$OUT/switches.txt" "$IDENTITY" "${HEADLESS:-}" "$RESUMPTION" \
-  "$ACQUISITION" || {
+  "$ACQUISITION" "$OUT/driven.txt" || {
   printf '10-first-profile: could not write the identity file\n' >&2
   exit 1
 }

@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 12  blocked 0  done 95
+total 107  open 11  blocked 0  done 96
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
-| P1 | 2 | 0 | 47 | 49 |
+| P1 | 1 | 0 | 48 | 49 |
 | P2 | 7 | 0 | 35 | 42 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **12** | **0** | **95** | **107** |
+| **all** | **11** | **0** | **96** | **107** |
 
 ---
 
@@ -59,7 +59,7 @@ total 107  open 12  blocked 0  done 95
 | DRIVER-08 | P0 | L | done | Purge the machine's browsers, install the build the cell names | [`driver.md`](driver.md) |
 | DRIVER-09 | P1 | M | done | The most dangerous script in the tree is the one with no twin | [`driver.md`](driver.md) |
 | DRIVER-10 | P1 | L | done | Provisioning is written for one family and the matrix names four | [`driver.md`](driver.md) |
-| DRIVER-11 | P1 | L | open | The launcher speaks Chromium, and the highest-value lane is not one | [`driver.md`](driver.md) |
+| DRIVER-11 | P1 | L | done | The launcher speaks Chromium, and the highest-value lane is not one | [`driver.md`](driver.md) |
 | EMIT-01 | P2 | L | done | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
 | EMIT-02 | P2 | L | done | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
 | EMIT-03 | P2 | S | open | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |

@@ -43,7 +43,7 @@
       "build": null,
       "enabled": true,
       "required": true,
-      "why": "The cheapest lane there is: the runner image ships Chrome, so this needs no acquisition at all. ⭐ Route changed to vendor on 2026-09-02, which is the ruling applied: the lane purges the machine and installs the current branded build rather than measuring whatever the image shipped. ⚠ Measured in provision.yml run 33628209454: the vendor channel served 152.0.7977.75 on Linux and 152.0.7977.76 on Windows one hour apart, so this route does NOT give both platforms one build."
+      "why": "The cheapest lane there is: the runner image ships Chrome, so this needs no acquisition at all. \u2b50 Route changed to vendor on 2026-09-02, which is the ruling applied: the lane purges the machine and installs the current branded build rather than measuring whatever the image shipped. \u26a0 Measured in provision.yml run 33628209454: the vendor channel served 152.0.7977.75 on Linux and 152.0.7977.76 on Windows one hour apart, so this route does NOT give both platforms one build."
     },
     {
       "browser": "chrome",
@@ -55,7 +55,7 @@
       "build": null,
       "enabled": true,
       "required": true,
-      "why": "The one platform the corpus already has, captured again on a runner rather than on a laptop. Two profiles of one build on two platforms is what decides whether the TLS half is platform-independent. ⭐ Route changed to vendor on 2026-09-02, which is the ruling applied: the lane purges the machine and installs the current branded build rather than measuring whatever the image shipped. ⚠ Measured in provision.yml run 33628209454: the vendor channel served 152.0.7977.75 on Linux and 152.0.7977.76 on Windows one hour apart, so this route does NOT give both platforms one build."
+      "why": "The one platform the corpus already has, captured again on a runner rather than on a laptop. Two profiles of one build on two platforms is what decides whether the TLS half is platform-independent. \u2b50 Route changed to vendor on 2026-09-02, which is the ruling applied: the lane purges the machine and installs the current branded build rather than measuring whatever the image shipped. \u26a0 Measured in provision.yml run 33628209454: the vendor channel served 152.0.7977.75 on Linux and 152.0.7977.76 on Windows one hour apart, so this route does NOT give both platforms one build."
     },
     {
       "browser": "edge",
@@ -67,7 +67,7 @@
       "build": "151.0.4129.101",
       "enabled": true,
       "required": true,
-      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. ⭐ Provisioned from the vendor enterprise index as of 2026-09-02 rather than taken from the image: the index publishes a SHA-256 per artefact, so this is the first cell whose acquisition can be checked against the publisher. ⚠ branded stays true: the enterprise index serves the vendor own product, unlike the Chrome automation index. The image Edge could not capture at all, because its SUID sandbox helper was not configured, which capture.yml run 33615327503 recorded and DRIVER-10 fixes."
+      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. \u2b50 Provisioned from the vendor enterprise index as of 2026-09-02 rather than taken from the image: the index publishes a SHA-256 per artefact, so this is the first cell whose acquisition can be checked against the publisher. \u26a0 branded stays true: the enterprise index serves the vendor own product, unlike the Chrome automation index. The image Edge could not capture at all, because its SUID sandbox helper was not configured, which capture.yml run 33615327503 recorded and DRIVER-10 fixes."
     },
     {
       "browser": "chrome",
@@ -79,7 +79,7 @@
       "build": "151.0.7922.76",
       "enabled": true,
       "required": false,
-      "why": "The unbranded build of the version the corpus already holds from a laptop, so one build across two platforms and two brands becomes comparable. ⭐ Enabled 2026-09-03, by the operator's ruling: Channel::ForTesting landed, so the row publishes at its own route and no branded build shares a path with it. ⚠ NOTHING HAS EXERCISED THIS LANE'S CAPTURE PATH. capture.yml allows every lane to fail alone, so the first attempt reports rather than breaking the run, and DRIVER-06 owns the difference the lane exists to measure."
+      "why": "The unbranded build of the version the corpus already holds from a laptop, so one build across two platforms and two brands becomes comparable. \u2b50 Enabled 2026-09-03, by the operator's ruling: Channel::ForTesting landed, so the row publishes at its own route and no branded build shares a path with it. \u26a0 NOTHING HAS EXERCISED THIS LANE'S CAPTURE PATH. capture.yml allows every lane to fail alone, so the first attempt reports rather than breaking the run, and DRIVER-06 owns the difference the lane exists to measure."
     },
     {
       "browser": "chrome",
@@ -91,7 +91,7 @@
       "build": "151.0.7922.76",
       "enabled": true,
       "required": false,
-      "why": "The other half of the pair above, and the one that measures whether the TLS half is platform-independent at a build both platforms genuinely run. ⭐ Enabled 2026-09-03 with it, and for the same reason. ⚠ Its capture path is equally unexercised."
+      "why": "The other half of the pair above, and the one that measures whether the TLS half is platform-independent at a build both platforms genuinely run. \u2b50 Enabled 2026-09-03 with it, and for the same reason. \u26a0 Its capture path is equally unexercised."
     },
     {
       "browser": "chrome",
@@ -125,9 +125,9 @@
       "route": "installed",
       "branded": true,
       "build": null,
-      "enabled": false,
-      "required": false,
-      "why": "A genuinely different TLS stack and the highest-value non-Chrome lane. ⭐ The resolver knows the family as of 2026-09-04, which is what this cell used to be waiting on: b_ids_driver::Family has a firefox variant, candidates on both platforms, and Source::ApplicationIni, which is the only source that answers for a Firefox layout. Measured on one Windows host, it resolves 148.0.2 from application.ini. ⛔ Still not enabled, and the blocker has MOVED rather than gone: b_ids_driver::drive passes Chromium switches and nothing else, so it refuses a non-Chromium family rather than launching one with arguments it misreads. A launch path for Gecko is what this cell now waits on."
+      "enabled": true,
+      "required": true,
+      "why": "A genuinely different TLS stack and the highest-value non-Chrome lane. \u2b50 Enabled 2026-09-04, when DRIVER-11 built the launch path this cell was waiting on: the switch list is per engine, so Gecko is given --profile and --headless rather than Chromium's, and the trust is arranged where Firefox looks for it. Firefox takes no command-line equivalent of --ignore-certificate-errors-spki-list, so the launch writes a certificate database into the throwaway profile carrying the run's own authority and its trust record, and the capture is recorded as trust-store rather than spki-pin. \u26a0 Driven end to end on one Windows host 2026-09-04 against Firefox 154.0.1: one connection, a completed TLS 1.3 handshake, h2 over ALPN, and the profile removed afterwards. That capture is published as firefox/stable/win64, which this plan does not carry as a cell, so check-coverage reports it as outside the plan. \u26d4 What is still unmeasured is this cell itself: nothing has run a Gecko lane on a hosted runner, and route installed takes whatever the image ships rather than a build this project named."
     },
     {
       "browser": "chromium",
@@ -139,7 +139,7 @@
       "build": null,
       "enabled": false,
       "required": false,
-      "why": "The control that proves which fields are branding and which are engine: whatever differs from the chrome cell beside it is branding. ⛔ THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02's acceptance names chromium as a required row, so the plan and the acceptance disagreed about what was even planned. ⚠ Waiting on acquisition rather than on the resolver, which knows the family now: there is no vendor channel serving a Chromium build addressable by the version a profile records, and the runner image serves it as a snap, which is a different install mechanism and a different sandbox. DRIVER-10 says this cell may end as a recorded refusal rather than a lane."
+      "why": "The control that proves which fields are branding and which are engine: whatever differs from the chrome cell beside it is branding. \u26d4 THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02's acceptance names chromium as a required row, so the plan and the acceptance disagreed about what was even planned. \u26a0 Waiting on acquisition rather than on the resolver, which knows the family now: there is no vendor channel serving a Chromium build addressable by the version a profile records, and the runner image serves it as a snap, which is a different install mechanism and a different sandbox. DRIVER-10 says this cell may end as a recorded refusal rather than a lane."
     }
   ]
 }

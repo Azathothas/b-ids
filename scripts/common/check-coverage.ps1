@@ -112,7 +112,7 @@ try {
     # ⛔ A PLAN WITH NO CELLS HAS REPORTED NOTHING.
     if ($cells.Count -eq 0) {
         if ($Json) {
-            Write-Output '{"schema":"check-coverage/1","cells":0,"captured":0,"absent":0,"not_attempted":0,"missing_required":0}'
+            Write-Output '{"schema":"check-coverage/2","cells":0,"captured":0,"absent":0,"not_attempted":0,"unplanned":0,"missing_required":0}'
         }
         else {
             [Console]::Error.WriteLine('check-coverage: the plan holds no cell, so nothing was reported.')
@@ -134,6 +134,22 @@ try {
         $rows += ('  {0,-14} {1,-34} {2} profile(s){3}' -f $state, $key, $n, $req)
     }
 
+    # A capture no planned cell covers is reported, never dropped. The rule
+    # above says a planned cell that was not attempted is reported; this is
+    # the same rule from the other side, and it was missing. Found
+    # 2026-09-04, when DRIVER-11 added a firefox/stable/win64 profile the
+    # plan does not carry: the corpus held seven profiles and the report
+    # accounted for six, with nothing saying so.
+    $plannedKeys = @($cells | ForEach-Object {
+        "$($_.browser)/$($_.channel)/$($_.platform)" })
+    $unplanned = @()
+    foreach ($key in ($captured | Sort-Object -Unique)) {
+        if (-not $key) { continue }
+        if ($plannedKeys -contains $key) { continue }
+        $n = @($captured | Where-Object { $_ -eq $key }).Count
+        $unplanned += ('  {0,-14} {1,-34} {2} profile(s)' -f 'unplanned', $key, $n)
+    }
+
     $missing = @()
     if ($RequireRows) {
         foreach ($want in ($RequireRows -split ',')) {
@@ -147,9 +163,10 @@ try {
     }
 
     if ($Json) {
-        Write-Output ('{"schema":"check-coverage/1","cells":' + $cells.Count +
+        Write-Output ('{"schema":"check-coverage/2","cells":' + $cells.Count +
                       ',"captured":' + $nCaptured + ',"absent":' + $nAbsent +
                       ',"not_attempted":' + $nNotAttempted +
+                      ',"unplanned":' + $unplanned.Count +
                       ',"missing_required":' + $missing.Count + '}')
         if ($missing.Count -gt 0) { exit 1 }
         exit 0
@@ -158,8 +175,10 @@ try {
     Write-Output ("coverage over " + $cells.Count + " planned cell(s):")
     Write-Output ''
     $rows | ForEach-Object { Write-Output $_ }
+    $unplanned | ForEach-Object { Write-Output $_ }
     Write-Output ''
-    Write-Output "$nCaptured captured, $nAbsent absent, $nNotAttempted not attempted."
+    Write-Output ("$nCaptured captured, $nAbsent absent, $nNotAttempted not attempted, " +
+                  "$($unplanned.Count) outside the plan.")
 
     if ($missing.Count -gt 0) {
         Write-Output ''

@@ -27,13 +27,15 @@
 pub mod acquire;
 pub mod drive;
 pub mod headless;
+pub mod nssdb;
 pub mod resolve;
 pub mod versions;
 
 pub use acquire::{
     Acquired, Candidate, IndexRefusal, Platform, Refusal, Route, acquire_with, download_url, plan,
 };
-pub use drive::{Driven, Launch, drive};
+pub use drive::{Driven, Launch, TrustRoute, drive, trust_route};
 pub use headless::{Normalisation, normalise, normalise_user_agent};
+pub use nssdb::{Seeded, seed};
 pub use resolve::{Family, NotResolved, Resolved, Source, resolve, sources_for};
 pub use versions::{Chosen, Release, Report, discover};

@@ -128,6 +128,27 @@
         "sha256": "56b16a972c5a19ee89e127b3fe1cd65de1abab251d5499bb3e1d029f8713f66f",
         "bytes": 3478
       }
+    },
+    {
+      "id": "firefox-154.0.1-win64-stable",
+      "browser": "Firefox",
+      "version": "154.0.1",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-09-04T06:44:56Z",
+      "trust": "trust-store",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/firefox/stable/win64/154.0.1.json",
+        "sha256": "2d0a5d99e391250c4046016e510c1fb1c1d12f1514b45e3b20c9c172e4faaad0",
+        "bytes": 14749
+      },
+      "hello": {
+        "path": "raw/v1/firefox/stable/win64/154.0.1.hello.hex",
+        "sha256": "e9728399e4e7c52c62da9696882c3b2335e036d05815a9dd4dfede1c92437541",
+        "bytes": 3744
+      }
     }
   ]
 }

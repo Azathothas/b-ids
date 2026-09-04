@@ -10,18 +10,27 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use b_ids_driver::acquire::{Platform, download, index_route, index_url};
-use b_ids_driver::{Family, Launch, drive, plan, resolve};
+use b_ids_driver::{Family, Launch, drive, plan, resolve, trust_route};
 
 const USAGE: &str = "\
 usage: b-ids-driver resolve [--browser NAME] [--json]
        b-ids-driver drive --url URL [--browser NAME] [--pin PIN] [--headless]
                           [--timeout-ms N] [--log PATH] [--disable-verification]
+                          [--ca-file PATH]
+       b-ids-driver trust-route [--browser NAME]
        b-ids-driver versions [--channel CH] [--json]
        b-ids-driver acquire --browser NAME --version V --index PATH
                             [--platform P] [--json]
 
   resolve          find a browser on this machine and report its build, with
                    what each source answered and whether they disagreed
+  trust-route      print how this family is told what to trust: `switch` for
+                   an engine that takes it on the command line, or
+                   `profile-database` for one that does not. ⭐ ASKED OF THIS
+                   COMMAND RATHER THAN DECIDED BY A CALLER: a capture script
+                   that mapped a family to a route itself would be a second
+                   family list, and the list the compiler cannot see is the
+                   one that goes stale.
   versions         ask the vendor which build is SERVING on a channel, which
                    during a staged rollout is not the highest build it knows.
                    It names every source, what each answered, the chosen build
@@ -50,6 +59,15 @@ usage: b-ids-driver resolve [--browser NAME] [--json]
   --pin PIN        the base64 SHA-256 of the one subject public key to trust.
                    b-ids-harness --ca-out prints it on stderr as `pin: VALUE`.
                    It is not a change to any trust store.
+  --ca-file PATH   the authority b-ids-harness --ca-out wrote, installed into
+                   the certificate database of the profile this launch
+                   creates. ⭐ THE ONLY TRUST ROUTE AN ENGINE WITH NO
+                   CERTIFICATE SWITCH HAS, which is Gecko: Firefox takes no
+                   command-line equivalent of --pin. ⛔ It changes no machine
+                   and no user's store: the database is written into the
+                   throwaway profile and removed with it. Refused together
+                   with --pin or --disable-verification, and refused on a
+                   Chromium, which takes --pin instead.
   --browser NAME   which family to resolve or drive: chrome or edge. Without
                    it, the first family that resolved is taken, which is the
                    order the resolver reports. ⛔ A NAME THAT IS NOT A
@@ -337,6 +355,15 @@ fn main() -> ExitCode {
                 };
                 launch.spki_pin = Some(value);
             }
+            "--ca-file" => {
+                let Some(value) = argv.next() else {
+                    return fail("--ca-file needs a path");
+                };
+                match std::fs::read_to_string(&value) {
+                    Ok(pem) => launch.ca_pem = Some(pem),
+                    Err(err) => return fail(&format!("--ca-file {value}: {err}")),
+                }
+            }
             "--timeout-ms" => {
                 let Some(value) = argv.next() else {
                     return fail("--timeout-ms needs a number");
@@ -409,6 +436,13 @@ fn main() -> ExitCode {
     };
 
     match command.as_str() {
+        "trust-route" => {
+            let Some(browser) = browsers.first() else {
+                return fail("no browser resolved");
+            };
+            println!("{}", trust_route(browser.family));
+            ExitCode::SUCCESS
+        }
         "resolve" => {
             for browser in &browsers {
                 if json {
@@ -437,12 +471,13 @@ fn main() -> ExitCode {
             match drive(browser, &launch) {
                 Ok(driven) => {
                     println!(
-                        "{} {} exited={} elapsed_ms={} profile_removed={}",
+                        "{} {} exited={} elapsed_ms={} profile_removed={} trust={}",
                         browser.family,
                         browser.version,
                         driven.exited,
                         driven.elapsed.as_millis(),
-                        driven.profile_removed
+                        driven.profile_removed,
+                        driven.trust
                     );
                     for switch in &driven.switches {
                         println!("  {switch}");

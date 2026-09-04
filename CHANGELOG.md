@@ -16,6 +16,43 @@ anything here has reached.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-04T07:20:00Z - the corpus has a non-Chromium profile, and three checks that were green would have refused every capture after it
+
+**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-11`.
+**Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch gains
+the Firefox profile, its raw sidecar and 42 regenerated aggregates on the next
+push to the default branch; every profile it already carries is unchanged.
+
+What landed:
+
+- ⭐ **Firefox 154.0.1 completed a TLS 1.3 handshake against this project's own
+  terminator**, on one Windows host, and the capture is published as
+  `corpus/v1/firefox/stable/win64/154.0.1.json`. `captured.trust` reads
+  `trust-store`. It is the first profile in the corpus from a stack that is not
+  a Chromium.
+- ⛔ **The launcher has a path per engine.** The switch list is a table, so Gecko
+  is given `--profile`, `--headless` and `--new-instance` rather than arguments
+  it reads as file names, and a trust configuration an engine has no route for
+  is refused by name.
+- ⭐ **Firefox takes no certificate switch at all**, so the trust is arranged
+  where it looks for it: the launch writes an NSS certificate database into the
+  throwaway profile carrying the run's own authority and a trust record for it.
+  `crates/b-ids-driver/src/nssdb/` is a SQLite writer, a DER field reader and a
+  SHA-1, each cited against `mozilla/nss` at a named commit in
+  [`references/mozilla__nss/`](references/mozilla__nss/).
+- ⛔ **A trust record without the certificate's SHA-1 is discarded in silence.**
+  That is NSS's rule and it is why this tree carries a SHA-1 at all. A
+  certificate object alone is a certificate the browser knows and does not
+  trust.
+- ⛔ **The publish manifest is `corpus-publish/2`** and records `derived` per
+  artefact. Without it, adding one profile changed nineteen aggregates and
+  `check-data-branch` called it a rewritten branch, so under the old rule no
+  capture could ever be published again.
+- ⛔ **`check-coverage` reports a capture no planned cell covers.** The corpus
+  held seven profiles and the report accounted for six.
+- ⚠ **The `firefox/stable/linux64` cell is enabled**, and nothing has run a
+  Gecko lane on a hosted runner yet.
+
 ### 2026-09-04T05:20:00Z - the Windows CI failure was this repository's own probe, and two checks were passing by comparing something to itself
 
 **Record:** [`TODO/ci.md`](TODO/ci.md) `CI-09`,

@@ -235,15 +235,28 @@ if [ -n "$REF" ]; then
       # ⭐ THE TWO CASES ARE DISTINGUISHABLE, so they are distinguished:
       #
       #   behind    every path the branch carries is still produced, and every
-      #             one of them is byte-identical, except the two files DERIVED
-      #             from the artefact list itself. Reported, and not a failure.
+      #             IMMUTABLE one of them is byte-identical. Reported, and not
+      #             a failure.
       #   diverged  anything else. A published path that is gone, or a
-      #             published byte that changed, is what this check exists for.
+      #             published byte that a profile owns and that changed, is
+      #             what this check exists for.
       #
-      # ⛔ The two derived files are compared by CONTENT rather than exempted:
-      # every artefact line the published manifest carries has to appear
-      # unchanged in the regenerated one. An exemption would let a changed
-      # digest through in the one file that lists every digest.
+      # ⛔ IMMUTABLE IS ASKED OF THE PRODUCER, NEVER GUESSED FROM A PATH. The
+      # manifest records `derived` per artefact: false for a profile and its raw
+      # sidecar, which are append-only, and true for every index, route, format
+      # dump and generated config, which are functions of the whole corpus and
+      # therefore MOVE when it grows.
+      #
+      # ⚠ THIS USED TO EXEMPT TWO FILES BY NAME and it was wrong the moment a
+      # seventh profile landed. Measured 2026-09-04: adding one Firefox profile
+      # changed nineteen published artefacts, every one of them an aggregate,
+      # and this check called it a rewritten branch. Under that rule no capture
+      # could ever be published again. TODO/driver.md, DRIVER-11.
+      #
+      # ⛔ The derived files are still compared by CONTENT rather than trusted:
+      # every artefact line the published manifest carries for an IMMUTABLE path
+      # has to appear unchanged in the regenerated one, so a digest that moved in
+      # the one file that lists every digest is still caught.
       git ls-tree -r --name-only "$REF" | sort > "$OUT/published-paths.txt"
       ( cd "$OUT/a" && find . -type f | sed 's|^\./||' | sort ) > "$OUT/regenerated-paths.txt"
       GONE=$(comm -23 "$OUT/published-paths.txt" "$OUT/regenerated-paths.txt" | wc -l | tr -d ' ')
@@ -271,6 +284,17 @@ if [ -n "$REF" ]; then
         note "the $BRANCH branch carries no MANIFEST.json, so what it claims to publish cannot be read"
       fi
 
+      # ⛔ THE REGENERATED manifest says which paths a profile owns. The
+      # PUBLISHED one is an older schema and cannot be asked.
+      jq -r '.artefacts[] | select(.derived == false) | .path' "$OUT/a/MANIFEST.json" 2>/dev/null |
+        tr -d '\r' | sort > "$OUT/immutable-paths.txt" || : > "$OUT/immutable-paths.txt"
+      if [ ! -s "$OUT/immutable-paths.txt" ]; then
+        # ⛔ AN EMPTY IMMUTABLE SET IS A REFUSAL, not a pass. A manifest this
+        # cannot read would otherwise make every published byte mutable, which
+        # is this check reporting green over the thing it exists to catch.
+        note "the regenerated MANIFEST.json names no immutable artefact, so nothing could be compared"
+      fi
+
       CHANGED=0
       DERIVED_CHANGED=0
       while IFS= read -r p; do
@@ -278,22 +302,30 @@ if [ -n "$REF" ]; then
         if git show "$REF:$p" 2>/dev/null | cmp -s - "$OUT/a/$p"; then
           continue
         fi
-        case "$p" in
-          MANIFEST.json | SHA256SUMS) DERIVED_CHANGED=$((DERIVED_CHANGED + 1)) ;;
-          *) CHANGED=$((CHANGED + 1)) ;;
-        esac
+        if grep -qx -- "$p" "$OUT/immutable-paths.txt"; then
+          CHANGED=$((CHANGED + 1))
+        else
+          DERIVED_CHANGED=$((DERIVED_CHANGED + 1))
+        fi
       done < "$OUT/published-paths.txt"
 
       # ⛔ EVERY PUBLISHED ARTEFACT LINE STILL PRESENT, UNCHANGED. This is what
       # makes the derived files safe to treat as expected-to-differ: a digest
       # that moved shows up here even though the file it lives in was allowed
       # to change.
+      # ⚠ OVER THE IMMUTABLE PATHS ONLY, for the same reason as above: an
+      # aggregate's digest moves whenever the corpus grows, so comparing every
+      # line would report a rewrite on every capture.
       SUMS_LOST=0
       if git show "$REF:SHA256SUMS" > "$OUT/published-sums.txt" 2>/dev/null &&
         [ -f "$OUT/a/SHA256SUMS" ]; then
-        SUMS_LOST=$(sort "$OUT/published-sums.txt" > "$OUT/ps.txt" &&
-          sort "$OUT/a/SHA256SUMS" > "$OUT/rs.txt" &&
-          comm -23 "$OUT/ps.txt" "$OUT/rs.txt" | wc -l | tr -d ' ')
+        awk 'NR == FNR { keep[$0] = 1; next }
+             { name = $0; sub(/^[0-9a-f]+[ ]+\*?/, "", name); if (name in keep) print }' \
+          "$OUT/immutable-paths.txt" "$OUT/published-sums.txt" | sort > "$OUT/ps.txt"
+        awk 'NR == FNR { keep[$0] = 1; next }
+             { name = $0; sub(/^[0-9a-f]+[ ]+\*?/, "", name); if (name in keep) print }' \
+          "$OUT/immutable-paths.txt" "$OUT/a/SHA256SUMS" | sort > "$OUT/rs.txt"
+        SUMS_LOST=$(comm -23 "$OUT/ps.txt" "$OUT/rs.txt" | wc -l | tr -d ' ')
       else
         SUMS_LOST=1
       fi

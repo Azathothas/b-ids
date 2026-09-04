@@ -13,53 +13,50 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Rule the open questions, fix the Windows CI failure at its cause, and work the order. Session ran 2026-09-04, attended, started 2026-09-04T00:07:59Z. |
-| the resume point | `DRIVER-11`, the launcher that speaks only Chromium. It is first in the work order and `CORPUS-02` is blocked on it. |
-| in flight | Nothing half-edited. Six entries closed in place with their acceptance commands run; `CORPUS-02` and `EMIT-03` open with measured blockers and rulings attached. |
-| the state of the tree | Clean and pushed on `main`. The gate is green over 40 checks. |
+| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s order to the end. Session ran 2026-09-04, attended, started 2026-09-04T06:04:28Z. |
+| the resume point | `CORPUS-02`, which the Gecko lane and the enabled `firefox/stable/linux64` cell now make dispatchable, then `PUB-13`. |
+| in flight | Nothing half-edited. `DRIVER-11` is closed in place with both acceptance commands run. |
+| the state of the tree | `check-gate.ps1 -Fast`: 39 passed, 1 skipped (`check-twins`). 445 tests. |
 | the paste | below |
 
 ---
 
 ## The one thing to know before anything else
 
-⭐ **There are no open questions.** Eight were put to the operator and ruled on
-2026-09-04, and each is written into the entry it governs as well as into the
-record's settled section. ⛔ Three of the next six units of work take a
-third-party tree into `vendor/`, and
-[`../methodology/vendoring.md`](../methodology/vendoring.md) is binding on each.
+⭐ **The corpus has a non-Chromium profile and it was measured here.** Firefox
+154.0.1 completed a TLS 1.3 handshake against this project's own terminator on
+this Windows host, and `corpus/v1/firefox/stable/win64/154.0.1.json` is the
+capture. `captured.trust` reads `trust-store`.
 
-⚠ **The Windows CI failure was this repository's own.** The record had called it
-a runner fault for three sessions. `rustc` and `cargo` are rustup proxies, so
-the probe started installing the pinned toolchain and killed it at six seconds;
-the component conflict the job reported was a fragment of that.
-⭐ `sh scripts/doctor/doctor.sh --fixture` is the command that now holds the
-rule, and `TODO/RULES.md` section 8.5 states it.
+⛔ **The operator overruled two things during this session**, and both are in
+`DRIVER-11`'s closure:
+
+- ⛔ **Do not vendor a niche third-party tree.** The nssdb writer is written in
+  Rust in this tree, under `crates/b-ids-driver/src/nssdb/`. The vendoring was
+  backed out before it was committed.
+- ⭐ **`mozilla/nss` is the reference**, mined to
+  [`../../references/mozilla__nss/`](../../references/mozilla__nss/) at commit
+  `7db8de42431841b214b49fd2cb7122a07aa631b8` and trimmed by deletion.
+
+⚠ **A local gate pass proves less than it looks.** The previous session pushed
+green from this same Windows host and both runners refused it. ⛔ Read the CI
+result before calling anything done.
 
 ---
 
 ## The conditions this session leaves
 
-⭐ **The data branch carries 237 files, up from 200.** `PUB-04`'s `configs/`
-tree was pushed by `publish.yml` on this session's own commit, and
-`check-data-branch` reports `matched:true pending:0` against it. ⚠ It was behind
-by 37 in between, and `PUB-14` is why that read as a pending publish rather than
-as a failure.
+⚠ **The data branch is BEHIND by 44 artefacts**, which is the designed pending
+state rather than a failure. The publisher adds them on the next push to `main`.
 
-⛔ **Two checks were passing by comparing something to itself**, and both are
-fixed: `check-data-branch` compared the published branch against a materialised
-copy of that same branch, and `check-corpus` asked this repository's history
-about files that are not in it. ⚠ Both had the identical cause, an export on the
-line above the guard.
+⛔ **The publish manifest is `corpus-publish/2`.** It records `derived` per
+artefact, and `check-data-branch` reads it: without that, adding any profile
+changed nineteen aggregates and read as a rewritten branch, so no capture could
+ever have been published again.
 
-⚠ **The corpus still publishes a `HeadlessChrome` User-Agent** on all six
-profiles and every `user-agent` route. ⭐ The operator has ruled that a session
-may dispatch `capture.yml` and merge the green lanes, which is the only route
-that replaces it, because the corpus is append-only.
-
-⛔ **A tool that purges browsers lives in `scripts/common/`.** It refuses any
-machine that is not both marked disposable by this project and running on a
-hosted runner. ⛔ Run it with `--plan` and nothing else on a machine you keep.
+⚠ **Firefox updated itself under this session**, 148.0.2 to 154.0.1 within an
+hour, and the launcher process that exits while the browser starts is what a
+capture taken during that update looks like.
 
 ---
 

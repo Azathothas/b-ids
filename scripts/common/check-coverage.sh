@@ -119,7 +119,7 @@ CELLS=$(jq -r '.cells[] | "\(.browser)/\(.channel)/\(.platform)\t\(.enabled)\t\(
 NCELLS=$(printf '%s\n' "$CELLS" | awk 'NF' | wc -l | tr -d ' ')
 if [ "$NCELLS" = 0 ]; then
   if [ "$JSON" = 1 ]; then
-    printf '{"schema":"check-coverage/1","cells":0,"captured":0,"absent":0,"not_attempted":0,"missing_required":0}\n'
+    printf '{"schema":"check-coverage/2","cells":0,"captured":0,"absent":0,"not_attempted":0,"unplanned":0,"missing_required":0}\n'
   else
     printf 'check-coverage: the plan holds no cell, so nothing was reported.\n' >&2
   fi
@@ -133,6 +133,7 @@ NNOTATTEMPTED=0
 NL="
 "
 printf '%s\n' "$CAPTURED" > "${TMPDIR:-/tmp}/.coverage.$$"
+cp "${TMPDIR:-/tmp}/.coverage.$$" "${TMPDIR:-/tmp}/.coverage.unplanned.$$" 2>/dev/null || :
 # shellcheck disable=SC2016
 while IFS="$TAB" read -r key enabled required; do
   [ -n "$key" ] || continue
@@ -155,6 +156,26 @@ $CELLS
 CELLS_EOF
 rm -f "${TMPDIR:-/tmp}/.coverage.$$"
 
+# ⛔ A CAPTURE NO PLANNED CELL COVERS IS REPORTED, NEVER DROPPED. The rule
+# above says a planned cell that was not attempted is reported; this is the
+# same rule from the other side, and it was missing. Found 2026-09-04, when
+# DRIVER-11 added a firefox/stable/win64 profile the plan does not carry: the
+# corpus held seven profiles and the report accounted for six, with nothing
+# saying so. A report that can only see the plan cannot show what the plan is
+# missing.
+UNPLANNED=""
+NUNPLANNED=0
+PLANNED_KEYS=$(printf '%s\n' "$CELLS" | cut -f1)
+for key in $(printf '%s\n' "$CAPTURED" | sort -u); do
+  [ -n "$key" ] || continue
+  if ! printf '%s\n' "$PLANNED_KEYS" | grep -qx -- "$key"; then
+    n=$(awk -v k="$key" '$0 == k { c++ } END { print c + 0 }' "${TMPDIR:-/tmp}/.coverage.unplanned.$$" 2>/dev/null || printf 0)
+    UNPLANNED="$UNPLANNED$(printf '  %-14s %-34s %s profile(s)' "unplanned" "$key" "$n")$NL"
+    NUNPLANNED=$((NUNPLANNED + 1))
+  fi
+done
+rm -f "${TMPDIR:-/tmp}/.coverage.unplanned.$$"
+
 # The caller's assertion: a named browser must have a capture SOMEWHERE.
 MISSING=""
 NMISSING=0
@@ -170,15 +191,19 @@ if [ -n "$REQUIRE" ]; then
 fi
 
 if [ "$JSON" = 1 ]; then
-  printf '{"schema":"check-coverage/1","cells":%s,"captured":%s,"absent":%s,"not_attempted":%s,"missing_required":%s}\n' \
-    "$NCELLS" "$NCAPTURED" "$NABSENT" "$NNOTATTEMPTED" "$NMISSING"
+  printf '{"schema":"check-coverage/2","cells":%s,"captured":%s,"absent":%s,"not_attempted":%s,"unplanned":%s,"missing_required":%s}\n' \
+    "$NCELLS" "$NCAPTURED" "$NABSENT" "$NNOTATTEMPTED" "$NUNPLANNED" "$NMISSING"
   [ "$NMISSING" -gt 0 ] && exit 1
   exit 0
 fi
 
 printf 'coverage over %s planned cell(s):\n\n' "$NCELLS"
 printf '%s' "$ROWS"
-printf '\n%s captured, %s absent, %s not attempted.\n' "$NCAPTURED" "$NABSENT" "$NNOTATTEMPTED"
+if [ "$NUNPLANNED" -gt 0 ]; then
+  printf '%s' "$UNPLANNED"
+fi
+printf '\n%s captured, %s absent, %s not attempted, %s outside the plan.\n' \
+  "$NCAPTURED" "$NABSENT" "$NNOTATTEMPTED" "$NUNPLANNED"
 
 if [ "$NMISSING" -gt 0 ]; then
   printf '\ncoverage check failed, %s required row(s) with no capture:\n\n' "$NMISSING"

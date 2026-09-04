@@ -296,6 +296,20 @@ if ($ref) {
             [void]$problems.Add("  the $branch branch carries no MANIFEST.json, so what it claims to publish cannot be read")
         }
 
+        # Immutable is asked of the producer, never guessed from a path. The
+        # regenerated manifest records derived per artefact: false for a
+        # profile and its raw sidecar, true for every index, route, format
+        # dump and generated config, which move whenever the corpus grows.
+        # Exempting two files by name was wrong the moment a seventh profile
+        # landed: adding one changed nineteen aggregates and this read as a
+        # rewritten branch.
+        $immutable = @($manifest.artefacts |
+            Where-Object { -not $_.derived } | ForEach-Object { $_.path })
+        if ($immutable.Count -eq 0) {
+            [void]$problems.Add(
+                "  the regenerated MANIFEST.json names no immutable artefact, so nothing could be compared")
+        }
+
         $changed = 0
         $sumsLost = 0
         foreach ($rel in $publishedPaths) {
@@ -308,14 +322,23 @@ if ($ref) {
                 $same = @(Compare-Object -ReferenceObject ([System.IO.File]::ReadAllBytes($blob)) `
                     -DifferenceObject ([System.IO.File]::ReadAllBytes($localFile))).Count -eq 0
             }
-            if (-not $same -and $rel -ne 'MANIFEST.json' -and $rel -ne 'SHA256SUMS') { $changed++ }
+            if (-not $same -and $immutable -contains $rel) { $changed++ }
         }
 
         $publishedSums = Join-Path $out 'published-sums.txt'
         & git show ($ref + ':SHA256SUMS') > $publishedSums 2>$null
         if ((Test-Path -LiteralPath $publishedSums) -and (Test-Path -LiteralPath (Join-Path $a 'SHA256SUMS'))) {
-            $ps = @(Get-Content $publishedSums | ForEach-Object { $_.TrimEnd() })
-            $rs = @(Get-Content (Join-Path $a 'SHA256SUMS') | ForEach-Object { $_.TrimEnd() })
+            # Over the immutable paths only: an aggregate digest moves
+            # whenever the corpus grows.
+            $keep = {
+                param($line)
+                $name = $line -replace '^[0-9a-f]+\s+\*?', ''
+                $immutable -contains $name
+            }
+            $ps = @(Get-Content $publishedSums | ForEach-Object { $_.TrimEnd() } |
+                Where-Object { & $keep $_ })
+            $rs = @(Get-Content (Join-Path $a 'SHA256SUMS') | ForEach-Object { $_.TrimEnd() } |
+                Where-Object { & $keep $_ })
             $sumsLost = @($ps | Where-Object { $rs -notcontains $_ }).Count
         } else {
             $sumsLost = 1
