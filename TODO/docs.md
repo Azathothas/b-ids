@@ -111,7 +111,7 @@ are named as scaffolding, with the entries that fill them.
 ## DOC-02. The operator's side is unwritten because there is nothing to operate
 
 **Source** found while adopting the template, 2026-08-30
-**Category** docs, **Priority** P2, **Effort** S, **Status** open
+**Category** docs, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -169,6 +169,65 @@ a capability on the capture machine. ⛔ If it does, that is the trigger and
 ⛔ **Still open, and still not written.** The Approach forbids writing it now and
 filling it with placeholders, and a skeleton is exactly what an empty operator
 runbook would be.
+
+---
+
+
+### ⭐ 2026-09-04, later the same day: the third trigger arrived, and it is written
+
+⚠ **The note above says this entry was FURTHER from its trigger than it was that
+morning**, with one candidate left: `PUB-06`'s raw-socket route, and only if
+capturing at that layer needs a privilege or a capability on the machine.
+
+⛔ **It does, and `PUB-06` measured it rather than predicting it.**
+
+| host | what is there | what a packet-capture dependency would need |
+| --- | --- | --- |
+| the operator's Windows machine | Npcap IS installed: `wpcap.dll`, `Packet.dll` and `System32\Npcap\wpcap.dll` | nothing |
+| `windows-latest` | nothing | Npcap, whose installer does not place silently in every configuration |
+| `ubuntu-24.04` | unmeasured from here | `libpcap-dev`, which `apt-get` installs without a person |
+
+⭐ **So taking the dependency makes the Windows half of the gate fail at link
+time until somebody installs Npcap on that runner.** That is a decision about a
+machine rather than about code, which is this entry's trigger in its own words.
+
+#### The acceptance, run
+
+```bash
+sh scripts/common/check-placeholders.sh
+```
+
+```text
+no placeholders survived in 325 files (TODO/ENTRY.md is exempt)
+```
+
+⚠ **Exit 0, read from the process, unpiped**, over a tree that now contains
+[`../docs/HUMAN.md`](../docs/HUMAN.md). ⛔ The Approach forbade writing it with
+placeholders in it, and the acceptance is exactly the check that would catch one.
+
+#### ⭐ What earned it, and what it deliberately leads with
+
+⛔ **Section 1 is what this project does NOT need from you**, and it is first on
+purpose: a runbook that only listed obligations would read as though the blanks
+were unwritten rather than as though the answer is none. No credential, no
+signing key, no deployment, no host. `check-signing` asserts the first two.
+
+⭐ **Section 2 is the machine checklist the Approach called the part that earns
+it**: every tool, its minimum, and why the pipeline needs it, with the two
+commands that read the machine rather than a table somebody works down by hand.
+⚠ The optional tools are listed separately with what each one turns from a SKIP
+into a check, because "install this and a leg starts running" is a different
+fact from "install this or nothing works".
+
+⭐ **Section 5 is the runbook**, and every row in it is an incident this
+repository actually had rather than a failure somebody imagined: a lane that
+exits 2, a run that reported `requests:0` over six real captures, a launch that
+aborts in a snap sandbox, a capture that leaves the digest suite red, and a
+Windows toolchain failure that is not the runner's.
+
+⚠ **What it does NOT contain**, so nobody looks for it: no credential
+inventory, because there are none; no deployment procedure, because nothing is
+deployed; and no on-call rotation, because nobody is on call.
 
 ---
 

@@ -16,19 +16,20 @@ its place, and a role listed here with no file behind it is a defect.
 
 | file | owns |
 | --- | --- |
-| ⭐ [`../AGENTS.md`](../AGENTS.md) | the router, and the ONLY one. Where you are, the absolutes, the start of a session, and what to read for which task. |
+| [`../AGENTS.md`](../AGENTS.md) | the router, and the ONLY one. Where you are, the absolutes, the start of a session, and what to read for which task. |
 | [`../../README.md`](../../README.md) | what this is, for a competent stranger: the thing, the honest limits, the licence, and the map |
-| ⭐ [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md) | the record. The baseline, what the last session did, and the work order. Nothing else carries a work order. |
+| [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md) | the record. The baseline, what the last session did, and the work order. Nothing else carries a work order. |
 | [`../../TODO/RULES.md`](../../TODO/RULES.md) | the half of the record that does not change between sessions: the standing facts, and the rules that are this project's own |
 | [`../../TODO/INDEX.md`](../../TODO/INDEX.md) | every entry, one line each, with the counts a check holds |
 | [`../../TODO/ENTRY.md`](../../TODO/ENTRY.md) | the form an entry is written from |
-| [`../../TODO/SUMMARY.md`](../../TODO/SUMMARY.md) | the last session's table. ⚠ A snapshot, never an authority. |
+| [`../../TODO/SUMMARY.md`](../../TODO/SUMMARY.md) | the last session's table. A snapshot, never an authority. |
 | [`../../CHANGELOG.md`](../../CHANGELOG.md) | what shipped, when, and where the evidence is |
 | [`../../SECURITY.md`](../../SECURITY.md) | ⭐ **the threat model**, and where to report. What this project accepts connections from, what a hosted oracle would receive, and what is in scope. `DOC-03`. |
 | [`../HISTORY/RESUME.md`](../HISTORY/RESUME.md) | ⚠ written at the START of a session and refreshed as work moves, so a session that dies mid-task still hands something over. Overwritten every session, never appended to. |
 | ⭐ [`../architecture.md`](../architecture.md) | **the technical reference.** What a profile is, what each crate does to one, the state a capture passes through, and the limits. `DOC-01`. |
 | ⭐ [`../glossary.md`](../glossary.md) | the terms this project uses without stopping to define them |
 | ⭐ [`../inherited-claims.md`](../inherited-claims.md) | every value this project carries that was measured somewhere else. **When a document states a fingerprint, a version or a codepoint, this file is where its provenance lives, and when the two disagree this one wins.** |
+| ⭐ [`../HUMAN.md`](../HUMAN.md) | **the operator's side.** What only a person can do: what this project does NOT need from you, the machine checklist, the one machine change the pipeline needs, the settings a workflow cannot grant itself, and what to read when a capture fails. `DOC-02`. |
 | [`../agent-tooling.md`](../agent-tooling.md) | what tool does what job, and where each one lives |
 | [`../containers.md`](../containers.md) | measuring in a machine you throw away afterwards |
 | [`../trust-anchors.md`](../trust-anchors.md) | the extension that carries a snapshot of the browser's own root store, the three things a client can do about it, and the cost of each. ⛔ It asserts no preference. |
@@ -36,13 +37,17 @@ its place, and a role listed here with no file behind it is a defect.
 | [`../reference-sweeps/usable.md`](../reference-sweeps/usable.md) | which of those findings this project can actually use, and where each one lands |
 | ⭐ [`../HISTORY/README.md`](../HISTORY/README.md) | **the story.** Superseded wording, reversed decisions, dead ends, review passes. ⛔ Everything above says what is true now; this says what was believed and why that changed. |
 
-⚠ **One role this set still leaves empty**, because a skeleton with nothing in
-it outlives the session that wrote it: no operator runbook for a pipeline a
-person does not drive. `DOC-02` is that one, open with the condition that would
-make writing it worth doing.
-⭐ **Two were filled**: the technical reference above is `DOC-01`, written once
-there was a schema to describe, and the threat model is `DOC-03`, written once
-the data branch carried a tree a consumer fetches.
+⭐ **Three were filled, and the third waited nearly a week for a reason.** The
+technical reference is `DOC-01`, written once there was a schema to describe;
+the threat model is `DOC-03`, written once the data branch carried a tree a
+consumer fetches; and the operator runbook is `DOC-02`, which stayed unwritten
+until it had something in it.
+
+⚠ **Two of `DOC-02`'s three triggers were ELIMINATED rather than met.** Keyless
+attestation means no workflow needs a secret and no release needs a signing key.
+⛔ The third arrived when `PUB-06` measured that the TCP half of a fingerprint
+needs a packet-capture library on the machine, which is a decision about a host
+rather than about code. ⭐ That measurement is section 3 of the file.
 
 ⛔ **`docs/HISTORY/` exists so that none of the rows above fill up with
 narrative.** ⚠ The instinct to record the story is right, which is why

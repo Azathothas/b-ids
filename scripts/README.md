@@ -802,6 +802,78 @@ acceptance-that-cannot-fail row of
 [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
 It exits 2 there and says so.
 
+
+### `common/check-pcap.sh`
+
+Is every published packet capture the profile's own bytes, and does it say it
+was synthesised?
+
+⛔ **A synthesised capture that is indistinguishable from a real one is the one
+thing [`../TODO/publish.md`](../TODO/publish.md), `PUB-06`, forbids.** A reader
+who opens one of these expecting a capture has to be told, in the file, in a
+field a standard tool displays. That is why the format is pcapng rather than
+classic pcap: pcapng carries comments and pcap does not.
+
+⭐ **The leg that matters is the payload one, and it is independent of the
+generator.** Everything else in the file is generated, so the only thing a
+consumer can be misled about is whether the bytes are the measured ones. The
+check hex-dumps the published file and requires the corpus's own
+`raw/v1/.../*.hello.hex` to appear in it as a contiguous run. ⛔ It never asks
+the generator what it wrote.
+
+⚠ **The dissection leg is a SKIP where there is no tool**, and it is reported as
+one. `tshark` is what would read the file the way a network engineer will, and
+it is on neither of this project's two hosts by default. ⛔ This check does not
+claim a standard tool opened the file when none was there to try.
+
+```bash
+sh scripts/common/check-pcap.sh
+```
+
+```bash
+pwsh -NoProfile -File scripts/common/check-pcap.ps1
+```
+
+⚠ **The PowerShell half uses no `xxd`.** A native session has none and does not
+need one: the bytes are read with `[System.IO.File]::ReadAllBytes` and hexed in
+process, which is what the two-halves rule at the top of this file means by the
+JOB existing on both platforms even where the tool does not.
+
+
+### `common/check-signing.sh`
+
+Can a consumer tell a capture from an assertion without trusting a file that
+travelled with the artefact?
+
+⛔ **A checksums file published in the same release as the artefact proves
+TRANSPORT, not authorship**, because whoever could replace one could replace the
+other. [`../TODO/publish.md`](../TODO/publish.md), `PUB-09`.
+
+⭐ **The answer is keyless.** The runner's own OIDC identity signs, so no
+long-lived key exists, nothing is rotated, and no workflow names a secret. That
+preserves what [`../TODO/RULES.md`](../TODO/RULES.md) states about this tree:
+nothing in it needs a credential.
+
+⚠ **The live leg is a SKIP and says why.** Verifying a real attestation needs a
+release to verify, and a pushed tag is the only thing that cuts one, which is
+the operator's own act. ⛔ Nothing here claims an attestation was verified when
+none exists.
+
+```bash
+sh scripts/common/check-signing.sh
+```
+
+```bash
+pwsh -NoProfile -File scripts/common/check-signing.ps1
+```
+
+⛔ **Its own comments are stripped before it reads the file, and the mutation
+pass is what found that.** With the identity permission removed from the release
+job, both halves reported `signing ok`: the job's comment explains what that
+permission is for and spells it exactly, so the search matched the prose. ⚠ It
+is the same defect this check had already caught in the workflow's line
+ordering, one leg later, in itself.
+
 ### `common/check-pr-body.sh`
 
 Would a scheduled run that found a change open a pull request a reviewer can

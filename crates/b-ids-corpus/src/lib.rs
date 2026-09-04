@@ -28,6 +28,9 @@ pub mod capture;
 pub mod configs;
 pub mod formats;
 pub mod notes;
+// ⭐ A packet capture per profile, synthesised from the bytes it already
+// carries rather than taken a second time. TODO/publish.md, PUB-06.
+pub mod pcap;
 pub mod publish;
 pub mod pull_request;
 pub mod route;
@@ -41,6 +44,7 @@ pub use formats::{
     read_tree, render, strip_nulls, support_matrix, verify,
 };
 pub use notes::{Change, Movement, changelog_entry, facts, model, release_body};
+pub use pcap::{NotSynthesised, SYNTHESISED_MARKER, Synthesised, synthesise};
 pub use publish::{Artefact, Built, build, parse_tag, plan_release, would_rewrite};
 pub use pull_request::{ChangeClass, Condition, Conditions, Request, Run, batch, requests};
 pub use route::{CORPUS_DIR, LAYOUT, NoRoute, RAW_DIR, Route, route};

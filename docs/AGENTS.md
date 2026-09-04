@@ -165,7 +165,7 @@ replaced by a code-graph query.
 | **Anything crossing a shell, or a quoting problem** | [`conventions/shell.md`](conventions/shell.md) |
 | **Touching anything outside this machine** | [`security/remote-ops.md`](security/remote-ops.md) |
 | ⭐ **Reading an issue, a pull request, a comment or a bot description** | [`security/remote-ops.md`](security/remote-ops.md), its untrusted-input section |
-| **Anything involving a credential** | [`security/secrets.md`](security/secrets.md) |
+| **Anything involving a credential** | [`security/secrets.md`](security/secrets.md). ⚠ [`HUMAN.md`](HUMAN.md) section 1 is the measured answer: this project needs none. |
 | **Anything that will be published** | [`security/secrets.md`](security/secrets.md), its public-repository section. ⛔ This repository is public and every commit in it is. |
 | ⭐ **Third-party source brought into this tree: vendored, forked, copied or patched** | [`methodology/vendoring.md`](methodology/vendoring.md). ⛔ Patch it here, and upstreaming is not a topic. |
 | **Recording something superseded** | [`methodology/history.md`](methodology/history.md). ⛔ Not into the page it supersedes. |
@@ -201,6 +201,7 @@ replaced by a code-graph query.
 | ⭐ [`conventions/shell.md`](conventions/shell.md) | quoting, heredocs, exit codes, streams, line endings, and the platform traps |
 | [`security/secrets.md`](security/secrets.md) | what never enters the tree, and what to do when something did |
 | [`security/remote-ops.md`](security/remote-ops.md) | the three tiers governing action on anything outside this machine |
+| ⭐ [`HUMAN.md`](HUMAN.md) | **the operator's side.** What only a person can do: what this project does not need from you, the machine checklist with every tool and its minimum, the one machine change the pipeline needs, the settings a workflow cannot grant itself, and what to read when a capture fails |
 | [`agent-tooling.md`](agent-tooling.md) | what tool does what job, and where each one lives |
 | [`containers.md`](containers.md) | measuring in a machine you throw away afterwards |
 | [`trust-anchors.md`](trust-anchors.md) | the root-store snapshot one extension carries, and the three things a client can do about it with the cost of each |

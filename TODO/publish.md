@@ -723,7 +723,7 @@ embeds, and a test asserts that release matches the one the build was cut from.
 ## PUB-06. A packet capture per profile
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** publish, **Priority** P3, **Effort** M, **Status** open
+**Category** publish, **Priority** P3, **Effort** M, **Status** done
 
 ### Problem
 
@@ -777,6 +777,88 @@ follow-on close together because they want the same bytes.
 ⚠ **`b_ids_harness::tcp` already carries the model**, with every field an option
 and every absence carrying its reason, so the work is a route that fills them
 rather than a shape to design.
+
+
+### ⭐ 2026-09-04: the capture is synthesised and published, and the acceptance runs
+
+```bash
+sh scripts/common/check-pcap.sh
+```
+
+```text
+pcap ok: 14 capture(s) over 14 raw hello(s), every one carrying the
+  ClientHello its profile recorded, byte for byte, and every one saying
+  it was synthesised. 5 suite case(s).
+  ⚠ SKIP the dissection leg: no tshark on this host, so nothing here
+  says a standard tool can open the file. Install tshark and it runs.
+```
+
+⚠ **Exit 0, read from the process, unpiped.** ⛔ The skip is reported as a skip
+and is not counted as a pass: nothing here says a standard tool opened the file,
+because there is no `tshark` on either of this project's two hosts.
+
+#### ⛔ The Approach's own question, answered: it is labelled in the file
+
+⚠ The Approach said to establish first whether a synthesised capture is faithful
+enough to be worth publishing, and that if it can mislead the answer is to label
+it. ⭐ **It can mislead, so it is labelled, three times, in a field a standard
+tool displays**: the section comment, the interface comment and the packet
+comment each open with `SYNTHESISED BY b-ids`.
+
+⛔ **That decided the format.** pcapng carries comments and classic pcap does
+not, so a classic pcap could not have said what it was.
+
+⭐ **And the synthesised values are chosen to be visibly wrong rather than
+plausible**, which is a second signal that costs nothing:
+
+| field | value | why |
+| --- | --- | --- |
+| the addresses | `192.0.2.1` and `192.0.2.2` | RFC 5737 reserves them for documentation; no host on the internet has one |
+| the timestamp | zero | displays as 1970 |
+| ⛔ the time to live, the window size, the source port | zero | each is a field `HARNESS-11` measured that this project CANNOT read. A plausible value in any of them would be publishing a measurement nobody took |
+| the destination port | 443 | the protocol's own well-known port, and the one value chosen so the file dissects at all |
+| the header checksums | ⭐ computed | a checksum is derived from bytes rather than invented, and a wrong one makes every tool report a defect that is not in the data |
+
+#### ⚠ The link type is raw IP, and that is not a detail
+
+⛔ **An Ethernet frame needs two hardware addresses this project has not
+measured and has no reserved range to borrow.** `LINKTYPE_RAW` needs neither, so
+the file carries no invented hardware address at all.
+
+#### ⭐ The check's payload leg never asks the generator
+
+Everything else in the file is generated, so the only thing a consumer can be
+misled about is whether the bytes are the measured ones. `check-pcap` hex-dumps
+the published file and requires the corpus's own `raw/v1/.../*.hello.hex` to
+appear in it as a contiguous run. ⛔ Both halves do it that way and both answer
+identically.
+
+---
+
+### ⛔ The other half of the ruling did NOT land, and here is the measurement
+
+⚠ **The ruling said: take the dependency, then add the whole TCP half at once.**
+The dependency was measured rather than taken, and the result is a machine
+question rather than a code one.
+
+| route | measured 2026-09-04 | verdict |
+| --- | --- | --- |
+| a packet-capture library (`pcap`, `pnet`) | ⭐ this host HAS Npcap: `wpcap.dll`, `Packet.dll` and `System32\Npcap\wpcap.dll` are all present. ⛔ `windows-latest` does not ship it | **open on a machine somebody set up, shut on a hosted Windows runner.** Taking it makes the Windows gate job fail at link time until Npcap is installed there |
+| `getsockopt(TCP_INFO)` | it answers the negotiated maximum segment size and window scale, and reaching it needs `unsafe` or a crate wrapping it. ⛔ `Cargo.toml` line 35: `unsafe_code = "deny"` | **shut without a dependency**, and the dependency is the same question one row up |
+| a sibling observer reading the SYN | `tcpdump`, `ss` and `ip` are all ABSENT on this host; only `netstat` is here, and it reports no TCP options | **open on Linux, shut on Windows.** It also reads no option ORDER, which is one of the six fields |
+
+⛔ **So the TCP half needs a machine somebody has to set up**, on at least one of
+the two hosts this project's gate runs on. ⭐ **That is exactly `DOC-02`'s last
+remaining trigger**, in that entry's own words: "a capture lane needs a machine
+somebody has to set up".
+
+⚠ **What the ruling protected is intact.** No schema version was spent on one
+weak field: `b_ids_harness::tcp` still carries all six with every absence
+explained, and nothing was published from it.
+
+⛔ **What this entry did NOT do, stated rather than implied.** It publishes no
+measured TCP field, and the packet headers in every synthesised capture say so
+by carrying zero where a measurement would go.
 
 ## PUB-07. The licence stated in three places
 
@@ -1036,7 +1118,7 @@ revision range is the caller's job and `CI-04` is where it lands.
 ## PUB-09. Signed and attested captures
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** publish, **Priority** P2, **Effort** M, **Status** open
+**Category** publish, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -1087,6 +1169,81 @@ needing a machine somebody sets up. ⛔ Keyless attestation makes none of the
 first two true, so `DOC-02` is now waiting on the third alone, which the
 vendored `certutil` in `DRIVER-11` and the raw-socket route in `PUB-06` are the
 candidates for.
+
+
+### ⭐ 2026-09-04: keyless, and the acceptance command exists now
+
+⚠ **The Prove named a script this tree did not have**, so this entry was a check
+pair as well as a workflow change. Both halves exist and agree.
+
+```bash
+sh scripts/common/check-signing.sh
+```
+
+```text
+signing ok: the release job signs with the runner's own identity, over the
+  archive and the two files a consumer fetches, before the release exists.
+  ⛔ No key, no secret, and the action is pinned to a commit rather than a tag.
+  ⚠ SKIP the live leg: 0 release(s) exist, and verifying needs one. A
+  pushed tag is the only thing that cuts a release, and that is the
+  operator's own act. Nothing here says an attestation was verified.
+```
+
+⚠ **Exit 0, read from the process, unpiped.**
+
+#### ⛔ The Prove's own wording is superseded, and saying so is the point
+
+⚠ It says "a published index verifies against **the project's key**". ⛔ There is
+no project key and there will not be one: that is what the ruling changed. The
+runner's OIDC identity signs, so the thing a consumer verifies against is the
+repository, the workflow and the commit rather than a key somebody holds.
+
+⭐ **Nothing in this tree needs a credential**, which is a property the record
+states and which a signing key would have ended.
+
+#### What the release job does now
+
+| | |
+| --- | --- |
+| `id-token: write`, `attestations: write` | ⛔ on the JOB, never at the top of the file, like every other write here |
+| the action | `actions/attest-build-provenance`, pinned to a commit, with the runtime it declares read rather than assumed |
+| what is attested | the archive, `MANIFEST.json` and `SHA256SUMS`. ⛔ Attesting the manifest alone would let a consumer verify the LIST and not the thing the list describes |
+| when | ⛔ **before the release is created.** A release that existed with no attestation beside it is a window in which a consumer verifies nothing and is told nothing is wrong |
+
+⭐ **And the verification command is published beside the route it verifies**, in
+[`../README.md`](../README.md), which is what the Approach asked for. The check
+asserts that a document publishes it: a command published nowhere is an
+instruction nobody can follow.
+
+#### ⭐ The mutation pass found the check reading its own prose
+
+⛔ **With `id-token: write` removed from the release job, both halves reported
+`signing ok`.** The job's own comment explains what that permission is for and
+spells it exactly, so the search matched the COMMENT and never looked at the
+declaration.
+
+⚠ **It is the same defect this check had already caught in the workflow, one leg
+earlier.** The ordering leg had reported "a release would exist before anything
+attested it" because a comment thirty lines above the release step mentions the
+command. ⛔ Both legs strip comments now, and the mutation was re-run:
+
+```text
+signing check failed, 1 problem(s):
+
+  the release job does not declare id-token: write, and keyless attestation needs it
+```
+
+⚠ **Exit 1 on BOTH halves, read from the process with no pipe**, and the file
+restored byte for byte afterwards with `git diff` showing nothing.
+
+#### ⚠ What is NOT proved, stated rather than implied
+
+⛔ **Nothing has been signed and nothing has been verified**, because no release
+exists: a pushed tag is the only thing that cuts one and that is the operator's
+own act. ⭐ The live leg is written and reports a skip naming exactly that.
+⚠ Two of the Prove's three clauses are unrun rather than passing: that a
+published index verifies, and that an altered file fails verification. ⭐ The
+check says so on its own last line rather than in this paragraph alone.
 
 ## PUB-10. Nothing triggers the two surfaces that were built to publish
 

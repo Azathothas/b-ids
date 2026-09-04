@@ -126,6 +126,25 @@ git fetch origin data
 git fetch origin source
 ```
 
+### ⭐ Verifying that a release came from this repository
+
+⛔ **A checksums file published beside the artefact proves TRANSPORT, not
+authorship**, because whoever could replace one could replace the other. Every
+release is attested with the runner's own identity, so a consumer can check
+authorship independently:
+
+```bash
+gh attestation verify b-ids-corpus-v1.0.0.tar.gz --repo Azathothas/b-ids
+```
+
+⭐ **There is no key to fetch and none to trust.** The signature is issued
+against the workflow's own OIDC identity, which names the repository, the
+workflow and the commit that produced the file. ⛔ Nothing in this repository
+holds a private key, and no workflow in it names a secret.
+
+⚠ **No release has been cut yet**, so there is nothing to run that against
+today. `TODO/publish.md`, `PUB-09`.
+
 ⚠ **No release has been cut**, because a pushed tag is the only thing that cuts
 one. `PUB-04`, the ready-to-paste snippets for somebody else's client, is the
 surface that does not exist yet. [`TODO/PROGRESS.md`](TODO/PROGRESS.md) carries

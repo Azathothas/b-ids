@@ -301,6 +301,38 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
         }
     }
 
+    // -- a packet capture per profile ----------------------------------------
+    //
+    // ⭐ SYNTHESISED FROM THE PROFILE'S OWN RAW SIDECAR, never captured again.
+    // The bytes are already stored under raw/v1/, so this is a generated format
+    // like every other rather than a second capture path that could disagree
+    // with the first. TODO/publish.md, PUB-06.
+    //
+    // ⛔ A PROFILE WITH NO RAW SIDECAR PRODUCES NOTHING, and that is an absence
+    // rather than a refusal: a profile taken before the sidecar existed carries
+    // none. ⚠ Bytes that are recorded and do not decode ARE a refusal, because
+    // that is a corpus problem rather than an old profile.
+    for profile in &profiles {
+        let sidecar = Path::new(root).join(crate::route::RAW_DIR).join(format!(
+            "v1/{}/{}/{}/{}.hello.hex",
+            profile.browser.name.to_ascii_lowercase(),
+            profile.browser.channel.as_str(),
+            profile.platform_token().as_str(),
+            profile.browser.version
+        ));
+        let Ok(hex) = std::fs::read_to_string(&sidecar) else {
+            continue;
+        };
+        match crate::pcap::synthesise(profile, &hex) {
+            Ok(one) => {
+                let path = one.path.clone();
+                put(out, &path, &one.bytes, &mut artefacts)?;
+            }
+            Err(crate::pcap::NotSynthesised::NoRawHello) => {}
+            Err(why) => return Err(format!("{}: {why}", profile.id)),
+        }
+    }
+
     // -- the published test vectors ------------------------------------------
     //
     // ⛔ COPIED VERBATIM, never regenerated. A vector's expected value comes

@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 7  blocked 0  done 100
+total 107  open 4  blocked 0  done 103
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 0 | 0 | 49 | 49 |
-| P2 | 4 | 0 | 38 | 42 |
-| P3 | 3 | 0 | 2 | 5 |
-| **all** | **7** | **0** | **100** | **107** |
+| P2 | 2 | 0 | 40 | 42 |
+| P3 | 2 | 0 | 3 | 5 |
+| **all** | **4** | **0** | **103** | **107** |
 
 ---
 
@@ -46,7 +46,7 @@ total 107  open 7  blocked 0  done 100
 | CORPUS-05 | P3 | S | done | Name the unidentified extension | [`corpus.md`](corpus.md) |
 | CORPUS-06 | P1 | M | done | The headless normalisation has no caller, and six published profiles say so | [`corpus.md`](corpus.md) |
 | DOC-01 | P2 | S | done | There is no technical reference, and one document is pretending not to notice | [`docs.md`](docs.md) |
-| DOC-02 | P2 | S | open | The operator's side is unwritten because there is nothing to operate | [`docs.md`](docs.md) |
+| DOC-02 | P2 | S | done | The operator's side is unwritten because there is nothing to operate | [`docs.md`](docs.md) |
 | DOC-03 | P2 | S | done | There is no threat model, and publishing a corpus will need one | [`docs.md`](docs.md) |
 | DOC-04 | P2 | S | done | The founding brief is retired, and this entry records what replaced it | [`docs.md`](docs.md) |
 | DRIVER-01 | P1 | M | done | Resolve a browser, and drive it at a URL | [`driver.md`](driver.md) |
@@ -88,10 +88,10 @@ total 107  open 7  blocked 0  done 100
 | PUB-03 | P1 | M | done | Routes a program with nothing but `curl` can read | [`publish.md`](publish.md) |
 | PUB-04 | P2 | M | done | The formats that are not data files | [`publish.md`](publish.md) |
 | PUB-05 | P2 | L | open | Language packages that embed the corpus | [`publish.md`](publish.md) |
-| PUB-06 | P3 | M | open | A packet capture per profile | [`publish.md`](publish.md) |
+| PUB-06 | P3 | M | done | A packet capture per profile | [`publish.md`](publish.md) |
 | PUB-07 | P1 | S | done | The licence stated in three places | [`publish.md`](publish.md) |
 | PUB-08 | P2 | S | done | One generator for the release body and the changelog | [`publish.md`](publish.md) |
-| PUB-09 | P2 | M | open | Signed and attested captures | [`publish.md`](publish.md) |
+| PUB-09 | P2 | M | done | Signed and attested captures | [`publish.md`](publish.md) |
 | PUB-10 | P1 | L | done | Nothing triggers the two surfaces that were built to publish | [`publish.md`](publish.md) |
 | PUB-11 | P2 | M | done | Every check reads the corpus from the working tree, and the corpus is leaving it | [`publish.md`](publish.md) |
 | PUB-12 | P2 | S | done | The licence check declines the one surface a consumer actually fetches | [`publish.md`](publish.md) |

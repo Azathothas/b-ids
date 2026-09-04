@@ -479,6 +479,8 @@ compare_pair "check-formats"        check-formats.sh        "--json"          ch
 # String.Contains. ⛔ Both refuse without the fixture flag at exit 2 rather than
 # reading as though a real pull request had been checked. TODO/ci.md, CI-04.
 compare_pair "check-pr-body"        check-pr-body.sh        "--fixture --json" check-pr-body.ps1        "-Fixture -Json"
+compare_pair "check-pcap"           check-pcap.sh           "--json"           check-pcap.ps1           "-Json"
+compare_pair "check-signing"        check-signing.sh        "--json"           check-signing.ps1        "-Json"
 
 # ⚠ EACH HALF READS THE SIX STATEMENTS ITSELF, one in jq and one in
 # ConvertFrom-Json, so this row compares two readings of the tree rather than

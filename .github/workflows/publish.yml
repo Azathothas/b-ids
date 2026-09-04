@@ -320,8 +320,24 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # ⛔ THREE WRITES, EACH FOR ONE THING, AND NO SECRET AMONG THEM. PUB-09.
+    #
+    # ⭐ `id-token: write` IS THE WHOLE OF THE KEYLESS DESIGN. It lets this job
+    # ask the platform for a short-lived OIDC token that says which repository,
+    # which workflow and which commit is running, and Sigstore issues a
+    # certificate against that identity. ⛔ There is no signing key anywhere:
+    # none is generated, none is stored, none is rotated, and no workflow in
+    # this tree names a secret. That preserves the property the record states
+    # about this repository, that nothing in it needs a credential.
+    #
+    # ⚠ A CHECKSUMS FILE PUBLISHED BESIDE THE ARTEFACT PROVES TRANSPORT, NOT
+    # AUTHORSHIP, because whoever could replace one could replace the other.
+    # The attestation is the part that proves authorship, and it applies on top
+    # rather than instead. TODO/publish.md, PUB-09.
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       # ⛔ THE SAME REF RULE AS THE ASSEMBLE JOB, and for the same reason: this
       # job runs `cargo run -p b-ids-corpus data-branch`, so it needs the code
@@ -410,6 +426,35 @@ jobs:
       # ⭐ --latest IS WHY NO GIT TAG MOVES. A consumer fetches
       # releases/latest/download/NAME without listing anything, and this project
       # never force-updates a ref to give them that.
+      # ⭐ KEYLESS ATTESTATION, FROM THE RUNNER'S OWN IDENTITY. PUB-09, ruled by
+      # the operator 2026-09-04. ⛔ NO KEY AND NO SECRET: the job asks the
+      # platform for a short-lived OIDC token naming this repository, this
+      # workflow and this commit, and Sigstore issues a certificate against that
+      # identity. Nothing is generated, stored or rotated.
+      #
+      # ⛔ IT ATTESTS THE THREE FILES A CONSUMER ACTUALLY FETCHES, and the
+      # archive is one of them. Attesting the manifest alone would let a
+      # consumer verify the list and not the thing the list describes.
+      #
+      # ⚠ BEFORE THE RELEASE IS CREATED, deliberately. A release that existed
+      # with no attestation beside it is a window in which a consumer would
+      # verify nothing and be told nothing was wrong.
+      #
+      # ⛔ PINNED TO A COMMIT AND THE RUNTIME IT DECLARES WAS READ, like every
+      # other third-party action here:
+      #
+      #   gh api repos/actions/attest-build-provenance/git/ref/tags/v4.2.2 --jq .object.sha
+      #   gh api repos/OWNER/NAME/contents/action.yml?ref=SHA --jq .content | base64 -d | grep using:
+      #
+      #   actions/attest-build-provenance  4d101475...  using: composite
+      - name: attest what this release publishes
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            ${{ runner.temp }}/b-ids-corpus-${{ github.ref_name }}.tar.gz
+            tree/MANIFEST.json
+            tree/SHA256SUMS
+
       - name: create the release
         shell: bash
         env:

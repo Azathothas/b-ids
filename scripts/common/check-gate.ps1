@@ -234,6 +234,8 @@ $ComparedDirectly = @(
     'check-provisioning',
     'check-formats',
     'check-pr-body',
+    'check-pcap',
+    'check-signing',
     'check-license-consistency',
     'check-release',
     'check-data-branch',
@@ -439,6 +441,10 @@ Invoke-PsCheck -Name 'check-formats' -Script 'scripts/common/check-formats.ps1'
 # request to check, and a run with no argument would read as though there were.
 # TODO/ci.md, CI-04.
 Invoke-PsCheck -Name 'check-pr-body' -Script 'scripts/common/check-pr-body.ps1' -Arguments @('-Fixture')
+# ⭐ PUB-06. A synthesised capture that says it is one.
+Invoke-PsCheck -Name 'check-pcap' -Script 'scripts/common/check-pcap.ps1' -Arguments @()
+# ⭐ PUB-09. The authorship half, which a checksums file is not.
+Invoke-PsCheck -Name 'check-signing' -Script 'scripts/common/check-signing.ps1' -Arguments @()
 
 # ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. Six places state the
 # licence and one of them is the source every generated one reads.
