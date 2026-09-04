@@ -130,6 +130,27 @@
       }
     },
     {
+      "id": "firefox-154.0.1-linux64-stable",
+      "browser": "Firefox",
+      "version": "154.0.1",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-09-04T08:00:39Z",
+      "trust": "trust-store",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/firefox/stable/linux64/154.0.1.json",
+        "sha256": "f6073c4c49a621d1d183c2982ba67c1935737eb8a6a238348fdd05507dfaf1af",
+        "bytes": 14705
+      },
+      "hello": {
+        "path": "raw/v1/firefox/stable/linux64/154.0.1.hello.hex",
+        "sha256": "15066cc5d7a38d58e700f029d0428a2168eaaef681b98b30afb13b4e4cc9954b",
+        "bytes": 3744
+      }
+    },
+    {
       "id": "firefox-154.0.1-win64-stable",
       "browser": "Firefox",
       "version": "154.0.1",
