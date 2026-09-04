@@ -56,7 +56,7 @@ one was a Chrome for Testing build.
 | **anything hosted** | ⛔ nothing. `HARNESS-12`'s oracle mode is built and no endpoint of this project's is reachable |
 | **a registry** | ⛔ nothing published to one. Publishing needs a credential and this tree has none |
 | **a true binding** | ⚠ `LIB-03` closed on a comparison rather than on a binding, which is the Approach's central choice not taken. The entry says so in its own words |
-| **the data branch** | ⚠ behind by 91 artefacts, which is the designed state: `check-data-branch` distinguishes behind from wrong, and the next push adds them |
+| **the data branch** | ⭐ it DID move: 496 files, `matched:true`. ⚠ It read behind by 91 while this table was being written, and the closing commit's publish run closed the gap. That gap is the designed state rather than a fault: `check-data-branch` distinguishes behind from wrong |
 
 ---
 

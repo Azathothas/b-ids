@@ -29,12 +29,14 @@ corpus           FOURTEEN profiles: nine Chrome, one Chromium, one Edge and
 branches         ⭐ THREE. The default branch carries the code and NO corpus;
                  `source` carries corpus/, raw/, vectors/ and LICENSE; `data`
                  is what the assembler derives from `source`.
-published        the assembler produces 496 files. ⚠ The data branch is
-                 BEHIND by 91 of them, which check-data-branch reports rather
-                 than fails: every path it carries is still produced and still
-                 byte-identical, and the publisher adds the rest on the next
-                 push. ⛔ No release: a pushed tag is the only thing that cuts
-                 one, and that is the operator's act.
+published        496 files on origin/data, and check-data-branch reports
+                 matched:true pending:0 over them. ⚠ It read BEHIND by 91
+                 while this file was being written, which is the honest
+                 state between an assembler gaining artefacts and the
+                 publisher pushing them; the closing commit's publish run
+                 closed the gap and the number above was re-read after it.
+                 ⛔ No release: a pushed tag is the only thing that cuts one,
+                 and that is the operator's act.
 gate             44 checks, 43 passed plus one skipped on this host. 463
                  tests, counted from the runner rather than predicted.
 ```

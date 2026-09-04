@@ -23,8 +23,9 @@ entries a check can read. TOOL-14.
 `HARNESS-12`, `PUB-05` and `LIB-03`.
 **Deployed:** no. ⛔ No tag was pushed and no release cut. ⚠ Two surfaces DID
 change on the remote: the `source` branch was created and now carries the
-canonical corpus, and the `data` branch is behind by 91 artefacts the publisher
-adds on its next push.
+canonical corpus, and the `data` branch gained 91 artefacts, which the publish
+run on this session's closing commit pushed. ⭐ `check-data-branch` reports
+`matched:true` over 496 files afterwards.
 
 What landed:
 
