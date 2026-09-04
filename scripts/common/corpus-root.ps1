@@ -27,6 +27,7 @@
 #   pwsh -NoProfile -File scripts/common/corpus-root.ps1
 #   pwsh -NoProfile -File scripts/common/corpus-root.ps1 -Json
 #   pwsh -NoProfile -File scripts/common/corpus-root.ps1 -Ref
+#   pwsh -NoProfile -File scripts/common/corpus-root.ps1 -Source
 #   pwsh -NoProfile -File scripts/common/corpus-root.ps1 -Fixture
 #
 # Exit codes: 0 a root was resolved and its path is on stdout, 2 none was.
@@ -38,6 +39,7 @@ param(
     [switch]$Json,
     [switch]$Fixture,
     [switch]$Ref,
+    [switch]$Source,
     # ⛔ EVERY UNBOUND ARGUMENT LANDS HERE, so an unknown one exits 2 rather
     # than 1, which is what the POSIX twin does for the same input.
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -198,6 +200,18 @@ if (-not $resolved) { exit 2 }
 # branch's and not this repository's. TODO/publish.md, PUB-11.
 if ($Ref) {
     Write-Output $resolved.Ref
+    exit 0
+}
+
+# ⛔ WHICH OF THE THREE ANSWERED, WHICH IS NOT THE SAME QUESTION AS -Ref.
+# -Ref is empty for TWO different reasons: the working tree answered, or the
+# caller named a root explicitly. A check that reads an empty ref as "the
+# working tree is canonical" is therefore wrong whenever B_IDS_CORPUS_ROOT is
+# set, and check-data-branch exported that variable on the line ABOVE its own
+# guard, which disarmed it. ⚠ It reported `data branch ok` while comparing the
+# branch against itself. TODO/publish.md, PUB-11.
+if ($Source) {
+    Write-Output $resolved.Source
     exit 0
 }
 

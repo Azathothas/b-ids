@@ -64,6 +64,28 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ⛔ THE TOOLCHAIN IS PINNED BY THE TREE, NOT BY THIS FILE. Naming a
+      # version here would be a second copy of the pin, and two copies is how
+      # one of them goes stale. rust-toolchain.toml names the exact version and
+      # the components; `rustup show active-toolchain` is what reads it and
+      # installs it, so this step cannot disagree with the pin.
+      # ⚠ The versions are printed rather than asserted here: check-msrv is what
+      # asserts, and it runs inside the gate below on both hosts.
+      #
+      # ⛔ AND IT RUNS BEFORE THE PROBE, WHICH IS NOT COSMETIC ORDERING. `rustc`
+      # and `cargo` are rustup proxies, so in a tree pinning a toolchain the
+      # runner does not have, the FIRST of them to run installs it. The probe
+      # kills anything that has not answered in 6 seconds, and an install killed
+      # partway through leaves a component's files on disk that the toolchain's
+      # own manifest does not list, which the next install refuses. Installing
+      # here means the probe below has nothing left to start.
+      # TODO/ci.md, CI-09.
+      - name: the pinned Rust toolchain
+        run: |
+          rustup show active-toolchain
+          cargo --version
+          rustc --version
+
       # ⚠ THE EXIT CODE IS CAPTURED, NOT ECHOED AFTER THE FACT. A `run:` step is
       # a shell with errexit on, so a non-zero probe aborts the step before any
       # echo, and an echo could therefore only ever print 0. That reads like a
@@ -84,19 +106,6 @@ jobs:
       - name: PSScriptAnalyzer
         shell: pwsh
         run: Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -ErrorAction Stop
-
-      # ⛔ THE TOOLCHAIN IS PINNED BY THE TREE, NOT BY THIS FILE. Naming a
-      # version here would be a second copy of the pin, and two copies is how
-      # one of them goes stale. rust-toolchain.toml names the exact version and
-      # the components; `rustup show active-toolchain` is what reads it and
-      # installs it, so this step cannot disagree with the pin.
-      # ⚠ The versions are printed rather than asserted here: check-msrv is what
-      # asserts, and it runs inside the gate below on both hosts.
-      - name: the pinned Rust toolchain
-        run: |
-          rustup show active-toolchain
-          cargo --version
-          rustc --version
 
       # ⭐ THE WHOLE GATE, IN ONE COMMAND, INCLUDING THE TWIN COMPARISON. Every
       # line it runs delegates to a check that already exists and reads that
@@ -161,6 +170,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ⛔ THE SAME PIN, READ FROM THE SAME FILE. See the ubuntu job's copy of
+      # this step for why no version is written here, and for why it runs
+      # BEFORE the probe rather than after it.
+      #
+      # ⭐ THIS JOB IS WHERE THAT ORDERING WAS PAID FOR. It ran the probe first,
+      # and the probe ran WITHOUT -Fast, so it asked `rustc --version` in a tree
+      # pinning a toolchain the runner does not have. The proxy began installing
+      # it, the probe killed it at 6 seconds, and the install below then refused
+      # the half-written toolchain the kill left:
+      #
+      #   error: failed to install component:
+      #   'rustfmt-preview-x86_64-pc-windows-msvc', detected conflict:
+      #   'bin\cargo-fmt.exe'
+      #
+      # ⚠ The ubuntu job never saw it because it passes --fast, which skips
+      # version probes entirely. Three sessions read that asymmetry as the
+      # runner being at fault. TODO/ci.md, CI-09.
+      - name: the pinned Rust toolchain
+        shell: pwsh
+        run: |
+          rustup show active-toolchain
+          cargo --version
+          rustc --version
+
       - name: the probe runs and emits valid json
         shell: pwsh
         run: |
@@ -186,15 +219,6 @@ jobs:
           choco install shellcheck --no-progress -y
           if ($LASTEXITCODE -ne 0) { exit 1 }
           shellcheck --version
-
-      # ⛔ THE SAME PIN, READ FROM THE SAME FILE. See the ubuntu job's copy of
-      # this step for why no version is written here.
-      - name: the pinned Rust toolchain
-        shell: pwsh
-        run: |
-          rustup show active-toolchain
-          cargo --version
-          rustc --version
 
       # ⚠ -Fast HERE, AND THE UBUNTU JOB RUNS THE FULL ONE. The twin comparison
       # runs both halves of every pair and needs a POSIX shell for the sh half;

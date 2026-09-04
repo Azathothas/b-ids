@@ -339,6 +339,90 @@ Passing means: with the patch applied, a client's first headers frame carries
 the flag and the five bytes, the harness reads them back identically, and the
 frame length is correct across a continuation split.
 
+### ⛔ 2026-09-04: the measurement is in, and the blocker has moved to a ruling
+
+⚠ **The Premise above says this entry is blocked on a measurement taken here.**
+⛔ That is no longer true. The measurement was taken by `HARNESS-05` on
+2026-09-01 and it is published: every profile in the corpus carries the block.
+
+```text
+$ for f in $(find corpus/v1 -name '*.json' ! -name index.json ! -name latest.json | sort); do
+    printf '%-40s %s\n' "$(jq -r .id "$f")" "$(jq -c .http2.stream_priority "$f")"; done
+chrome-151.0.7922.173-linux64-stable     {"exclusive":true,"stream_dependency":0,"weight_wire":255}
+chrome-152.0.7977.75-linux64-stable      {"exclusive":true,"stream_dependency":0,"weight_wire":255}
+chrome-151.0.7922.174-win64-stable       {"exclusive":true,"stream_dependency":0,"weight_wire":255}
+chrome-151.0.7922.76-win64-stable        {"exclusive":true,"stream_dependency":0,"weight_wire":255}
+chrome-152.0.7977.76-win64-stable        {"exclusive":true,"stream_dependency":0,"weight_wire":255}
+edge-151.0.4129.101-linux64-stable       {"exclusive":true,"stream_dependency":0,"weight_wire":255}
+```
+
+⭐ **Six of six, two browsers, two majors, two platforms, one value.** The
+Approach's second branch, which closes this entry on a negative result, does not
+apply. The first branch does.
+
+#### ⛔ What that branch costs, measured rather than estimated
+
+⚠ **"Vendor and patch the HTTP/2 library here" was written before anyone
+counted what the library brings.** Read from
+`references/hyperium__h2/tree/Cargo.toml` on 2026-09-04, at the commit
+`references/hyperium__h2/PROVENANCE.md` records,
+`cb9574bb2c18d1904eca74e98b31c8986b0d8b32`:
+
+```text
+atomic-waker, futures-core, futures-sink, tokio-util, tokio, bytes,
+http, tracing, fnv, slab, indexmap
+```
+
+⛔ **Eleven crates, one of which is an async runtime.** This workspace's entire
+third-party surface today is `serde` and `serde_json`, plus the vendored TLS
+terminator and the certificate authority beside it. It is synchronous
+throughout.
+
+⛔ **And nothing in this workspace uses `h2` at all.** The `h2` module in
+[`../crates/b-ids-harness/src/h2.rs`](../crates/b-ids-harness/src/h2.rs) is this
+project's own frame READER, written here; the hole in the support matrix is
+about somebody else's send path. So the patch would compile a tree nothing here
+calls, for a consumer this repository does not have.
+
+⚠ **`b-ids-cli` is not that consumer and must not become it.**
+[`../docs/architecture.md`](../docs/architecture.md) says it puts one profile's
+hello on a socket and stops, and that it must never grow into a general-purpose
+HTTP client.
+
+#### ⭐ The question, and the recommendation attached to it
+
+⛔ **This entry now needs a ruling rather than a measurement**, and it is
+recorded in [`PROGRESS.md`](PROGRESS.md).
+[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) says
+vendoring is chosen rather than drifted into, and lists what it costs: the build
+compiles the vendored code, the tree grows, upstream stops being visible, and
+its warnings become this project's.
+
+⭐ **Recommendation: do not vendor `h2`, and publish the seam instead.** The
+support matrix already records the hole at a file and a line, and as of
+`PUB-04` every published profile carries a `configs/.../h2.txt` naming it, so a
+client author on `h2` is told exactly what to patch and where. That delivers the
+entry's Problem without an async runtime in a synchronous workspace.
+
+⚠ **The alternative, and what it would buy**: vendoring makes the patch this
+project's own, provable by the acceptance command above, and flips the matrix
+hole's `patchable_here` from false to true. ⛔ It is the only route that makes
+the Prove runnable, because that command needs a client built on the patched
+library.
+
+#### ⚠ What has NOT changed
+
+⛔ **The seam is still real and still confirmed by reading.** Both send-path
+constructors hardcode no dependency and the encode closure that would carry the
+five bytes is passed empty, at
+`references/hyperium__h2/tree/src/frame/headers.rs:123`. Nothing above weakens
+that; it is a statement about who pays for the fix rather than about whether one
+is needed.
+
+⛔ **And the entry stays OPEN.** A blocked entry keeps the blocker named and
+what would unblock it, and this one is unblocked by one sentence from the
+operator.
+
 ---
 
 
@@ -378,6 +462,25 @@ did not happen.** ⛔ Left as it is rather than edited, per
 estimate is what was believed, and this paragraph is what is true.
 
 ---
+
+
+### ⛔ Ruled by the operator 2026-09-04: vendor and patch `h2`
+
+⛔ **The patch branch, not the seam.** The eleven crates and the async runtime
+are accepted. ⚠ The recommendation attached to the question was the opposite,
+and the operator ruled against it: the alternative leaves this entry's
+acceptance command permanently unrunnable, because it needs a client built on
+the patched library.
+
+⭐ **What that makes possible.** The patch becomes this project's own, provable
+by `cargo test -p b-ids-emit priority_block`, and the support matrix hole's
+`patchable_here` flips from false to true.
+
+⛔ **The rules that bind the work.** Re-derive the five bytes, never copy them:
+that tree is MIT and this one's output is 0BSD.
+[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) governs
+the manifest, the change record and the reproduction command, and ⛔ upstreaming
+is not a topic.
 
 ## EMIT-04. Emitters for the stacks a consumer already uses
 

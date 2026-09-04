@@ -168,7 +168,18 @@ impl Comparison {
 /// a heterogeneous field list, and the alternative is an enum with one variant
 /// per field type that nothing else would use. What matters is that the same
 /// function renders both sides.
-fn render(field: &str, tls: &TlsHalf) -> Option<String> {
+///
+/// ⭐ **Public because a second comparison needs the SAME renderer.**
+/// `b-ids-conformance` compares a captured client against the profile it claims
+/// to be, over the same [`FIELDS`] vocabulary. A second renderer would be two
+/// spellings of one value, and the two comparisons would disagree about what
+/// "the same" means for a field with no check between them.
+/// `TODO/validator.md`, `VALID-05`.
+///
+/// ⚠ `None` means the half carries nothing for that field, which is a different
+/// fact from carrying an empty value.
+#[must_use]
+pub fn render(field: &str, tls: &TlsHalf) -> Option<String> {
     let list = |v: &[u16]| {
         v.iter()
             .map(|x| format!("{x:#06x}"))

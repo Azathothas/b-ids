@@ -761,6 +761,29 @@ filled honestly.
 Every other stack was read, at a file and a line, in a tree held at a named
 commit, and those are different kinds of knowledge.
 
+### `common/check-generated-configs.sh`
+
+Is every generated snippet for a pair the support matrix says can emit, and does
+every hole get a named refusal instead of one?
+
+⛔ **A snippet that silently approximates is worse than no snippet**, because it
+produces a client that is almost right, and an almost-right fingerprint is more
+distinguishing than an honestly old one.
+[`../TODO/publish.md`](../TODO/publish.md), `PUB-04`.
+
+The tree is generated here rather than read from a committed copy, then each
+file is classified by its own name: a snippet for the one stack this tree can
+run must match an emitting cell for **that profile**, not merely for that
+stack; a stack the matrix records a hole against must carry a refusal naming
+what it cannot do and the file and line that was read at, and no snippet at all;
+every published profile has a directory; and ⭐ **at least one stack is
+refused**, because a tree with none was gated on nothing.
+
+⚠ **The detection rule is not matrix-gated, and it is checked for the opposite
+property.** It emits nothing, so no stack has to be able to emit it. It is
+refused if it names a digest: the corpus holds none, and a route resolving to a
+value computed at generation time is what `PUB-03`'s ruling declined.
+
 ### `common/check-trust-anchors.sh`
 
 Does every profile carrying the trust-anchor extension have a published list
@@ -977,10 +1000,18 @@ that is the property that matters more than which list they appear in.
 
 Where is the corpus this run should read?
 
-⛔ **Twelve checks read the corpus and every one of them assumed the working
-tree**, which is leaving the default branch.
-[`../TODO/publish.md`](../TODO/publish.md), `PUB-11`. This is the one answer to
-the question, and no check carries a second one.
+⛔ **Every check that reads the corpus assumed the working tree**, which is
+leaving the default branch. [`../TODO/publish.md`](../TODO/publish.md),
+`PUB-11`. This is the one answer to the question, and no check carries a second
+one.
+
+⚠ **The number is not written here, because it moves.** It was twelve pairs when
+the resolver landed and thirteen once `PUB-04` added one, and a count in prose
+goes stale the next time a check is added. ⭐ Read it instead:
+
+```bash
+grep -l corpus-root.sh scripts/common/check-*.sh
+```
 
 The order, and ⚠ **it is not the order the entry proposed**:
 `B_IDS_CORPUS_ROOT` if it is set, then the working tree if that holds a corpus,

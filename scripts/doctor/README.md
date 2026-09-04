@@ -36,6 +36,21 @@ belongs in a gate chain.
 It is read-only. No installer, no config change, no network call unless the
 network flag is passed, and the only file it writes is a temp file it removes.
 
+⛔ **That sentence was false for three sessions, and it has a command now.**
+`rustc` and `cargo` are rustup proxies, so a version probe inside a tree pinning
+a toolchain the host does not have started INSTALLING one, and the probe's own
+six-second limit then killed the install partway through. `--fixture` builds
+that exact condition and refuses unless the proxy declined instead.
+[`../../TODO/ci.md`](../../TODO/ci.md), `CI-09`, carries the measurement.
+
+⚠ **What that changes for a reader, on a machine without the pinned
+toolchain.** The probe reports `rustc` and `cargo` as present with no version,
+and names them in its stubs note, because asking them for one would install a
+toolchain. ⛔ That is the honest answer rather than a defect: the first `cargo`
+command installs it, which on this project is
+[`../common/check-gate.sh`](../common/check-gate.sh), the step the router runs
+straight after the probe.
+
 ## Flags
 
 | flag | sh | ps | what it does |
@@ -43,6 +58,7 @@ network flag is passed, and the only file it writes is a temp file it removes.
 | json | `--json` | `-Json` | emit the schema document instead of the report |
 | text | `--text` | `-Text` | select the human report explicitly. It is the default. |
 | fast | `--fast` | `-Fast` | presence only, skip every version probe |
+| fixture | `--fixture` | `-Fixture` | prove the read-only claim above, and exit |
 | net | `--net` | `-Net` | also test outbound reachability |
 | group | `--group vcs` | `-Group vcs` | probe one group only |
 

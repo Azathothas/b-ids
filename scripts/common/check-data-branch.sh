@@ -71,13 +71,29 @@ CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
 # crate's build script embeds the corpus at build time and reads exactly this
 # variable, calling it the seam PUB-11 needs; a check that resolved a root and
 # did not export it would build against one corpus and report on another.
-export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
-CORPUS_REF=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --ref)
-if [ -n "$CORPUS_REF" ]; then
+# ⛔ THE GUARD IS ASKED BEFORE THE EXPORT, AND IT ASKS FOR THE SOURCE RATHER
+# THAN THE REF. Both halves of that sentence were defects.
+#
+# ⚠ The export below sets B_IDS_CORPUS_ROOT, and the resolver's first rule is
+# that an explicit root is never second guessed. Asking it anything afterwards
+# therefore gets `source=explicit` and an EMPTY ref, whatever it would have
+# said a line earlier. The guard read that empty ref as "the working tree is
+# canonical" and did not fire.
+#
+# ⭐ Driven 2026-09-04 with corpus/ and raw/ moved out of the working tree:
+# this check reported `data branch ok: 200 file(s) regenerated, identical over
+# two builds` and exited 0, having compared the published branch against a
+# materialised copy of that same branch. ⛔ A check cannot pass by comparing
+# something to itself, and this one could. TODO/publish.md, PUB-11.
+CORPUS_SOURCE=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --source)
+if [ "$CORPUS_SOURCE" != "working-tree" ]; then
   printf 'check-data-branch: the canonical corpus is not in this tree, so the\n' >&2
-  printf 'branch has nothing to be compared against. It resolved to %s.\n' "$CORPUS_REF" >&2
+  printf 'branch has nothing to be compared against. It resolved to %s.\n' "$CORPUS_SOURCE" >&2
   exit 2
 fi
+# ⛔ AND EXPORTED ONLY AFTER THE GUARD HAS RUN, because cargo is downstream of
+# this decision but the guard must not be.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
 command -v cargo >/dev/null 2>&1 || { printf 'check-data-branch: cargo not found\n' >&2; exit 2; }
 
 # ⛔ THE BRANCH IS NAMED ONCE, here and in the twin, so a rename moves both.
@@ -195,6 +211,7 @@ fi
 # and every mode. The regenerated tree is written into a TEMPORARY index, so the
 # repository's own index is never touched.
 MATCHES=""
+PENDING=0
 if [ -n "$REF" ]; then
   IDX="$OUT/compare.index"
   rm -f "$IDX"
@@ -207,7 +224,95 @@ if [ -n "$REF" ]; then
     elif [ "$LOCAL_TREE" = "$PUBLISHED_TREE" ]; then
       MATCHES="$LOCAL_TREE"
     else
-      note "the regenerated tree is $LOCAL_TREE and $REF carries $PUBLISHED_TREE, so what is published is not what this corpus derives to"
+      # ⛔ BEHIND IS NOT THE SAME AS WRONG, AND THIS CHECK REPORTED BOTH AS A
+      # FAILURE. Adding an artefact class to the assembler makes the published
+      # branch a strict SUBSET of what the corpus now derives to: nothing on the
+      # branch is wrong, there is simply less of it than the generator produces.
+      # ⚠ The gate then went red on a state the publisher clears on the next
+      # push, which is a red nobody can act on and the kind that gets ignored.
+      # TODO/publish.md, PUB-14.
+      #
+      # ⭐ THE TWO CASES ARE DISTINGUISHABLE, so they are distinguished:
+      #
+      #   behind    every path the branch carries is still produced, and every
+      #             one of them is byte-identical, except the two files DERIVED
+      #             from the artefact list itself. Reported, and not a failure.
+      #   diverged  anything else. A published path that is gone, or a
+      #             published byte that changed, is what this check exists for.
+      #
+      # ⛔ The two derived files are compared by CONTENT rather than exempted:
+      # every artefact line the published manifest carries has to appear
+      # unchanged in the regenerated one. An exemption would let a changed
+      # digest through in the one file that lists every digest.
+      git ls-tree -r --name-only "$REF" | sort > "$OUT/published-paths.txt"
+      ( cd "$OUT/a" && find . -type f | sed 's|^\./||' | sort ) > "$OUT/regenerated-paths.txt"
+      GONE=$(comm -23 "$OUT/published-paths.txt" "$OUT/regenerated-paths.txt" | wc -l | tr -d ' ')
+      ADDED=$(comm -13 "$OUT/published-paths.txt" "$OUT/regenerated-paths.txt" | wc -l | tr -d ' ')
+
+      # ⛔ THE BRANCH AGAINST ITS OWN MANIFEST, and this leg is why the subset
+      # test above is safe. A path DELETED from the branch leaves the branch a
+      # smaller subset of what the corpus derives to, which is indistinguishable
+      # from "not published yet" by comparing the two trees alone. ⚠ Measured by
+      # planting exactly that: a published profile removed from a local branch
+      # read as BEHIND until this leg existed.
+      # ⭐ The branch's own manifest lists every artefact it published, so a path
+      # in the manifest and not in the tree is a consumer's 404 and a rewrite.
+      # TODO/publish.md, PUB-14.
+      MISSING=0
+      if git show "$REF:MANIFEST.json" > "$OUT/published-manifest.json" 2>/dev/null; then
+        # ⛔ THE CARRIAGE RETURN IS STRIPPED. jq on Windows writes CRLF, so every
+        # path arrived with a CR riding on it and matched nothing: this leg
+        # reported all 198 artefacts missing on its first run. It is the same
+        # defect CORPUS-02 recorded against this tool and it bit again here.
+        jq -r '.artefacts[].path' "$OUT/published-manifest.json" 2>/dev/null |
+          tr -d '\r' | sort > "$OUT/manifest-paths.txt" || : > "$OUT/manifest-paths.txt"
+        MISSING=$(comm -23 "$OUT/manifest-paths.txt" "$OUT/published-paths.txt" | wc -l | tr -d ' ')
+      else
+        note "the $BRANCH branch carries no MANIFEST.json, so what it claims to publish cannot be read"
+      fi
+
+      CHANGED=0
+      DERIVED_CHANGED=0
+      while IFS= read -r p; do
+        [ -n "$p" ] || continue
+        if git show "$REF:$p" 2>/dev/null | cmp -s - "$OUT/a/$p"; then
+          continue
+        fi
+        case "$p" in
+          MANIFEST.json | SHA256SUMS) DERIVED_CHANGED=$((DERIVED_CHANGED + 1)) ;;
+          *) CHANGED=$((CHANGED + 1)) ;;
+        esac
+      done < "$OUT/published-paths.txt"
+
+      # ⛔ EVERY PUBLISHED ARTEFACT LINE STILL PRESENT, UNCHANGED. This is what
+      # makes the derived files safe to treat as expected-to-differ: a digest
+      # that moved shows up here even though the file it lives in was allowed
+      # to change.
+      SUMS_LOST=0
+      if git show "$REF:SHA256SUMS" > "$OUT/published-sums.txt" 2>/dev/null &&
+        [ -f "$OUT/a/SHA256SUMS" ]; then
+        SUMS_LOST=$(sort "$OUT/published-sums.txt" > "$OUT/ps.txt" &&
+          sort "$OUT/a/SHA256SUMS" > "$OUT/rs.txt" &&
+          comm -23 "$OUT/ps.txt" "$OUT/rs.txt" | wc -l | tr -d ' ')
+      else
+        SUMS_LOST=1
+      fi
+
+      if [ "$GONE" = 0 ] && [ "$CHANGED" = 0 ] && [ "$SUMS_LOST" = 0 ] &&
+        [ "$MISSING" = 0 ] && [ "$ADDED" -gt 0 ]; then
+        PENDING=$ADDED
+      else
+        note "the regenerated tree is $LOCAL_TREE and $REF carries $PUBLISHED_TREE, so what is published is not what this corpus derives to"
+        [ "$GONE" = 0 ] ||
+          note "$GONE published path(s) are no longer produced at all, which a consumer pinning them would notice"
+        [ "$CHANGED" = 0 ] ||
+          note "$CHANGED published artefact(s) changed their bytes, and a published artefact is immutable"
+        [ "$SUMS_LOST" = 0 ] ||
+          note "$SUMS_LOST checksum line(s) the branch publishes are not in the regenerated set"
+        [ "$MISSING" = 0 ] ||
+          note "$MISSING path(s) the branch's own manifest lists are not on the branch, so a consumer fetching one gets a 404"
+      fi
+      : "$DERIVED_CHANGED"
     fi
   else
     note "the regenerated tree could not be written into a temporary index, so nothing was compared"
@@ -215,9 +320,9 @@ if [ -n "$REF" ]; then
 fi
 
 if [ "$JSON" = 1 ]; then
-  printf '{"schema":"check-data-branch/2","files":%s,"present":%s,"recorded":%s,"cases":%s,"published":"%s","matched":%s,"problems":%s}\n' \
+  printf '{"schema":"check-data-branch/3","files":%s,"present":%s,"recorded":%s,"cases":%s,"published":"%s","matched":%s,"pending":%s,"problems":%s}\n' \
     "${FILES:-0}" "$PRESENT" "$RECORDED" "${CASES:-0}" "$PUBLISHED" \
-    "$([ -n "$MATCHES" ] && echo true || echo false)" "$COUNT"
+    "$([ -n "$MATCHES" ] && echo true || echo false)" "$PENDING" "$COUNT"
   [ "$COUNT" = 0 ] || exit 1
   exit 0
 fi
@@ -230,6 +335,12 @@ if [ "$COUNT" = 0 ]; then
     printf '  ⭐ The %s branch is %s and its tree is %s, which is what this\n' \
       "$BRANCH" "$PUBLISHED" "$MATCHES"
     printf '  corpus derives to. One tree object is one set of bytes.\n'
+  elif [ "$PENDING" -gt 0 ]; then
+    printf '  ⚠ The %s branch is %s and BEHIND by %s artefact(s): every path it\n' \
+      "$BRANCH" "$PUBLISHED" "$PENDING"
+    printf '  carries is still produced and still byte-identical, and the assembler\n'
+    printf '  now produces more. ⛔ Nothing published is wrong, so this is reported\n'
+    printf '  rather than failed. The publisher adds them on the next push.\n'
   else
     printf '  ⚠ A SKIP IS NOT A PASS: the %s branch is %s, so the regenerated tree was\n' \
       "$BRANCH" "$PUBLISHED"

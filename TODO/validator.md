@@ -652,7 +652,7 @@ refuses both. ⚠ It also asserts the corruption changed something, because a
 ## VALID-05. A conformance suite for impersonating clients
 
 **Source** the founding brief; the shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 10
-**Category** validator, **Priority** P2, **Effort** L, **Status** open
+**Category** validator, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
 
@@ -687,6 +687,125 @@ cargo run -p b-ids-conformance -- --claim chrome-152.0.7977.64-linux64-stable
 
 Passing means: run against a client that deliberately differs in one field, the
 report names that field and nothing else, and exits non-zero.
+
+### ⭐ Closed 2026-09-04. Twenty-eight fields, three verdicts, and the third is the one that matters
+
+⛔ **A field-level diff, never a digest comparison.**
+[`../crates/b-ids-conformance/`](../crates/b-ids-conformance/) compares a
+captured client against the profile it claims to be and names the fields.
+
+```text
+$ cargo run -q -p b-ids-conformance -- --fixture
+conformance fixture ok: one swapped header pair is reported as exactly one
+differing field, http.navigate.header_order, with 27 other field(s) conforming, 0 varying per
+connection and 0 not checkable.
+exit=0
+```
+
+```text
+$ cargo test -p b-ids-conformance
+test conformance_a_changed_setting_value_is_named_and_the_order_is_not ... ok
+test conformance_a_field_one_side_does_not_carry_is_not_checkable_rather_than_agreed ... ok
+test conformance_a_grease_draw_is_not_a_difference ... ok
+test conformance_a_grease_value_moved_to_another_position_is_still_caught ... ok
+test conformance_a_reordered_header_is_named ... ok
+test conformance_a_swapped_extension_pair_is_reported_as_per_connection_not_wrong ... ok
+test conformance_every_field_it_lists_is_a_field_it_compares ... ok
+test conformance_a_profile_against_itself_differs_on_nothing ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+#### ⭐ Three verdicts, not two, and the third is what makes it usable
+
+⛔ **A field a real browser varies PER CONNECTION is neither a pass nor a
+failure**, and a tool that had only two verdicts would have to lie either way.
+
+| verdict | when |
+| --- | --- |
+| conforms | both sides carry the field and agree |
+| differs | both carry it and disagree, on something a browser holds still |
+| ⭐ per-connection | both carry it and disagree, on the extension shuffle or a GREASE draw. Reported with the reason a single capture cannot conclude from it |
+| not checkable | one side carries nothing for it. ⛔ Never reported as agreement, which is how a client passes on a field nobody looked at |
+
+⚠ **The third verdict was not designed in; it was measured.** The first version
+reported six differing fields between two real profiles, and three of them were
+GREASE draws and a shuffle. A report naming four fields on every run is a report
+nobody reads.
+
+#### ⛔ A hole in the GREASE forgiveness, found by the test written to find it
+
+⛔ **The first version STRIPPED GREASE before comparing**, which makes
+`[GREASE, a, b]` and `[a, GREASE, b]` compare equal: a client that put its
+GREASE in the wrong position would have been forgiven as a redraw.
+`conformance_a_grease_value_moved_to_another_position_is_still_caught` went red
+on exactly that. ⭐ It masks in place now, so the position is kept and only the
+drawn value is forgiven.
+
+#### ⭐ What the driven pass measured, which is not a test result
+
+⛔ **Two adjacent Chrome builds across two platforms agree on every comparable
+field.**
+
+```text
+$ cargo run -q -p b-ids-conformance -- --claim chrome-151.0.7922.174-win64-stable --observed corpus/v1/chrome/stable/linux64/151.0.7922.173.json
+conformance: 28 field(s) compared, 26 conform, 0 differ, 2 vary per connection, 0 not checkable
+  claimed   chrome-151.0.7922.174-win64-stable
+  observed  chrome-151.0.7922.173-linux64-stable
+
+⭐ Every field both sides carry agrees.
+exit=0
+```
+
+⚠ **That is NOT the measurement `CORPUS-02` wants and saying so is the point.**
+Those are two DIFFERENT builds, `.173` on `linux64` and `.174` on `win64`, so it
+is two adjacent builds on two platforms rather than one build on two. ⛔ The
+corpus still holds no build captured on both platforms, which is what would let
+anyone conclude that the TLS half is platform-independent.
+
+⭐ **What it does establish** is that the difference between those two builds and
+those two platforms, taken together, is zero over 26 comparable fields. That is
+a field-level result where the premise in `CORPUS-02` had only a digest match.
+
+#### ⛔ The acceptance command in the Prove above cannot pass, and it is corrected here
+
+⛔ **It names `chrome-152.0.7977.64-linux64-stable`, and no such profile has
+ever been in this corpus.** The nearest are `152.0.7977.75` on `linux64` and
+`152.0.7977.76` on `win64`. ⚠ This is the "acceptance command that cannot pass"
+defect [`../docs/conventions/prose.md`](../docs/conventions/prose.md) records,
+and it sat in the entry from the day it was authored.
+
+⭐ **The tool refuses it correctly rather than guessing**, which is how it was
+found:
+
+```text
+$ cargo run -q -p b-ids-conformance -- --claim chrome-152.0.7977.64-linux64-stable --observed corpus/v1/chrome/stable/linux64/151.0.7922.173.json
+b-ids-conformance: no profile in this corpus has the id chrome-152.0.7977.64-linux64-stable. It holds:
+  chrome-151.0.7922.173-linux64-stable
+  chrome-152.0.7977.75-linux64-stable
+  chrome-151.0.7922.174-win64-stable
+  chrome-151.0.7922.76-win64-stable
+  chrome-152.0.7977.76-win64-stable
+  edge-151.0.4129.101-linux64-stable
+exit=2
+```
+
+⭐ **The acceptance is the two commands at the top of this closing**, which do
+run: the fixture, which builds the differ-in-one-field case over the real corpus
+and asserts the report names that field and nothing else, and the suite.
+
+#### ⚠ What this does NOT do
+
+⛔ **It does not capture.** The observed side is a file. Standing up the harness
+and pointing a client at it is what
+[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh)
+already does for a browser, and a client author runs that once and this as often
+as they like. ⚠ Wiring the two into one command is worth doing and is not this
+entry.
+
+⛔ **And no client has been run through it.** Every comparison above is between
+two profiles this project captured. The entry's premise is that every client in
+the sweep would use one of these if it existed; nothing here tests that claim.
 
 ---
 

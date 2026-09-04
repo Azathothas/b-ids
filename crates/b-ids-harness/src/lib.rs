@@ -40,6 +40,7 @@ pub mod note;
 pub mod rebuild;
 pub mod sampling;
 pub mod select;
+pub mod tcp;
 pub mod tls;
 
 pub use bytes::{Cursor, hex, sha256, unhex};
@@ -57,4 +58,5 @@ pub use note::Note;
 pub use rebuild::{Rebuilt, differences, rebuild};
 pub use sampling::{Sampling, summarise};
 pub use select::{Kind, Selection, select};
+pub use tcp::{Absent, TcpObservation, capability, observe};
 pub use tls::{Authority, Terminated, mint};

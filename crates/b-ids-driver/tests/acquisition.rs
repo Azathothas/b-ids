@@ -466,7 +466,12 @@ fn the_route_table_names_an_index_and_a_route_for_every_family_it_knows() {
             continue;
         };
         assert!(url.starts_with("https://"), "{family}: {url}");
-        let route = index_route(family);
+        // ⚠ A family whose index is named must also name a route, and the two
+        // are separate answers, so this unwraps rather than assuming. The
+        // pairing itself is asserted in resolve_and_drive.rs, over EVERY
+        // family rather than only the ones with an index.
+        let route = index_route(family)
+            .unwrap_or_else(|| panic!("{family} names an index and no route to record it under"));
         assert!(
             b_ids_schema::ACQUISITION_ROUTES.contains(&route.as_str()),
             "{family}: the route {route} is not one a profile may record"

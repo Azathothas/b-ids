@@ -489,3 +489,52 @@ fn a_profile_that_omits_no_setting_still_needs_a_stack_that_can_order_extensions
     assert!(message.contains("tls.extensions"), "{message}");
     assert!(!message.contains("http2.frames"), "{message}");
 }
+
+#[test]
+fn coherence_a_header_the_browser_never_sent_is_not_reported_as_a_thin_capture() {
+    // ⛔ THREE FACTS ARRIVED AS ONE MESSAGE. A browser that sends no sec-ch-ua
+    // at all is SIGNAL: the header is a Chromium feature and Firefox is not a
+    // Chromium. Reporting that as "no VALUE was recorded" tells a reader the
+    // capture was thin when the truth is about the browser.
+    //
+    // ⚠ Found by the door sweep on 2026-09-04, when b_ids_driver::Family
+    // learned firefox and made this case reachable. TODO/corpus.md, CORPUS-02.
+    let mut profile = b_ids_schema::fixture::profile();
+    let set = profile
+        .http
+        .variants
+        .iter_mut()
+        .find(|s| s.variant == b_ids_schema::http::Variant::Navigate)
+        .expect("the fixture carries a navigation set");
+    set.headers
+        .retain(|h| !h.name.eq_ignore_ascii_case("sec-ch-ua"));
+
+    let outcome = b_ids_validator::check_brand(&profile);
+    let b_ids_validator::Outcome::NotCheckable(why) = outcome else {
+        panic!("a browser that sent no sec-ch-ua cannot be checked for a brand: {outcome:?}");
+    };
+    assert!(
+        why.contains("sent no sec-ch-ua header at all"),
+        "the reason says WHICH absence it is: {why}"
+    );
+
+    // ⭐ THE CONTROL, so this test cannot pass by the message being wrong in
+    // both directions. A header that WAS sent with no value recorded is the
+    // names-only policy, and it says so differently.
+    let mut names_only = b_ids_schema::fixture::profile();
+    for set in &mut names_only.http.variants {
+        for header in &mut set.headers {
+            if header.name.eq_ignore_ascii_case("sec-ch-ua") {
+                header.value = None;
+            }
+        }
+    }
+    let outcome = b_ids_validator::check_brand(&names_only);
+    let b_ids_validator::Outcome::NotCheckable(why) = outcome else {
+        panic!("a header with no recorded value cannot be checked: {outcome:?}");
+    };
+    assert!(
+        why.contains("was sent and no VALUE was recorded"),
+        "the two absences are reported differently: {why}"
+    );
+}

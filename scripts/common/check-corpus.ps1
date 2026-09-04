@@ -84,17 +84,24 @@ if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     exit 2
 }
 $corpusRoot = "$corpusRoot".Trim()
-# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
-# crate's build script embeds the corpus at build time and reads exactly this
-# variable; a check that resolved a root and did not export it would build
-# against one corpus and report on another.
-$env:B_IDS_CORPUS_ROOT = $corpusRoot
 # ⛔ AND THE REF THAT CARRIES IT. This check's one question is about a HISTORY
 # rather than about files on disk: empty means the working tree, whose history
 # is this repository's own, and a ref means the corpus lives on that branch.
+#
+# ⛔ ASKED BEFORE THE EXPORT BELOW, AND THAT ORDER IS THE WHOLE THING. The
+# resolver's first rule is that an explicit root is never second guessed, so
+# once B_IDS_CORPUS_ROOT is set it answers with an EMPTY ref whatever it would
+# have said a line earlier. This question sat AFTER the export, so the ref was
+# always empty and this check always read THIS repository's history, including
+# for a corpus that lives on a branch.
+# ⚠ It passed that way rather than failing. TODO/publish.md, PUB-11.
 $corpusRef = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Ref | Select-Object -First 1)
 if ($null -eq $corpusRef) { $corpusRef = '' }
 $corpusRef = "$corpusRef".Trim()
+# ⛔ EXPORTED ONLY NOW, because cargo is downstream of this decision but the
+# question above must not be. The b-ids crate's build script embeds the corpus
+# at build time and reads exactly this variable.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 try {
     $corpusDir = 'corpus'
     $rawDir = 'raw'

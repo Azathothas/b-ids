@@ -71,12 +71,18 @@ dependencies = [
 [[package]]
 name = "b-ids-conformance"
 version = "0.0.0"
+dependencies = [
+ "b-ids-harness",
+ "b-ids-schema",
+ "serde_json",
+]
 
 [[package]]
 name = "b-ids-corpus"
 version = "0.0.0"
 dependencies = [
  "b-ids-driver",
+ "b-ids-emit",
  "b-ids-harness",
  "b-ids-schema",
  "b-ids-validator",

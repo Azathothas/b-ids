@@ -29,7 +29,7 @@
 use std::net::IpAddr;
 use std::time::Duration;
 
-use b_ids_driver::{Launch, Source, drive, resolve};
+use b_ids_driver::{Family, Launch, Source, drive, resolve};
 
 /// Whether this host has a browser at all.
 ///
@@ -223,7 +223,11 @@ fn resolve_and_drive_a_family_name_round_trips() {
     // ⛔ NONE rather than a default. A caller naming a family this resolver has
     // no branch for is asking for something that cannot be produced, and
     // answering with Chrome would capture one browser and label it another.
-    assert_eq!(b_ids_driver::Family::parse("firefox"), None);
+    // ⚠ THE STAND-IN WAS `firefox` AND IS NOW `safari`. The resolver learned
+    // firefox on 2026-09-04, so this assertion had started proving the opposite
+    // of what it says: it would have gone red on the change that FIXED the gap
+    // it was written about. TODO/corpus.md, CORPUS-02.
+    assert_eq!(b_ids_driver::Family::parse("safari"), None);
     assert_eq!(b_ids_driver::Family::parse("Chrome"), None);
     assert_eq!(b_ids_driver::Family::parse(""), None);
 }
@@ -234,8 +238,14 @@ fn resolve_and_drive_browser_refuses_a_family_the_resolver_cannot_produce() {
     // that has no branch would otherwise capture whatever resolved first and
     // label it with the name it asked for, which is the corpus's worst outcome:
     // a profile that is wrong in a way nothing notices.
+    // ⚠ THE STAND-IN WAS `firefox` AND IS NOW `safari`, for the reason given in
+    // resolve_and_drive_a_family_name_round_trips. ⛔ `firefox` would also make
+    // this test HOST-DEPENDENT now: a machine with Firefox installed answers 0,
+    // and a machine without it answers 2 for a different reason, which is the
+    // "a check that passes because a different code path happened to satisfy
+    // it" shape. `safari` has no branch on any host.
     let output = std::process::Command::new(driver_bin())
-        .args(["resolve", "--browser", "firefox"])
+        .args(["resolve", "--browser", "safari"])
         .output()
         .expect("the driver command runs");
     assert_eq!(output.status.code(), Some(2));
@@ -245,7 +255,7 @@ fn resolve_and_drive_browser_refuses_a_family_the_resolver_cannot_produce() {
         "the refusal names the problem: {stderr}"
     );
     assert!(
-        stderr.contains("chrome, edge"),
+        stderr.contains("chrome, edge, chromium, firefox"),
         "the refusal names what it does know: {stderr}"
     );
 }
@@ -475,4 +485,118 @@ fn a_file_that_is_not_version_shaped_is_not_read_as_a_build() {
     );
 
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn resolve_and_drive_the_four_families_the_matrix_names_are_all_parseable() {
+    // ⛔ THE MATRIX NAMES FOUR AND THE RESOLVER KNEW TWO, which is what
+    // CORPUS-02's acceptance was blocked on: `--require-rows chrome,edge,
+    // chromium,firefox` cannot pass while two of the four cannot be named.
+    for name in ["chrome", "edge", "chromium", "firefox"] {
+        let family = Family::parse(name)
+            .unwrap_or_else(|| panic!("the matrix names {name} and the resolver cannot parse it"));
+        assert_eq!(family.as_str(), name);
+    }
+    assert_eq!(Family::all().len(), 4);
+}
+
+#[test]
+fn resolve_and_drive_a_family_name_lower_cases_to_the_route_it_publishes_under() {
+    // ⛔ The corpus derives a route by lower-casing `browser.name`, so a vendor
+    // spelling that does not round-trip publishes a profile under a route no
+    // consumer asks for. Chrome and Edge were checked when they were added;
+    // these two were not, because they did not exist.
+    for family in Family::all() {
+        assert_eq!(
+            family.vendor_name().to_lowercase(),
+            family.as_str(),
+            "{family} publishes under a route its vendor name does not produce"
+        );
+    }
+}
+
+#[test]
+fn resolve_and_drive_firefox_is_versioned_from_the_application_ini_beside_it() {
+    // ⛔ MEASURED ON A REAL INSTALL, 2026-09-04. Firefox lays out nothing the
+    // two existing sources can read: no version-shaped sibling directory and no
+    // NAME.manifest. `application.ini` states it, and without this source the
+    // resolver finds the executable, versions it from nothing and DROPS it, so
+    // an installed Firefox was invisible.
+    let dir = layout_dir("firefox");
+    let exe = dir.join("firefox.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    // ⚠ The real file's shape, including the [Gecko] section whose MinVersion
+    // and MaxVersion a substring search would find first.
+    std::fs::write(
+        dir.join("application.ini"),
+        b"[Build]\nBuildID=20260309125808\nSourceRepository=https://hg.mozilla.org/releases/mozilla-release\n\
+          \n[App]\nVendor=Mozilla\nName=Firefox\nVersion=148.0.2\n\
+          \n[Gecko]\nMinVersion=148.0.2\nMaxVersion=148.0.2\n",
+    )
+    .expect("write the ini");
+
+    let answers = b_ids_driver::sources_for(&exe);
+    assert!(
+        answers.contains(&(Source::ApplicationIni, "148.0.2".to_owned())),
+        "{answers:?}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn resolve_and_drive_an_application_ini_with_no_version_key_answers_nothing() {
+    // ⚠ A guard that reports a version for a file that states none is worse
+    // than one that reports nothing, because the corpus records the number.
+    let dir = layout_dir("firefox-noversion");
+    let exe = dir.join("firefox.exe");
+    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
+    std::fs::write(
+        dir.join("application.ini"),
+        b"[App]\nVendor=Mozilla\nName=Firefox\n\n[Gecko]\nMinVersion=148.0.2\n",
+    )
+    .expect("write the ini");
+
+    let answers = b_ids_driver::sources_for(&exe);
+    assert!(
+        !answers
+            .iter()
+            .any(|(source, _)| *source == Source::ApplicationIni),
+        "MinVersion is not the application's version: {answers:?}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn resolve_and_drive_a_family_with_no_index_offers_no_index_route() {
+    // ⛔ index_url and index_route are asked together so they cannot disagree.
+    // index_route used to answer a Route unconditionally, so a family with no
+    // index still had a route name: a value describing an acquisition that
+    // cannot happen. TODO/corpus.md, CORPUS-02.
+    for family in Family::all() {
+        assert_eq!(
+            b_ids_driver::acquire::index_url(family).is_some(),
+            b_ids_driver::acquire::index_route(family).is_some(),
+            "{family} answers one of the two and not the other"
+        );
+    }
+    assert!(b_ids_driver::acquire::index_url(Family::Firefox).is_none());
+    assert!(b_ids_driver::acquire::index_url(Family::Chromium).is_none());
+}
+
+#[test]
+fn resolve_and_drive_a_family_with_no_index_gets_no_index_candidate() {
+    // ⚠ The plan is what a caller acts on, so the absence has to show there
+    // rather than only in the table. Installed and Cache remain.
+    let plan = b_ids_driver::acquire::plan(Family::Firefox, Some("148.0.2"));
+    assert!(
+        !plan.iter().any(|c| c.url.is_some()),
+        "a family with no first-party index was offered one: {plan:?}"
+    );
+    let chrome = b_ids_driver::acquire::plan(Family::Chrome, Some("151.0.7922.76"));
+    assert!(
+        chrome.iter().any(|c| c.url.is_some()),
+        "the control: Chrome does have an index, so this test can fail"
+    );
 }

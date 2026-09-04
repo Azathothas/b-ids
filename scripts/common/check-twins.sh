@@ -513,6 +513,7 @@ compare_pair "check-cold-start probe" check-cold-start.sh   "--resolve --json" c
 # readings of one run rather than two wrappers over one. TODO/emitters.md,
 # EMIT-01.
 compare_pair "check-support-matrix"  check-support-matrix.sh "--json"          check-support-matrix.ps1 "-Json"
+compare_pair "check-generated-configs" check-generated-configs.sh "--json"     check-generated-configs.ps1 "-Json"
 
 # ⚠ EACH HALF COUNTS THE CARRIERS ITSELF, in jq and in ConvertFrom-Json, so this
 # row compares two readings of the corpus rather than two wrappers over one.

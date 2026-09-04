@@ -182,11 +182,15 @@ fn acquire(
     // ⛔ THE PLAN DECIDES WHETHER THE ROUTE EXISTS, rather than this command
     // knowing which families have an automation index. A second answer here
     // would be a copy of `plan`'s branch with nothing checking that they agree.
+    // ⚠ None means this project reads no index for the family, which `plan`
+    // expresses by offering no candidate. Both are asked so the refusal below
+    // covers the two cases with one message rather than two.
     let want = index_route(family);
-    let Some(candidate) = plan(family, Some(version))
-        .into_iter()
-        .find(|c| c.route == want)
-    else {
+    let Some(candidate) = want.and_then(|want| {
+        plan(family, Some(version))
+            .into_iter()
+            .find(|c| c.route == want)
+    }) else {
         eprintln!(
             "b-ids-driver: there is no first-party index route for {family}, so no exact build \
              can be asked for."

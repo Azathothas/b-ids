@@ -39,6 +39,7 @@
 #   sh scripts/common/corpus-root.sh
 #   sh scripts/common/corpus-root.sh --json
 #   sh scripts/common/corpus-root.sh --ref
+#   sh scripts/common/corpus-root.sh --source
 #   sh scripts/common/corpus-root.sh --fixture
 #
 # --fixture asserts the fallback actually resolves: it builds a tree with no
@@ -54,11 +55,13 @@ set -u
 JSON=0
 FIXTURE=0
 REF_ONLY=0
+SOURCE_ONLY=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --json) JSON=1 ;;
     --ref) REF_ONLY=1 ;;
+    --source) SOURCE_ONLY=1 ;;
     --fixture) FIXTURE=1 ;;
     -h|--help) awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print } else exit }' "$0"; exit 0 ;;
     *) printf 'corpus-root: unknown argument: %s\n' "$1" >&2; exit 2 ;;
@@ -192,6 +195,18 @@ resolve "$REPO_ROOT" || exit 2
 # that branch's and not this repository's. TODO/publish.md, PUB-11.
 if [ "$REF_ONLY" = 1 ]; then
   printf '%s\n' "$FROM_REF"
+  exit 0
+fi
+
+# ⛔ WHICH OF THE THREE ANSWERED, WHICH IS NOT THE SAME QUESTION AS --ref.
+# `--ref` is empty for TWO different reasons: the working tree answered, or the
+# caller named a root explicitly. A check that reads an empty ref as "the
+# working tree is canonical" is therefore wrong whenever B_IDS_CORPUS_ROOT is
+# set, and check-data-branch exported that variable on the line ABOVE its own
+# guard, which disarmed it. ⚠ It reported `data branch ok` while comparing the
+# branch against itself. TODO/publish.md, PUB-11.
+if [ "$SOURCE_ONLY" = 1 ]; then
+  printf '%s\n' "$SOURCE"
   exit 0
 fi
 

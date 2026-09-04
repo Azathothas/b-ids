@@ -1,6 +1,6 @@
 # architecture.md
 
-⭐ **The technical reference.** What a profile is, what the eight crates do to
+⭐ **The technical reference.** What a profile is, what the nine crates do to
 one, what state a capture passes through, and where the limits are. ⛔ When two
 documents in this tree disagree about a technical fact, this one settles it;
 [`conventions/docs.md`](conventions/docs.md) is the rule that says so.
@@ -51,11 +51,14 @@ types about every integer's width.
 | [`b-ids`](../crates/b-ids/) | hands a program a profile, with the corpus embedded at build time | ⛔ it never fetches and never substitutes. A platform this project has not captured returns nothing. |
 | [`b-ids-cli`](../crates/b-ids-cli/) | the smallest client: it puts one profile's hello on a socket and stops | ⛔ not a general-purpose HTTP client, and it must never grow into one. No cookie jar, no redirects, no retries. |
 
-⚠ **One more crate exists and is not a component yet**, and it says so in its
-own first line rather than looking finished:
-[`b-ids-conformance`](../crates/b-ids-conformance/) for `VALID-05`.
-⭐ It exists so that the acceptance commands in [`../TODO/`](../TODO/) resolve
-a target.
+| [`b-ids-conformance`](../crates/b-ids-conformance/) | compares a captured client against the profile it claims to be, field by field | ⛔ never a digest comparison. A digest says two things differ without saying what, and it also cannot tell a shuffle from a defect. |
+
+⚠ **`b-ids-conformance` reports three outcomes per field and not two.** A field
+both sides carry and agree on conforms; one they disagree on differs; and one a
+real browser varies PER CONNECTION, which is the extension shuffle and the
+GREASE draw, is reported with the reason a single capture cannot conclude from
+it. ⛔ It is not counted as a pass either: `glossary.md` records that a client
+whose order never changes is more distinguishable, not less.
 
 ---
 

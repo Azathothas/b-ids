@@ -30,13 +30,25 @@ pub enum Family {
     Chrome,
     /// Microsoft Edge.
     Edge,
+    /// Chromium, unbranded.
+    ///
+    /// ⚠ **The control that separates branding from engine.** Whatever differs
+    /// between this and [`Self::Chrome`] on one host is branding, and whatever
+    /// does not is the engine. `TODO/corpus.md`, `CORPUS-02`.
+    Chromium,
+    /// Mozilla Firefox.
+    ///
+    /// ⭐ **The one family here that is not a Chromium.** A different TLS
+    /// stack, a different extension set and order, and different HTTP/2
+    /// settings, which is what makes it the highest-value non-Chrome lane.
+    Firefox,
 }
 
 impl Family {
     /// Every family, in the order they are reported.
     #[must_use]
-    pub fn all() -> [Self; 2] {
-        [Self::Chrome, Self::Edge]
+    pub fn all() -> [Self; 4] {
+        [Self::Chrome, Self::Edge, Self::Chromium, Self::Firefox]
     }
 
     /// The family's name, as a report prints it.
@@ -45,6 +57,24 @@ impl Family {
         match self {
             Self::Chrome => "chrome",
             Self::Edge => "edge",
+            Self::Chromium => "chromium",
+            Self::Firefox => "firefox",
+        }
+    }
+
+    /// Whether the family is a Chromium at heart.
+    ///
+    /// ⛔ **Asked rather than assumed, because the switches differ.** Every
+    /// launch flag this driver passes is a Chromium switch, and Firefox takes
+    /// none of them: it spells headless `-headless` and has no equivalent for
+    /// most of the rest. A caller that treated all four alike would launch
+    /// Firefox with arguments it reads as file names.
+    /// `TODO/corpus.md`, `CORPUS-02`.
+    #[must_use]
+    pub fn is_chromium(self) -> bool {
+        match self {
+            Self::Chrome | Self::Edge | Self::Chromium => true,
+            Self::Firefox => false,
         }
     }
 
@@ -59,6 +89,8 @@ impl Family {
         match self {
             Self::Chrome => "Chrome",
             Self::Edge => "Edge",
+            Self::Chromium => "Chromium",
+            Self::Firefox => "Firefox",
         }
     }
 
@@ -118,6 +150,27 @@ pub enum Source {
     /// A resolver that waited for it hangs, and one that killed it has still
     /// opened somebody's browser to read a number that is in a directory name.
     VersionFlag,
+    /// `Version=` in the `application.ini` beside the executable.
+    ///
+    /// ⛔ **Firefox's only on-disk source, and neither of the two above
+    /// answers for it.** Measured on this host 2026-09-04: the install
+    /// directory holds `browser/`, `defaults/`, `fonts/` and `uninstall/` and
+    /// NO version-shaped directory, so [`Source::SiblingDirectory`] finds
+    /// nothing, and there is no `firefox.manifest`, so
+    /// [`Source::ManifestFile`] finds nothing either. `application.ini` states
+    /// it:
+    ///
+    /// ```text
+    /// Version=148.0.2
+    /// BuildID=20260309125808
+    /// ```
+    ///
+    /// ⚠ A resolver without this source finds the executable, versions it from
+    /// nothing, and drops it, which is the "an executable no source could
+    /// version is reported as nothing" branch in [`resolve`]. Firefox would
+    /// have been invisible while being installed. `TODO/corpus.md`,
+    /// `CORPUS-02`.
+    ApplicationIni,
 }
 
 impl Source {
@@ -128,6 +181,7 @@ impl Source {
             Self::SiblingDirectory => "sibling-directory",
             Self::ManifestFile => "manifest-file",
             Self::VersionFlag => "version-flag",
+            Self::ApplicationIni => "application-ini",
         }
     }
 }
@@ -187,6 +241,12 @@ fn candidates(family: Family) -> Vec<PathBuf> {
     let tail: &[&str] = match family {
         Family::Chrome => &["Google/Chrome/Application/chrome.exe"],
         Family::Edge => &["Microsoft/Edge/Application/msedge.exe"],
+        Family::Chromium => &["Chromium/Application/chrome.exe"],
+        // ⚠ NOT UNDER AN `Application` DIRECTORY, and that is not a typo. The
+        // Chromium installers put the executable one level down beside its
+        // version directories; Firefox puts it at the top of its own install
+        // directory. Measured on this host 2026-09-04.
+        Family::Firefox => &["Mozilla Firefox/firefox.exe"],
     };
     for key in ["ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"] {
         let Ok(root) = std::env::var(key) else {
@@ -209,6 +269,23 @@ fn candidates(family: Family) -> Vec<PathBuf> {
             "/usr/bin/microsoft-edge",
             "/opt/microsoft/msedge/msedge",
             "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        ],
+        Family::Chromium => &[
+            "/usr/bin/chromium",
+            "/usr/bin/chromium-browser",
+            // ⚠ The runner image serves Chromium as a snap, which is a
+            // different install mechanism and a different sandbox. The path is
+            // listed so the resolver can REPORT one that is there; whether a
+            // snap can be driven is a separate measurement and DRIVER-10 says
+            // so. TODO/driver.md, DRIVER-10.
+            "/snap/bin/chromium",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        ],
+        Family::Firefox => &[
+            "/usr/bin/firefox",
+            "/usr/lib/firefox/firefox",
+            "/snap/bin/firefox",
+            "/Applications/Firefox.app/Contents/MacOS/firefox",
         ],
     };
     out.extend(posix.iter().map(PathBuf::from));
@@ -319,7 +396,29 @@ pub fn sources_for(path: &Path) -> Vec<(Source, String)> {
     if let Some(version) = from_flag(path) {
         answers.push((Source::VersionFlag, version));
     }
+    // ⚠ LAST, AND IT IS THE ONLY ONE THAT ANSWERS FOR FIREFOX. Asked for every
+    // path rather than gated on the family, because a source is a property of
+    // the layout on disk and gating it would be a second place that has to
+    // agree about which family a path belongs to.
+    if let Some(version) = from_application_ini(path) {
+        answers.push((Source::ApplicationIni, version));
+    }
     answers
+}
+
+/// The build from `Version=` in the `application.ini` beside the executable.
+///
+/// ⚠ **The first `Version=` in the file, and the key is matched at the start of
+/// a line.** `application.ini` also carries a `[Gecko]` section with its own
+/// `MinVersion` and `MaxVersion`, and a substring search finds those first.
+fn from_application_ini(path: &Path) -> Option<String> {
+    let ini = path.parent()?.join("application.ini");
+    let text = std::fs::read_to_string(ini).ok()?;
+    text.lines()
+        .find_map(|line| line.strip_prefix("Version="))
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(str::to_owned)
 }
 
 /// Find every browser this resolver knows how to look for.

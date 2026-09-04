@@ -9,5 +9,20 @@ repository.workspace = true
 # decides what a package registry ever sees.
 publish = false
 
+[dependencies]
+# ⛔ THE RENDERER AND THE FIELD VOCABULARY COME FROM HERE, and that is the whole
+# reason for this edge. The capture-mode comparison already renders a TLS half
+# field by field; a second renderer in this crate would be two spellings of one
+# value with nothing checking that they agree. TODO/validator.md, VALID-05.
+b-ids-harness = { path = "../b-ids-harness" }
+b-ids-schema = { path = "../b-ids-schema" }
+serde_json.workspace = true
+
+[dev-dependencies]
+# ⛔ THE ONE FIXTURE, not a second one written here. A fixture copied into a
+# second place is two fixtures that drift, which is why the schema crate gates
+# it behind a feature rather than exporting a copy.
+b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }
+
 [lints]
 workspace = true

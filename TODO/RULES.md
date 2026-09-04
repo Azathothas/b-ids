@@ -185,30 +185,46 @@ here. [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md)
 also settles that upstreaming is not a topic, and `TOOL-04` is the first entry
 this applies to.
 
-## 8.5 ⚠ The Windows CI job fails at the toolchain step, and it is not yours
+## 8.5 ⛔ A probe does not change the machine it is probing
 
 ⛔ **A standing fact, and it lives here rather than in
 [`PROGRESS.md`](PROGRESS.md) because that file is rewritten every session and
 this was lost that way once.**
 
-The Windows runner intermittently fails installing the pinned toolchain, with a
-component conflict rather than anything about this tree:
+⚠ **This section used to say the Windows job's toolchain failure was the
+runner's and to rerun it. That was wrong**, and it stood for three sessions.
+`CI-09` measured the cause: `rustc` and `cargo` are rustup proxies, so this
+repository's own probe, run in a tree pinning a toolchain the runner does not
+have, STARTED installing it and then killed the install at its six-second
+limit. The conflict the job reported was a fragment of that. The superseded
+wording is in
+[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
 
-```text
-error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc', detected conflict: 'bin\cargo-fmt.exe'
-```
+⭐ **The rule that came out of it, and it is general.** A probe measures a
+machine. It does not change one. A version flag looks read-only and is not:
+a proxy, a wrapper or a shim can install, download or start a daemon in answer
+to it, and a probe that kills what it started leaves the machine worse than it
+found it.
 
-⭐ **How to tell it apart from a real failure**: it happens at the toolchain
-install, before any check runs, and the Ubuntu job of the same run passes. Rerun
-the failed job rather than changing anything.
+Two things hold it, from two sources, because one of them can be absent:
+
+- both halves of [`../scripts/doctor/`](../scripts/doctor/) export
+  `RUSTUP_AUTO_INSTALL=0`, which rustup reads from 1.28;
+- [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) installs the
+  pinned toolchain BEFORE it runs the probe, in both jobs, so an older rustup
+  that ignores the variable still has nothing left to interrupt.
+
+⭐ **The claim has a command**, because a claim about what a script does not do
+is the kind nobody re-checks:
 
 ```bash
-gh run rerun RUN_ID --failed
+sh scripts/doctor/doctor.sh --fixture
 ```
 
-⚠ **Measured 2026-09-01**: one run failed this way and the rerun of the same
-commit passed with no change to the tree. ⛔ A red build is still not left
-behind: the rerun is confirmed green before the session ends.
+⛔ **So a red Windows job is now read as a real failure.** Do not rerun it to
+see whether it goes away. ⚠ If a toolchain conflict does appear again, the
+machine is carrying a half-installed toolchain from before this fix, and
+`rustup toolchain uninstall` on the named version clears it.
 
 ---
 

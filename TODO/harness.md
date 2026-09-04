@@ -1546,7 +1546,7 @@ differing fields, which is the result a naive diff would have got wrong.
 ## HARNESS-11. The p0f layer, which is free once the listener is ours
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** harness, **Priority** P2, **Effort** M, **Status** open
+**Category** harness, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -1581,6 +1581,83 @@ cargo test -p b-ids-harness tcp_layer -- --nocapture
 Passing means: a capture on a host where the capability exists records all five
 fields, and a capture on a host where it does not records them as absent with a
 reason rather than as zero.
+
+### ⭐ Closed 2026-09-04. The capability was established first, and it is one field of six
+
+⛔ **The entry asked for the capability question to be answered before the code
+question, because it decides whether this is a lane in the capture matrix or a
+local-only extra.** It was answered by measurement, and the answer is that
+**five of the six fields cannot be read at all** on any host this workspace can
+build for.
+
+```text
+$ cargo test -p b-ids-harness tcp_layer -- --nocapture
+running 4 tests
+tcp_layer: the client set ttl=37 and the accepted socket reads 128
+tcp layer: 1 of 6 field(s) readable from safe std on an accepted connection (source_port). The other 5 need a raw socket or a packet capture, which the workspace's unsafe_code=deny makes a dependency question rather than a code one.
+test tcp_layer_the_socket_ttl_is_this_host_s_own_and_is_not_recorded_as_the_peer_s ... ok
+test tcp_layer_an_unavailable_field_is_absent_with_a_reason_rather_than_zero ... ok
+test tcp_layer_the_source_port_is_recorded_and_it_is_the_peer_s ... ok
+test tcp_layer_the_capability_is_stated_and_it_is_one_of_six ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+#### ⛔ `TcpStream::ttl` is this host's own hop limit, and recording it would have been the defect
+
+⚠ **The trap is that it is named `ttl` and returns a plausible number.**
+Measured on this Windows 11 host with a real loopback connection: the client set
+its hop limit to `37` and the accepted socket on the server read `128`, which is
+the server's own default.
+
+⛔ **A profile that recorded that as the browser's TTL would carry this
+machine's configuration as though it were a measurement of the subject.** That
+is `RULES.md` rule 1 exactly, and it is the reason this entry produced a model
+with reasons rather than five more fields.
+
+⭐ `tcp_layer_the_socket_ttl_is_this_host_s_own_and_is_not_recorded_as_the_peer_s`
+asserts the inequality, so if a future platform starts reporting the peer's
+value, the suite says so rather than the premise silently rotting.
+
+#### The capability, per field
+
+| field | readable here | why not |
+| --- | --- | --- |
+| ⭐ `source_port` | yes | `peer_addr()` on the accepted socket. Ephemeral port ranges differ by operating system, so it is real signal, and it is the weakest of the six |
+| `maximum_segment_size` | no | safe std exposes no TCP option data |
+| `window_size` | no | the same |
+| `window_scale` | no | the same |
+| `option_order` | no | the same |
+| `time_to_live` | no | `ttl()` is the local outgoing hop limit, measured above |
+
+#### ⭐ Three routes considered, and each costs something
+
+⛔ **Naming three before recording anything as not-doable is the standard**, and
+none of these is closed by this entry: each is a decision the operator has not
+been asked for.
+
+| route | what it costs |
+| --- | --- |
+| a raw socket, read directly | `unsafe_code = "deny"` at the workspace root, so it needs a third-party dependency that wraps the syscalls, and this project vendors what it takes |
+| a packet capture beside the listener | a capture library, elevated privileges on the capture host, and a second artefact to correlate with the connection |
+| a platform socket option, `TCP_INFO` on Linux | not portable, and it carries the NEGOTIATED window rather than the peer's advertised options, which is a different measurement wearing the same name |
+
+⛔ **So the answer to the entry's question is: a local-only extra, not a matrix
+lane.** A lane that could fill one field of six on every runner would report a
+source port and five reasons, and `check-coverage` would count it as a captured
+cell.
+
+#### ⚠ What this does NOT do, and it is deliberate
+
+⛔ **Nothing is added to `browser-profile/1`.** The schema is what every
+consumer reads, and a half that can carry one field of six on this platform is
+not worth a version every consumer has to handle. ⭐ That is a ruling to ask for
+once one of the three routes above is taken, and `PROGRESS.md` carries the
+question.
+
+⚠ **And no capture has gone through it.** The observation type and its probe are
+exercised by a real loopback connection in the suite; the capture path has not
+been changed to call them, because there is nothing yet for a profile to carry.
 
 ---
 

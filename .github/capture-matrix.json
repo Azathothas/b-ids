@@ -127,7 +127,19 @@
       "build": null,
       "enabled": false,
       "required": false,
-      "why": "A genuinely different TLS stack and the highest-value non-Chrome lane. Waiting on the resolver knowing the family at all."
+      "why": "A genuinely different TLS stack and the highest-value non-Chrome lane. ⭐ The resolver knows the family as of 2026-09-04, which is what this cell used to be waiting on: b_ids_driver::Family has a firefox variant, candidates on both platforms, and Source::ApplicationIni, which is the only source that answers for a Firefox layout. Measured on one Windows host, it resolves 148.0.2 from application.ini. ⛔ Still not enabled, and the blocker has MOVED rather than gone: b_ids_driver::drive passes Chromium switches and nothing else, so it refuses a non-Chromium family rather than launching one with arguments it misreads. A launch path for Gecko is what this cell now waits on."
+    },
+    {
+      "browser": "chromium",
+      "channel": "stable",
+      "platform": "linux64",
+      "os": "ubuntu-latest",
+      "route": "installed",
+      "branded": false,
+      "build": null,
+      "enabled": false,
+      "required": false,
+      "why": "The control that proves which fields are branding and which are engine: whatever differs from the chrome cell beside it is branding. ⛔ THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02's acceptance names chromium as a required row, so the plan and the acceptance disagreed about what was even planned. ⚠ Waiting on acquisition rather than on the resolver, which knows the family now: there is no vendor channel serving a Chromium build addressable by the version a profile records, and the runner image serves it as a snap, which is a different install mechanism and a different sandbox. DRIVER-10 says this cell may end as a recorded refusal rather than a lane."
     }
   ]
 }

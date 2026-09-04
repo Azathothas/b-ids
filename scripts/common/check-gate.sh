@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-catalogues check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-license-consistency check-release check-data-branch check-publish check-cold-start check-support-matrix"
+COMPARED_DIRECTLY="check-docs check-markers check-catalogues check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-license-consistency check-release check-data-branch check-publish check-cold-start check-support-matrix check-generated-configs"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -251,7 +251,26 @@ compared_directly 'check-release' ||   check_simple 'check-release' sh "$HERE/ch
 # ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER, and
 # that property is free right up until somebody rewrites the branch.
 # TODO/publish.md, PUB-02.
-compared_directly 'check-data-branch' ||   check_simple 'check-data-branch' sh "$HERE/check-data-branch.sh"
+# ⚠ 2 IS "COULD NOT RUN" HERE AND IT WAS BEING READ AS A FAILURE. This check
+# exits 2 by design when the canonical corpus is not in this tree, because the
+# branch then has nothing independent to be compared against, and CI-07 rules
+# that a 2 is not a failure. `check_simple` fails on any non-zero, so the
+# designed refusal would have taken the gate red on the day PUB-13 removes
+# corpus/ from the default branch. ⛔ Recorded as a skip rather than a pass, so
+# --strict still refuses it in CI, where the corpus is present on purpose.
+# TODO/publish.md, PUB-14.
+if ! compared_directly 'check-data-branch'; then
+  db_out=$(sh "$HERE/check-data-branch.sh" 2>&1)
+  rc=$?
+  if [ "$rc" = 0 ]; then
+    record_pass 'check-data-branch'
+  elif [ "$rc" = 2 ]; then
+    record_skip 'check-data-branch' 'the canonical corpus is not in this tree, so the branch has nothing to be compared against'
+  else
+    record_fail 'check-data-branch' "$rc"
+    [ "$JSON" = 1 ] || printf '%s\n' "$db_out" | sed 's/^/  | /'
+  fi
+fi
 # ⛔ THE TRIGGER, AND THE TWO CONDITIONS THAT STAND BETWEEN IT AND A REWRITTEN
 # BRANCH. A force push over the data branch discards every commit a consumer
 # pinned. TODO/publish.md, PUB-10.
@@ -262,6 +281,7 @@ compared_directly 'check-cold-start' ||   check_simple 'check-cold-start' sh "$H
 # ⛔ A CELL THAT SAYS "approximately" IS WORSE THAN ONE THAT SAYS "cannot", and a
 # hole whose evidence stopped resolving is a claim. TODO/emitters.md, EMIT-01.
 compared_directly 'check-support-matrix' ||   check_simple 'check-support-matrix' sh "$HERE/check-support-matrix.sh"
+compared_directly 'check-generated-configs' || check_simple 'check-generated-configs' sh "$HERE/check-generated-configs.sh"
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
 # build that carries it gets a published list with its date. TODO/corpus.md,
 # CORPUS-04.

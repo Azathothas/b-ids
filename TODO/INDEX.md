@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 103  open 14  blocked 0  done 89
+total 107  open 12  blocked 0  done 95
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
-| P1 | 1 | 0 | 45 | 46 |
-| P2 | 10 | 0 | 31 | 41 |
+| P1 | 2 | 0 | 47 | 49 |
+| P2 | 7 | 0 | 35 | 42 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **14** | **0** | **89** | **103** |
+| **all** | **12** | **0** | **95** | **107** |
 
 ---
 
@@ -38,6 +38,7 @@ total 103  open 14  blocked 0  done 89
 | CI-06 | P2 | M | done | No single source of any fact | [`ci.md`](ci.md) |
 | CI-07 | P2 | S | done | Exit 2 means could not run, and it is not a failure | [`ci.md`](ci.md) |
 | CI-08 | P2 | S | done | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
+| CI-09 | P1 | M | done | The Windows job's toolchain step fails because the probe before it started the install | [`ci.md`](ci.md) |
 | CORPUS-01 | P1 | M | done | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
 | CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
 | CORPUS-03 | P2 | S | done | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
@@ -58,6 +59,7 @@ total 103  open 14  blocked 0  done 89
 | DRIVER-08 | P0 | L | done | Purge the machine's browsers, install the build the cell names | [`driver.md`](driver.md) |
 | DRIVER-09 | P1 | M | done | The most dangerous script in the tree is the one with no twin | [`driver.md`](driver.md) |
 | DRIVER-10 | P1 | L | done | Provisioning is written for one family and the matrix names four | [`driver.md`](driver.md) |
+| DRIVER-11 | P1 | L | open | The launcher speaks Chromium, and the highest-value lane is not one | [`driver.md`](driver.md) |
 | EMIT-01 | P2 | L | done | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
 | EMIT-02 | P2 | L | done | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
 | EMIT-03 | P2 | S | open | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
@@ -72,7 +74,7 @@ total 103  open 14  blocked 0  done 89
 | HARNESS-08 | P1 | S | done | One handshake is not a sample | [`harness.md`](harness.md) |
 | HARNESS-09 | P1 | M | done | Fuzz the parsers. A panic here is unacceptable | [`harness.md`](harness.md) |
 | HARNESS-10 | P2 | S | done | Check whether measuring changed what was measured | [`harness.md`](harness.md) |
-| HARNESS-11 | P2 | M | open | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
+| HARNESS-11 | P2 | M | done | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
 | HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
 | HARNESS-14 | P2 | M | done | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
@@ -84,15 +86,17 @@ total 103  open 14  blocked 0  done 89
 | PUB-01 | P1 | M | done | Releases, tagged and versioned and immutable | [`publish.md`](publish.md) |
 | PUB-02 | P1 | M | done | The data branch, over raw file serving | [`publish.md`](publish.md) |
 | PUB-03 | P1 | M | done | Routes a program with nothing but `curl` can read | [`publish.md`](publish.md) |
-| PUB-04 | P2 | M | open | The formats that are not data files | [`publish.md`](publish.md) |
+| PUB-04 | P2 | M | done | The formats that are not data files | [`publish.md`](publish.md) |
 | PUB-05 | P2 | L | open | Language packages that embed the corpus | [`publish.md`](publish.md) |
 | PUB-06 | P3 | M | open | A packet capture per profile | [`publish.md`](publish.md) |
 | PUB-07 | P1 | S | done | The licence stated in three places | [`publish.md`](publish.md) |
 | PUB-08 | P2 | S | done | One generator for the release body and the changelog | [`publish.md`](publish.md) |
 | PUB-09 | P2 | M | open | Signed and attested captures | [`publish.md`](publish.md) |
 | PUB-10 | P1 | L | done | Nothing triggers the two surfaces that were built to publish | [`publish.md`](publish.md) |
-| PUB-11 | P2 | M | open | Every check reads the corpus from the working tree, and the corpus is leaving it | [`publish.md`](publish.md) |
+| PUB-11 | P2 | M | done | Every check reads the corpus from the working tree, and the corpus is leaving it | [`publish.md`](publish.md) |
 | PUB-12 | P2 | S | done | The licence check declines the one surface a consumer actually fetches | [`publish.md`](publish.md) |
+| PUB-13 | P2 | L | open | The corpus moves to a source branch, and the default branch carries neither | [`publish.md`](publish.md) |
+| PUB-14 | P1 | M | done | The data branch check cannot tell a branch that is behind from one that is wrong | [`publish.md`](publish.md) |
 | SCHEMA-01 | P0 | M | done | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
 | SCHEMA-02 | P0 | M | done | The TLS half, in wire order, with unknown codepoints kept | [`schema.md`](schema.md) |
 | SCHEMA-03 | P0 | S | done | The HTTP/2 half, as an ordered frame sequence | [`schema.md`](schema.md) |
@@ -130,7 +134,7 @@ total 103  open 14  blocked 0  done 89
 | VALID-02 | P1 | S | done | Run it over the prior art, and publish what it finds | [`validator.md`](validator.md) |
 | VALID-03 | P2 | S | done | A family the resolver cannot produce is data nobody can reach | [`validator.md`](validator.md) |
 | VALID-04 | P2 | M | done | Reference digest implementations, with published test vectors | [`validator.md`](validator.md) |
-| VALID-05 | P2 | L | open | A conformance suite for impersonating clients | [`validator.md`](validator.md) |
+| VALID-05 | P2 | L | done | A conformance suite for impersonating clients | [`validator.md`](validator.md) |
 | VALID-06 | P2 | S | done | Diffs between adjacent versions | [`validator.md`](validator.md) |
 | VENDOR-01 | P1 | L | done | The vendored tree, and the four things that keep it honest | [`vendor.md`](vendor.md) |
 

@@ -92,20 +92,24 @@ fn reachable_dimensions_the_published_corpus_is_wholly_reachable() {
 
 #[test]
 fn reachable_dimensions_a_family_the_resolver_cannot_produce_is_reported() {
-    // ⛔ THE GUARD, planted rather than argued. `firefox` is a family this
+    // ⛔ THE GUARD, planted rather than argued. `safari` is a family this
     // resolver has no branch for, and the corpus could carry one tomorrow.
+    // ⚠ THE STAND-IN WAS `firefox` UNTIL 2026-09-04, when the resolver learned
+    // that family. An example chosen because it was impossible stops testing
+    // anything on the day it becomes possible, and this one went red on exactly
+    // the change that fixed the gap. TODO/corpus.md, CORPUS-02.
     let mut profile = b_ids_schema::fixture::profile();
-    profile.browser.name = "Firefox".to_owned();
+    profile.browser.name = "Safari".to_owned();
     profile.id = profile.derived_id();
 
     let unreachable = unreachable_dimensions(std::slice::from_ref(&profile), &this_project());
     assert_eq!(unreachable.len(), 1, "{unreachable:?}");
     assert_eq!(unreachable[0].dimension, "browser");
-    assert_eq!(unreachable[0].value, "firefox");
+    assert_eq!(unreachable[0].value, "safari");
     // ⛔ The message names the family AND the profile that carries it, because a
     // report saying only that something is unreachable sends a reader looking.
     let message = unreachable[0].to_string();
-    assert!(message.contains("firefox"), "{message}");
+    assert!(message.contains("safari"), "{message}");
     assert!(message.contains(profile.id.as_str()), "{message}");
 }
 
@@ -136,7 +140,7 @@ fn reachable_dimensions_every_profile_carrying_it_is_named() {
     // unreachable family should report one problem naming forty, not forty
     // problems naming one each.
     let mut first = b_ids_schema::fixture::profile();
-    first.browser.name = "Firefox".to_owned();
+    first.browser.name = "Safari".to_owned();
     first.id = first.derived_id();
     let mut second = first.clone();
     second.browser.version = "999.0.0.2".to_owned();

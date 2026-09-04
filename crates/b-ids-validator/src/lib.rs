@@ -276,6 +276,34 @@ fn navigate_header<'a>(profile: &'a Profile, name: &str) -> Option<&'a str> {
         .as_deref()
 }
 
+/// Why a header carried no value to check, in the words that fact deserves.
+///
+/// ⛔ **THREE DIFFERENT FACTS ARRIVE AS ONE `None`, and reporting them alike
+/// tells a reader the capture was thin when the truth is about the browser.**
+/// A browser that sends no `sec-ch-ua` at all is SIGNAL, and Firefox is one:
+/// the header is a Chromium feature. A capture that recorded the header under
+/// the names-only policy is a gap in the capture. A profile with no navigation
+/// set recorded nothing about HTTP.
+///
+/// ⚠ Found by the door sweep on 2026-09-04, when `b_ids_driver::Family` learned
+/// `firefox` and made the second case reachable. `TODO/corpus.md`, `CORPUS-02`.
+fn why_no_value(profile: &Profile, name: &str) -> String {
+    let Some(set) = profile.http.variant(Variant::Navigate) else {
+        return "no navigation header set was recorded, so nothing about HTTP was".to_owned();
+    };
+    match set
+        .headers
+        .iter()
+        .find(|h| h.name.eq_ignore_ascii_case(name))
+    {
+        // ⭐ The header was sent and its value was not kept. That is the
+        // names-only policy, which is this project's default.
+        Some(_) => format!("{name} was sent and no VALUE was recorded"),
+        // ⛔ The header was not sent. That is a fact about the browser.
+        None => format!("this browser sent no {name} header at all"),
+    }
+}
+
 /// Check 1. The major in the brand list, in the User-Agent, and in
 /// `browser.major` all agree.
 ///
@@ -351,7 +379,7 @@ pub fn check_version(profile: &Profile) -> Outcome {
 #[must_use]
 pub fn check_platform(profile: &Profile) -> Outcome {
     let Some(ua) = navigate_header(profile, "user-agent") else {
-        return Outcome::NotCheckable("no user-agent VALUE was recorded".to_owned());
+        return Outcome::NotCheckable(why_no_value(profile, "user-agent"));
     };
     let mut findings = Vec::new();
     let os = profile.platform.os;
@@ -415,7 +443,7 @@ pub fn check_platform(profile: &Profile) -> Outcome {
 #[must_use]
 pub fn check_brand(profile: &Profile) -> Outcome {
     let Some(raw) = navigate_header(profile, "sec-ch-ua") else {
-        return Outcome::NotCheckable("no sec-ch-ua VALUE was recorded".to_owned());
+        return Outcome::NotCheckable(why_no_value(profile, "sec-ch-ua"));
     };
     let brands = parse_brand_list(raw);
     let vendor = headers::vendor_brand(&profile.browser.name);
@@ -640,7 +668,7 @@ pub fn check_encoding(profile: &Profile, options: &Options) -> Outcome {
         );
     }
     let Some(raw) = navigate_header(profile, "accept-encoding") else {
-        return Outcome::NotCheckable("no accept-encoding VALUE was recorded".to_owned());
+        return Outcome::NotCheckable(why_no_value(profile, "accept-encoding"));
     };
     let findings = raw
         .split(',')

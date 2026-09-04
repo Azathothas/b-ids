@@ -1352,3 +1352,173 @@ $ pwsh -NoProfile -File scripts/common/check-manual-path.ps1 -Json
 {"schema":"check-manual-path/1","jobs":10,"named":10,"problems":0}
 ```
 
+
+---
+
+## CI-09. The Windows job's toolchain step fails because the probe before it started the install
+
+**Source** the operator, 2026-09-04, asking for the cause of the transient failure rather than the rerun
+**Category** ci, **Priority** P1, **Effort** M, **Status** done
+
+### Problem
+
+The `gate (windows)` job fails at the toolchain step, before any check runs,
+with a component conflict:
+
+```text
+error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc', detected conflict: 'bin\cargo-fmt.exe'
+```
+
+The Ubuntu job of the same run passes. Rerunning the failed job on the same
+commit passes with no change to the tree, so it read as a runner fault and was
+recorded as one in [`RULES.md`](RULES.md) section 8.5 with a rerun as the
+answer.
+
+### Premise
+
+⛔ **The recorded premise was that this is the runner's and not ours, and it is
+wrong.** It was READ from the symptom, never measured. What follows was
+measured on this Windows host on 2026-09-04.
+
+`rustc` and `cargo` are rustup PROXIES. Run with a working directory whose
+`rust-toolchain.toml` pins a toolchain the host does not have, a proxy does not
+answer a version question: it begins installing that toolchain.
+
+The probe gives every tool six seconds and then kills it
+([`../scripts/doctor/doctor.ps1`](../scripts/doctor/doctor.ps1), `$ProbeTimeoutMs`,
+and `PROBE_TIMEOUT` in its twin). A fresh runner has no `1.98.0`, so the probe
+started a multi-minute install and killed it partway through:
+
+```text
+exited within 6000ms: False
+KILLED at 6068ms
+--- stderr ---
+info: syncing channel updates for 1.75.0-x86_64-pc-windows-msvc
+info: latest update on 2023-12-28 for version 1.75.0 (82e1608df 2023-12-21)
+info: downloading 5 components
+```
+
+⭐ **What the kill leaves behind is the defect.** The toolchain directory holds
+the files of whichever components had begun unpacking, and
+`lib/rustlib/components` lists only the ones that finished:
+
+```text
+--- bin/ ---
+cargo-clippy.exe
+cargo.exe
+clippy-driver.exe
+--- components manifest ---
+clippy-preview-x86_64-pc-windows-msvc
+cargo-x86_64-pc-windows-msvc
+```
+
+A later install then meets a file that no recorded component owns and refuses.
+Driven here by planting the one file an interrupted `rustfmt-preview` unpack
+leaves, then running the job's own toolchain step:
+
+```text
+info: recovering from a partially installed toolchain
+info: downloading 6 components
+info: rolling back changes
+error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc', detected conflict: 'bin\cargo-fmt.exe'
+```
+
+⚠ **That is why it is intermittent.** Five components, and only a kill landing
+inside the `rustfmt-preview` unpack produces this conflict. Where six seconds
+lands depends on the runner's download speed that minute.
+
+⭐ **And that is why only one host ever saw it.** The Ubuntu job runs
+`doctor.sh --fast`, which skips version probes entirely, so no proxy is ever
+invoked before its toolchain step. The Windows job ran `doctor.ps1 -Json` with
+no `-Fast`. The asymmetry was read as the runner being at fault.
+
+⛔ **The probe's own README claimed the opposite of what it did**: "It is
+read-only. No installer, no config change". A version probe was installing a
+toolchain.
+
+### Approach
+
+Two sources for one condition, because a rustup that does not know the variable
+would leave the ordering as the only thing holding.
+
+- ⭐ **The probe cannot start an install.** Both twins export
+  `RUSTUP_AUTO_INSTALL=0`, so a proxy in a tree pinning an absent toolchain
+  declines in milliseconds instead of installing for minutes.
+- **The workflow installs before it probes.** The toolchain step moves above
+  the probe step in both jobs of
+  [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml), so there is no
+  install left for a probe to interrupt even where the variable is ignored.
+- ⚠ **An error is not a version.** With the guard in place the proxy answers
+  `error: toolchain '...' is not installed`, and the probe reported that
+  compiler as present at the version inside the error text. The token is read
+  only from a process that exited 0.
+
+⛔ Must not raise the six-second limit, which exists because several tools block
+for as long as they are allowed to. Must not special-case rustup by matching its
+message text: the exit code is what separates an error from an answer.
+
+### Consumers
+
+⚠ Nothing is fetched from this repository yet that this touches. The probe and
+the workflow are internal, and the corpus is unchanged by this entry.
+
+### Prove
+
+```bash
+sh scripts/doctor/doctor.sh --fixture
+```
+
+```bash
+pwsh -NoProfile -File scripts/doctor/doctor.ps1 -Fixture
+```
+
+Passing means exit 0 and the ok line from both halves: a version probe run in a
+tree pinning an absent toolchain declined instead of installing, and created no
+toolchain directory. ⛔ Read the code from the process that produced it, unpiped.
+
+### ⭐ Closed 2026-09-04. The probe was the installer, and the guard has been seen to refuse
+
+**Both halves guard it, the workflow no longer depends on the guard alone, and
+the fabricated version is gone.**
+
+```text
+$ sh scripts/doctor/doctor.sh --fixture
+doctor fixture ok: a version probe in a tree pinning an absent
+toolchain declined instead of installing one, and created nothing.
+exit=0
+```
+
+```text
+$ pwsh -NoProfile -File scripts/doctor/doctor.ps1 -Fixture
+doctor fixture ok: a version probe in a tree pinning an absent
+toolchain declined instead of installing one, and created nothing.
+exit=0
+```
+
+⛔ **The premise recorded in [`RULES.md`](RULES.md) section 8.5 was disproved,
+and the correction is here rather than as an edit to it.** What was believed:
+the Windows runner intermittently fails installing the pinned toolchain, with a
+component conflict rather than anything about this tree, and the answer is to
+rerun the job. What was measured: this tree's own probe starts the install that
+the conflict is a fragment of, and kills it. Section 8.5 is rewritten to the
+cause, and its original wording is in
+[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
+
+**The guard mutation, both halves.** ⛔ Each mutation was made against a copy
+under the ignored scratch directory, the live file restored from that copy, and
+the restored file compared byte for byte before anything else ran.
+
+| where | planted | red |
+| --- | --- | --- |
+| `doctor.sh` | `RUSTUP_AUTO_INSTALL=0` changed to `=1` | exit 1, naming the proxy line `info: syncing channel updates for 1.999.0-x86_64-pc-windows-msvc` |
+| `doctor.ps1` | the same, on its own assignment | exit 1, same finding, same rustup version reported |
+
+⚠ **The fixture is the entry's acceptance and it is NOT wired into the gate**,
+deliberately. It would refuse on a host whose rustup predates 1.28, which is
+the version that first reads the variable, and that host is protected by the
+workflow ordering instead. A gate that goes red on a correctly configured
+machine is a gate somebody switches off.
+
+⚠ **What this did not prove.** No CI run has exercised the fix: the evidence is
+local, on one Windows host, and the next push is what drives it on the runner
+the failure was measured on.

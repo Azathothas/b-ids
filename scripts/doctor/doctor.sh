@@ -38,6 +38,7 @@ SCHEMA="agent-doctor/1"
 MODE=text
 FAST=0
 NET=0
+FIXTURE=0
 ONLY=""
 
 while [ $# -gt 0 ]; do
@@ -52,6 +53,7 @@ while [ $# -gt 0 ]; do
     --text) [ "$MODE" = json ] && { printf 'doctor: --json and --text are contradictory. Pass one.\n' >&2; exit 2; }
             MODE=text_explicit ;;
     --fast) FAST=1 ;;
+    --fixture) FIXTURE=1 ;;
     --net)  NET=1 ;;
     --group) shift; ONLY="${1:-}" ;;
     -h|--help)
@@ -157,6 +159,22 @@ probe_version() {
     return 124
   fi
 
+  # ⛔ AN ERROR IS NOT A VERSION, AND MERGING THE STREAMS IS WHAT MAKES THAT
+  # EASY TO GET WRONG. The 2>&1 above is deliberate, because java and several
+  # JVM tools print the version to stderr. It also hands a FAILING tool's
+  # complaint to the token reader below, and any version-shaped run of
+  # characters in it becomes the reported version. `rustc --version` in a tree
+  # pinning an absent toolchain answers `error: toolchain
+  # '1.75.0-x86_64-pc-windows-msvc' is not installed`, and this probe reported
+  # that compiler as present at 1.75.0.
+  # ⚠ The exit code is the only thing that separates the two, so it is read
+  # here rather than the text being pattern-matched.
+  # ⭐ Measured over all 86 rows of the table below on 2026-09-04: nothing on
+  # that host exits non-zero AND yields a token, so this loses no version that
+  # was real. The two that exit non-zero, the Windows Store python3 alias at
+  # 9009 and pip at 1, already yielded none and are already reported as stubs.
+  [ "$_pv_rc" != 0 ] && { printf ''; return 0; }
+
   [ -z "$_pv_raw" ] && { printf ''; return 0; }
   printf '%s' "$_pv_raw" \
     | head -n 5 \
@@ -196,12 +214,118 @@ NOTES=""
 note() { NOTES="$NOTES$1$NL"; }
 
 PROBE_TIMEOUT=6
+
+# ⛔ A PROBE MEASURES A MACHINE. IT DOES NOT CHANGE ONE, AND ASKING A VERSION
+# used to. `rustc`, `cargo` and `rustup` are rustup PROXIES: run inside a tree
+# whose rust-toolchain.toml pins a toolchain the host does not have, a proxy
+# does not answer, it starts INSTALLING that toolchain. probe_version gives
+# every tool PROBE_TIMEOUT seconds and then kills it, so the probe would begin
+# a multi-minute install and kill it partway through, leaving a toolchain
+# directory holding the files of a component that lib/rustlib/components does
+# not list. The next install refuses that state:
+#
+#   error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc',
+#   detected conflict: 'bin/cargo-fmt.exe'
+#
+# ⚠ Which component the kill lands inside decides whether the machine is left
+# broken, so the same probe on the same tree passes most of the time. That is
+# what made this read as a runner fault for three sessions. TODO/ci.md, CI-09.
+#
+# ⭐ Measured 2026-09-04, in a tree pinned to an absent 1.75.0: the proxy was
+# killed at 6068 ms mid "downloading 5 components"; with this variable set it
+# answered in 84 ms and created no toolchain directory at all.
+# ⚠ A rustup too old to know the variable ignores it, which is why ci.yml also
+# installs the toolchain BEFORE it runs this probe. Two sources, one condition.
+# ⚠ --fast skips probe_version entirely, so this only ever mattered to a run
+# WITHOUT it. The ubuntu job passes --fast and the windows job did not, which
+# is why one host saw this and the other never could.
+RUSTUP_AUTO_INSTALL=0
+export RUSTUP_AUTO_INSTALL
+
 TIMEOUT_BIN=""
 if command -v timeout >/dev/null 2>&1; then TIMEOUT_BIN=timeout
 elif command -v gtimeout >/dev/null 2>&1; then TIMEOUT_BIN=gtimeout   # macOS, via coreutils
 fi
 TIMEDOUT=""
 STUBS=""
+
+# --fixture: prove the claim this file's README makes about it -----------------
+#
+# ⭐ THE README SAYS "IT IS READ-ONLY. NO INSTALLER, NO CONFIG CHANGE", AND FOR
+# THREE SESSIONS THAT WAS FALSE. `rustc` and `cargo` are rustup proxies, so a
+# version probe inside a tree pinning an absent toolchain started INSTALLING
+# one, and the 6 second limit above killed it partway through. TODO/ci.md,
+# CI-09 carries the measurement and the CI failure it produced.
+#
+# ⛔ SO THE CLAIM GETS A COMMAND. This builds the exact condition, asks a proxy
+# for its version, and refuses unless the proxy declined instead of installing.
+# ⚠ It asserts on the ABSENCE of rustup's own "syncing channel updates" line
+# rather than on elapsed time. A timing assertion would pass on a slow host for
+# the wrong reason, and this file has a rule about a check that passes because
+# something else happened to satisfy it.
+run_fixture() {
+  if ! command -v rustup >/dev/null 2>&1 || ! command -v rustc >/dev/null 2>&1; then
+    printf 'doctor fixture SKIPPED: rustup and rustc are what this asks, and\n'
+    printf 'this host has no rustup toolchain to ask. Not the same as a pass.\n'
+    return 0
+  fi
+
+  # ⚠ A VERSION NO RELEASE HAS EVER CARRIED. A real one would be installable,
+  # so a run that DID install would leave a real toolchain on the machine.
+  _fx_chan="1.999.0"
+  _fx_home="${RUSTUP_HOME:-$HOME/.rustup}"
+  _fx_dir="${TMPDIR:-/tmp}/doctor-fixture.$$"
+
+  _fx_pre=0
+  for _fx_t in "$_fx_home/toolchains/$_fx_chan-"*; do
+    [ -e "$_fx_t" ] && _fx_pre=1
+  done
+  if [ "$_fx_pre" = 1 ]; then
+    printf 'doctor fixture could not run: a %s toolchain already exists.\n' "$_fx_chan" >&2
+    return 2
+  fi
+
+  mkdir -p "$_fx_dir" || { printf 'doctor fixture could not run: no temp dir.\n' >&2; return 2; }
+  printf '[toolchain]\nchannel = "%s"\ncomponents = ["rustfmt", "clippy"]\n' "$_fx_chan" \
+    > "$_fx_dir/rust-toolchain.toml"
+
+  _fx_rustc=$(command -v rustc)
+  _fx_out=$(cd "$_fx_dir" && "$_fx_rustc" --version 2>&1 </dev/null || true)
+
+  _fx_made=0
+  for _fx_t in "$_fx_home/toolchains/$_fx_chan-"*; do
+    [ -e "$_fx_t" ] && _fx_made=1
+  done
+  rm -rf "$_fx_dir"
+
+  _fx_bad=0
+  if [ "$_fx_made" = 1 ]; then
+    printf 'doctor fixture FAILED: the probe created a %s toolchain directory.\n' "$_fx_chan"
+    printf '  A version probe installed a toolchain. Remove it with\n'
+    printf '  rustup toolchain uninstall %s\n' "$_fx_chan"
+    printf '  and see TODO/ci.md, CI-09.\n'
+    _fx_bad=1
+  fi
+  if printf '%s' "$_fx_out" | grep -q 'syncing channel updates'; then
+    printf 'doctor fixture FAILED: the proxy began installing rather than declining.\n'
+    printf '  RUSTUP_AUTO_INSTALL=0 was not honoured. rustup 1.28 is the first\n'
+    printf '  version that reads it; this host has %s.\n' "$(rustup --version 2>&1 | head -n 1)"
+    _fx_bad=1
+  fi
+  if [ "$_fx_bad" = 1 ]; then
+    printf '  what the proxy said: %s\n' "$(printf '%s' "$_fx_out" | head -n 1)"
+    return 1
+  fi
+
+  printf 'doctor fixture ok: a version probe in a tree pinning an absent\n'
+  printf 'toolchain declined instead of installing one, and created nothing.\n'
+  return 0
+}
+
+if [ "$FIXTURE" = "1" ]; then
+  run_fixture
+  exit $?
+fi
 
 # ------------------------------------------------------------------- host ---
 

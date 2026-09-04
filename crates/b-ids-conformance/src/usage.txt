@@ -1,0 +1,36 @@
+b-ids-conformance - how close is this client to the browser it claims to be?
+
+A field-level diff, never a digest comparison. A digest says two things differ
+without saying what; this names which extension moved, which setting is absent,
+and which header changed position.
+
+usage:
+  b-ids-conformance --claim ID --observed FILE [--root DIR] [--json]
+  b-ids-conformance --list
+  b-ids-conformance --fixture
+
+  --claim ID       the profile in the corpus this client says it is
+  --observed FILE  a captured profile produced from the client under test
+  --root DIR       the corpus to read the claim from. Defaults to
+                   B_IDS_CORPUS_ROOT, then the nearest corpus above the
+                   working directory.
+  --json           emit the conformance/1 document instead of the report
+  --list           print every field this comparison knows, and exit
+  --fixture        compare a profile against a copy of itself with two
+                   extensions swapped, and assert the report names exactly
+                   that one field
+
+exit codes:
+  0  every field both sides carry agrees
+  1  at least one field differs
+  2  could not run
+
+The observed side is a file rather than a live capture. Capturing a client
+means standing up the harness and pointing the client at it, which
+experiments/10-first-profile.sh already does for a browser. Run the capture
+once and this as often as you like.
+
+A not-checkable field is not a passing one. It is a field one side does not
+carry, and nothing was compared on it.
+
+TODO/validator.md, VALID-05.

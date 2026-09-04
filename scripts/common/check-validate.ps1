@@ -141,8 +141,17 @@ try {
     $null = New-Item -ItemType Directory -Path (Join-Path $scratch 'first') -Force
     try {
         Copy-Item -LiteralPath (Join-Path $corpusRoot $corpusDir) -Destination (Join-Path $scratch 'root') -Recurse -Force
-        if (Test-Path -LiteralPath $rawDir -PathType Container) {
-            Copy-Item -LiteralPath $rawDir -Destination (Join-Path $scratch 'root') -Recurse -Force
+        # ⛔ THE RAW BYTES COME FROM THE RESOLVED ROOT, NOT THE WORKING TREE.
+        # This read $rawDir relative to the repository, so with the corpus
+        # moved out it copied a corpus from the data branch and no raw bytes at
+        # all. The generator reads the capture beside each profile, so its
+        # first run then failed and this check reported that as a
+        # NON-DETERMINISTIC GENERATOR. ⚠ The wrong verdict is the point: the
+        # leg was not measuring what its message claimed.
+        # TODO/publish.md, PUB-11.
+        $rawSource = Join-Path $corpusRoot $rawDir
+        if (Test-Path -LiteralPath $rawSource -PathType Container) {
+            Copy-Item -LiteralPath $rawSource -Destination (Join-Path $scratch 'root') -Recurse -Force
         }
         $scratchRoot = Join-Path $scratch 'root'
         $derivedDir = Join-Path (Join-Path $scratchRoot $corpusDir) 'v1'

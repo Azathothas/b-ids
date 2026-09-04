@@ -563,7 +563,7 @@ the re-run without the pipe.
 ## PUB-04. The formats that are not data files
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** publish, **Priority** P2, **Effort** M, **Status** open
+**Category** publish, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -598,6 +598,86 @@ sh scripts/common/check-generated-configs.sh
 Passing means: every generated snippet is for a (profile, stack) pair the
 support matrix marks as emittable, and a pair marked as a hole generates a
 comment naming the hole instead of a snippet.
+
+### ⭐ Closed 2026-09-04. Thirty-seven generated files, and twenty-four of them are refusals
+
+⛔ **The gate is the entry.** A snippet exists only where the support matrix
+records the pair as emittable; every stack the matrix records a hole against
+gets a file naming the hole, its file and its line, and no snippet at all.
+
+```text
+$ sh scripts/common/check-generated-configs.sh
+generated configs ok: 6 snippet(s) over 6 profile(s), each for a pair the
+  matrix marks emittable, and 24 refusal(s) naming a hole at a file and a line.
+  6 detection rule(s), none naming a digest the corpus does not hold.
+```
+
+```text
+$ sh scripts/common/check-generated-configs.sh --json
+{"schema":"check-generated-configs/1","snippets":6,"refusals":24,"detection":6,"profiles":6,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-generated-configs.ps1 -Json
+{"schema":"check-generated-configs/1","snippets":6,"refusals":24,"detection":6,"profiles":6,"problems":0}
+```
+
+**What is generated**, per profile, under `configs/` in the published tree:
+
+| file | what it is |
+| --- | --- |
+| `b-ids-emit.rs` | the snippet, for the one stack this tree can RUN. Its byte count comes from the run that produced the file. |
+| `rustls.txt`, `h2.txt`, `impit.txt`, `utls.txt` | a refusal each, naming what that stack cannot emit, the path under `references/` it was read at, and the line |
+| `detect.conf` | the detection side: the navigation header order and the ALPN list, in the order the wire carried them |
+
+⭐ **Twenty-four refusals to six snippets is the ratio the entry wanted.** A
+tree of six snippets and nothing else would be one where every stack was assumed
+able.
+
+#### ⚠ Three things the generator does that are worth stating
+
+⛔ **The random is zeroed and says so.** The 32 random bytes are the one part of
+a `ClientHello` that differs on every connection, so a snippet that pinned a
+captured draw would teach a reader to send a replay.
+
+⛔ **The detection rule is not matrix-gated and IS checked for the opposite
+property.** It emits nothing, so no stack has to be able to emit it; the check
+refuses it if it names a digest, because the corpus holds none. ⚠ It also says
+in its own text that it matches a BUILD rather than a browser, because a rule
+pinned this tightly refuses real traffic as a fleet updates.
+
+⛔ **The pair is checked, not the stack.** A cell for one profile does not
+license a snippet for another, so the check reads the profile out of the file
+and requires an emitting cell for exactly that pair.
+
+#### ⛔ The guard mutation
+
+⛔ **Planted against a copy under the ignored scratch directory, the live file
+restored from that copy, and the restored file compared byte for byte.**
+
+| planted | red |
+| --- | --- |
+| the generator writes a `.rs` snippet for every hole stack instead of a `.txt` refusal | exit 1, 24 problems, each naming the stack and the path: `h2 has a hole in the matrix and a snippet in the tree` |
+
+⚠ **And the exit code was read twice**, because the first reading was through a
+pipe into `head` and reported `0`, which is the pipeline's status and the trap
+[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 2 names.
+Unpiped it is 1.
+
+#### ⚠ What this entry does NOT generate, and why it is a question rather than a gap
+
+⛔ **No digest allowlist.** The Approach names "digest allowlists" among the
+detection-side artefacts, and the operator's ruling on `PUB-03` declined digest
+ROUTES on the ground that a route resolves to a value the corpus HOLDS and the
+corpus holds no digest. ⚠ Those two are in tension and the tension is a finding
+rather than something to resolve by judgement: an allowlist is the same computed
+value on a different surface.
+
+⭐ **The question is recorded in [`PROGRESS.md`](PROGRESS.md) with a
+recommendation.** Everything in the Approach that does not depend on that answer
+is built.
+
+⚠ **And one thing found by building it.** Adding an artefact class to the
+assembler made `check-data-branch` fail, because the published branch predates
+the new files. Nothing published was wrong; the check could not tell "behind"
+from "diverged". `PUB-14` is that entry.
 
 ---
 
@@ -680,6 +760,23 @@ Passing means: a synthesised capture parses in a standard tool, its
 a comment identifying it as synthesised.
 
 ---
+
+
+### ⛔ Ruled by the operator 2026-09-04: vendor a raw-socket route, and close this with `HARNESS-11`'s residue
+
+⛔ **`HARNESS-11` measured the capability and it is one field of six.** The
+source port is readable from safe std; the maximum segment size, the window size
+and scale, the option order and the peer's hop limit are not, and
+`unsafe_code = "deny"` at the workspace root makes reading them a dependency
+question rather than a code one.
+
+⭐ **The ruling: take the dependency, then add the whole TCP half at once.** No
+schema version is spent on one weak field, and this entry and `HARNESS-11`'s
+follow-on close together because they want the same bytes.
+
+⚠ **`b_ids_harness::tcp` already carries the model**, with every field an option
+and every absence carrying its reason, so the work is a route that fills them
+rather than a shape to design.
 
 ## PUB-07. The licence stated in three places
 
@@ -977,6 +1074,20 @@ command is the one the check runs.
 
 ---
 
+
+### ⛔ Ruled by the operator 2026-09-04: keyless attestation, and no signing key
+
+⭐ **The runner's own OIDC identity signs**, so no long-lived key exists and no
+workflow names a secret. ⛔ That preserves the property the record states about
+this tree: nothing in it needs a credential.
+
+⚠ **And it changes what `DOC-02` is waiting for.** That entry's trigger is a
+workflow needing a secret, a release needing a signing key, or a capture lane
+needing a machine somebody sets up. ⛔ Keyless attestation makes none of the
+first two true, so `DOC-02` is now waiting on the third alone, which the
+vendored `certutil` in `DRIVER-11` and the raw-socket route in `PUB-06` are the
+candidates for.
+
 ## PUB-10. Nothing triggers the two surfaces that were built to publish
 
 **Source** the operator, ruled 2026-09-03 after the previous session wrote its record
@@ -1165,7 +1276,7 @@ and it is the argument for planting the mutation rather than reading the code.
 ## PUB-11. Every check reads the corpus from the working tree, and the corpus is leaving it
 
 **Source** the operator, ruled 2026-09-03
-**Category** publish, **Priority** P2, **Effort** M, **Status** open
+**Category** publish, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
 
@@ -1313,6 +1424,126 @@ comparison stops meaning anything. That is a question about where a NEW capture
 is written, and it is recorded in [`PROGRESS.md`](PROGRESS.md) rather than
 answered here.
 
+### ⭐ Closed 2026-09-04. Ten of ten, and two checks that passed by comparing something to itself
+
+⛔ **The three legs named above are fixed at their cause**, and the driven pass
+that measured them now reports ten of ten. ⚠ Two further defects were found by
+running it, both of the same shape and neither in the three.
+
+**The three legs.**
+
+| leg | what reached the working tree | what it reads now |
+| --- | --- | --- |
+| [`../crates/b-ids-corpus/tests/publish.rs`](../crates/b-ids-corpus/tests/publish.rs) | `repository_root()`, which walked up from `CARGO_MANIFEST_DIR` and was BOTH the build source and the scratch destination | `corpus_root()` for the source, reading `B_IDS_CORPUS_ROOT` in `b-ids/build.rs`'s own order, and `workspace_root()` for the destination |
+| [`../scripts/common/check-validate.sh`](../scripts/common/check-validate.sh) determinism leg | `RAW_DIR` relative to the repository, so the scratch copy got a branch corpus and no raw bytes | `"$CORPUS_ROOT/$RAW_DIR"`, and its PowerShell twin the same |
+| [`../scripts/common/check-trust-anchors.sh`](../scripts/common/check-trust-anchors.sh) carrier walk | `find "$REPO_ROOT/corpus"` while the publisher above it took `--root "$CORPUS_ROOT"` | `find "$CORPUS_ROOT/corpus"`. ⚠ The PowerShell twin already did, so the halves disagreed and only a run with the corpus moved out could show it |
+
+### ⛔ The two the driven pass found, and they are worse than the three
+
+⭐ **A check cannot pass by comparing something to itself, and two could.** Both
+had the identical cause: the check asked the resolver a second question AFTER
+exporting `B_IDS_CORPUS_ROOT`, and the resolver's first rule is that an explicit
+root is never second guessed. The export disarmed the guard on the line below
+it.
+
+```text
+$ sh scripts/common/corpus-root.sh --ref
+refs/remotes/origin/data
+$ B_IDS_CORPUS_ROOT="$(sh scripts/common/corpus-root.sh)" sh scripts/common/corpus-root.sh --json
+{"schema":"corpus-root/1","source":"explicit","ref":"","profiles":6}
+```
+
+- ⛔ **`check-data-branch` compared the published branch against a materialised
+  copy of that same branch and reported green.** Its own header says it must
+  exit 2 rather than do that. Driven with `corpus/` moved out, before the fix:
+  `data branch ok: 200 file(s) regenerated, identical over two builds`, exit 0.
+- ⛔ **`check-corpus` asked THIS repository's history about files that are not
+  in it.** Its one irreplaceable leg asks whether a published file was ever
+  modified; with the ref emptied it read `main` instead of the data branch and
+  reported `nothing edited after publication` for the wrong reason.
+
+⭐ **`--ref` was the wrong question and a new one answers it.** An empty ref
+means the working tree answered OR the caller named a root, which are different
+facts. `corpus-root.sh --source` and its `-Source` twin print which of the three
+rules answered, and `check-data-branch` now refuses anything that is not
+`working-tree`. `check-corpus` keeps `--ref`, asked before the export.
+
+### ⭐ Driven with `corpus/` and `raw/` moved out of the working tree
+
+⛔ **The measurement, not a prediction.** Both directories were copied to the
+ignored scratch directory and removed, the checks were run, and both were
+restored and compared against `HEAD` afterwards.
+
+```text
+check-coverage               exit=0
+check-corpus                 exit=0
+check-formats                exit=0
+check-routes                 exit=0
+check-support-matrix         exit=0
+check-license-consistency    exit=0
+check-publish                exit=0
+check-validate               exit=0
+check-trust-anchors          exit=0
+check-release                exit=0
+---
+ten checks: 10 passed, 0 failed
+check-data-branch: exit=2 (2 = refuses by design, and now it does)
+```
+
+```text
+$ git status --porcelain corpus raw
+corpus/ and raw/ are byte-identical to HEAD
+```
+
+⚠ **And the guard was checked for over-refusing**, because one that always
+refuses is as useless as one that never does. With the corpus restored,
+`check-data-branch` compares and passes, naming the tree it compared:
+
+```text
+data branch ok: 200 file(s) regenerated, identical over two builds,
+  198 of them with a checksum in the manifest and in SHA256SUMS, and no
+  source, vendored dependency or reference corpus among them.
+```
+
+⚠ **The line after those names the tree object both sides resolved to**, and it
+is quoted here rather than in the block because a bare 40-hex run trips the
+secret scan's public rules while one in a code span does not. The check reported
+the remote data branch at tree `6d0b4c1703f3da2294ec3fb3f9654f6a042126c3`, which
+is what this corpus derives to, and one tree object is one set of bytes.
+
+### ⚠ And the count in the paragraph above has already moved
+
+⛔ **"Twelve check pairs" was true the day it was written and is not now.**
+`PUB-04` added a thirteenth, and the number will move again. ⭐ The claim audit
+found it in [`../scripts/README.md`](../scripts/README.md) stating twelve in the
+present tense about the tree, and that page reads it with a command now instead.
+
+```bash
+grep -l corpus-root.sh scripts/common/check-*.sh
+```
+
+### The acceptance
+
+```text
+$ sh scripts/common/check-gate.sh --fast
+gate ok: 38 passed, but 1 SKIPPED on this host: check-twins
+A skipped check is not a passed check. CI runs on two hosts that between
+them have every tool; that is where the coverage for these comes from.
+```
+
+### ⚠ One residual, measured and named
+
+⛔ **A root named explicitly still makes `check-corpus`'s history question
+ambiguous.** With `B_IDS_CORPUS_ROOT` set by a caller,
+[`../scripts/common/check-corpus.sh`](../scripts/common/check-corpus.sh) line 90
+gets an empty ref and reads this repository's history, which is right when the
+explicit root IS this working tree and unanswerable when it is not. ⚠ It is not
+reachable from the gate, which never sets the variable before a check resolves.
+
+⭐ **It is carried by `PUB-13`**, which is where the operator's 2026-09-04
+ruling put the question of which branch holds the canonical corpus. The history
+to read is a property of that answer rather than of this entry.
+
 ---
 
 ## PUB-12. The licence check declines the one surface a consumer actually fetches
@@ -1418,3 +1649,282 @@ red the day somebody else's host is down.
 in the JSON rather than hidden. Making it fetch would be the wrong repair; the
 right one is a checkout that fetched the branch, which is what
 `check-data-branch` already needs for its own comparison.
+
+---
+
+## PUB-13. The corpus moves to a source branch, and the default branch carries neither
+
+**Source** the operator, ruled 2026-09-04, answering `PROGRESS.md`'s open question 1
+**Category** publish, **Priority** P2, **Effort** L, **Status** open
+
+### Problem
+
+`PUB-11` moved every check off the working tree, so `corpus/` and `raw/` can now
+leave the default branch. ⛔ **The step after it has an unanswered question in
+it, and removing the directories without answering it breaks two things.**
+
+- `check-data-branch` compares the published branch against what the canonical
+  corpus derives to. With no canonical corpus in the tree there is nothing to
+  compare against, and the check refuses rather than comparing the branch
+  against itself.
+- The capture workflow adds a profile by writing `corpus/v1/...` in the working
+  tree and committing it. With the directory gone there is nowhere to write.
+
+### Premise
+
+⚠ **Both halves were measured by `PUB-11`'s driven pass on 2026-09-04**, not
+predicted. With `corpus/` and `raw/` moved out, ten checks resolve off the
+branch and pass, and `check-data-branch` exits 2 naming `data-branch` as what it
+resolved to.
+
+⛔ **And the refusal only works because `PUB-11` fixed it.** Before that, the
+same run reported `data branch ok: 200 file(s) regenerated, identical over two
+builds` and exited 0, having compared the branch against a copy of itself.
+
+### Decision
+
+⛔ **Ruled by the operator 2026-09-04.** The corpus moves to a dedicated SOURCE
+branch. The default branch carries neither `corpus/` nor `raw/`, a capture opens
+its pull request against the source branch, and the data branch is derived from
+the source branch rather than from the default one.
+
+⚠ **The two alternatives and why they lost.** Keeping `corpus/` on the default
+branch until a capture path writes to the data branch was the recommendation
+attached to the question; it is the smallest change and it leaves the default
+branch carrying data indefinitely, which is the thing the sequence exists to
+end. Having the capture workflow commit straight to the data branch removes the
+comparison entirely: the branch becomes canonical, and `check-data-branch` has
+nothing independent left to check it against.
+
+⭐ **What the ruling buys is that the comparison survives.** Three branches
+means the data branch is still a DERIVATION of something, so the check that
+asks whether it matches keeps a real question to ask.
+
+### Approach
+
+⛔ **Sequenced, and every step reversible until the last.** This entry is not a
+single change.
+
+1. **Name the source branch and create it** carrying `corpus/` and `raw/` as the
+   default branch holds them today, verified tree for tree the way
+   `PUB-02` verified the data branch.
+2. **Teach the resolver a third rule.**
+   [`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh)
+   resolves an explicit root, then the working tree, then the data branch. The
+   source branch belongs between the working tree and the data branch, and
+   `--source` must name it, because `check-data-branch` refuses anything that is
+   not the canonical corpus and the canonical corpus is about to stop being
+   `working-tree`.
+3. **Point `check-data-branch` at the source branch** as the thing the data
+   branch is compared against.
+4. **Move the capture lane's pull request** to open against the source branch.
+   [`../.github/workflows/capture.yml`](../.github/workflows/capture.yml).
+5. ⛔ **Only then remove `corpus/` and `raw/` from the default branch.**
+6. ⚠ **And fix what step 5 does to CI, which is not obvious.** `PUB-14` made
+   the gate record `check-data-branch`'s designed exit 2 as a SKIP rather than a
+   failure, which is right. ⛔ But the ubuntu job runs `--strict`, which fails on
+   any skip, and the windows job asserts `$j.skipped -gt 1` because only
+   `check-twins` may be one. With `corpus/` gone from the default branch that
+   check skips on both, so both jobs go red on a state that is correct.
+   ⭐ Found by the door sweep on 2026-09-04, before it could bite.
+
+⚠ **And one thing `PUB-11` left, which this entry owns.**
+[`../scripts/common/check-corpus.sh`](../scripts/common/check-corpus.sh) line 90
+asks the resolver which ref carries the corpus, so it can ask the right history
+whether a published file was ever edited. An explicitly named root answers with
+an empty ref, and the check then reads this repository's history, which is right
+only when the explicit root is this working tree. ⛔ Once the canonical corpus is
+a branch, "which history" is this entry's question rather than an ambiguity to
+leave.
+
+Must not: make any check depend on the network, and must not give the capture
+workflow a write to the data branch. ⭐ The data branch stays derived and
+append-only.
+
+### Consumers
+
+⛔ **This is the breaking one, and it is why `PUB-02` exists.** A consumer
+reading `corpus/v1/` from the default branch over raw file serving gets a 404
+after step 5. The data branch has carried the same tree since 2026-09-03 and is
+the surface a consumer is meant to fetch. ⚠ Nothing is known to fetch either
+today.
+
+### Prove
+
+```bash
+sh scripts/common/check-gate.sh --fast
+```
+
+Passing means: the gate is green with `corpus/` and `raw/` absent from the
+working tree and a local copy of BOTH branches present, `check-data-branch`
+comparing the data branch against the source branch rather than refusing, and
+`check-corpus` reading the source branch's history. ⛔ Read the exit code from
+the process that produced it, unpiped.
+
+---
+
+
+### ⛔ Ruled by the operator 2026-09-04: a session may create and push the source branch
+
+⭐ **All six steps are a session's to run**, including creating the branch on
+this repository's own remote and, at the end, removing `corpus/` and `raw/` from
+the default branch.
+
+⚠ **What that does NOT license, and the distinction is the whole of absolute
+6.** Creating a branch is not rewriting one. ⛔ The data branch stays
+append-only and is never force-pushed, the history reset on `main` remains the
+operator's own action, and nothing here is written to any other repository.
+
+⛔ **Verify before removing.** The source branch is compared tree-for-tree
+against a local build the way `PUB-02` verified the data branch, and every step
+before the last stays reversible.
+
+## PUB-14. The data branch check cannot tell a branch that is behind from one that is wrong
+
+**Source** found by `PUB-04`, 2026-09-04, on the first change to the assembler since the branch was published
+**Category** publish, **Priority** P1, **Effort** M, **Status** done
+
+### Problem
+
+⛔ **`check-data-branch` compares two git tree objects and fails on any
+difference**, so adding an artefact class to the assembler takes the gate red.
+Nothing published is wrong when that happens: the branch simply carries fewer
+files than the generator now produces, and the publisher adds them on the next
+push.
+
+⚠ **A red nobody can act on is a red that gets ignored**, and this one cannot be
+cleared from a working tree at all: only a workflow run fixes it, and that
+workflow runs AFTER the gate on the same push.
+
+⛔ **And a second defect in the same area.** The check exits 2 when the canonical
+corpus is not in this tree, which its own header calls its honest state and
+which `CI-07` rules is not a failure. Both halves of the gate ran it through a
+runner that fails on any non-zero, so the designed refusal would have taken the
+gate red on the day `PUB-13` removes `corpus/` from the default branch.
+
+### Premise
+
+⭐ **Measured 2026-09-04, on the first assembler change since 2026-09-03.**
+`PUB-04` added 37 files under `configs/`, and the difference between the
+published branch and the regenerated tree was exactly that:
+
+```text
+published: 200  regenerated: 237
+--- paths on the branch that the regeneration does NOT produce ---
+--- count added ---
+37
+```
+
+⛔ **Every one of the 198 real artefacts was byte-identical.** Only the two
+files DERIVED from the artefact list differed, and they differed because the
+list grew.
+
+⚠ **`generated_from` does not help**, and it is the field that looks as though
+it would. It records the corpus digest, and that value was IDENTICAL on both
+sides: the branch's `MANIFEST.json` and the local build report the same one. The
+corpus did not change, the GENERATOR did, and the manifest records nothing about
+the generator.
+
+```bash
+git show origin/data:MANIFEST.json | jq -r .generated_from
+```
+
+⛔ **The digest is read with that command rather than written out here.** A
+64-character hex run in prose is refused by the public rules in
+[`../scripts/common/check-no-secrets.sh`](../scripts/common/check-no-secrets.sh),
+which exempt one only where an identifier names it as a digest. ⚠ Widening that
+rule to make a document read better is how a secret scan stops working.
+
+### Approach
+
+⭐ **The two cases are distinguishable, so distinguish them.**
+
+- **behind**: every path the branch carries is still produced, every one of them
+  is byte-identical apart from the two derived files, every checksum line the
+  branch publishes is still in the regenerated set, and every path the branch's
+  own manifest lists is on the branch. Reported with the count, exit 0.
+- **diverged**: anything else. Exit 1, with the count of each kind.
+
+⛔ **The derived files are compared by CONTENT rather than exempted.** Every
+artefact line the published `SHA256SUMS` carries has to appear unchanged in the
+regenerated one, so a digest that moved is caught in the one file that lists
+every digest.
+
+⛔ **And the branch is checked against its own manifest**, because a path
+DELETED from the branch leaves it a smaller subset, which the tree comparison
+alone cannot tell from "not published yet".
+
+Must not: exempt a file from comparison by name. Must not turn the 2 into a
+pass; it is a skip, so `--strict` still refuses it in CI where the corpus is
+present on purpose.
+
+### Consumers
+
+⚠ This changes a check, not what is published. The JSON gains a `pending` field
+and the schema moves to `check-data-branch/3`; nothing outside this tree reads
+it.
+
+### Prove
+
+```bash
+sh scripts/common/check-data-branch.sh
+```
+
+Passing means exit 0, with the branch reported as behind by the number of
+artefacts the assembler now produces and the branch does not carry, and no
+problem raised. ⛔ Read the exit code from the process that produced it,
+unpiped.
+
+### ⭐ Closed 2026-09-04. Three failure modes, each planted and each seen to fail
+
+```text
+$ sh scripts/common/check-data-branch.sh
+data branch ok: 237 file(s) regenerated, identical over two builds,
+  235 of them with a checksum in the manifest and in SHA256SUMS, and no
+  source, vendored dependency or reference corpus among them.
+  ⚠ The data branch is remote and BEHIND by 37 artefact(s): every path it
+  carries is still produced and still byte-identical, and the assembler
+  now produces more. ⛔ Nothing published is wrong, so this is reported
+  rather than failed. The publisher adds them on the next push.
+  ⛔ Nothing was pushed and no branch was created.
+exit=0
+```
+
+```text
+$ sh scripts/common/check-data-branch.sh --json
+{"schema":"check-data-branch/3","files":235,"present":237,"recorded":235,"cases":11,"published":"remote","matched":false,"pending":37,"problems":0}
+$ pwsh -NoProfile -File scripts/common/check-data-branch.ps1 -Json
+{"schema":"check-data-branch/3","files":235,"present":237,"recorded":235,"cases":11,"published":"remote","matched":false,"pending":37,"problems":0}
+```
+
+#### ⛔ The guard mutation, three plants
+
+⛔ **Each was made on a local branch built off `origin/data` in a throwaway
+worktree, and the branch and the worktree were removed afterwards.** ⚠ Nothing
+was pushed and `origin/data` was never written to.
+
+| planted | red |
+| --- | --- |
+| a published artefact's bytes changed | exit 1: `1 published artefact(s) changed their bytes, and a published artefact is immutable` |
+| a published path deleted from the branch | exit 1: `1 path(s) the branch's own manifest lists are not on the branch, so a consumer fetching one gets a 404` |
+| the canonical corpus moved out of the working tree | the gate records `SKIP check-data-branch -- the canonical corpus is not in this tree, so the branch has nothing to be compared against`, where it previously recorded a failure |
+
+⭐ **The second plant is the one that earned the manifest leg.** With only the
+tree comparison, a DELETED published path read as `BEHIND`, because a branch
+missing a file is a smaller subset and a subset was the signal for "not
+published yet". ⛔ That would have turned a rewritten branch green, which is the
+one thing this check exists to refuse. The branch's own manifest is what tells
+the two apart.
+
+#### ⚠ And the manifest leg was wrong on its first run, in a way this tree has seen before
+
+⛔ **It reported all 198 artefacts missing.** `jq` on this Windows host writes
+CRLF, so every path came back with a carriage return riding on it and matched
+nothing. ⭐ `CORPUS-02` recorded that exact defect against that exact tool on
+2026-09-02, and it bit again in a new script. The read strips it now, as
+[`../scripts/common/check-coverage.sh`](../scripts/common/check-coverage.sh)
+already did.
+
+⚠ **A guard that fires on everything is as useless as one that fires on
+nothing**, which is why the count is asserted rather than the failure: 198 was
+wrong and 1 was right, and both are non-zero.

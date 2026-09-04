@@ -135,6 +135,20 @@ pub fn drive(browser: &Resolved, launch: &Launch) -> Result<Driven, String> {
     if launch.url.is_empty() {
         return Err("a launch needs a URL".to_owned());
     }
+    // ⛔ EVERY SWITCH BELOW IS A CHROMIUM SWITCH, so a family that is not one
+    // is refused here rather than launched with arguments it misreads. Firefox
+    // takes none of them: it spells headless `-headless`, has no
+    // `--user-data-dir`, and reads a bare `--no-first-run` as a file to open.
+    // ⚠ Refusing is not the same as saying Firefox cannot be captured. It says
+    // this launcher cannot, and the corpus would otherwise gain a profile taken
+    // under a configuration nobody can name. TODO/corpus.md, CORPUS-02.
+    if !browser.family.is_chromium() {
+        return Err(format!(
+            "{} is not a Chromium, and every switch this launcher passes is a Chromium \
+             switch. Driving it needs its own launch path.",
+            browser.family
+        ));
+    }
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())

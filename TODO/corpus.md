@@ -536,7 +536,127 @@ exit=1
 ⭐ **The refusal is down from three rows to two**, which is the half of this
 entry that moved on 2026-09-02.
 
+### ⛔ 2026-09-04: the blocker above is disproved, and it has moved rather than gone
+
+⚠ **The section above says two of the four required rows are blocked on
+`b_ids_driver::Family` knowing the family at all.** ⛔ That is no longer true,
+and the correction is written here rather than as an edit to it.
+
+⭐ **The resolver knows all four families now.** Measured on this Windows host,
+which has three of them installed:
+
+```text
+$ cargo run -q -p b-ids-driver -- resolve --json
+{"family":"chrome","name":"Chrome","path":"C:\\Program Files\\Google/Chrome/Application/chrome.exe","version":"151.0.7922.76","answers":[["sibling-directory","151.0.7922.76"]],"disagreement":false}
+{"family":"edge","name":"Edge","path":"C:\\Program Files (x86)\\Microsoft/Edge/Application/msedge.exe","version":"152.0.4191.62","answers":[["sibling-directory","152.0.4191.62"]],"disagreement":false}
+{"family":"firefox","name":"Firefox","path":"C:\\Program Files\\Mozilla Firefox/firefox.exe","version":"148.0.2","answers":[["application-ini","148.0.2"]],"disagreement":false}
+```
+
+⛔ **Firefox needed a version source no Chromium layout has, and without it the
+family would have been invisible while installed.** Measured in the install
+directory 2026-09-04: no version-shaped sibling directory and no
+`firefox.manifest`, so both existing sources answer nothing, and `resolve` drops
+an executable it cannot version. `application.ini` states it, and
+`Source::ApplicationIni` is what reads it.
+
+| what changed | where |
+| --- | --- |
+| `Family::Chromium` and `Family::Firefox` | [`../crates/b-ids-driver/src/resolve.rs`](../crates/b-ids-driver/src/resolve.rs) |
+| `Family::is_chromium`, which the launcher reads | the same file |
+| `Source::ApplicationIni` and `from_application_ini` | the same file |
+| candidate paths for both families, on Windows and POSIX | the same file |
+| `index_route` returns `Option<Route>`, so it cannot disagree with `index_url` | [`../crates/b-ids-driver/src/acquire.rs`](../crates/b-ids-driver/src/acquire.rs) |
+| `IndexRefusal::NoIndexForFamily` | the same file |
+| the launcher refuses a non-Chromium family rather than passing it Chromium switches | [`../crates/b-ids-driver/src/drive.rs`](../crates/b-ids-driver/src/drive.rs) |
+| a `chromium` cell, which the plan did not have while the acceptance required the row | [`../.github/capture-matrix.json`](../.github/capture-matrix.json) |
+
+#### ⛔ Four tests used `firefox` as the example of an impossible family
+
+⭐ **They went red on the change that fixed the gap they were written about**,
+which is the most useful thing they could have done. An example chosen because
+it is impossible stops testing anything on the day it becomes possible, and
+nothing warns you.
+
+| test | what it asserted |
+| --- | --- |
+| `resolve_and_drive_a_family_name_round_trips` | `Family::parse("firefox")` is `None` |
+| `resolve_and_drive_browser_refuses_a_family_the_resolver_cannot_produce` | `resolve --browser firefox` exits 2 |
+| `reachable_dimensions_a_family_the_resolver_cannot_produce_is_reported` | a `Firefox` profile is unreachable |
+| `reachable_dimensions_every_profile_carrying_it_is_named` | two of them are grouped |
+
+⚠ **All four now use `safari`**, which no branch produces on any host. ⛔ The
+second one had a second defect: with `firefox` it would have become
+HOST-DEPENDENT, answering 0 on a machine with Firefox installed and 2 on one
+without, for a different reason each time.
+
+#### ⚠ Where the blocker actually is now, measured
+
+⛔ **`firefox` is blocked on the LAUNCHER, and `chromium` on ACQUISITION.**
+Neither is the resolver any more.
+
+Measured from `firefox --help` on 148.0.2, this host, 2026-09-04: `--profile`
+and `--headless` exist and there is **no certificate switch of any kind**. The
+harness is a TLS terminator, so a Chromium capture is arranged with
+`--ignore-certificate-errors-spki-list`; Gecko offers no command-line
+equivalent, and the trust has to be arranged inside the profile instead.
+⭐ `DRIVER-11` is that entry and it carries the measurement.
+
+Chromium is blocked on there being no vendor channel serving a build
+addressable by the version a profile records, which `DRIVER-10` measured and
+which is why its cell says the outcome may be a recorded refusal.
+
+#### The acceptance, still refusing, and now on the honest ground
+
+```text
+$ sh scripts/common/check-coverage.sh --require-rows chrome,edge,chromium,firefox
+coverage over 9 planned cell(s):
+
+  captured       chrome/stable/linux64              2 profile(s) required
+  captured       chrome/stable/win64                3 profile(s) required
+  captured       edge/stable/linux64                1 profile(s) required
+  absent         chrome/for-testing/linux64         0 profile(s)
+  absent         chrome/for-testing/win64           0 profile(s)
+  not-attempted  chrome/stable/macos-arm64          0 profile(s)
+  not-attempted  chrome/beta/linux64                0 profile(s)
+  not-attempted  firefox/stable/linux64             0 profile(s)
+  not-attempted  chromium/stable/linux64            0 profile(s)
+
+3 captured, 2 absent, 4 not attempted.
+
+coverage check failed, 2 required row(s) with no capture:
+
+  chromium: no capture at all, on any channel or platform
+  firefox: no capture at all, on any channel or platform
+exit=1
+```
+
+⛔ **This entry stays open.** Two required rows have no capture, and a row is
+captured when a profile exists rather than when a code path does. ⚠ The report
+lists nine cells rather than eight because the `chromium` row the acceptance
+requires had no cell in the plan at all until today.
+
 ---
+
+
+### ⛔ Ruled by the operator 2026-09-04: a session may dispatch captures and merge the lanes
+
+⭐ **The last thing between this entry and its acceptance is captures, and a
+session may now take them.** Dispatch `capture.yml` on this repository's own
+remote, let each lane open its pull request, and merge the green ones.
+
+⛔ **It is also the only route that fixes the published `HeadlessChrome`
+User-Agent.** The corpus is append-only, so `CORPUS-06`'s normalisation reaches
+only the NEXT capture: one run per enabled cell is what produces profiles at new
+versions carrying the normalised value. ⚠ Nothing published is edited.
+
+⚠ **Every lane already fails alone**, so a lane that cannot capture reports
+rather than breaking the run, and `check-coverage` moves the row from
+`not-attempted` to `absent` rather than to `captured`.
+
+⛔ **The two rows this entry needs are still blocked on code, not on
+permission**: `firefox` on `DRIVER-11`'s launcher and `chromium` on an
+acquisition route. Dispatching a lane for a family the driver cannot drive
+produces an honest failure, not a profile.
 
 ## CORPUS-03. `latest` means stable, and beta is how the project gets ahead
 

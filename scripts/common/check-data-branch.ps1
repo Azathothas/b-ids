@@ -73,23 +73,32 @@ if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     exit 2
 }
 $corpusRoot = "$corpusRoot".Trim()
-# ⛔ AND EXPORTED, because cargo is downstream of this decision. The b-ids
-# crate's build script embeds the corpus at build time and reads exactly this
-# variable; a check that resolved a root and did not export it would build
-# against one corpus and report on another.
-$env:B_IDS_CORPUS_ROOT = $corpusRoot
 # ⛔ THIS CHECK RESOLVES THE ROOT AND THEN REFUSES ONE ANSWER. Its question is
 # whether the published branch equals what the CANONICAL corpus derives to, so
 # a run that resolved to the branch would compare it against itself and pass
 # without asking anything. ⚠ Once corpus/ leaves the default branch that is
 # this check's honest state: exit 2, "could not run". TODO/publish.md, PUB-11.
-$corpusRef = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Ref | Select-Object -First 1)
-if ($null -eq $corpusRef) { $corpusRef = '' }
-if ("$corpusRef".Trim() -ne '') {
+#
+# ⛔ THE GUARD IS ASKED BEFORE THE EXPORT, AND IT ASKS FOR THE SOURCE RATHER
+# THAN THE REF. Both halves of that sentence were defects. The export sets
+# B_IDS_CORPUS_ROOT, and the resolver's first rule is that an explicit root is
+# never second guessed, so anything asked afterwards answers `explicit` with an
+# EMPTY ref whatever it would have said a line earlier.
+# ⭐ Driven 2026-09-04 with corpus/ and raw/ moved out: this check reported
+# `data branch ok` and exited 0, having compared the published branch against a
+# materialised copy of that same branch.
+$corpusSource = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Source | Select-Object -First 1)
+if ($null -eq $corpusSource) { $corpusSource = '' }
+$corpusSource = "$corpusSource".Trim()
+if ($corpusSource -ne 'working-tree') {
     [Console]::Error.WriteLine('check-data-branch: the canonical corpus is not in this tree, so the')
-    [Console]::Error.WriteLine("branch has nothing to be compared against. It resolved to $corpusRef.")
+    [Console]::Error.WriteLine("branch has nothing to be compared against. It resolved to $corpusSource.")
     exit 2
 }
+# ⛔ AND EXPORTED ONLY AFTER THE GUARD HAS RUN, because cargo is downstream of
+# this decision but the guard must not be. The b-ids crate's build script
+# embeds the corpus at build time and reads exactly this variable.
+$env:B_IDS_CORPUS_ROOT = $corpusRoot
 if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     [Console]::Error.WriteLine('check-data-branch: cargo not found')
     exit 2
@@ -230,6 +239,7 @@ else {
 # regenerated tree goes into a TEMPORARY index, so the repository's own index is
 # never touched.
 $matched = $false
+$pending = 0
 if ($ref) {
     $indexFile = Join-Path $out 'compare.index'
     if (Test-Path -LiteralPath $indexFile) { Remove-Item -LiteralPath $indexFile -Force }
@@ -262,17 +272,75 @@ if ($ref) {
         $matchedTree = $localTree.Trim()
     }
     else {
-        [void]$problems.Add("  the regenerated tree is $($localTree.Trim()) and $ref carries $($publishedTree.Trim()), so what is published is not what this corpus derives to")
+        # ⛔ BEHIND IS NOT THE SAME AS WRONG. The sh half carries the full
+        # reasoning and the two cases it separates; this follows it.
+        # TODO/publish.md, PUB-14.
+        $a = Join-Path $out 'a'
+        $publishedPaths = @(& git ls-tree -r --name-only $ref | ForEach-Object { $_.Trim() } | Sort-Object)
+        $regenPaths = @(Get-ChildItem -LiteralPath $a -Recurse -File |
+            ForEach-Object { $_.FullName.Substring($a.Length + 1).Replace('\', '/') } | Sort-Object)
+        $gone = @($publishedPaths | Where-Object { $regenPaths -notcontains $_ }).Count
+        $added = @($regenPaths | Where-Object { $publishedPaths -notcontains $_ }).Count
+
+        # ⛔ THE BRANCH AGAINST ITS OWN MANIFEST. A deleted path leaves the
+        # branch a smaller subset, which the tree comparison alone cannot tell
+        # from 'not published yet'.
+        $missing = 0
+        $publishedManifest = Join-Path $out 'published-manifest.json'
+        & git show ($ref + ':MANIFEST.json') > $publishedManifest 2>$null
+        if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $publishedManifest)) {
+            $manifestPaths = @((Get-Content $publishedManifest -Raw | ConvertFrom-Json).artefacts |
+                ForEach-Object { $_.path })
+            $missing = @($manifestPaths | Where-Object { $publishedPaths -notcontains $_ }).Count
+        } else {
+            [void]$problems.Add("  the $branch branch carries no MANIFEST.json, so what it claims to publish cannot be read")
+        }
+
+        $changed = 0
+        $sumsLost = 0
+        foreach ($rel in $publishedPaths) {
+            $localFile = Join-Path $a $rel
+            if (-not (Test-Path -LiteralPath $localFile)) { continue }
+            $blob = Join-Path $out 'blob.tmp'
+            & git show ($ref + ':' + $rel) > $blob 2>$null
+            $same = $false
+            if (Test-Path -LiteralPath $blob) {
+                $same = @(Compare-Object -ReferenceObject ([System.IO.File]::ReadAllBytes($blob)) `
+                    -DifferenceObject ([System.IO.File]::ReadAllBytes($localFile))).Count -eq 0
+            }
+            if (-not $same -and $rel -ne 'MANIFEST.json' -and $rel -ne 'SHA256SUMS') { $changed++ }
+        }
+
+        $publishedSums = Join-Path $out 'published-sums.txt'
+        & git show ($ref + ':SHA256SUMS') > $publishedSums 2>$null
+        if ((Test-Path -LiteralPath $publishedSums) -and (Test-Path -LiteralPath (Join-Path $a 'SHA256SUMS'))) {
+            $ps = @(Get-Content $publishedSums | ForEach-Object { $_.TrimEnd() })
+            $rs = @(Get-Content (Join-Path $a 'SHA256SUMS') | ForEach-Object { $_.TrimEnd() })
+            $sumsLost = @($ps | Where-Object { $rs -notcontains $_ }).Count
+        } else {
+            $sumsLost = 1
+        }
+
+        if ($gone -eq 0 -and $changed -eq 0 -and $sumsLost -eq 0 -and $missing -eq 0 -and $added -gt 0) {
+            $pending = $added
+        } else {
+            [void]$problems.Add("  the regenerated tree is $($localTree.Trim()) and $ref carries $($publishedTree.Trim()), so what is published is not what this corpus derives to")
+            if ($gone -ne 0) { [void]$problems.Add("  $gone published path(s) are no longer produced at all, which a consumer pinning them would notice") }
+            if ($changed -ne 0) { [void]$problems.Add("  $changed published artefact(s) changed their bytes, and a published artefact is immutable") }
+            if ($sumsLost -ne 0) { [void]$problems.Add("  $sumsLost checksum line(s) the branch publishes are not in the regenerated set") }
+            if ($missing -ne 0) { [void]$problems.Add("  $missing path(s) the branch's own manifest lists are not on the branch, so a consumer fetching one gets a 404") }
+        }
     }
 }
 
 $count = $problems.Count
 
 if ($Json) {
-    Write-Output ('{"schema":"check-data-branch/2","files":' + $files + ',"present":' + $present +
+    Write-Output ('{"schema":"check-data-branch/3","files":' + $files + ',"present":' + $present +
                   ',"recorded":' + $recorded + ',"cases":' + $cases +
                   ',"published":"' + $published + '","matched":' +
-                  $matched.ToString().ToLowerInvariant() + ',"problems":' + $count + '}')
+                  $matched.ToString().ToLowerInvariant() + ',"pending":' + $pending +
+                  ',"problems":' + $count + '}')
     if ($count -gt 0) { exit 1 }
     exit 0
 }
@@ -284,6 +352,12 @@ if ($count -eq 0) {
     if ($matched) {
         Write-Output "  `u{2B50} The $branch branch is $published and its tree is $matchedTree, which is what this"
         Write-Output '  corpus derives to. One tree object is one set of bytes.'
+    }
+    elseif ($pending -gt 0) {
+        Write-Output "  `u{26A0} The $branch branch is $published and BEHIND by $pending artefact(s): every path it"
+        Write-Output '  carries is still produced and still byte-identical, and the assembler'
+        Write-Output '  now produces more. `u{26D4} Nothing published is wrong, so this is reported'
+        Write-Output '  rather than failed. The publisher adds them on the next push.'
     }
     else {
         Write-Output "  `u{26A0} A SKIP IS NOT A PASS: the $branch branch is $published, so the regenerated tree was"

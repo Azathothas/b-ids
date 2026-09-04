@@ -16,16 +16,16 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session ran      2026-09-03, unattended, ended by the operator
-baseline         gate ok: 37 passed, 1 skipped (check-twins, which --fast skips)
+session ran      2026-09-04, attended, started 2026-09-04T00:07:59Z
+baseline         gate ok: 38 passed, 1 skipped (check-twins, which --fast skips)
                  on this Windows host at the start. 401 tests.
-entries          total 103  open 14  blocked 0  done 89
-published        the data branch: 200 files on origin/data, unchanged by this
-                 session. ⚠ No release: a pushed tag is the only thing that
-                 cuts one.
-gate             check-catalogues joined it, taking the gate from 38 checks to
-                 39, and two pairs joined the twin comparison. The closing run
-                 is in SUMMARY.md and its output is below.
+entries          total 107  open 12  blocked 0  done 95
+published        the data branch: 200 files on origin/data. ⚠ BEHIND by 37:
+                 PUB-04 added a configs/ tree the publisher has not pushed yet.
+                 Nothing published is wrong. ⚠ No release: a pushed tag is the
+                 only thing that cuts one.
+gate             check-generated-configs joined it, taking the gate from 39
+                 checks to 40. 412 tests. The closing run is in SUMMARY.md.
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -33,62 +33,42 @@ gate             check-catalogues joined it, taking the gate from 38 checks to
 hand to make a check pass; fix whichever file is wrong.
 ⭐ `node scripts/common/set-record.mjs recount` moves them for you.
 
-### The closing gate, run twice and both readings kept
-
-⛔ **The full run came first, over the code, and it is the one that includes
-`check-twins`.**
-
-```text
-$ pwsh -NoProfile -File scripts/common/check-gate.ps1
-gate ok: all 39 checks passed
-```
-
-⚠ **The record was still being written when that started**, so a second run
-covers the documents it did not see. `--fast` skips exactly one check, and that
-check compares implementations rather than reading prose: nothing under
-`scripts/` or `crates/` changed between the two runs.
-
-```text
-$ pwsh -NoProfile -File scripts/common/check-gate.ps1 -Fast
-gate ok: 38 passed, but 1 SKIPPED on this host: check-twins
-```
-
-⚠ **And the full run is slower than it was**, measurably: every PowerShell check
-that reads the corpus now spawns a `pwsh` to resolve the root, and `check-twins`
-runs the gate's PowerShell half inside itself. `TOOL-07` is the entry that owns
-the gate's cost and the next session that touches it should re-time it.
-
-
----
-
-## Three entries closed, five effort points, and one worked and left open
-
-⚠ **Under the twenty [`RULES.md`](RULES.md) section 10 asks for**, and the
-reason is stated rather than hidden: the operator's first instruction was to
-consolidate the documents against the tree, which is not an entry and scores
-nothing, and it took the first third of the session. The operator then ended it.
-
-| | |
-| --- | --- |
-| `TOOL-19` `M` | a check pair holding both catalogues, which refuses thirteen scripts on the tree as it stood this morning |
-| `CORPUS-06` `M` | the headless normalisation wired where `DRIVER-03` said it belonged, four sessions after `CORPUS-01` landed without it |
-| `PUB-12` `S` | the licence check reads the branch a consumer fetches, driven against a branch that disagrees |
-| ⚠ `PUB-11` `M` | worked and **open**. One resolver, twelve check pairs wired, seven of ten passing with the corpus moved out of the working tree. Its entry names the three that do not and why. |
-
 ---
 
 ## ⭐ What changed about this project today
 
-**The documents had stopped describing the tree.** Four sessions built the
-schema, the harness, the corpus, the emitters, the library and both publishing
-surfaces, moved [`INDEX.md`](INDEX.md) and the changelog with each of them, and
-never re-read the reference pages those name. ⛔ The README told a reader this
-repository could run its own checks and nothing else; the technical reference
-said nothing was published and no digest was computed; the document set table
-said there was no technical reference, two sections above the rule naming it.
+**The Windows CI failure was this repository's own, and the record said it was
+not.** [`RULES.md`](RULES.md) section 8.5 had called it a runner fault for three
+sessions and prescribed a rerun. ⛔ The cause is that `rustc` and `cargo` are
+rustup PROXIES, so this project's own probe, run in a tree pinning a toolchain
+the runner does not have, STARTED installing it and then killed the install at
+its six-second limit. The conflict the job reported was a fragment of that.
 
-⭐ **A check holds both catalogues now**, so the next session that adds a script
-or a document without listing it fails the gate rather than the reading.
+⭐ **A probe measures a machine. It does not change one.** That is the rule
+section 8.5 carries now, and `doctor --fixture` is the command that holds it.
+
+---
+
+## Six entries closed, fourteen effort points, and two left open with measured blockers
+
+| | |
+| --- | --- |
+| `CI-09` `M` | the Windows toolchain failure, traced to this tree's own probe and fixed from two sources |
+| `PUB-11` `M` | ten of ten with the corpus moved out, plus two checks that were passing by comparing something to itself |
+| `PUB-04` `M` | thirty-seven generated config files, twenty-four of them refusals naming a hole at a file and a line |
+| `PUB-14` `M` | the data branch check could not tell a branch that is BEHIND from one that is WRONG, and the gate mistreated its designed exit 2 |
+| `VALID-05` `L` | the conformance suite: a field-level diff with a third verdict for what a browser varies per connection |
+| `HARNESS-11` `M` | the TCP layer, and the capability answer is one field of six |
+
+⚠ **Under the twenty [`RULES.md`](RULES.md) section 10 asks for**, and the
+reason is stated rather than hidden: every remaining open entry needs an
+operator ruling, a capability this host does not have, or is a large new build.
+Two were worked to that point rather than left untouched.
+
+| | |
+| --- | --- |
+| `CORPUS-02` | worked and **open**. The resolver knows all four families now; the blocker moved from the resolver to the launcher and to acquisition, and both are measured |
+| `EMIT-03` | worked and **open**. Its measurement is in and unanimous; what it needs now is a ruling, below |
 
 ---
 
@@ -96,15 +76,16 @@ or a document without listing it fails the gate rather than the reading.
 
 | what | how it showed |
 | --- | --- |
-| ⛔ the headless normalisation had no caller at all | `DRIVER-03` built it, named the seam, and said so; `CORPUS-01` landed and nothing wired it. Every published profile and every published `user-agent` route carries `HeadlessChrome` |
-| ⛔ a check written this session passed over its own missing entry | `check-catalogues` asked `git ls-files` alone, so the one file most likely to be unlisted, the one written that minute, was outside its scope |
-| ⛔ a `[switch]` parameter and a lower-case local are ONE variable in PowerShell | a script-scope `$ref = Get-BranchRef` assigned a string to `[switch]$Ref` and threw before anything ran |
-| ⛔ a `'*/index.json'` pattern matches nothing on Windows | `$_.FullName` is backslash-separated, so the twin counted the derived files as profiles and said 8 where the POSIX half said 6 |
-| ⛔ `check-license-consistency` declined the one surface a consumer fetches | its header said the data branch did not exist, on the day after it was pushed |
-| ⛔ two script headers described behaviour their own bodies no longer had | `check-data-branch` still said its comparison could not run, and `check-formats` still said nothing published a generated format |
-| ⚠ the entry's own resolution order was wrong | `PUB-11` puts the data branch before the working tree; that reads the PUBLISHED corpus while a session is adding to the working one |
-| ⚠ the shell ate a backticked payload inside a `node -e` string | a paragraph reached a document with three code spans emptied. The payload goes through `write-file.mjs` from a file now |
-| ⚠ `check-one-home` fired twice on this session's own prose | once on a sentence quoted from another entry, once on a phrase copied from a script's comment. Both are pointers now |
+| the probe was the installer | a `rustc --version` in a tree pinning an absent toolchain was killed at 6068 ms mid "downloading 5 components", leaving a half-written toolchain the next install refuses |
+| `check-data-branch` compared the published branch against a copy of ITSELF and reported green | driven with `corpus/` moved out: `data branch ok: 200 file(s) regenerated`, exit 0. The export on the line ABOVE its guard disarmed the guard |
+| `check-corpus` asked THIS repository's history about files that are not in it | the same cause, one line apart. It passed for the wrong reason rather than failing |
+| a deleted published path read as BEHIND rather than as a rewrite | planted on a throwaway branch. The branch's own manifest is what tells the two apart, and it was not being read |
+| four tests used `firefox` as the example of an impossible family | all four went red on the change that made it possible, which is the most useful thing they could have done |
+| the conformance tool forgave a GREASE value MOVED to another position | it stripped GREASE before comparing rather than masking it in place. The test written to catch it did |
+| `VALID-05`'s acceptance command named a profile the corpus has never held | the tool refuses it and names what it does hold, which is how it was found |
+| the probe reported `rustc 1.75.0` for a compiler that could not run | the version was parsed out of an error message. A non-zero exit is not a version |
+| `jq` on Windows writes CRLF, again | a new leg reported all 198 artefacts missing. `CORPUS-02` recorded that same defect against that same tool on 2026-09-02 |
+| a Python `open(p,'w')` on Windows rewrote one `.rs` file to CRLF | caught by comparing every touched file against `.gitattributes`. It is why this project mandates `write-file.mjs` |
 
 ---
 
@@ -114,136 +95,140 @@ or a document without listing it fails the gate rather than the reading.
 [`../docs/methodology/reviews.md`](../docs/methodology/reviews.md) is the
 specification. ⭐ All three found something.
 
-### 1. The claim audit: which document sentence is not backed by the tree
+### 1. The door sweep: what else reaches the code that changed
 
-Swept: every markdown file under [`../docs/`](../docs/), the README, the
-scripts contract, the experiments index, the changelog's front matter, and the
-header comment of every script the session touched. The method was to read each
-absence claim and check it against the tree rather than against another
-document.
+Swept: every `Family::all()` site, because widening an enum from two variants to
+four changes behaviour at every ITERATION without a compile error; every caller
+of `index_route`, which changed shape; every check that asks the corpus
+resolver a second question; and every string that maps a family name to
+something, because those are the family lists the compiler cannot see.
 
-⛔ **Finding: nine documents and two script headers were wrong**, every one of
-them by having been true once. The full list, with the original wording, is
-[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
-⭐ The worst was a document contradicting itself two sections apart.
+⛔ **Finding: `b_ids_validator::vendor_brand` is a second family list**, in
+shipped code, and it knows four names that are not the resolver's four. ⭐ It is
+protected by a guard one line above it, which declines the check when no
+`sec-ch-ua` value was recorded, so the hole is not reachable.
 
-**What the other passes did not look at:** the prose. Neither of the others
-reads a sentence for whether it is true.
+⛔ **Finding, and this one was live: that guard reported THREE different facts
+with one message.** A browser that sends no `sec-ch-ua` at all is signal, and
+Firefox is one of those; a header recorded under the names-only policy is a gap
+in the capture. Both said "no VALUE was recorded". Fixed at three call sites and
+mutation-proved.
 
-### 2. The dead-caller sweep: what is built, tested, documented and unreachable
-
-Swept by grep rather than from memory: every `pub fn` in
-`b-ids-driver`, every function the capture path could call, and every entry
-closing that says a seam was left for later. The question was not "does this
-work" but "does anything reach it".
-
-⛔ **Finding: `b_ids_driver::headless::normalise` had no caller outside its own
-module**, with five passing tests and a closing paragraph naming the seam it was
-waiting for. That seam had existed for two sessions. `CORPUS-06`.
-
-⚠ **What it did not find, and saying so is the point:** every other function
-checked has a production caller, and the sweep cannot see a caller that exists
-but is unreachable at run time. That is the driven pass's question.
+⛔ **Finding: the gate can now record a skip that CI refuses.** `PUB-14` made
+`check-data-branch`'s designed exit 2 a skip, and the ubuntu job runs `--strict`
+while the windows job allows exactly one skip. Neither bites until `PUB-13`
+removes `corpus/`, and `PUB-13` carries it as a step.
 
 **What the other passes did not look at:** reachability. The claim audit reads
-documents and the guard mutation reads guards.
+sentences and the guard mutation reads guards.
 
-### 3. The guard mutation: can the new guards actually fail
+### 2. The guard mutation: can the new guards actually fail
 
-⛔ **Every mutation of a tracked file was made against a copy under the ignored
-scratch directory, the live file restored from that copy, and the restored file
-compared against `HEAD` before anything else ran.**
+⛔ **Every mutation was made against a copy under the ignored scratch directory,
+the live file restored from that copy, and the restored file compared byte for
+byte before anything else ran.** ⚠ The branch mutations were made on a throwaway
+worktree and a local branch, both removed; `origin/data` was never written to.
 
 | where | planted | red |
 | --- | --- | --- |
-| `CORPUS-06` | the `normalise` call deleted; the launch gate replaced with `if true`; the provenance `insert` made unreachable | all three. ⭐ The launch gate is the one no other case covers: a normalisation that fired on every capture would look correct on every profile in the corpus, because every one of them was taken headless |
-| `TOOL-19` | the check pointed at this repository at `8f031a6`, where thirteen scripts were unlisted | both halves, same thirteen, same exit code |
-| `PUB-12` | a local `data` branch built off `origin/data` with its manifest rewritten to `MIT`, then with its `LICENSE` replaced too | both halves, one problem and then two |
-| `PUB-11` | `corpus/` and `raw/` moved out of the working tree entirely | seven of ten checks resolved off the branch and passed; the three that did not are named in the entry |
+| `doctor.sh`, `doctor.ps1` | `RUSTUP_AUTO_INSTALL=0` changed to `=1` | both, exit 1, naming the proxy's own `syncing channel updates` line |
+| `check-generated-configs` | the generator writes a `.rs` snippet for every hole stack | exit 1, 24 problems, each naming the stack and the path |
+| `check-data-branch` | a published artefact's bytes changed | exit 1: a published artefact is immutable |
+| `check-data-branch` | a published path deleted from the branch | exit 1 only after the manifest leg existed. ⭐ Before it, this read as BEHIND, which would have turned a rewritten branch green |
+| `check-data-branch` | the canonical corpus moved out of the working tree | the gate records a SKIP where it previously recorded a failure |
+| `b_ids_validator::why_no_value` | the two absences collapsed into one message | exit 101, the coherence suite |
+| `b_ids_conformance` | GREASE stripped rather than masked | exit 101, on the test written for it |
 
 ⚠ **Guards NOT mutated, and saying so is the point:** nothing exercised the
 publishing workflow, because running it writes to the remote; the `for-testing`
-capture lane has still never run; and no capture was taken this session, so
-`CORPUS-06`'s fix is proved by its suite rather than by a browser.
+capture lane has still never run; no capture was taken this session; and
+`TcpObservation::every_absence_explained` is asserted true and has never been
+seen false.
+
+### 3. The claim audit: which sentence is not backed by the tree
+
+Swept: every number this session wrote, against the command that produces it;
+every count carried forward from the previous session; and the premise of every
+entry the work order named, against what the corpus and the tree actually hold.
+
+⛔ **Finding: three premises were disproved**, each stated as measured and each
+false by the time it was read.
+
+| where | said | is |
+| --- | --- | --- |
+| [`RULES.md`](RULES.md) section 8.5 | the Windows failure is the runner's | it is this tree's own probe |
+| `EMIT-03` | blocked on a measurement taken here | the measurement is in, six of six profiles carry the block |
+| `DOC-03` | this repository publishes nothing yet | the data branch has carried a tree a consumer fetches since 2026-09-03 |
+
+⛔ **Finding: a live reference page carried a count that had moved.**
+[`../scripts/README.md`](../scripts/README.md) said twelve checks read the
+corpus; it is thirteen pairs now. ⭐ It reads the number with a command instead
+of writing one.
+
+⚠ **What it did NOT find:** any pasted output that could not be reproduced. Every
+`text` block written this session was produced by running the command above it,
+and the ones that could not be re-run say so.
 
 ---
 
 ## ⚠ What is in progress
 
-⛔ **Nothing half-edited.** `PUB-11` is worked and open, and its entry carries
-what landed, what was driven, and the three legs that still reach the corpus
-through code resolving the workspace root.
+⛔ **Nothing half-edited.** `CORPUS-02` and `EMIT-03` are worked and open, each
+with its blocker measured and named in its own entry.
 
 ---
 
 ## Open questions for the operator
 
-### 1. ⭐ Where does a new capture go once `corpus/` leaves the default branch?
-
-⚠ **The sequence has an unanswered step in it.** Publish the branch, verify it,
-move the checks, remove `corpus/`: after that last step the data branch is the
-canonical corpus rather than a derivation of it, and two things stop meaning
-what they mean today.
-
-- `check-data-branch` compares the branch against what the canonical corpus
-  derives to. With no canonical corpus in the tree it would compare the branch
-  against itself, so it refuses instead and exits 2.
-- The capture workflow adds a profile by writing `corpus/v1/...` in the working
-  tree and committing it. With the directory gone there is nowhere to write.
-
-⭐ **Recommendation: the capture lane opens its pull request against a branch
-that still carries the corpus, and the default branch keeps `corpus/` until a
-capture path that writes to the data branch exists.** ⛔ That makes the removal
-step the LAST one rather than the fourth, and it is a smaller change than making
-a workflow push data.
-
-### 2. ⚠ Two documents disagree about whether a session prints a prompt
-
-[`RULES.md`](RULES.md) section 10 and [`../docs/AGENTS.md`](../docs/AGENTS.md)
-section 6 both refuse one, in as many words.
-[`../docs/methodology/work-todo.md`](../docs/methodology/work-todo.md) listed one
-as owed at every session boundary. ⭐ **Amended to defer to this project's own
-rule**, so the tree now has one answer.
-
-⚠ **The operator asks for a kick-off prompt at the end of every session**, which
-is the opposite of what the rule says. ⭐ **Recommendation: keep printing it and
-soften the rule to "no prompt is written into the tree"**, which is the defect
-the rule was actually written against: a second copy of the work order going
-stale in a file. A prompt printed in chat and never committed cannot go stale.
-
-### 3. ⚠ The corpus publishes a `HeadlessChrome` User-Agent and will keep doing so
-
-⛔ **Six profiles and every `user-agent` route carry it**, and the corpus is
-append-only, so `CORPUS-06`'s fix reaches only the next capture. ⭐
-**Recommendation: run the capture lane once on each enabled cell**, which
-produces new profiles at new versions carrying the normalised value, rather than
-anything that edits what is published.
+⛔ **None.** Every question this session raised was put to the operator and
+ruled on 2026-09-04, and each ruling is in the entry it governs as well as in
+the settled section below. ⚠ A session that finds a new one records it here with
+a recommendation attached and keeps working.
 
 ---
 
 ## ⭐ The work order
 
-⚠ **Take these in order.**
+⚠ **Take these in order. Everything in it is now unblocked**, and the operator
+has scoped the remainder to this session's successor plus at most one more.
 
-1. **`PUB-11`**, which is worked and open. Its entry names three legs that reach
-   the corpus through Rust resolving the workspace root; give them the resolved
-   root and re-run the driven pass for ten of ten.
-2. **`CORPUS-02`**, whose acceptance names four rows and refuses on two.
-   ⛔ Both are blocked on one thing: `b_ids_driver::Family` knows two families.
-   `firefox` is the higher value: a genuinely different TLS stack.
-3. **`PUB-04`**, which `EMIT-01` unblocked: there is a support matrix to ask
-   before a snippet is generated.
-4. **`VALID-05`**, the conformance suite, which is what would turn a hole in
-   that matrix into a cell for somebody else's stack.
-5. **`HARNESS-11`**, the p0f layer. ⚠ Establish the capability first: a raw
-   socket needs a dependency this workspace does not have and an `unsafe` it
-   denies, so the answer may be that it is a local-only extra.
-6. **`EMIT-03`**, which needs a second vendored tree before its five bytes.
+⛔ **Three of the six take a third-party tree into `vendor/`.**
+[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) is
+binding on each: the manifest, the change record, the derived series and the
+reproduction command, and ⛔ upstreaming is not a topic and nothing is opened on
+anybody else's repository.
+
+1. **`DRIVER-11`**, the launcher that speaks only Chromium. Vendor an NSS
+   `certutil`, seed the throwaway profile's `cert9.db`, give Gecko its own
+   switch list, and record `captured.trust`. ⭐ It is what stands between the
+   corpus and its first non-Chromium profile.
+2. **`CORPUS-02`**, which closes on captures the session may now dispatch and
+   merge. ⛔ It needs `DRIVER-11` for `firefox` and an acquisition route for
+   `chromium`, and the same runs are what replace the published
+   `HeadlessChrome` User-Agent, because the corpus is append-only.
+3. **`PUB-13`**, the source branch, all six steps. ⛔ Verify tree-for-tree
+   before removing anything, and step 6 is the CI change that step 5 makes
+   necessary.
+4. **`EMIT-03`**, which is now a vendor-and-patch. ⭐ Its acceptance command
+   becomes runnable for the first time.
+5. **`PUB-06`** with `HARNESS-11`'s residue: vendor a raw-socket route, then add
+   the whole TCP half at once rather than spending a schema version on one weak
+   field.
+6. **`PUB-09`**, keyless attestation from the runner's own identity. ⛔ No key,
+   no secret, and the record's claim that nothing here needs a credential stays
+   true.
+
+⭐ **Then the build-outs, largest first**, which the operator has put in scope:
+`EMIT-04`, `PUB-05`, `HARNESS-12` and `LIB-03`. ⚠ `HARNESS-12` is the one that
+receives other people's traffic, so `DOC-03`'s threat model lands with it rather
+than after it.
 
 **Small entries worth taking whenever a larger one is blocked**: `DOC-02` and
-`DOC-03`, both of which their own entries say to write only when a specific
-thing becomes true. ⛔ Re-checked 2026-09-03 and neither is: no workflow needs a
-secret, no release needs a signing key, and no release has shipped.
+`DOC-03`. ⭐ `DOC-03` is unblocked now and is an hour's work.
+⚠ `DOC-02`'s trigger has narrowed to one of its three: keyless attestation means
+no workflow needs a secret and no release needs a signing key, so what remains
+is a capture lane needing a machine somebody sets up, which the vendored
+`certutil` and raw-socket routes are the candidates for.
 
 ---
 
@@ -251,62 +236,93 @@ secret, no release needs a signing key, and no release has shipped.
 
 **Ruled by the operator 2026-09-01 unless noted.**
 
-### Ruled 2026-09-03 by the operator, after the previous session wrote its record
+### Ruled 2026-09-04 by the operator, and each unblocks an entry
+
+⭐ **Eight rulings, taken together at the end of the session.** Each is written
+into the entry it governs as well as here.
+
+- **The corpus moves to a SOURCE branch.** The default branch carries neither
+  `corpus/` nor `raw/`, a capture opens its pull request against the source
+  branch, and the data branch derives from the source branch. ⭐ `PUB-13`.
+  ⚠ The alternatives lost because one leaves the default branch carrying data
+  indefinitely and the other removes the comparison entirely.
+- **A session may create and push the source branch**, and run all six of
+  `PUB-13`'s steps. ⚠ Creating a branch is not rewriting one: the data branch
+  stays append-only, and the history reset on `main` is still the operator's own
+  action.
+- **`EMIT-03` vendors and patches `h2`.** The eleven crates and the async
+  runtime are accepted, because the alternative leaves its acceptance command
+  permanently unrunnable. ⚠ Re-derive the five bytes; that tree is MIT.
+- **`DRIVER-11` vendors an NSS `certutil`** and seeds the throwaway profile's
+  certificate database, rather than writing a `cert_override.txt` whose format
+  is version-dependent or making a machine change the trust-anchor ruling
+  refuses.
+- **`PUB-06` vendors a raw-socket route, and the TCP half lands whole.**
+  `HARNESS-11` measured one readable field of six; no schema version is spent
+  until the other five are readable.
+- **`PUB-09` is keyless attestation from the runner's own identity.** No
+  signing key and no secret, so the record's claim that nothing here needs a
+  credential stays true.
+- **A session may dispatch `capture.yml` and merge the green lanes.** It is
+  the only route that closes `CORPUS-02` and the only one that replaces the
+  published `HeadlessChrome` User-Agent, because the corpus is append-only.
+- **`DOC-03` points at private vulnerability reporting on the forge.** One
+  setting on the remote, no address published in the tree, and no timeline
+  promised.
+- **The four build-outs are in scope**, largest first: `EMIT-04`, `PUB-05`,
+  `HARNESS-12`, `LIB-03`. ⚠ The operator has scoped the remainder to the next
+  session plus at most one more.
+- **The kick-off prompt is redundancy, and the router stays standalone.**
+  Agents have ignored the rule that a session does not stop early, so the prompt
+  is printed at the end of a session as a second copy of that instruction.
+  ⛔ It changes nothing about [`../docs/AGENTS.md`](../docs/AGENTS.md), which
+  must stay sufficient on its own, and the tree carries no copy of the work
+  order.
+- **The `HeadlessChrome` User-Agent is fixed by RECAPTURING**, one run of the
+  capture lane per enabled cell.
+
+### Ruled 2026-09-03 by the operator
 
 - **The publishing workflow is triggered three ways**: `workflow_dispatch`, a
   push to `main`, and a pushed tag. ⭐ Done: `PUB-10`. The write is job-scoped,
   using the run's own `GITHUB_TOKEN` and never a personal access token, and the
   data branch is append-only and never force-pushed.
 - **Removing `corpus/` and `raw/` from `main` is sequenced, data branch
-  first.** ⛔ Nothing was deleted. The order is: push the data branch and verify
-  it byte for byte; then move the checks that read the corpus; then remove it.
-  ⚠ `PUB-11` is the middle step and open question 1 above is about the last one.
+  first.** ⛔ Nothing was deleted. ⭐ `PUB-11` closed the middle step and
+  `PUB-13` carries the last one under the ruling above.
 - **The history reset on `main` is not yet.** ⛔ It is the operator's action,
   after the data is published and verified, and no session force-pushes this
   remote.
-- **Both `for-testing` matrix cells are enabled.** ⭐ Done: the coverage report
-  moves them from `not-attempted` to `absent`, which is the difference between
-  planned and tried. ⚠ Nothing has exercised that lane's capture path.
-
-### Ruled 2026-09-03, by the operator's standing instruction for the session
-
-- ⛔ **`for-testing` is a `Channel`.** ⭐ Done: the variant and the schema enum
-  value are in, and `DRIVER-06`'s closing states the rest of the ruling and what
-  it cost. The alternative lost because it would have changed `corpus/v1/` for
-  every consumer to carry a dimension only one browser family has.
-- **`SCHEMA-12`'s six formats are four and two.** YAML, TOML, SQLite as a
-  text dump and protobuf as a definition are published; CBOR and MessagePack
-  are declined with their reasons published beside them.
-- ⭐ **Routes are generated only where the corpus HOLDS a value.** A route that
-  resolves to a plausible-looking wrong value is worse than one that 404s. ⛔ It
-  is why no digest route exists even now that JA4 is computable.
-- ⭐ **JA4 is implemented and no member of its extended family is.** JA4 is
-  BSD-3 with no patent claim; the rest is patent-pending and
-  monetisation-restricted, and that question has no answer written down.
+- **Both `for-testing` matrix cells are enabled.** ⚠ Nothing has exercised that
+  lane's capture path.
+- ⛔ **`for-testing` is a `Channel`.** ⭐ Done: `DRIVER-06`.
+- **`SCHEMA-12`'s six formats are four and two.** YAML, TOML, SQLite as a text
+  dump and protobuf as a definition are published; CBOR and MessagePack are
+  declined with their reasons published beside them.
+- ⭐ **Routes are generated only where the corpus HOLDS a value.** ⛔ It is why
+  no digest route exists even now that JA4 is computable, and `PUB-04` generates
+  no digest artefact for the same reason.
+- ⭐ **JA4 is implemented and no member of its extended family is.**
 - ⛔ **The release job moves no git tag.**
 
 ### Ruled 2026-09-02, and each created or moved an entry
 
 - ⛔ **A capture lane PURGES the machine's browsers and installs the build it
-  needs.** Done: `DRIVER-08` closed, and `capture.yml` provisions where the
-  cell asks for it.
+  needs.** Done: `DRIVER-08`.
 - **The corpus carries BOTH Chromes, as separate matrix cells.**
 - ⛔ **The resumption problem is solved at its cause, not behind a switch.**
 - ⛔ **A guard on something irreversible is TWO conditions from two sources**,
-  and it is never mutated on the machine it protects. Held all session.
+  and it is never mutated on the machine it protects.
 - **The write for `CI-04` is JOB-SCOPED**, using the run's own token.
-  ⛔ Never a personal access token, and no workflow in this tree names a secret.
 - **The first runner capture is fetched with `gh` and added by hand.**
 - ⭐ **The one laptop profile stays, unchanged.** ⚠ And the operator has ruled
   something broader with it: **this project is in beta, nobody consumes its
   data, and the commit history will be reset once the project satisfies the
   operator.** ⛔ That is the OPERATOR'S action at a time of their choosing and
-  it licenses nothing for a session: no force push, no history rewrite, and the
-  corpus stays append-only in every change an agent makes.
+  it licenses nothing for a session.
 - **Credentials are recorded as PRESENT, never as a value.**
 - **The trust anchor is a job, not a machine change.**
-- **Header values stay names-only by default.** Corpus captures turn them on
-  deliberately.
+- **Header values stay names-only by default.**
 - **The schema gains numeric bounds.**
 - **The shuffle seed stays out of `browser-profile/1`.**
 - **Commit once at the close** unless the session is genuinely at risk of losing

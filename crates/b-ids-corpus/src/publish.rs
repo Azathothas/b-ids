@@ -23,6 +23,7 @@ use std::path::Path;
 use b_ids_harness::{hex, sha256};
 use b_ids_schema::Profile;
 
+use crate::configs::{CONFIGS_DIR, configs};
 use crate::formats::{Format, SUPPORT_MATRIX_FILE, render, support_matrix, verify};
 use crate::routes::{MANIFEST_FILE, indexes, manifest as route_manifest, routes};
 use crate::store::Store;
@@ -172,6 +173,22 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
         support_matrix().as_bytes(),
         &mut artefacts,
     )?;
+
+    // -- the generated configuration, gated on the support matrix ------------
+    //
+    // ⛔ THE MATRIX IS BUILT ONCE AND HANDED IN, never rebuilt per profile. It
+    // is what decides whether a pair gets a snippet or a named hole, and a
+    // generator that rebuilt it would be asking a question whose answer could
+    // change between two files in one tree. TODO/publish.md, PUB-04.
+    let matrix = b_ids_emit::support_matrix(&profiles);
+    for generated in configs(&profiles, &matrix)? {
+        put(
+            out,
+            &format!("{CONFIGS_DIR}/{}", generated.path),
+            generated.body.as_bytes(),
+            &mut artefacts,
+        )?;
+    }
 
     // -- the flat routes -----------------------------------------------------
     //

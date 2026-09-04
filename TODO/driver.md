@@ -1618,3 +1618,136 @@ can be attempted.
 empty and it was filled in by hand for this profile as it was for the three
 before it. That is named in the writer's own comment and it is not this entry's
 to fix.
+
+---
+
+## DRIVER-11. The launcher speaks Chromium, and the highest-value lane is not one
+
+**Source** found while working `CORPUS-02`, 2026-09-04, once the resolver could name the family
+**Category** driver, **Priority** P1, **Effort** L, **Status** open
+
+### Problem
+
+⛔ **`b_ids_driver::drive` passes Chromium switches and nothing else.** Firefox
+resolves now, so `capture.yml` could name a `firefox` lane, and the lane would
+launch Gecko with `--user-data-dir`, `--no-first-run` and `--headless=new`,
+which Firefox reads as file names to open rather than as switches. The launcher
+refuses the family instead, and that refusal is what stands between the corpus
+and its first non-Chromium profile.
+
+### Premise
+
+⭐ **Measured on this host 2026-09-04, from `firefox --help` on 148.0.2**, not
+carried from anywhere:
+
+```text
+  --profile <path>   Start with profile at <path>.
+  --ProfileManager   Start with ProfileManager.
+  --headless         Run without a GUI.
+```
+
+⛔ **And the whole of what the same output says about certificates:**
+
+```text
+Please read security guidelines at https://firefox-source-docs.mozilla.org/remote/Security.html
+```
+
+⚠ **That absence is the entry.** Two of the three switch groups map across
+cleanly: `--user-data-dir=X` becomes `--profile X`, and `--headless=new` becomes
+`--headless`. The third does not map at all. Chromium takes
+`--ignore-certificate-errors` and
+`--ignore-certificate-errors-spki-list=PIN` on the command line, and Firefox
+offers no command-line equivalent for either, so a capture against this
+project's own TLS terminator cannot be arranged by adding arguments.
+
+⚠ **Believed**: that the trust has to be arranged in the profile instead,
+through the NSS database Firefox creates there or through an enterprise policy
+file beside the binary.
+
+⛔ **One half of that is now measured, and it closes the obvious route.**
+Seeding a profile's `cert9.db` needs NSS's `certutil`, and this host has none:
+the `certutil` on `PATH` is Windows' own, a different program with a different
+verb set, and Firefox ships `nss3.dll` with no `certutil` beside it. Measured
+2026-09-04:
+
+```text
+$ command -v certutil
+/c/Windows/system32/certutil
+$ ls "/c/Program Files/Mozilla Firefox/" | grep -iE "certutil|nss"
+nss3.dll
+```
+
+⚠ **So the three remaining routes each cost something, and none has been
+tried**: an enterprise policy file beside the binary, which is a machine change
+this project's trust-anchor ruling refuses; `security.enterprise_roots`, which
+reads the operating system's own store and is the same machine change one step
+away; and a `cert_override.txt` written into the throwaway profile, which is the
+only one that stays inside the profile the driver already creates.
+⭐ **The third is the one to try first**, and until it is tried this is a
+belief. `docs/inherited-claims.md` is where a claim about any of them belongs.
+
+### Approach
+
+⭐ **A launch path per engine, chosen by `Family::is_chromium`**, which exists
+and is what the current refusal reads.
+
+- **The switch list becomes per engine.** ⛔ Data rather than a second arm of a
+  case statement inside `drive`, for the reason `DRIVER-10` gives about the
+  route table: adding an engine should be a table and a fixture.
+- **The trust configuration is the entry's real work**, and it lands with the
+  measurement that says which mechanism was used. ⛔ `captured.trust` records
+  the configuration a profile was taken under, so a Gecko capture whose trust
+  nobody can name is a profile this corpus must not publish.
+  `TODO/harness.md`, `HARNESS-10`.
+- ⚠ **A Gecko capture is compared against a Chromium one before it is
+  believed.** The point of the lane is that the stack is different, so a run
+  producing a hello that looks like Chromium's is a finding about the harness
+  rather than a result.
+
+⛔ Must not: reuse `--ignore-certificate-errors` by hoping Firefox ignores what
+it does not know. Measured above: it takes the unknown argument as a file to
+open, so the browser navigates somewhere nobody asked for and the capture is of
+the wrong thing.
+
+⛔ Must not: publish a profile from a lane whose trust configuration is not
+recorded, which is the rule `HARNESS-10` exists to hold.
+
+### Consumers
+
+⚠ Nothing is published that this changes. A new family in the corpus adds
+routes rather than moving existing ones, and `PUB-03` generates a route only
+where the corpus holds a value.
+
+### Prove
+
+```bash
+cargo test -p b-ids-driver --test resolve_and_drive
+```
+
+```bash
+sh scripts/common/check-coverage.sh --require-rows chrome,edge,firefox
+```
+
+Passing means: the suite is green with a Gecko launch case that asserts the
+switch list contains `--headless` and `--profile` and none of the Chromium
+switches, and the coverage report carries a `firefox` row with at least one
+profile whose `captured.trust` names the configuration it was taken under.
+⛔ Read the exit code from the process that produced it, unpiped.
+
+### ⛔ Ruled by the operator 2026-09-04: vendor an NSS `certutil`
+
+⛔ **The trust is arranged the way Firefox itself expects**, by seeding the
+throwaway profile's `cert9.db`, and the tooling to do it comes into the tree.
+⚠ The recommendation attached to the question was `cert_override.txt`, and the
+operator ruled against it: that file's format is version-dependent and
+undocumented as a stable interface, so a lane built on it would break on a
+Firefox release with nothing to point at.
+
+⭐ **It also removes the machine change.** `policies.json` beside the binary and
+`security.enterprise_roots` both need something installed on the host, which the
+trust-anchor ruling refuses. A vendored `certutil` writes only into the profile
+the driver already creates and removes.
+
+⚠ **`captured.trust` still records which configuration the capture was taken
+under**, and a Gecko capture whose trust nobody can name is a profile this
+corpus must not publish.

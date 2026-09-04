@@ -41,6 +41,12 @@ b-ids-validator = { path = "../b-ids-validator" }
 # and nothing else, so this adds no third-party linkage at all.
 # TODO/corpus.md, CORPUS-06.
 b-ids-driver = { path = "../b-ids-driver" }
+# ⛔ THE SUPPORT MATRIX IS WHAT GATES A GENERATED SNIPPET, and this crate is
+# where the publish tree is assembled, so the gate and the tree have to be in
+# one place. `formats.rs` already reads this crate for the matrix table it
+# publishes; `configs.rs` reads the same matrix to decide which pairs get a
+# snippet and which get a named hole. TODO/publish.md, PUB-04.
+b-ids-emit = { path = "../b-ids-emit" }
 serde.workspace = true
 serde_json.workspace = true
 

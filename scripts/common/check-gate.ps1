@@ -240,6 +240,7 @@ $ComparedDirectly = @(
     'check-publish',
     'check-cold-start',
     'check-support-matrix',
+    'check-generated-configs',
     'check-trust-anchors',
     'check-notes-generator',
     'check-changelog',
@@ -451,7 +452,13 @@ Invoke-PsCheck -Name 'check-release' -Script 'scripts/common/check-release.ps1' 
 
 # ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER.
 # TODO/publish.md, PUB-02.
-Invoke-PsCheck -Name 'check-data-branch' -Script 'scripts/common/check-data-branch.ps1'
+# ⚠ 2 IS "COULD NOT RUN" HERE AND IT WAS BEING READ AS A FAILURE. This check
+# exits 2 by design when the canonical corpus is not in this tree, and CI-07
+# rules that a 2 is not a failure. ⛔ A SKIP rather than a pass, so --strict
+# still refuses it in CI where the corpus is present on purpose.
+# TODO/publish.md, PUB-14.
+Invoke-PsCheck -Name 'check-data-branch' -Script 'scripts/common/check-data-branch.ps1' `
+    -SkipCodes 2 -SkipReason 'the canonical corpus is not in this tree, so the branch has nothing to be compared against'
 
 # ⛔ THE TRIGGER, AND THE TWO CONDITIONS THAT STAND BETWEEN IT AND A REWRITTEN
 # BRANCH. TODO/publish.md, PUB-10.
@@ -463,6 +470,10 @@ Invoke-PsCheck -Name 'check-cold-start' -Script 'scripts/common/check-cold-start
 
 # ⛔ A HOLE WHOSE EVIDENCE STOPPED RESOLVING IS A CLAIM. TODO/emitters.md, EMIT-01.
 Invoke-PsCheck -Name 'check-support-matrix' -Script 'scripts/common/check-support-matrix.ps1'
+
+# ⛔ A SNIPPET IS GENERATED ONLY WHERE THE MATRIX SAYS THE PAIR CAN EMIT, and a
+# hole gets a named refusal instead. TODO/publish.md, PUB-04.
+Invoke-PsCheck -Name 'check-generated-configs' -Script 'scripts/common/check-generated-configs.ps1'
 
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
 # build that carries it gets a published list with its date. TODO/corpus.md,

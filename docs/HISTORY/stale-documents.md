@@ -32,6 +32,7 @@ this page records.
 | `check-data-branch`, both halves | the comparison against the published branch cannot run | it runs, and reports `matched` in its own JSON |
 | `check-formats.sh` | nothing here publishes a generated format | the data branch carries nine of them |
 | `check-license-consistency`, both halves | the data branch is not checked because it does not exist | both its manifest identifier and its licence text are compared |
+| [`../../TODO/RULES.md`](../../TODO/RULES.md) section 8.5 | the Windows toolchain failure is the runner's, and the answer is to rerun the job | this repository's own probe starts the install the conflict is a fragment of, and kills it |
 
 ---
 
@@ -210,3 +211,37 @@ the day it does.
 sentence stayed, which is the same shape as the skip above it: a leg whose own
 condition had been met, still declining. `PUB-12` is the entry that added the
 two legs.
+
+### `TODO/RULES.md`, section 8.5, on the Windows CI failure
+
+```text
+## 8.5 ⚠ The Windows CI job fails at the toolchain step, and it is not yours
+
+The Windows runner intermittently fails installing the pinned toolchain, with a
+component conflict rather than anything about this tree:
+
+  error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc',
+  detected conflict: 'bin\cargo-fmt.exe'
+
+⭐ How to tell it apart from a real failure: it happens at the toolchain
+install, before any check runs, and the Ubuntu job of the same run passes.
+Rerun the failed job rather than changing anything.
+
+  gh run rerun RUN_ID --failed
+
+⚠ Measured 2026-09-01: one run failed this way and the rerun of the same commit
+passed with no change to the tree.
+```
+
+⛔ **Every sentence of that is an accurate observation and the conclusion drawn
+from them is wrong.** The failure does happen at the toolchain install, the
+Ubuntu job does pass, and a rerun does clear it. None of that makes it the
+runner's: the probe step that runs BEFORE the toolchain step asks `rustc
+--version`, which in a tree pinning an absent toolchain begins installing one,
+and the probe kills it after six seconds. The rerun works because the second
+run finds the toolchain already there.
+
+⚠ **The Ubuntu job passing is the detail that misled three sessions.** It was
+read as evidence that the tree was innocent and the runner was not. It is
+actually the clue: that job passes `--fast`, which skips version probes, so it
+never starts an install for anything to interrupt. `CI-09` has the measurement.

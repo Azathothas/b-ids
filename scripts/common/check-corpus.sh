@@ -73,12 +73,26 @@ CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
 # crate's build script embeds the corpus at build time and reads exactly this
 # variable, calling it the seam PUB-11 needs; a check that resolved a root and
 # did not export it would build against one corpus and report on another.
-export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
 # ⛔ AND THE REF THAT CARRIES IT, because this check's one question is about a
 # HISTORY rather than about files on disk. Empty means the working tree, whose
 # history is this repository's own; a ref means the corpus lives on that branch
 # and its history is the one to read.
+#
+# ⛔ ASKED BEFORE THE EXPORT BELOW, AND THAT ORDER IS THE WHOLE THING. The
+# resolver's first rule is that an explicit root is never second guessed, so
+# once B_IDS_CORPUS_ROOT is set it answers `explicit` with an EMPTY ref
+# whatever it would have said a line earlier. This question sat AFTER the
+# export, so the ref was always empty and this check always read THIS
+# repository's history, including for a corpus that lives on a branch.
+# ⚠ It passed that way rather than failing: driven 2026-09-04 with corpus/
+# moved out, it reported `nothing edited after publication` having asked main's
+# history about files that are not on main. TODO/publish.md, PUB-11.
 CORPUS_REF=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --ref)
+# ⛔ EXPORTED ONLY NOW, because cargo is downstream of this decision. The b-ids
+# crate's build script embeds the corpus at build time and reads exactly this
+# variable, calling it the seam PUB-11 needs; a check that resolved a root and
+# did not export it would build against one corpus and report on another.
+export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"
 
 CORPUS_DIR="corpus"
 RAW_DIR="raw"

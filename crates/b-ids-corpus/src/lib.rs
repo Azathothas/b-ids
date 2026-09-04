@@ -25,6 +25,7 @@
 //! `TODO/corpus.md`, `CORPUS-01`.
 
 pub mod capture;
+pub mod configs;
 pub mod formats;
 pub mod notes;
 pub mod publish;

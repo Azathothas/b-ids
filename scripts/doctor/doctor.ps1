@@ -43,6 +43,9 @@ param(
     [switch]$Text,
     # Presence only. Skips every version probe, which is where the time goes.
     [switch]$Fast,
+    # Prove the read-only claim this probe's README makes, and exit. See
+    # Invoke-Fixture below for what it builds and what it refuses.
+    [switch]$Fixture,
     # Also test outbound reachability. Off by default: a probe makes no network
     # call unless it is asked to.
     [switch]$Net,
@@ -80,8 +83,112 @@ if ($Json -and $Text) {
 $Schema = 'agent-doctor/1'
 $ProbeTimeoutMs = 6000
 
+# ⛔ A PROBE MEASURES A MACHINE. IT DOES NOT CHANGE ONE, AND ASKING A VERSION
+# USED TO. `rustc`, `cargo` and `rustup` are rustup PROXIES: run inside a tree
+# whose rust-toolchain.toml pins a toolchain the host does not have, a proxy
+# does not answer, it starts INSTALLING that toolchain. The version probe below
+# gives every tool 6 seconds and then kills it, so the probe would begin a
+# multi-minute install and then kill it partway through, leaving a toolchain
+# directory holding the files of a component that lib/rustlib/components does
+# not list. The next install refuses that state:
+#
+#   error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc',
+#   detected conflict: 'bin\cargo-fmt.exe'
+#
+# ⚠ Which component the kill lands inside decides whether the machine is left
+# broken, so the same probe on the same tree passes most of the time. That is
+# what made this read as a runner fault for three sessions. TODO/ci.md, CI-09.
+#
+# ⭐ Measured 2026-09-04 on this host, in a tree pinned to an absent 1.75.0:
+# the proxy was killed at 6068 ms mid "downloading 5 components"; with this
+# variable set it answered in 84 ms and created no toolchain directory at all.
+# ⚠ A rustup too old to know the variable ignores it, which is why ci.yml also
+# installs the toolchain BEFORE it runs this probe. Two sources, one condition.
+$env:RUSTUP_AUTO_INSTALL = '0'
+
 $notes = New-Object System.Collections.ArrayList
 function Add-Note([string]$Text) { [void]$notes.Add($Text) }
+
+# --fixture: prove the claim this file's README makes about it -----------------
+#
+# ⭐ THE README SAYS "IT IS READ-ONLY. NO INSTALLER, NO CONFIG CHANGE", AND FOR
+# THREE SESSIONS THAT WAS FALSE. `rustc` and `cargo` are rustup proxies, so a
+# version probe inside a tree pinning an absent toolchain started INSTALLING
+# one, and the 6 second limit above killed it partway through. TODO/ci.md,
+# CI-09 carries the measurement and the CI failure it produced.
+#
+# ⛔ SO THE CLAIM GETS A COMMAND. This builds the exact condition, asks a proxy
+# for its version, and refuses unless the proxy declined instead of installing.
+# ⚠ It asserts on the ABSENCE of rustup's own "syncing channel updates" line
+# rather than on elapsed time. A timing assertion would pass on a slow host for
+# the wrong reason, and this file has a rule about a check that passes because
+# something else happened to satisfy it.
+function Invoke-Fixture {
+    $rustup = Get-Command rustup -ErrorAction SilentlyContinue
+    $rustc = Get-Command rustc -ErrorAction SilentlyContinue
+    if (-not $rustup -or -not $rustc) {
+        [Console]::Out.WriteLine('doctor fixture SKIPPED: rustup and rustc are what this asks, and')
+        [Console]::Out.WriteLine('this host has no rustup toolchain to ask. Not the same as a pass.')
+        return 0
+    }
+
+    # ⚠ A VERSION NO RELEASE HAS EVER CARRIED. A real one would be installable,
+    # so a run that DID install would leave a real toolchain on the machine.
+    $chan = '1.999.0'
+    $home_ru = if ($env:RUSTUP_HOME) { $env:RUSTUP_HOME } else { Join-Path $HOME '.rustup' }
+    $tcDir = Join-Path $home_ru 'toolchains'
+    $pre = @(Get-ChildItem -Path $tcDir -Filter "$chan-*" -ErrorAction SilentlyContinue)
+    if ($pre.Count -gt 0) {
+        [Console]::Error.WriteLine("doctor fixture could not run: a $chan toolchain already exists.")
+        return 2
+    }
+
+    $dir = Join-Path ([System.IO.Path]::GetTempPath()) ("doctor-fixture." + $PID)
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    $pin = "[toolchain]`nchannel = `"$chan`"`ncomponents = [`"rustfmt`", `"clippy`"]`n"
+    [System.IO.File]::WriteAllText((Join-Path $dir 'rust-toolchain.toml'), $pin)
+
+    $was = (Get-Location).Path
+    $out = ''
+    try {
+        Set-Location $dir
+        $out = (& $rustc.Source --version 2>&1 | Out-String)
+    } catch {
+        $out = $_.ToString()
+    } finally {
+        Set-Location $was
+    }
+
+    $made = @(Get-ChildItem -Path $tcDir -Filter "$chan-*" -ErrorAction SilentlyContinue)
+    Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue
+
+    $bad = $false
+    if ($made.Count -gt 0) {
+        [Console]::Out.WriteLine("doctor fixture FAILED: the probe created a $chan toolchain directory.")
+        [Console]::Out.WriteLine('  A version probe installed a toolchain. Remove it with')
+        [Console]::Out.WriteLine("  rustup toolchain uninstall $chan")
+        [Console]::Out.WriteLine('  and see TODO/ci.md, CI-09.')
+        $bad = $true
+    }
+    if ($out -match 'syncing channel updates') {
+        $rv = (& $rustup.Source --version 2>&1 | Select-Object -First 1)
+        [Console]::Out.WriteLine('doctor fixture FAILED: the proxy began installing rather than declining.')
+        [Console]::Out.WriteLine('  RUSTUP_AUTO_INSTALL=0 was not honoured. rustup 1.28 is the first')
+        [Console]::Out.WriteLine("  version that reads it; this host has $rv.")
+        $bad = $true
+    }
+    if ($bad) {
+        $first = ($out -split "`r?`n" | Where-Object { $_ -ne '' } | Select-Object -First 1)
+        [Console]::Out.WriteLine("  what the proxy said: $first")
+        return 1
+    }
+
+    [Console]::Out.WriteLine('doctor fixture ok: a version probe in a tree pinning an absent')
+    [Console]::Out.WriteLine('toolchain declined instead of installing one, and created nothing.')
+    return 0
+}
+
+if ($Fixture) { exit (Invoke-Fixture) }
 
 # ------------------------------------------------------------------- host ---
 
@@ -537,7 +644,25 @@ foreach ($row in $toolTable) {
             } else {
                 # Merged here on purpose: java and several JVM tools print the
                 # version to stderr, so a probe reading stdout alone finds none.
-                $version = Get-VersionToken $res.Combined
+                #
+                # ⛔ AN ERROR IS NOT A VERSION, AND MERGING THE STREAMS IS WHAT
+                # MAKES THAT EASY TO GET WRONG. A failing tool prints its
+                # complaint to stderr, the merge above hands it to the token
+                # reader, and any version-shaped run of characters in it becomes
+                # the reported version. `rustc --version` in a tree pinning an
+                # absent toolchain answers `error: toolchain
+                # '1.75.0-x86_64-pc-windows-msvc' is not installed`, and this
+                # probe reported that compiler as present at 1.75.0.
+                # ⚠ The exit code is the only thing that separates the two, so
+                # it is read here rather than the text being pattern-matched.
+                # ⭐ Measured over all 86 rows of the table below on 2026-09-04:
+                # nothing on that host exits non-zero AND yields a token, so
+                # this loses no version that was real. The two that exit
+                # non-zero, the Windows Store python3 alias at 9009 and pip at
+                # 1, already yielded none and are already reported as stubs.
+                if ($res.Code -eq 0) {
+                    $version = Get-VersionToken $res.Combined
+                }
                 # On PATH but answering nothing. Usually a shim standing in for
                 # a tool that is not installed: the Windows Store python3 alias
                 # is the common one, a stub that prints "Python was not found".

@@ -139,7 +139,15 @@ SCRATCH="${TMPDIR:-/tmp}/b-ids-check-validate.$$"
 rm -rf "$SCRATCH"
 if mkdir -p "$SCRATCH/root" "$SCRATCH/first" 2>/dev/null; then
   cp -R "$CORPUS_ROOT/$CORPUS_DIR" "$SCRATCH/root/" 2>/dev/null
-  [ -d "$RAW_DIR" ] && cp -R "$RAW_DIR" "$SCRATCH/root/" 2>/dev/null
+  # ⛔ THE RAW BYTES COME FROM THE RESOLVED ROOT, NOT THE WORKING TREE. This
+  # line read `$RAW_DIR` relative to the repository, so with the corpus moved
+  # out it copied a corpus from the data branch and no raw bytes at all. The
+  # generator reads the capture beside each profile, so its first run then
+  # failed with `raw/v1/.../151.0.7922.173.hello.hex: The system cannot find
+  # the path specified`, and this check reported that as a NON-DETERMINISTIC
+  # GENERATOR. ⚠ The wrong verdict is the point: the leg was not measuring what
+  # its message claimed. TODO/publish.md, PUB-11.
+  [ -d "$CORPUS_ROOT/$RAW_DIR" ] && cp -R "$CORPUS_ROOT/$RAW_DIR" "$SCRATCH/root/" 2>/dev/null
 
   if cargo run -q -p b-ids-corpus -- index --write --root "$SCRATCH/root" >/dev/null 2>&1; then
     # ⚠ Both derived files, not the index alone. The pointer file is derived by

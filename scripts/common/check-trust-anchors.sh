@@ -105,7 +105,15 @@ PROFILES=$(printf '%s' "$STATUS" | awk -F'profiles:' '{ split($2, a, / /); print
 # 1. ⛔ HOW MANY PROFILES CARRY IT, counted from the corpus rather than from the
 # publisher's own answer. A publisher that skipped a carrier would otherwise
 # agree with itself.
-CARRIERS=$(find "$REPO_ROOT/corpus" -name '*.json' -not -name 'index.json' -not -name 'latest.json' \
+# ⚠ FROM THE RESOLVED ROOT, WHICH IS THE CORPUS THE PUBLISHER ABOVE READ. This
+# walked "$REPO_ROOT/corpus" while the publisher took --root "$CORPUS_ROOT", so
+# with the corpus moved out of the working tree it counted zero carriers and
+# the check exited 2 saying no profile carries the codepoint. ⛔ An independent
+# count has to be independent of the PUBLISHER, not of the corpus.
+# ⚠ The PowerShell twin already read the resolved root here, so the two halves
+# disagreed and only a run with the corpus moved out could show it.
+# TODO/publish.md, PUB-11.
+CARRIERS=$(find "$CORPUS_ROOT/corpus" -name '*.json' -not -name 'index.json' -not -name 'latest.json' \
   -exec jq -r 'if ([.tls.extensions[].codepoint] | index(51764)) then "carrier" else empty end' {} \; \
   2>/dev/null | grep -c carrier)
 

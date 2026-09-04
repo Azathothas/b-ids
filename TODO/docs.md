@@ -165,6 +165,26 @@ Measured: this repository publishes nothing yet, so there is no artefact to
 report against. ⚠ The argument gets stronger the moment `PUB-01` cuts a release,
 and stronger again if `HARNESS-12` ever hosts an endpoint.
 
+⛔ **That premise is disproved as of 2026-09-04, and the correction is here
+rather than as an edit to it.** The `data` branch has carried a tree a consumer
+fetches since 2026-09-03, and `PUB-04` added a `configs/` tree to it: snippets
+somebody pastes into their own tool, which is a materially different artefact
+from a data file. ⚠ There IS something to report against now, and no release has
+been cut, so the Approach's trigger and the Problem's condition have come apart.
+
+⚠ **And the entry is still blocked, on a different thing.** The contact route is
+the operator's to choose and every option is a decision plus, for two of them, a
+setting on the remote: private vulnerability reporting on the forge, an address,
+or a `security.txt`. ⛔ A session must not pick one, and must not publish an
+address nobody offered. The question is in [`PROGRESS.md`](PROGRESS.md) with a
+recommendation.
+
+⭐ **What does not need the ruling is the threat model itself**, which the
+Approach already says is the part that earns the document: a capture harness
+accepts connections from anything, and a hosted oracle would receive other
+people's traffic. Those two sentences are true today and are what a reporter
+needs to know they have found something.
+
 ### Approach
 
 Write `SECURITY.md` when the first release ships: where to send a report, what
@@ -188,6 +208,21 @@ Passing means: the file exists when a release does, it names a contact route,
 and every claim in it is one somebody has agreed to.
 
 ---
+
+
+### ⛔ Ruled by the operator 2026-09-04: private vulnerability reporting on the forge
+
+⭐ **One setting on the remote and no address in the tree.** `SECURITY.md`
+points a reporter at the forge's private reporting route, so nothing published
+here is an address that outlives the session that wrote it.
+
+⛔ **Promise no timeline.** The Approach's own rule, and the ruling does not
+change it.
+
+⭐ **The threat model is the part that earns the document** and it needed no
+ruling: a capture harness accepts connections from anything, and a hosted oracle
+would receive other people's traffic. ⚠ The second becomes real if `HARNESS-12`
+lands, which the operator has now put in scope.
 
 ## DOC-04. The founding brief is retired, and this entry records what replaced it
 

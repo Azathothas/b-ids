@@ -13,43 +13,49 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | Work [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)'s order, which starts at `PUB-11`. Session ran 2026-09-03, unattended, and the operator ended it. |
-| the resume point | `PUB-11`, which is worked and open. Its entry names three legs that still reach the corpus through code resolving the workspace root. |
-| in flight | ⛔ Nothing half-edited. Three entries closed in place; `PUB-11` open with its state written into the entry. |
-| the state of the tree | Clean and pushed on `main`. The gate is green in full, `check-twins` included. |
+| the task | Rule the open questions, fix the Windows CI failure at its cause, and work the order. Session ran 2026-09-04, attended, started 2026-09-04T00:07:59Z. |
+| the resume point | `DRIVER-11`, the launcher that speaks only Chromium. It is first in the work order and `CORPUS-02` is blocked on it. |
+| in flight | Nothing half-edited. Six entries closed in place with their acceptance commands run; `CORPUS-02` and `EMIT-03` open with measured blockers and rulings attached. |
+| the state of the tree | Clean and pushed on `main`. The gate is green over 40 checks. |
 | the paste | below |
 
 ---
 
 ## The one thing to know before anything else
 
-⭐ **The documents describe the tree again.** They had stopped: four sessions
-built the corpus, the emitters, the library and both publishing surfaces without
-re-reading the reference pages, so the README said this repository could run its
-own checks and nothing else. Nine documents and three script headers are
-amended, and
-[`stale-documents.md`](stale-documents.md) keeps every superseded passage.
+⭐ **There are no open questions.** Eight were put to the operator and ruled on
+2026-09-04, and each is written into the entry it governs as well as into the
+record's settled section. ⛔ Three of the next six units of work take a
+third-party tree into `vendor/`, and
+[`../methodology/vendoring.md`](../methodology/vendoring.md) is binding on each.
 
-⛔ **A check holds that now.** `check-catalogues` refuses a script with no
-section in [`../../scripts/README.md`](../../scripts/README.md) and a document
-with no row in the index that routes to it. ⚠ It cannot read prose, so a
-sentence that is merely wrong is still the review's job.
+⚠ **The Windows CI failure was this repository's own.** The record had called it
+a runner fault for three sessions. `rustc` and `cargo` are rustup proxies, so
+the probe started installing the pinned toolchain and killed it at six seconds;
+the component conflict the job reported was a fragment of that.
+⭐ `sh scripts/doctor/doctor.sh --fixture` is the command that now holds the
+rule, and `TODO/RULES.md` section 8.5 states it.
 
 ---
 
 ## The conditions this session leaves
 
-**`PUB-11` is the resume point and it is half a change.**
-[`../../scripts/common/corpus-root.sh`](../../scripts/common/corpus-root.sh)
-answers where the corpus is, twelve check pairs ask it, and the resolved root is
-exported so `cargo` and the `b-ids` build script see the same one. ⚠ Seven of
-ten checks pass with `corpus/` moved out of the working tree; three fail because
-their legs reach the corpus through Rust that resolves the workspace root, and
-the entry names each.
+⚠ **The data branch is BEHIND by 37 artefacts and nothing published is wrong.**
+`PUB-04` added a `configs/` tree the publisher has not pushed yet.
+`check-data-branch` reports that as a pending publish rather than a failure,
+which is `PUB-14`, and the push at the end of this session is what triggers
+`publish.yml` to close the gap.
 
-⚠ **The corpus publishes a `HeadlessChrome` User-Agent** on all six profiles and
-every `user-agent` route, and always will: the normalisation is wired for the
-next capture and the corpus is append-only.
+⛔ **Two checks were passing by comparing something to itself**, and both are
+fixed: `check-data-branch` compared the published branch against a materialised
+copy of that same branch, and `check-corpus` asked this repository's history
+about files that are not in it. ⚠ Both had the identical cause, an export on the
+line above the guard.
+
+⚠ **The corpus still publishes a `HeadlessChrome` User-Agent** on all six
+profiles and every `user-agent` route. ⭐ The operator has ruled that a session
+may dispatch `capture.yml` and merge the green lanes, which is the only route
+that replaces it, because the corpus is append-only.
 
 ⛔ **A tool that purges browsers lives in `scripts/common/`.** It refuses any
 machine that is not both marked disposable by this project and running on a

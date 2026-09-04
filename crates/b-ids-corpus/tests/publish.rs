@@ -10,13 +10,53 @@ use b_ids_corpus::publish::{
     would_rewrite,
 };
 
-/// The repository root, canonicalised, which is what [`built_into`] builds from.
-fn repository_root() -> std::path::PathBuf {
+/// The environment variable that names a corpus root explicitly.
+///
+/// ⭐ **The same seam [`b-ids/build.rs`] reads**, and it has to be, because a
+/// suite that built from a different corpus than the crate embedded would
+/// report on one and ship the other.
+const ROOT_ENV: &str = "B_IDS_CORPUS_ROOT";
+
+/// The workspace root, canonicalised. ⚠ **This is where scratch output goes and
+/// it is NOT where the corpus is read from.** The two were one function until
+/// `PUB-11`, which is what coupled this suite to the working tree.
+fn workspace_root() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("..")
         .canonicalize()
-        .expect("the repository root")
+        .expect("the workspace root")
+}
+
+/// The corpus this run should build from.
+///
+/// ⛔ **Resolved, never assumed.** `corpus/` and `raw/` are to leave the default
+/// branch, and this suite reached them by walking up from its own manifest, so
+/// it was one of the three legs that still failed with the corpus moved out of
+/// the working tree. TODO/publish.md, `PUB-11`.
+///
+/// ⭐ The order is `b-ids/build.rs`'s, deliberately: an explicit root wins, then
+/// the nearest ancestor that actually holds a corpus. A checker that exports
+/// `B_IDS_CORPUS_ROOT` therefore gets the same answer here, in the crate's build
+/// script, and in every check that asks `corpus-root.sh`.
+fn corpus_root() -> std::path::PathBuf {
+    if let Some(named) = std::env::var_os(ROOT_ENV) {
+        return std::path::PathBuf::from(named);
+    }
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut here: &Path = manifest;
+    loop {
+        if here.join("corpus").join("v1").join("index.json").is_file() {
+            return here.to_path_buf();
+        }
+        match here.parent() {
+            Some(parent) => here = parent,
+            None => panic!(
+                "no corpus above {}. Set {ROOT_ENV} to a corpus root.",
+                manifest.display()
+            ),
+        }
+    }
 }
 
 /// Build the repository's own corpus into a throwaway directory.
@@ -24,9 +64,16 @@ fn repository_root() -> std::path::PathBuf {
 /// ⚠ **The REAL corpus, not a fixture.** The assembler's job is to publish what
 /// this project actually holds, and a fixture would prove it can publish
 /// something else.
+///
+/// ⚠ **The source and the destination are resolved separately.** The corpus may
+/// be a materialised copy of the data branch; the scratch output belongs under
+/// the workspace's own ignored directory either way.
 fn built_into(name: &str) -> (b_ids_corpus::Built, std::path::PathBuf) {
-    let root = repository_root();
-    let out = root.join(".tmp").join("publish-suite").join(name);
+    let root = corpus_root();
+    let out = workspace_root()
+        .join(".tmp")
+        .join("publish-suite")
+        .join(name);
     let _ = std::fs::remove_dir_all(&out);
     let built = build(root.to_str().expect("a utf-8 root"), &out).expect("the corpus assembles");
     (built, out)
@@ -231,7 +278,16 @@ fn publish_the_tree_names_no_path_outside_itself() {
     // because it builds twice under ONE root. Found by running the assembler
     // both ways. TODO/publish.md, PUB-10.
     let (built, dir) = built_into("paths");
-    let root = repository_root().to_string_lossy().replace('\\', "/");
+    // ⚠ THE CORPUS ROOT, NOT THE WORKSPACE ROOT. This asserts that the tree
+    // does not name the path it was BUILT FROM, and `built_into` builds from
+    // the resolved corpus. With B_IDS_CORPUS_ROOT pointing outside this tree
+    // the workspace root would be a path the build never saw, so the assertion
+    // would pass while testing nothing.
+    let root = corpus_root()
+        .canonicalize()
+        .expect("the corpus root resolves")
+        .to_string_lossy()
+        .replace('\\', "/");
     // ⚠ Windows canonicalises to a `\?\` prefixed path; the trimmed form is a
     // substring of the untrimmed one, so searching for it catches both.
     let root = root.trim_start_matches("//?/").to_owned();

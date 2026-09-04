@@ -194,9 +194,11 @@ pub fn plan(family: Family, version: Option<&str>) -> Vec<Candidate> {
     // ⛔ READ FROM THE ROUTE TABLE, never from a branch here. A family with no
     // first-party index gets no candidate offered, and saying so is better than
     // a URL that cannot answer. TODO/driver.md, DRIVER-10.
-    if let (Some(index), true) = (index_url(family), version.is_some()) {
+    if let (Some(index), Some(route), true) =
+        (index_url(family), index_route(family), version.is_some())
+    {
         candidates.push(Candidate {
-            route: index_route(family),
+            route,
             url: Some(index.to_owned()),
         });
     }
@@ -370,6 +372,14 @@ pub enum IndexRefusal {
         /// The nearest builds it carries, in the index's order.
         nearest: Vec<String>,
     },
+    /// This project has no index reader for that family.
+    ///
+    /// ⛔ **A refusal rather than a fallback.** `index_url` answers `None` for
+    /// Chromium and for Firefox, so nothing should reach this reader with one,
+    /// and if something does, guessing a reader would parse one vendor's index
+    /// with another vendor's meanings for every field. TODO/corpus.md,
+    /// CORPUS-02.
+    NoIndexForFamily(Family),
     /// The build is published and not for this platform.
     NoDownloadForPlatform {
         /// What was asked for.
@@ -385,6 +395,12 @@ impl fmt::Display for IndexRefusal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Unparsable(why) => write!(f, "the index did not parse: {why}"),
+            Self::NoIndexForFamily(family) => write!(
+                f,
+                "there is no first-party index this project reads for {family}, so no build can \
+                 be asked for by version. The routes that remain are an install already on the \
+                 machine and a copy this project cached."
+            ),
             Self::NoSuchBuild {
                 version,
                 known,
@@ -536,15 +552,37 @@ pub fn index_url(family: Family) -> Option<&'static str> {
     match family {
         Family::Chrome => Some(FOR_TESTING_INDEX),
         Family::Edge => Some(EDGE_ENTERPRISE_INDEX),
+        // ⛔ NONE IS THE MEASURED ANSWER FOR BOTH, not a gap left for later.
+        //
+        // Chromium has no vendor channel serving a build by version: the
+        // snapshot index is keyed by a build number that is not the version a
+        // profile records, and the runner image serves a snap.
+        //
+        // Firefox has a first-party archive, and this project has not read it.
+        // ⚠ Writing a URL here from memory is exactly what TODO/RULES.md rule 1
+        // refuses: the value would be inherited rather than measured, and a
+        // fetcher pointed at a URL nobody checked fails at provisioning time
+        // with an error nobody can attribute.
+        //
+        // ⭐ `plan` offers no candidate for a family that answers None, so both
+        // are reachable through Route::Installed and Route::Cache and nothing
+        // else. TODO/corpus.md, CORPUS-02.
+        Family::Chromium | Family::Firefox => None,
     }
 }
 
 /// The route a profile records for a build obtained from a family's index.
+///
+/// ⚠ **`None` where [`index_url`] is `None`**, and the two are asked together
+/// so they cannot disagree. This returned a `Route` unconditionally while
+/// `index_url` returned an `Option`, so a family with no index still had a
+/// route name, which is a value describing an acquisition that cannot happen.
 #[must_use]
-pub fn index_route(family: Family) -> Route {
+pub fn index_route(family: Family) -> Option<Route> {
     match family {
-        Family::Chrome => Route::ChromeForTesting,
-        Family::Edge => Route::EdgeEnterprise,
+        Family::Chrome => Some(Route::ChromeForTesting),
+        Family::Edge => Some(Route::EdgeEnterprise),
+        Family::Chromium | Family::Firefox => None,
     }
 }
 
@@ -580,6 +618,7 @@ pub fn download(
             })
         }
         Family::Edge => edge_download(index_json, version, platform),
+        Family::Chromium | Family::Firefox => Err(IndexRefusal::NoIndexForFamily(family)),
     }
 }
 

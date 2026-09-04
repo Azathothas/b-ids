@@ -16,6 +16,47 @@ anything here has reached.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-04T05:20:00Z - the Windows CI failure was this repository's own probe, and two checks were passing by comparing something to itself
+
+**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-09`,
+[`TODO/publish.md`](TODO/publish.md) `PUB-11`, `PUB-04` and `PUB-14`,
+[`TODO/validator.md`](TODO/validator.md) `VALID-05`,
+[`TODO/harness.md`](TODO/harness.md) `HARNESS-11`.
+**Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch gains
+a `configs/` tree on the next push to the default branch; the profiles it
+carries are unchanged.
+
+What landed:
+
+- ⛔ **The Windows toolchain failure was traced to this tree.** `rustc` and
+  `cargo` are rustup proxies, so the probe, run in a tree pinning a toolchain
+  the runner does not have, started installing it and killed the install at its
+  six-second limit. The component conflict the job reported was a fragment of
+  that. Both probe halves now refuse to start an install, the workflow installs
+  before it probes, and `doctor --fixture` holds the claim. `CI-09`.
+- ⛔ **Two checks were passing by comparing something to itself.**
+  `check-data-branch` compared the published branch against a materialised copy
+  of that same branch and reported green; `check-corpus` asked this repository's
+  history about files that are not in it. Both had one cause: an export on the
+  line above the guard. `PUB-11`.
+- ⭐ **`PUB-11` closed at ten of ten** with `corpus/` and `raw/` moved out of the
+  working tree, and both directories restored and compared against `HEAD`.
+- ⭐ **Generated client configuration is published.** Thirty-seven files per
+  build, twenty-four of them refusals naming a hole at a file and a line, gated
+  on the support matrix by `check-generated-configs` and its twin. `PUB-04`.
+- ⛔ **The data branch check can tell BEHIND from WRONG.** Adding an artefact
+  class made it red on a state the publisher clears; it now reports a pending
+  publish and still refuses a changed byte, a deleted path and a rewritten
+  branch. `PUB-14`.
+- ⭐ **A conformance suite compares a client against the profile it claims to
+  be**, field by field, with a third verdict for what a browser varies per
+  connection. `VALID-05`.
+- ⭐ **The TCP layer's capability is measured**: one field of six is readable
+  without a raw socket, and `TcpStream::ttl` is this host's own hop limit rather
+  than the peer's. `HARNESS-11`.
+- ⚠ **The resolver knows four browser families**, not two, and `CORPUS-02`'s
+  blocker moved from the resolver to the launcher and to acquisition.
+
 ### 2026-09-03T13:07:00Z - the documents were checked against the tree, and nine of them were wrong about what it does
 
 **Record:** [`TODO/tooling.md`](TODO/tooling.md) `TOOL-19`,
