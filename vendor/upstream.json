@@ -74,6 +74,48 @@
       "not_patched": {
         "rustls-test": "Kept because rustls's own dev-dependencies name it through the workspace dependency table, and dropping it would mean patching a manifest to run no tests. Not depended on by anything this tree builds."
       }
+    },
+    {
+      "name": "h2",
+      "repository": "https://github.com/hyperium/h2",
+      "directory": "vendor/h2",
+      "ref": "v0.4.19",
+      "base": "d57d1b852fec9dda6d42d3454502006d52104da8",
+      "vendored_at": "2026-09-04T14:30:00Z",
+      "ref_reason": "Upstream's newest release tag. \u26a0 The reference sweep read this tree at commit cb9574bb2c18, abbreviated because this project's secret scan refuses a 40-character hex run in prose and references/hyperium__h2/PROVENANCE.md carries it in full. That is a trunk commit rather than a release, so the seam is RE-READ at this tag rather than carried from the sweep's line numbers. TODO/RULES.md rule 3: a document is checked against the tree it describes.",
+      "why_vendored": "EMIT-03. A client that omits the HTTP/2 PRIORITY block carries a zero in one field of four in a widely-read fingerprint, and every profile in this corpus carries the block: six of six, two browsers, two majors, two platforms, one value. \u26d4 Upstream will not take the patch for a stated reason rather than by neglect: RFC 9113 deprecates stream priority, so a release adding a way to send one would add a way to do what the specification tells clients not to do. Ruled by the operator 2026-09-04, against the recommendation attached to the question.",
+      "exclude": [
+        ".git",
+        ".github",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        "benches",
+        "ci",
+        "examples",
+        "fixtures",
+        "fuzz",
+        "tests",
+        "util"
+      ],
+      "exclude_reasons": {
+        ".git": "The clone's own history. The vendored tree is source in this repository's history, not a nested repository.",
+        ".github": "Upstream's own CI, which runs against upstream's repository and cannot run here.",
+        "AGENTS.md": "An agent instruction file of any name is never vendored: a file with such a name anywhere under a repository is read as instructions by the tools working in it. Excluded by name whether or not upstream has one today, so a release that adds one does not land silently.",
+        "CLAUDE.md": "See AGENTS.md.",
+        "GEMINI.md": "See AGENTS.md.",
+        "benches": "Upstream's criterion benchmarks, which nothing here runs.",
+        "ci": "Upstream's own CI scripts.",
+        "examples": "Upstream's example binaries, which pull a runtime and a logger this tree does not need.",
+        "fixtures": "The HPACK test-case corpus, one directory per implementation of the same cases. \u2b50 It is http2jp/hpack-test-case, which this project already mines separately at references/http2jp__hpack-test-case, so vendoring a second copy would be the same corpus in two places.",
+        "fuzz": "cargo-fuzz targets, which need a nightly toolchain.",
+        "tests": "Upstream's integration suite, which needs h2-support and a full tokio test rig. \u26a0 What this project asserts about the patch is its OWN test, because the patch is this project's and upstream's suite does not know about it.",
+        "util": "Upstream's test-support helpers, which only its own tests use."
+      },
+      "crates": {
+        "h2": "."
+      },
+      "not_patched": {}
     }
   ]
 }

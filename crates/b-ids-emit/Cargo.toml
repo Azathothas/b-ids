@@ -17,7 +17,20 @@ b-ids-schema = { path = "../b-ids-schema" }
 # ⚠ THE MATRIX IS SERIALISED, never formatted. EMIT-01.
 serde.workspace = true
 
+# ⭐ THE PATCHED HTTP/2 LIBRARY, vendored here. EMIT-03. The priority block a
+# browser sends is five bytes this library had no way to write, and the emitter
+# below is what writes them.
+h2.workspace = true
+# ⚠ h2's own buffer type crosses this seam, so it is named rather than reached
+# through h2's re-exports: a version this workspace did not pin would be a
+# second `bytes` in one binary.
+bytes.workspace = true
+http.workspace = true
+
 [dev-dependencies]
+# ⚠ THE HARNESS READS THE FRAME BACK, and that is what makes the suite a
+# comparison rather than the emitter checking its own arithmetic. EMIT-03.
+b-ids-harness = { path = "../b-ids-harness" }
 # ⚠ THE ESCAPE HATCH SUITE READS THE PUBLISHED CORPUS, because a fixture would
 # prove the emitter can write a hello somebody made up. TODO/emitters.md,
 # EMIT-02.

@@ -33,6 +33,7 @@ this page records.
 | `check-formats.sh` | nothing here publishes a generated format | the data branch carries nine of them |
 | `check-license-consistency`, both halves | the data branch is not checked because it does not exist | both its manifest identifier and its licence text are compared |
 | [`../../TODO/RULES.md`](../../TODO/RULES.md) section 8.5 | the Windows toolchain failure is the runner's, and the answer is to rerun the job | this repository's own probe starts the install the conflict is a fragment of, and kills it |
+| ⭐ [`../../TODO/corpus.md`](../../TODO/corpus.md), `CORPUS-02` | an unbranded build publishes an EMPTY trust-anchor list, so the bundled root store is branding rather than engine | ⛔ **refuted the same day.** A distribution Chromium is equally unbranded and sends a full 206-byte list. The empty one is a property of the automation channel's build configuration |
 
 ---
 
@@ -245,3 +246,34 @@ run finds the toolchain already there.
 read as evidence that the tree was innocent and the runner was not. It is
 actually the clue: that job passes `--fast`, which skips version probes, so it
 never starts an install for anything to interrupt. `CI-09` has the measurement.
+
+### `TODO/corpus.md`, `CORPUS-02`, the trust-anchor conclusion
+
+Written 2026-09-04, on the day the first two unbranded builds landed:
+
+> ⚠ **And one thing the `for-testing` captures already settled that this cell was
+> for.** The unbranded build publishes an EMPTY trust-anchor list and the branded
+> one publishes 32 identifiers, so the bundled root store is branding rather than
+> engine.
+
+⛔ **Refuted the same day**, by the capture that paragraph asked for. The
+Chromium build the archive route provisioned is equally unbranded and sends the
+root-store extension with a **206-byte body**, the same length as the branded
+Chrome beside it at the same build.
+
+⚠ **The observation was right and the conclusion was confounded.** The empty
+list did come from an unbranded build; it came from a Chrome **for Testing**
+build, and being for-testing is not the same property as being unbranded. Only a
+second unbranded build from a different source could tell the two apart, which
+is what the `chromium` row turned out to be for.
+
+⭐ **What replaced it is a sharper claim, not a weaker one.** The two 206-byte
+lists are DIFFERENT BYTES: branded Chrome opens `00cc0582df13` and Chromium
+opens `00cc04d67909`. Two builds of one version carry root stores of the same
+size and different content, so the store is a build-time input rather than a
+branding switch, and an empty one is a property of the automation channel.
+
+⚠ **What nobody should take from either version:** that the TLS half differs
+between the two. It does not. At build `152.0.7977.75` on `linux64`, with the
+per-connection GREASE draw removed, the extension set and the cipher list are
+identical and so is the whole HTTP/2 half.

@@ -82,7 +82,16 @@ report() { PROBLEMS="$PROBLEMS  $1
 SCHEMA=$(jq -r '.schema_version // empty' "$MANIFEST")
 [ -n "$SCHEMA" ] || report "$MANIFEST: no schema_version. A positional format with no version mis-reads silently."
 
-NAMES=$(jq -r '.upstreams[]?.name' "$MANIFEST")
+# ⛔ THE CARRIAGE RETURN IS STRIPPED, AND A SECOND UPSTREAM IS WHAT EXPOSED THAT.
+# jq on Windows writes CRLF, which this project has now been bitten by four
+# times. ⚠ THE SHAPE HERE IS THE NASTY ONE: a command substitution strips the
+# trailing line ending, so the LAST name in the list comes out clean and every
+# name before it carries a `\r`. With one upstream in the manifest this loop was
+# correct for eighteen months of sessions; the day a second one landed, the
+# FIRST reported five problems it does not have and the second reported none.
+# ⭐ A latent defect that only a second element could ever show.
+# TODO/emitters.md, EMIT-03, and TODO/vendor.md, VENDOR-01.
+NAMES=$(jq -r '.upstreams[]?.name' "$MANIFEST" | tr -d '\r')
 NUPSTREAMS=0
 NCRATES=0
 NPATCHES=0

@@ -283,7 +283,7 @@ exit 1.
 ## CORPUS-02. The capture matrix: browsers, channels and hosts
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** corpus, **Priority** P1, **Effort** L, **Status** open
+**Category** corpus, **Priority** P1, **Effort** L, **Status** done
 
 ### Problem
 
@@ -826,13 +826,126 @@ addressable by the version a profile records. That is `DRIVER-10`'s question
 rather than this cell's, and it is the one thing between this entry and its
 acceptance command.
 
-⚠ **And one thing the `for-testing` captures already settled that this cell was
-for.** The unbranded build publishes an EMPTY trust-anchor list and the branded
-one publishes 32 identifiers, so the bundled root store is branding rather than
-engine. ⛔ That does not retire the row: the two for-testing builds are 151 and
-the two stable ones are 152, so the comparison confounds the major with the
-branding, and a chromium capture beside a chrome one of the same major is what
-separates them.
+⛔ **REFUTED THE SAME DAY, BY THE CAPTURE THIS PARAGRAPH ASKED FOR. The original
+wording is kept below and it is WRONG**; the correction is in the closing
+section of this entry and in
+[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
+
+> ⚠ **And one thing the `for-testing` captures already settled that this cell was
+> for.** The unbranded build publishes an EMPTY trust-anchor list and the branded
+> one publishes 32 identifiers, so the bundled root store is branding rather than
+> engine. ⛔ That does not retire the row: the two for-testing builds are 151 and
+> the two stable ones are 152, so the comparison confounds the major with the
+> branding, and a chromium capture beside a chrome one of the same major is what
+> separates them.
+
+⚠ **What was wrong with it was a confound, not the reading.** The empty list came
+from a Chrome **for Testing** build, and the Chromium capture taken hours later
+is equally unbranded and sends a full 206-byte list.
+
+---
+
+### ⭐ 2026-09-04, second session of the day: the acceptance command exits 0
+
+```bash
+sh scripts/common/check-coverage.sh --require-rows chrome,edge,chromium,firefox
+```
+
+```text
+coverage over 10 planned cell(s):
+
+  captured       chrome/stable/linux64              3 profile(s) required
+  captured       chrome/stable/win64                4 profile(s) required
+  captured       edge/stable/linux64                1 profile(s) required
+  captured       chrome/for-testing/linux64         1 profile(s)
+  captured       chrome/for-testing/win64           1 profile(s)
+  not-attempted  chrome/stable/macos-arm64          0 profile(s)
+  not-attempted  chrome/beta/linux64                0 profile(s)
+  captured       firefox/stable/linux64             1 profile(s) required
+  captured       firefox/stable/win64               2 profile(s)
+  captured       chromium/stable/linux64            1 profile(s) required
+
+8 captured, 0 absent, 2 not attempted, 0 outside the plan.
+```
+
+⚠ **Exit 0, read from the process, unpiped.** Eight of ten cells captured, none
+absent, none outside the plan, and the two not attempted are the two whose
+blockers this entry has always named: no runner image ships a beta channel, and
+`DRIVER-05` has no route serving a macOS build.
+
+#### ⛔ What unblocked it: three routes measured, and the third answers
+
+⚠ **`--no-sandbox` was refused, as the note above requires.**
+
+| route | measured | verdict |
+| --- | --- | --- |
+| the image's own `chromium` on `ubuntu-24.04` | `capture.yml` run `33854002345`: the resolver finds `/usr/bin/chromium` and reads `151.0.7922.0`, and the launch aborts on signal 6 inside `content::ZygoteHostImpl::Init` | ⛔ shut. It is a snap, and its zygote will not start on that image |
+| Google's `chromium-browser-snapshots` | `Linux_x64/LAST_CHANGE` answers `1692381` and the zip beside it is `200` at 246,778,957 bytes | ⛔ shut for THIS row. It serves a real unpatched Chromium and it is keyed by a trunk revision, which is not the version a profile records, and a continuous trunk build belongs to no channel anybody runs |
+| ⭐ an APT archive publishing `chromium` for `noble` | `Packages` is `404` and `Packages.gz` is `200`; the index names `152.0.7977.75-1xtradeb1.2404.1` with a `SHA256` and a `Size`, and the artefact it points at is `200` at exactly the `93784166` bytes the index states | ⭐ **open.** It answers by version and publishes a digest |
+
+⭐ **And the build it serves is the one this corpus already holds branded.**
+`chrome/stable/linux64/152.0.7977.75` was already published, so the control this
+row exists for is a SAME-BUILD pair rather than a same-major one.
+
+⛔ **The route is `chromium-ubuntu-ppa`**, a sixth entry in the vocabulary
+`b_ids_schema::ACQUISITION_ROUTES`, `b_ids_driver::acquire::Route` and the
+published JSON schema all state. ⚠ It is named for the archive rather than for
+the format, because a consumer reading it should learn that this was a
+distributor's repackaging and not a vendor build.
+
+#### ⭐ The measurement the row exists for, taken
+
+`capture.yml` run `33882426404`, every lane green, one pull request against the
+source branch, merged after `verify` and `validate` were re-derived locally.
+Comparing the two profiles at build `152.0.7977.75` on `linux64`, with the
+per-connection GREASE draw removed because it is a draw:
+
+| | branded Chrome | Chromium |
+| --- | --- | --- |
+| TLS extension set | `5,10,11,13,16,18,23,27,35,43,45,51,17613,51764,65037,65281` | ⭐ **identical** |
+| cipher suites, in order | `4865,4866,4867,49195,49199,49196,49200,52393,52392,49171,49172,156,157,47,53` | ⭐ **identical** |
+| the HTTP/2 half | settings, window update and priority block | ⭐ **identical** |
+| header set and order | thirteen fields | ⚠ the same thirteen, shifted by one: Chromium sends `cache-control` FIRST |
+| the root-store extension `0xca34` | 206 bytes, body opening `00cc0582df13` | ⚠ **206 bytes, body opening `00cc04d67909`** |
+
+⭐ **So branding changes NOTHING in the TLS half or the HTTP/2 half at this
+build.** That is the answer this row was added to get, and it is the first time
+this corpus can state it without confounding branding with the major.
+
+⚠ **The one header difference is a capture condition rather than a build
+property, and it is recorded as unresolved rather than explained.**
+`cache-control` at position 0 is what a navigation that is not served from cache
+sends; nothing here establishes that the two runs navigated identically.
+
+#### ⛔ AND IT REFUTES A CLAIM THIS PROJECT MADE ELEVEN HOURS EARLIER
+
+⚠ **The record said:** "the unbranded build publishes an EMPTY trust-anchor list
+and the branded one publishes 32 identifiers, so the bundled root store is
+BRANDING rather than engine."
+
+⛔ **That is wrong, and the reason is a confound rather than a mistake in the
+reading.** The empty list came from a Chrome **for Testing** build, and this
+Chromium build is equally unbranded and sends a full 206-byte list. So an empty
+root store is a property of the automation channel's own build configuration,
+not of being unbranded.
+
+⭐ **What IS true, and it is the sharper claim:** the two 206-byte lists are
+different bytes. Branded Chrome and this Chromium carry root stores of the same
+size and different content, which is a build-time input rather than a branding
+switch.
+
+⚠ **What this pair does NOT separate:** the archive is a distributor's
+repackaging, which may build against system libraries and disable features, so a
+difference between these two is branding OR packaging. ⛔ Recorded in the cell
+rather than left to be discovered.
+
+#### ⚠ What is still open about this entry's own subject, and is not this entry
+
+⭐ **`CI-04`'s merge condition wants agreement across two INDEPENDENT sources**,
+and no cell has that yet: `firefox/stable/win64` now holds two profiles, one from
+a laptop and one from a runner, but at different builds (`154.0.1` and `154.0`).
+⛔ That is a coverage fact rather than an unmet acceptance, and this entry's
+acceptance command is what decides whether it closes.
 
 ---
 

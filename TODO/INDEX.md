@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 9  blocked 0  done 98
+total 107  open 7  blocked 0  done 100
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
-| P1 | 1 | 0 | 48 | 49 |
-| P2 | 5 | 0 | 37 | 42 |
+| P1 | 0 | 0 | 49 | 49 |
+| P2 | 4 | 0 | 38 | 42 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **9** | **0** | **98** | **107** |
+| **all** | **7** | **0** | **100** | **107** |
 
 ---
 
@@ -40,7 +40,7 @@ total 107  open 9  blocked 0  done 98
 | CI-08 | P2 | S | done | A documented manual path, for the day the provider is not there | [`ci.md`](ci.md) |
 | CI-09 | P1 | M | done | The Windows job's toolchain step fails because the probe before it started the install | [`ci.md`](ci.md) |
 | CORPUS-01 | P1 | M | done | Content-addressed, append-only, never edited in place | [`corpus.md`](corpus.md) |
-| CORPUS-02 | P1 | L | open | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
+| CORPUS-02 | P1 | L | done | The capture matrix: browsers, channels and hosts | [`corpus.md`](corpus.md) |
 | CORPUS-03 | P2 | S | done | `latest` means stable, and beta is how the project gets ahead | [`corpus.md`](corpus.md) |
 | CORPUS-04 | P2 | M | done | Per-build trust-anchor lists, and a recommendation | [`corpus.md`](corpus.md) |
 | CORPUS-05 | P3 | S | done | Name the unidentified extension | [`corpus.md`](corpus.md) |
@@ -62,7 +62,7 @@ total 107  open 9  blocked 0  done 98
 | DRIVER-11 | P1 | L | done | The launcher speaks Chromium, and the highest-value lane is not one | [`driver.md`](driver.md) |
 | EMIT-01 | P2 | L | done | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
 | EMIT-02 | P2 | L | done | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
-| EMIT-03 | P2 | S | open | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
+| EMIT-03 | P2 | S | done | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
 | EMIT-04 | P3 | M | open | Emitters for the stacks a consumer already uses | [`emitters.md`](emitters.md) |
 | HARNESS-01 | P0 | L | done | The oracle is a server, not a client | [`harness.md`](harness.md) |
 | HARNESS-02 | P0 | M | done | The switches, each of which exists because something went wrong without it | [`harness.md`](harness.md) |

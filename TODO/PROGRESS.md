@@ -21,7 +21,7 @@ baseline         gate ok: 39 passed, 1 skipped (check-twins, which --fast
                  skips), measured on this Windows host at the start. ⚠ The
                  412 tests is carried from the last session's close and was
                  not re-counted before the work began.
-entries          total 107  open 9  blocked 0  done 98
+entries          total 107  open 7  blocked 0  done 100
 corpus           TWELVE profiles, up from six. Five browsers-and-platforms
                  the matrix captured on runners, and one Firefox taken here.
                  ⭐ The first non-Chromium profiles, the first UNBRANDED

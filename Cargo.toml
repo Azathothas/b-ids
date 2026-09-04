@@ -44,6 +44,11 @@ all = { level = "warn", priority = -1 }
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# ⚠ h2 CROSSES A SEAM WITH BOTH OF THESE IN ITS SIGNATURES, so they are pinned
+# here rather than in the one crate that names them: two versions of `bytes` in
+# one binary is two `BufMut` traits and a type error nobody can read.
+bytes = "1"
+http = "1.1"
 
 # ⭐ VENDORED, not a registry dependency. TODO/vendor.md, VENDOR-01, and the ruling is in
 # TODO/RULES.md: the TLS terminator is vendored here and patched here, so the seam HARNESS-13
@@ -64,3 +69,24 @@ rustls = { path = "vendor/rustls/rustls", default-features = false, features = [
 # it has to be the SAME backend: two crypto libraries in one binary is two builds of the same
 # primitives and a second C toolchain requirement.
 rcgen = { version = "0.14", default-features = false, features = ["pem", "ring"] }
+
+# ⭐ VENDORED AND PATCHED, ruled by the operator 2026-09-04 against the
+# recommendation attached to the question. TODO/emitters.md, EMIT-03.
+#
+# ⛔ THE PATCH IS FIVE BYTES AND UPSTREAM WILL NOT TAKE IT, for a stated reason
+# rather than by neglect: RFC 9113 deprecates stream priority, so a release
+# adding a way to send one would add a way to do what the specification tells
+# clients not to do. Every profile in this corpus carries the block, six of six
+# across two browsers, two majors and two platforms, all at 1:1:0:255.
+#
+# ⚠ THE `unstable` FEATURE IS UPSTREAM'S OWN, not something this patch added. It
+# makes `frame` and `proto` public, which is what lets this project's emitter
+# build a HEADERS frame and hand it to its own reader. ⛔ It is what upstream
+# says it is: an API with no backwards-compatibility promise, which is exactly
+# the trade a vendored tree exists to make.
+#
+# ⚠ It brings eleven crates including an async runtime into a workspace that was
+# serde and serde_json. That cost was named in the question and accepted in the
+# ruling. docs/methodology/vendoring.md says vendoring is chosen rather than
+# drifted into, and this is the choosing.
+h2 = { path = "vendor/h2", features = ["unstable"] }

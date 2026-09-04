@@ -125,9 +125,14 @@ pub fn holes() -> Vec<Hole> {
              dependency, and the closure that would carry it is passed empty",
             "references/hyperium__h2/tree/src/frame/headers.rs",
             123,
-            // ⚠ Patchable in principle and NOT vendored here yet, which is
-            // EMIT-03's first step rather than this entry's.
-            false,
+            // ⭐ PATCHED HERE SINCE 2026-09-04, so this flipped from false.
+            // vendor/h2 is the tree and patches/h2/ is what changed:
+            // StreamDependency::encode, the half `load` never had, and
+            // Headers::set_stream_priority, which sets the payload AND the flag
+            // in one call. ⚠ The hole is still real about UPSTREAM, which is
+            // what this matrix describes; what moved is whether this project
+            // can close it, and it can. TODO/emitters.md, EMIT-03.
+            true,
         ),
         hole(
             "impit",

@@ -25,6 +25,8 @@
 
 pub mod hello;
 pub mod matrix;
+// ⭐ THE PATCHED HTTP/2 SEND PATH. EMIT-03, and vendor/h2 is the tree.
+pub mod priority;
 
 pub use hello::{
     EmittableExtension, Unreproducible, client_hello, extension, extensions, extensions_block,

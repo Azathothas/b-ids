@@ -1,0 +1,75 @@
+[package]
+name = "h2"
+# When releasing to crates.io:
+# - Update CHANGELOG.md.
+# - Create git tag
+version = "0.4.19"
+license = "MIT"
+authors = [
+  "Carl Lerche <me@carllerche.com>",
+  "Sean McArthur <sean@seanmonstar.com>",
+]
+description = "An HTTP/2 client and server"
+documentation = "https://docs.rs/h2"
+repository = "https://github.com/hyperium/h2"
+readme = "README.md"
+keywords = ["http", "async", "non-blocking"]
+categories = ["asynchronous", "web-programming", "network-programming"]
+exclude = ["fixtures/**", "ci/**"]
+edition = "2021"
+rust-version = "1.63"
+
+[features]
+# Enables `futures::Stream` implementations for various types.
+stream = []
+
+# Enables **unstable** APIs. Any API exposed by this feature has no backwards
+# compatibility guarantees. In other words, you should not use this feature for
+# anything besides experimentation. Definitely **do not** publish a crate that
+# depends on this feature.
+unstable = []
+
+# ⛔ PATCHED HERE: THE MEMBER LIST IS EMPTY, NOT THE TABLE REMOVED. Upstream's
+# members are its own test rig, its fuzz target and two fixture generators, and
+# vendor/upstream.json excludes all five: they need h2-support, a nightly
+# toolchain and a full tokio test harness, and what this project asserts about
+# the patch is its own test rather than upstream's suite.
+#
+# ⚠ The TABLE STAYS. Cargo resolves a path dependency against the outermost
+# workspace that does not exclude it, so a vendored crate with no [workspace] of
+# its own inherits this repository's root table and fails on the first key it
+# does not carry. VENDOR-01 measured exactly that with rustls:
+# "dependency.aws-lc-rs was not found in workspace.dependencies".
+[workspace]
+members = []
+
+[dependencies]
+atomic-waker = "1.0.0"
+futures-core = { version = "0.3", default-features = false }
+futures-sink = { version = "0.3", default-features = false }
+tokio-util = { version = "0.7.1", features = ["codec", "io"] }
+tokio = { version = "1", features = ["io-util"] }
+bytes = "1"
+http = "1.1"
+tracing = { version = "0.1.35", default-features = false, features = ["std"] }
+fnv = "1.0.5"
+slab = "0.4.2"
+indexmap = { version = "2", features = ["std"] }
+
+# ⛔ PATCHED HERE: THE DEV-DEPENDENCIES ARE GONE, and every one of them served a
+# directory vendor/upstream.json excludes. quickcheck and rand are the fuzz
+# target's; hex, walkdir, serde and serde_json read the HPACK fixture corpus,
+# which this project mines separately at references/http2jp__hpack-test-case;
+# tokio's rt/macros/sync/net features, env_logger, tokio-rustls and webpki-roots
+# are the examples'. ⚠ Keeping them would make this tree's build fetch four
+# crates and a root store to compile tests that are not here.
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fuzzing)"] }
+
+[package.metadata.docs.rs]
+features = ["stream"]
+
+# ⛔ PATCHED HERE: THE BENCHMARK TARGET IS GONE with the benches/ directory
+# vendor/upstream.json excludes. A [[bench]] naming a file that is not there is
+# a manifest cargo refuses to load.

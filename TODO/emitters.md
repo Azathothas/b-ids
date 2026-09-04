@@ -281,7 +281,7 @@ proved only that the bytes were present somewhere.
 ## EMIT-03. The priority block patch, if the measurement says it is needed
 
 **Source** the founding brief; the seam and the patch are [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 4
-**Category** emitters, **Priority** P2, **Effort** S, **Status** open
+**Category** emitters, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -481,6 +481,98 @@ that tree is MIT and this one's output is 0BSD.
 [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) governs
 the manifest, the change record and the reproduction command, and ⛔ upstreaming
 is not a topic.
+
+
+### ⭐ 2026-09-04: vendored, patched, and the acceptance command runs
+
+⛔ **The operator's ruling, applied.** The eleven crates and the async runtime
+were accepted, and the recommendation attached to the question was overruled.
+
+```bash
+cargo test -p b-ids-emit priority_block
+```
+
+```text
+running 5 tests
+.....
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+```
+
+⭐ **The reader is not the writer, which is what makes the suite a comparison.**
+The bytes are written by the vendored and patched `h2` and read by
+`b_ids_harness::h2`, which is this project's own frame reader used on every
+capture in the corpus. ⛔ Neither knows about the other.
+
+#### The five bytes, on the wire, read back
+
+```text
+80000000ff
+```
+
+⭐ `exclusive: true, stream_dependency: 0, weight_wire: 255`, which is what all
+twelve profiles in this corpus carried when the entry was ruled. The exclusive
+bit is the top bit of the 31-bit dependency.
+
+#### ⛔ What the patch is, and it is smaller than the entry feared
+
+| patch | what |
+| --- | --- |
+| `0002-src-frame-headers.rs` | `HeadersFlag::set_priority`, `Headers::set_stream_priority`, and `Headers::encode` writing the dependency into the closure it already ran |
+| `0003-src-frame-priority.rs` | `StreamDependency::encode`, the half `load` never had |
+| `0004-src-lib.rs` | ⭐ `hpack` public under `unstable`, in upstream's OWN idiom. `frame` and `proto` were already public there; `Headers::encode` takes `&mut hpack::Encoder`, so the encoder was reachable in NAME and not in USE |
+| `0001-Cargo.toml` | the members, dev-dependencies and benchmark target of directories `vendor/upstream.json` excludes |
+
+⭐ **The `unstable` feature is upstream's own, not something this patch added**,
+so the module visibility this needed cost one arm rather than a new gate.
+
+⛔ **The setter sets BOTH halves in one call**, and that is the design rather
+than convenience: a head carrying the flag with no block is a frame a peer
+cannot parse, and a block with no flag is five bytes of header block that
+decodes as garbage.
+
+⭐ **The frame length and the CONTINUATION split follow for free**, exactly as
+the seam predicted. `priority_block_the_frame_length_is_right_across_a_continuation_split`
+drives a header block that needs a continuation and asserts three things: that it
+actually split, that the block survived in the first frame, and that no frame
+exceeds the size every peer must accept.
+
+#### ⭐ The control, and it is what makes the other four cases mean anything
+
+`priority_block_the_patch_is_what_puts_it_there` builds a HEADERS frame WITHOUT
+`set_stream_priority` and requires that no block comes back. ⛔ An unpatched `h2`
+passes `|_| {}` into the same closure, so if that case ever goes red while the
+others stay green, the block is coming from somewhere that is not the patch.
+
+#### ⛔ A defect a second vendored upstream exposed in this project's own check
+
+⚠ **`check-vendor` reported five problems `rustls` does not have**, on the run
+that added the second upstream, and none for `h2`.
+
+⛔ **The cause is the carriage return, for the fourth time in this tree.** `jq`
+on Windows writes CRLF; the name list is read through a command substitution,
+which strips the trailing line ending, so the LAST name comes out clean and
+every name before it carries a `\r`. ⭐ **With one upstream in the manifest the
+loop was correct for every session this repository has had.** The day a second
+one landed, the first reported five problems and the second reported none.
+
+⚠ **A latent defect only a second element could ever show**, and the shape is
+worth carrying: a `for` over a command substitution of a multi-line `jq` read is
+safe in exactly the one-element case.
+
+#### ⚠ What this does NOT do, stated so nobody looks for it
+
+⛔ **It does not wire the block through `h2::client`'s request path.** The
+Prove asks that a client's first HEADERS frame carry the flag and the five bytes
+and that the harness read them back, and that is what the suite drives: this
+project's emitter builds the frame with the patched encoder. ⚠ Threading a
+priority through `SendRequest::send_request` would touch `proto::streams` and
+need a tokio rig to assert anything, and it would prove a bigger claim than the
+entry makes. ⭐ The seam is open either way: the patch is on the FRAME, so a
+consumer that wants the client path has the five bytes already written for them.
+
+⭐ **And the support matrix hole flipped.** `patchable_here` for `h2` was
+`false` with the comment "not vendored here yet, which is EMIT-03's first step".
+It is `true` now.
 
 ## EMIT-04. Emitters for the stacks a consumer already uses
 
