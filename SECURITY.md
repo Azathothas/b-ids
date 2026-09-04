@@ -87,10 +87,32 @@ on that decision yourself.
 
 ### 2. ⚠ A hosted capture oracle would receive other people's traffic
 
-[`TODO/harness.md`](TODO/harness.md), `HARNESS-12`, is an entry for a public
-capture endpoint and it is **open**. ⛔ Nothing like it is running today, and
-this section exists because the day it does, the data flowing in stops being
-this project's own.
+[`TODO/harness.md`](TODO/harness.md), `HARNESS-12`, is the entry for a public
+capture endpoint. ⛔ **The MODE is built and nothing is hosted**, and the
+difference is the whole of this section: `b-ids-harness --serve` answers a
+caller on a machine somebody chose to run it on, and no endpoint of this
+project's is reachable from anywhere.
+
+### ⭐ The retention answer, settled before the mode was built
+
+⛔ **Nothing is retained. That is the default and it is enforced rather than
+promised.**
+
+| the question the entry asked | the answer |
+| --- | --- |
+| what is logged | the capture goes to the socket that produced it and to the run's own stdout. Nothing else |
+| for how long | ⛔ the life of the process |
+| whether anything is retained at all | ⛔ **no.** `--no-retain` refuses `--ca-out`, `--hello-out` and `--write-golden` by name, at parse time, before a socket is opened |
+| how that is checked | a test runs the binary in an empty directory and counts what is in the directory afterwards. ⚠ Over the DIRECTORY rather than over a list of switches, because a list can go stale and a directory cannot |
+| what a caller gets | its own capture, in full, with the raw bytes. ⭐ That is the Problem: every existing hosted service returns a subset and no raw hello |
+
+⛔ **A capture from a visitor's browser never becomes a corpus entry.** The
+corpus is captures the harness took of browsers it launched itself, and there is
+no path from the serve mode into `b-ids-corpus add`.
+
+⚠ **`--serve` without `--no-retain` is allowed and warns on stderr**, because
+pairing an oracle with a switch that writes is a decision somebody may have
+reasons for. What it must not be is silent.
 
 ⭐ **What it would receive is a fingerprint, which is exactly the thing this
 project publishes.** That is the point and it is also the hazard: a header set

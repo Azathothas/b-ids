@@ -20,7 +20,7 @@
 //! client with prior knowledge sends the HTTP/2 connection preface. The reader
 //! is chosen by the bytes that arrived, never by a flag the operator passed.
 
-use std::io::{ErrorKind, Read};
+use std::io::{ErrorKind, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -225,6 +225,26 @@ pub struct Config {
     pub until_h2: bool,
     /// Whether to record header values.
     pub header_values: bool,
+    /// Whether to hand each caller its own capture back.
+    ///
+    /// ⭐ **`HARNESS-12`, the oracle mode.** Every hosted fingerprint service
+    /// returns a subset and no raw hello, so somebody who wants to know what
+    /// their own browser sends has to trust a page. This returns the full
+    /// model, raw bytes included, to the caller that produced it.
+    ///
+    /// ⛔ **The mode is BUILT and it is not HOSTED.** The entry's own decision
+    /// says so: a hosted endpoint receives traffic from people, which is the
+    /// one thing this project's scope boundary says it does not do, and that
+    /// question needs an answer written down and a person's approval before
+    /// anything is stood up. `TODO/harness.md`, `HARNESS-12`.
+    ///
+    /// ⚠ **It answers over CLEARTEXT HTTP/1.1 and nothing else**, and the note
+    /// on every other connection says why rather than leaving a caller waiting.
+    /// Writing an HTTP/2 response needs an HPACK ENCODER, and this crate has a
+    /// decoder: the encoder in this tree is the vendored `h2`, which
+    /// `b-ids-emit` owns, and reaching it from here would invert the dependency
+    /// the workspace has.
+    pub serve: bool,
     /// How long to wait for bytes on an accepted connection.
     pub read_timeout: Duration,
     /// The server configuration a terminated surface serves.
@@ -249,6 +269,9 @@ impl Default for Config {
             run_timeout: None,
             until_h2: false,
             header_values: false,
+            // ⛔ OFF BY DEFAULT. A harness that answered every caller by default
+            // would be an oracle nobody chose to run. HARNESS-12.
+            serve: false,
             read_timeout: Duration::from_secs(10),
             terminator: None,
         }
@@ -464,7 +487,12 @@ impl Oracle {
 
         match self.config.protocol {
             Protocol::TlsRaw => self.read_hello(&bytes, &mut capture),
-            Protocol::Cleartext => self.read_cleartext(&bytes, &mut capture),
+            Protocol::Cleartext => {
+                self.read_cleartext(&bytes, &mut capture);
+                if self.config.serve {
+                    self.answer(stream, &bytes, &mut capture);
+                }
+            }
             // ⛔ The hello is parsed from the bytes the listener read, BEFORE the
             // terminator sees them, and those same bytes are replayed into it.
             // A hello reported by the library that consumed it is a hello
@@ -472,9 +500,81 @@ impl Oracle {
             Protocol::TlsTerminated => {
                 self.read_hello(&bytes, &mut capture);
                 self.terminate(stream, &bytes, &mut capture);
+                if self.config.serve {
+                    capture.notes.push(Note::new(
+                        "serve",
+                        "nothing was returned to the caller: this surface completes a TLS \
+                         handshake and answering over it needs an HPACK encoder, which this \
+                         crate does not have. --plain is the surface that answers. \
+                         TODO/harness.md, HARNESS-12",
+                    ));
+                }
             }
         }
         capture
+    }
+
+    /// Hand the caller its own capture back.
+    ///
+    /// ⭐ **`HARNESS-12`. The full model, raw bytes included**, rather than a
+    /// hash and a marketing page. ⛔ Nothing is written to disk and nothing is
+    /// retained: the capture goes to the socket that produced it and to the
+    /// run's own stdout, and the process keeps no copy a later run could read.
+    ///
+    /// ⚠ **HTTP/1.1 ONLY, and a connection that is not one is TOLD so** rather
+    /// than left waiting. An HTTP/2 response needs an HPACK encoder and this
+    /// crate has a decoder.
+    ///
+    /// ⚠ **A write that fails is a note rather than an error.** A caller that
+    /// closed the socket after sending its request is ordinary, and a capture
+    /// is still a capture.
+    fn answer(&self, mut stream: &TcpStream, bytes: &[u8], capture: &mut Capture) {
+        if h2::starts_like_preface(bytes) {
+            capture.notes.push(Note::new(
+                "serve",
+                "nothing was returned to the caller: this connection is HTTP/2, and answering \
+                 over it needs an HPACK encoder, which this crate does not have. \
+                 TODO/harness.md, HARNESS-12",
+            ));
+            return;
+        }
+        // ⛔ SERIALISED, never formatted, like every other JSON this tree emits.
+        let body = match serde_json::to_string_pretty(capture) {
+            Ok(text) => text,
+            Err(why) => {
+                capture.notes.push(Note::new(
+                    "serve",
+                    format!("the capture did not serialise: {why}"),
+                ));
+                return;
+            }
+        };
+        // ⚠ `Connection: close` because the caller gets one answer and the run
+        // is counting connections. A kept-alive socket would make one browser
+        // look like one connection for as long as it stayed open.
+        let head = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\
+             Cache-Control: no-store\r\nConnection: close\r\n\r\n",
+            body.len()
+        );
+        if let Err(why) = stream
+            .write_all(head.as_bytes())
+            .and_then(|()| stream.write_all(body.as_bytes()))
+            .and_then(|()| stream.flush())
+        {
+            capture.notes.push(Note::new(
+                "serve",
+                format!("the answer did not send: {why}"),
+            ));
+            return;
+        }
+        capture.notes.push(Note::new(
+            "serve",
+            format!(
+                "{} byte(s) of capture returned to the caller, and nothing retained",
+                body.len()
+            ),
+        ));
     }
 
     fn read_hello(&self, bytes: &[u8], capture: &mut Capture) {

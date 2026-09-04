@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 3  blocked 0  done 104
+total 107  open 2  blocked 0  done 105
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 0 | 0 | 49 | 49 |
-| P2 | 2 | 0 | 40 | 42 |
+| P2 | 1 | 0 | 41 | 42 |
 | P3 | 1 | 0 | 4 | 5 |
-| **all** | **3** | **0** | **104** | **107** |
+| **all** | **2** | **0** | **105** | **107** |
 
 ---
 
@@ -75,7 +75,7 @@ total 107  open 3  blocked 0  done 104
 | HARNESS-09 | P1 | M | done | Fuzz the parsers. A panic here is unacceptable | [`harness.md`](harness.md) |
 | HARNESS-10 | P2 | S | done | Check whether measuring changed what was measured | [`harness.md`](harness.md) |
 | HARNESS-11 | P2 | M | done | The p0f layer, which is free once the listener is ours | [`harness.md`](harness.md) |
-| HARNESS-12 | P2 | L | open | A public capture oracle | [`harness.md`](harness.md) |
+| HARNESS-12 | P2 | L | done | A public capture oracle | [`harness.md`](harness.md) |
 | HARNESS-13 | P1 | L | done | Terminate the handshake, and mint the authority that lets a browser complete it | [`harness.md`](harness.md) |
 | HARNESS-14 | P2 | M | done | The pin against a real trust anchor, on a machine that is thrown away | [`harness.md`](harness.md) |
 | HARNESS-15 | P0 | M | done | A cold hello is thrown away because its own connection carried no HTTP/2 | [`harness.md`](harness.md) |

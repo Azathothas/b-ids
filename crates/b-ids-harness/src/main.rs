@@ -63,6 +63,21 @@ usage: b-ids-harness [SWITCHES]
                        on a difference.
   --write-golden PATH  write the capture --expect-file reads.
   --timeout-ms N       how long to wait for bytes on an accepted connection.
+  --serve              ⭐ HARNESS-12. Hand each caller its own capture back, as
+                       the full model with the raw bytes in it, rather than a
+                       hash and a page it has to trust. ⚠ Over cleartext
+                       HTTP/1.1 only: an HTTP/2 answer needs an HPACK encoder
+                       and this crate has a decoder, and every other connection
+                       gets a note saying so rather than being left waiting.
+                       ⛔ THE MODE IS BUILT AND IT IS NOT HOSTED. A hosted
+                       endpoint receives traffic from people, which the scope
+                       boundary says this project does not do, and that needs an
+                       answer written down and a person's approval first.
+  --no-retain          ⛔ Refuse every switch that writes to disk, so a run
+                       cannot keep anything a later one could read. It is what
+                       makes --serve safe to run at all, and it is checked
+                       rather than promised: --ca-out, --hello-out and
+                       --write-golden are refused by name.
 
 exit 0 clean, 1 a comparison failed or a handshake did not complete,
        2 the run could not start.";
@@ -79,6 +94,8 @@ struct Args {
     hello_out: Option<String>,
     expect_file: Option<String>,
     write_golden: Option<String>,
+    /// ⛔ Refuse every switch that writes to disk. `HARNESS-12`.
+    no_retain: bool,
 }
 
 fn fail(message: &str) -> ExitCode {
@@ -97,6 +114,7 @@ fn parse_args() -> Result<Args, String> {
         hello_out: None,
         expect_file: None,
         write_golden: None,
+        no_retain: false,
     };
     let mut argv = std::env::args().skip(1);
     while let Some(arg) = argv.next() {
@@ -106,6 +124,8 @@ fn parse_args() -> Result<Args, String> {
             "--until-h2" => args.config.until_h2 = true,
             "--no-resumption" => args.resumption = b_ids_schema::Resumption::Refused,
             "--header-values" => args.config.header_values = true,
+            "--serve" => args.config.serve = true,
+            "--no-retain" => args.no_retain = true,
             "--json" => args.json = true,
             "--once" => args.config.handshakes = 1,
             "--bind" => {
@@ -173,6 +193,41 @@ fn parse_args() -> Result<Args, String> {
              On --raw and --plain no handshake is completed here, so nothing issues a \
              ticket and the switch would change nothing"
                 .to_owned(),
+        );
+    }
+    // ⛔ --no-retain REFUSES THE WRITERS BY NAME, at parse time, before a
+    // socket is opened. HARNESS-12's whole safety property is that a run keeps
+    // nothing a later one could read, and a flag that merely INTENDED that
+    // while --hello-out sat beside it would be the "a setting that no code
+    // reads" row of docs/conventions/forbidden-patterns.md.
+    //
+    // ⚠ The three named here are every switch in this binary that writes. A
+    // fourth added without a row here is a hole, which is why the test asserts
+    // over a directory rather than over this list.
+    if args.no_retain {
+        for (flag, given) in [
+            ("--ca-out", args.ca_out.is_some()),
+            ("--hello-out", args.hello_out.is_some()),
+            ("--write-golden", args.write_golden.is_some()),
+        ] {
+            if given {
+                return Err(format!(
+                    "--no-retain and {flag} ask for opposite things: one says keep nothing and \
+                     the other names a file to write. TODO/harness.md, HARNESS-12"
+                ));
+            }
+        }
+    }
+
+    // ⚠ --serve WITHOUT --no-retain IS ALLOWED AND SAYS SO. The oracle mode is
+    // the one that receives somebody else's traffic, and pairing it with a
+    // switch that writes is a decision rather than a mistake; what it must not
+    // be is silent.
+    if args.config.serve && !args.no_retain {
+        eprintln!(
+            "b-ids-harness: WARN --serve without --no-retain. This run answers callers AND may \
+             write to disk. TODO/harness.md, HARNESS-12: the default that keeps the scope \
+             boundary intact is to retain nothing."
         );
     }
     Ok(args)

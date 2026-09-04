@@ -1664,7 +1664,7 @@ been changed to call them, because there is nothing yet for a profile to carry.
 ## HARNESS-12. A public capture oracle
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** harness, **Priority** P2, **Effort** L, **Status** open
+**Category** harness, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
 
@@ -1706,6 +1706,89 @@ cargo run -p b-ids-harness -- --serve --no-retain
 Passing means: the endpoint returns a full profile to a browser pointed at it,
 nothing is written to disk, and a test asserts the no-retain default by checking
 that the process created no file.
+
+---
+
+
+### ⭐ 2026-09-04: the mode is built, and it is not hosted
+
+⛔ **That is the Decision's own recommendation applied, not a smaller version of
+the entry.** "Build the mode, and do not host it until the retention question has
+an answer written down and a human has approved it." The mode exists; nothing of
+this project's is reachable from anywhere.
+
+```bash
+cargo run -p b-ids-harness -- --serve --no-retain
+```
+
+```text
+schema=harness-capture/4 connection=1 raw_bytes=79 request=GET / HTTP/1.1
+files created: 0
+```
+
+⭐ **A real client over a real socket got the full model back**, raw bytes
+included, and the process created nothing in its own working directory.
+
+#### ⭐ The retention question, settled BEFORE the mode was built
+
+⚠ The Approach said to settle it first, so it is settled and it is written into
+[`../SECURITY.md`](../SECURITY.md)'s threat model rather than here.
+
+| the question | the answer |
+| --- | --- |
+| what is logged | the capture goes to the socket that produced it and to the run's own stdout. Nothing else |
+| for how long | ⛔ the life of the process |
+| whether anything is retained | ⛔ **no**, and it is enforced rather than promised |
+
+⛔ **`--no-retain` refuses `--ca-out`, `--hello-out` and `--write-golden` by
+name, at parse time, before a socket is opened.** A flag that merely INTENDED to
+keep nothing while a writing switch sat beside it would be the "a setting or flag
+that no code reads" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+
+⭐ **And the assertion is over a DIRECTORY rather than over that list.**
+`oracle_no_retain_creates_no_file` runs the binary in an empty directory and
+counts what is in it afterwards. ⚠ A list of writing switches can go stale when
+a fourth is added; a directory cannot.
+
+⛔ **The Must-not holds by construction.** There is no path from the serve mode
+into `b-ids-corpus add`: the capture goes to a socket and to stdout, and the
+corpus is captures the harness took of browsers it launched itself.
+
+#### ⚠ What it answers over, and what it tells the rest
+
+⛔ **Cleartext HTTP/1.1 only.** An HTTP/2 answer needs an HPACK ENCODER and this
+crate has a decoder: the encoder in this tree is the vendored `h2` that `EMIT-03`
+patched, and `b-ids-emit` owns it, so reaching it from the harness would invert
+the workspace's dependency direction.
+
+⭐ **Every other connection is TOLD, rather than left waiting.** An HTTP/2 caller
+and a terminated-TLS caller each get a note in their capture naming the reason.
+`oracle_an_http2_caller_is_told_why_it_gets_no_answer` drives the first of those
+and asserts both halves: that nothing was sent, and that the capture says why.
+
+#### ⭐ The control, without which the other cases prove nothing
+
+`oracle_the_mode_is_off_unless_it_is_asked_for` runs the same listener with
+`serve` false and requires that the caller gets nothing. ⛔ A harness that
+answered every caller by default would be an oracle nobody chose to run, and
+this project's scope boundary says it does not receive traffic from people.
+
+⚠ **`--serve` without `--no-retain` is allowed and warns on stderr.** Pairing an
+oracle with a switch that writes is a decision somebody may have reasons for;
+what it must not be is silent.
+
+#### ⚠ What is NOT done, and it is the half that needs a person
+
+⛔ **Nothing is hosted, no endpoint exists, and no address of this project's
+answers anything.** ⭐ That is the state the Decision asks for rather than an
+unfinished one: hosting needs a person's approval, and
+[`../docs/HUMAN.md`](../docs/HUMAN.md) is where a decision like that is recorded
+when somebody takes it.
+
+⚠ **A hosted deployment would also need a certificate a browser already trusts**,
+because the mode answers over cleartext and the terminated surface cannot answer
+at all. That is a fact about what exists rather than a design.
 
 ---
 
