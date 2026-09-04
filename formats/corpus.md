@@ -6,10 +6,15 @@ This table carries the keys and the capture instant only. The handshake, the fra
 
 | id | browser | version | channel | branded | os | arch | captured_at |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| chrome-151.0.7922.76-linux64-for-testing | Chrome | 151.0.7922.76 | for-testing | false | linux | x86_64 | 2026-09-04T08:00:29Z |
+| chrome-151.0.7922.76-win64-for-testing | Chrome | 151.0.7922.76 | for-testing | false | windows | x86_64 | 2026-09-04T08:00:47Z |
 | chrome-151.0.7922.173-linux64-stable | Chrome | 151.0.7922.173 | stable | true | linux | x86_64 | 2026-09-02T02:23:31Z |
 | chrome-152.0.7977.75-linux64-stable | Chrome | 152.0.7977.75 | stable | true | linux | x86_64 | 2026-09-02T14:08:20Z |
+| chrome-152.0.7977.82-linux64-stable | Chrome | 152.0.7977.82 | stable | true | linux | x86_64 | 2026-09-04T08:00:39Z |
 | chrome-151.0.7922.174-win64-stable | Chrome | 151.0.7922.174 | stable | true | windows | x86_64 | 2026-09-02T01:31:39Z |
 | chrome-151.0.7922.76-win64-stable | Chrome | 151.0.7922.76 | stable | true | windows | x86_64 | 2026-09-01T08:26:33Z |
 | chrome-152.0.7977.76-win64-stable | Chrome | 152.0.7977.76 | stable | true | windows | x86_64 | 2026-09-02T14:53:12Z |
+| chrome-152.0.7977.83-win64-stable | Chrome | 152.0.7977.83 | stable | true | windows | x86_64 | 2026-09-04T08:01:19Z |
 | edge-151.0.4129.101-linux64-stable | Edge | 151.0.4129.101 | stable | true | linux | x86_64 | 2026-09-02T13:52:53Z |
+| firefox-154.0.1-linux64-stable | Firefox | 154.0.1 | stable | true | linux | x86_64 | 2026-09-04T08:00:39Z |
 | firefox-154.0.1-win64-stable | Firefox | 154.0.1 | stable | true | windows | x86_64 | 2026-09-04T06:44:56Z |
