@@ -13,6 +13,7 @@ Session ran 2026-09-04, attended. Started `2026-09-04T00:07:59Z`.
 | Changes | 60 files, +4982 / -342 | `git diff --cached --shortstat` |
 | Size | 94,268 lines, up from 89,628. Delta +4,640 | `git ls-files` less `references/` and `vendor/`, through `wc -l` |
 | Checks | gate ok, 39 passed and 1 skipped over **40**. At the start it was 38 and 1 over 39. ⛔ The skip is `check-twins`, which `--fast` skips, and it was run separately on a still tree: `check-twins exit=0`, 62 pairs, every one agreeing. So all 40 are covered rather than 39. | `check-gate.ps1 -Fast` and `check-twins.sh`, each read from the process, unpiped |
+| Remote | ⭐ **`ci` green on both jobs**, run `33839660924`. ⚠ The first push of the session was green here and red on both runners; each found one defect this host could not, and both are fixed. | `gh run view`, and the two findings are in `CORPUS-02` |
 | Tests | **425**, up from 401 | `cargo test --workspace` |
 | Cost | no money and no bandwidth beyond `cargo` resolving the workspace. ⛔ No capture was taken, no workflow was dispatched, and nothing was pushed to any remote until the closing commit. | measured by what was run |
 | Health | 4 debts cleared, 1 introduced and named, tree clean, nothing deployed | below |

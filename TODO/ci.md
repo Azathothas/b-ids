@@ -1538,6 +1538,30 @@ the version that first reads the variable, and that host is protected by the
 workflow ordering instead. A gate that goes red on a correctly configured
 machine is a gate somebody switches off.
 
-⚠ **What this did not prove.** No CI run has exercised the fix: the evidence is
-local, on one Windows host, and the next push is what drives it on the runner
-the failure was measured on.
+### ⭐ Driven on the runner, and the fix held first try
+
+⛔ **The evidence was local until the push, and it is not now.** Run
+`33839660924`, the `ci` run for commit `1f70486`:
+
+```text
+ci: completed success
+  gate (windows): success
+  gate (ubuntu): success
+```
+
+⭐ **The step order is the fix, and the job reports it:**
+
+```text
+3. the pinned Rust toolchain: success
+4. the probe runs and emits valid json: success
+```
+
+⛔ **No rerun.** The last run before the fix, `33760180207`, needed one and had
+needed one for three sessions; this one passed the first time with the toolchain
+installed before anything probed it.
+
+⚠ **What is still not proved.** The `RUSTUP_AUTO_INSTALL` guard is the second of
+the two sources and the runner did not have to use it: the toolchain was already
+installed by the time the probe ran, which is what the ordering is for. ⭐ The
+guard is proved by `doctor --fixture` and by its mutation instead, and it is
+what protects a developer's machine, where nothing installs the toolchain first.
