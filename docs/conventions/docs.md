@@ -24,6 +24,7 @@ its place, and a role listed here with no file behind it is a defect.
 | [`../../TODO/ENTRY.md`](../../TODO/ENTRY.md) | the form an entry is written from |
 | [`../../TODO/SUMMARY.md`](../../TODO/SUMMARY.md) | the last session's table. ⚠ A snapshot, never an authority. |
 | [`../../CHANGELOG.md`](../../CHANGELOG.md) | what shipped, when, and where the evidence is |
+| [`../../SECURITY.md`](../../SECURITY.md) | ⭐ **the threat model**, and where to report. What this project accepts connections from, what a hosted oracle would receive, and what is in scope. `DOC-03`. |
 | [`../HISTORY/RESUME.md`](../HISTORY/RESUME.md) | ⚠ written at the START of a session and refreshed as work moves, so a session that dies mid-task still hands something over. Overwritten every session, never appended to. |
 | ⭐ [`../architecture.md`](../architecture.md) | **the technical reference.** What a profile is, what each crate does to one, the state a capture passes through, and the limits. `DOC-01`. |
 | ⭐ [`../glossary.md`](../glossary.md) | the terms this project uses without stopping to define them |
@@ -35,13 +36,13 @@ its place, and a role listed here with no file behind it is a defect.
 | [`../reference-sweeps/usable.md`](../reference-sweeps/usable.md) | which of those findings this project can actually use, and where each one lands |
 | ⭐ [`../HISTORY/README.md`](../HISTORY/README.md) | **the story.** Superseded wording, reversed decisions, dead ends, review passes. ⛔ Everything above says what is true now; this says what was believed and why that changed. |
 
-⚠ **Two roles this set still leaves empty**, because a skeleton with nothing in
+⚠ **One role this set still leaves empty**, because a skeleton with nothing in
 it outlives the session that wrote it: no operator runbook for a pipeline a
-person does not drive, and no threat model for a published corpus nobody
-consumes yet. `DOC-02` and `DOC-03` are those two, each open with the condition
-that would make writing it worth doing.
-⭐ **The third was filled**: the technical reference above is `DOC-01`, written
-once there was a schema to describe.
+person does not drive. `DOC-02` is that one, open with the condition that would
+make writing it worth doing.
+⭐ **Two were filled**: the technical reference above is `DOC-01`, written once
+there was a schema to describe, and the threat model is `DOC-03`, written once
+the data branch carried a tree a consumer fetches.
 
 ⛔ **`docs/HISTORY/` exists so that none of the rows above fill up with
 narrative.** ⚠ The instinct to record the story is right, which is why

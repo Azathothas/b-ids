@@ -182,6 +182,62 @@ jobs:
         shell: bash
         run: sh experiments/10-first-profile.sh --headless --browser "${{ matrix.browser }}"
 
+      # ⛔ THE LANE ADDS THE PROFILE, AND UNTIL 2026-09-04 NOTHING DID.
+      # experiments/10-first-profile.sh deliberately writes nothing into the
+      # corpus: the corpus is append-only and a profile in it is permanent, so
+      # the write is a deliberate act rather than a side effect of measuring.
+      # ⛔ That rule was applied to the script and never to this lane, so every
+      # lane uploaded the checkout UNCHANGED, `collect` merged nothing over
+      # nothing, and the run reported `corpus=pull-request requests:0 auto:0`
+      # and success. Measured on run 33849934489: six lanes green, six captures
+      # actually taken, zero profiles added, and it had been that way since the
+      # workflow was written. TODO/corpus.md, CORPUS-02.
+      #
+      # ⭐ THE IDENTITY TAKES THE CELL'S OWN VALUES, not the script's defaults.
+      # The script writes `stable` and `branded: true` because a laptop capture
+      # has nobody to ask; a lane has the plan, and a for-testing cell is
+      # UNBRANDED. A lane that took the defaults would publish an unbranded
+      # build labelled branded, which is a wrong value rather than a missing
+      # one.
+      #
+      # ⚠ `vm` RATHER THAN `host`. A hosted runner is a virtual machine, and
+      # `captured.method` is a condition of the measurement rather than a label.
+      #
+      # ⛔ AND AN ALREADY-PUBLISHED BUILD IS NOT A FAILURE. The store refuses to
+      # overwrite a published profile, by design, so a lane whose runner serves
+      # a build the corpus already holds exits 1 on a state that is correct.
+      # The refusal is matched on the store's own sentence and reported; ⚠ any
+      # OTHER refusal is still red.
+      - name: add the profile this lane captured
+        if: steps.resolve.outputs.rc == '0'
+        shell: bash
+        run: |
+          ident=.tmp/10-first-profile/identity.json
+          [ -f "$ident" ] || { echo "the capture wrote no identity"; exit 1; }
+          jq --arg channel "${{ matrix.channel }}" \
+             --argjson branded ${{ matrix.branded }} \
+             --arg operator "capture.yml run ${{ github.run_id }}" \
+             '.channel = $channel | .branded = $branded
+              | .operator = $operator | .method = "vm"' \
+             "$ident" > "$ident.new"
+          mv "$ident.new" "$ident"
+          cat "$ident"
+          set +e
+          cargo run -q -p b-ids-corpus -- add \
+            --captures .tmp/10-first-profile/captures.jsonl \
+            --identity "$ident" --root . > add.log 2>&1
+          rc=$?
+          set -e
+          cat add.log
+          if [ "$rc" = 0 ]; then
+            echo "added: this lane contributed a profile"
+          elif grep -q 'is already published' add.log; then
+            echo "this build is already in the corpus, so there was nothing to add"
+          else
+            echo "the add refused for a reason that is not an already-published build"
+            exit "$rc"
+          fi
+
       # ⭐ THE CAPTURE PATH IS THE ONE A PERSON RUNS. experiments/10-first-profile.sh
       # is the manual equivalent CI-08 requires, so the lane runs it rather than
       # a second pipeline written here. Two pipelines is two things to keep

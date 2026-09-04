@@ -215,6 +215,7 @@ a notice file.
 | [`TODO/INDEX.md`](TODO/INDEX.md) | every work item, one line each |
 | [`docs/inherited-claims.md`](docs/inherited-claims.md) | every value carried from somewhere else, with its source and status |
 | [`docs/glossary.md`](docs/glossary.md) | the terms, and the caveat attached to each |
+| [`SECURITY.md`](SECURITY.md) | the threat model, and where to report something |
 | [`docs/reference-sweeps/findings.md`](docs/reference-sweeps/findings.md) | what eighteen other repositories do, and get wrong |
 | [`vendor/upstream.json`](vendor/upstream.json) | what third-party source this tree compiles, and at which commit |
 | [`patches/README.md`](patches/README.md) | every local change to that source, and how to tell when a release retires one |

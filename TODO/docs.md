@@ -148,10 +148,34 @@ until then the check passes over a tree that does not have it.
 
 ---
 
+### ⚠ 2026-09-04: the third trigger was eliminated rather than met, and this entry stays open
+
+⛔ **The Approach names three triggers and two were already gone.** Keyless
+attestation means no workflow needs a secret and no release needs a signing key,
+so what remained was "a capture lane needs a machine somebody has to set up".
+
+⭐ **`DRIVER-11` closed without needing one.** The Gecko lane arranges its trust
+inside the throwaway profile the launcher already creates, with a certificate
+database written by this tree's own Rust. ⛔ Nothing is installed, no trust store
+is changed, and no person sets anything up. So that candidate is **eliminated**,
+not triggered, and this entry is further from its trigger than it was this
+morning rather than nearer.
+
+⚠ **One candidate is left and it is not this entry's to force.** `PUB-06`
+vendors a raw-socket route, and capturing at that layer can need a privilege or
+a capability on the capture machine. ⛔ If it does, that is the trigger and
+`HUMAN.md` gets written then, with the machine checklist that earns it.
+
+⛔ **Still open, and still not written.** The Approach forbids writing it now and
+filling it with placeholders, and a skeleton is exactly what an empty operator
+runbook would be.
+
+---
+
 ## DOC-03. There is no threat model, and publishing a corpus will need one
 
 **Source** found while adopting the template, 2026-08-30
-**Category** docs, **Priority** P2, **Effort** S, **Status** open
+**Category** docs, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
 
@@ -223,6 +247,65 @@ change it.
 ruling: a capture harness accepts connections from anything, and a hosted oracle
 would receive other people's traffic. ⚠ The second becomes real if `HARNESS-12`
 lands, which the operator has now put in scope.
+
+### ⭐ Closed 2026-09-04. [`../SECURITY.md`](../SECURITY.md) exists, and it degrades rather than lying
+
+⛔ **The ruling's route is measurably switched off, and the document is written
+so that this does not matter to a reporter.** Measured 2026-09-04, read from the
+forge rather than assumed:
+
+```text
+$ gh api repos/Azathothas/b-ids/private-vulnerability-reporting
+{"enabled":false}
+```
+
+⚠ **A session must not switch it on.** It is a setting on the remote and this
+session's authorisation names branches, workflow dispatches and merges, not
+repository settings. ⭐ Enabling it is one action for the operator and it is
+recorded in [`PROGRESS.md`](PROGRESS.md).
+
+⭐ **So the document names the private route AND keeps a fallback that works
+whether or not it is on:** open an issue saying only that you have a report and
+asking for a private channel, with no detail in it. ⛔ That publishes nothing,
+needs no address in the tree, and is true today. A document that told a reporter
+to use a button that is not there would be the "most confident sentence in a
+file is the only false one" case, in the file where it matters most.
+
+#### What earned the document, which is the half that needed no ruling
+
+| | |
+| --- | --- |
+| the harness accepts connections from anything | it is the design rather than a mode: the subject is a browser and a browser will not authenticate itself. Loopback by default, `--bind` refuses a hostname and the unspecified address by name, and the parsers are fuzzed with a panic treated as unacceptable |
+| a hosted oracle would receive other people's traffic | `HARNESS-12` is open and nothing like it runs today. What it would receive is a fingerprint, which is what this project publishes, and one field a browser sends is a credential |
+| what holds the second | the schema refuses a profile whose recorded bytes spell out a cookie or an authorization header, and header values are names-only by default. ⚠ Stated as a backstop rather than a licence |
+
+⭐ **And the scope table names what is NOT a report here**, including the one
+this project expects most: a browser's own defect belongs to its vendor.
+
+⚠ **The row worth reading twice is the third**, and writing it was the audit:
+a published artefact is permanent, because the corpus is append-only and the
+data branch is never rewritten, so something that should not have been published
+cannot be taken back by deleting it.
+
+#### Prove
+
+```bash
+sh scripts/common/check-docs.sh
+```
+
+```text
+docs ok: 56 files, 1171 relative links, 116 cited paths, 187 shell blocks. Links, paths and prose clean.
+```
+
+⚠ **Exit 0 read from the process, unpiped.** The file count moved from 55 to 56,
+which is the new document, and its every link and cited path resolves. ⭐ The
+block above is the run taken AFTER this section was written: closing an entry
+adds links and a shell block of its own, so the first run's counts were already
+stale by the time they were pasted.
+
+⛔ **What this does not prove is that a claim in it is true.** That is a reading,
+and the two the reading turned up are above: the reporting route is off, and the
+hosted oracle does not exist.
 
 ## DOC-04. The founding brief is retired, and this entry records what replaced it
 

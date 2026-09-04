@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 11  blocked 0  done 96
+total 107  open 10  blocked 0  done 97
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 1 | 0 | 48 | 49 |
-| P2 | 7 | 0 | 35 | 42 |
+| P2 | 6 | 0 | 36 | 42 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **11** | **0** | **96** | **107** |
+| **all** | **10** | **0** | **97** | **107** |
 
 ---
 
@@ -47,7 +47,7 @@ total 107  open 11  blocked 0  done 96
 | CORPUS-06 | P1 | M | done | The headless normalisation has no caller, and six published profiles say so | [`corpus.md`](corpus.md) |
 | DOC-01 | P2 | S | done | There is no technical reference, and one document is pretending not to notice | [`docs.md`](docs.md) |
 | DOC-02 | P2 | S | open | The operator's side is unwritten because there is nothing to operate | [`docs.md`](docs.md) |
-| DOC-03 | P2 | S | open | There is no threat model, and publishing a corpus will need one | [`docs.md`](docs.md) |
+| DOC-03 | P2 | S | done | There is no threat model, and publishing a corpus will need one | [`docs.md`](docs.md) |
 | DOC-04 | P2 | S | done | The founding brief is retired, and this entry records what replaced it | [`docs.md`](docs.md) |
 | DRIVER-01 | P1 | M | done | Resolve a browser, and drive it at a URL | [`driver.md`](driver.md) |
 | DRIVER-02 | P1 | M | done | Read the version that is serving, not the one that is published | [`driver.md`](driver.md) |
