@@ -13,48 +13,62 @@ than a document about the project.
 
 | | |
 | --- | --- |
-| the task | ⛔ **The FINAL session**, ruled by the operator 2026-09-04 at its start. Close every open entry, leave the tree clean and green and the documents lean. Started 2026-09-04T11:57:16Z, attended. |
-| the resume point | `PUB-13`, the source branch, all six steps. The operator ruled all six in scope including the removal from the default branch. |
-| in flight | Nothing half-edited. The session has read the router, the record and the six entries in the work order, and has run the probe and the baseline gate. |
-| the state of the tree | Clean on `main` at `e7e521e`, pushed. The gate re-measured on this Windows host at the start: **39 passed, 1 skipped** (`check-twins`, which `--fast` skips). |
+| the task | ⛔ **The FINAL session**, ruled by the operator 2026-09-04. Close every open entry, leave the tree clean and green and the documents lean. Ran 2026-09-04T11:57:16Z to 19:32:53Z, attended. |
+| the resume point | ⛔ **There is none, and that is the state rather than an omission.** 107 of 107 entries are done and no work order exists. A session that opens this file is starting something new, and it AUTHORS from [`../../TODO/ENTRY.md`](../../TODO/ENTRY.md) rather than picking up. |
+| in flight | Nothing. No half-edit, no throwaway branch, no scratch file outside `.tmp/`. |
+| the state of the tree | Clean on `main`, pushed. The gate is green over **44 checks**, 43 passed and one skipped, with **463 tests**. |
 | the paste | below |
 
 ---
 
-## The four rulings this session opened with
+## The three things to know before anything else
 
-⛔ **All four were asked before any work and answered by the operator.**
+⭐ **1. The corpus is not on the default branch.** `corpus/`, `raw/`, `vectors/`
+and `LICENSE` are on `source`; `data` is what the assembler derives from it; the
+default branch carries the code and no corpus at all. ⛔ Every reader resolves
+the root rather than assuming it:
 
-1. **Scope: all ten open entries.** The six in the work order and the four
-   build-outs. The session carries twice the usual budget.
-2. **`PUB-13` runs all six steps**, including removing `corpus/` and `raw/` from
-   the default branch.
-3. ⛔ **No tool is credited in the commit.** The harness asked for a
-   `Co-Authored-By` trailer naming a model; absolute 5 in
-   [`../AGENTS.md`](../AGENTS.md) forbids it and the operator ruled the
-   repository's rule wins. ⚠ It is worth stating that this contradiction exists,
-   because the harness default will ask again.
-4. **All four open questions are this session's**, and ⭐ the operator
-   authorised `gh` for the fourth, which is a setting on this repository's own
-   remote.
+```bash
+sh scripts/common/corpus-root.sh --source
+```
+
+⚠ **A bare `cargo test` in a fresh checkout will fail**, because
+`crates/b-ids/build.rs` embeds the corpus and finds none. The gate exports
+`B_IDS_CORPUS_ROOT` around its three cargo steps; by hand it is:
+
+```bash
+B_IDS_CORPUS_ROOT=$(sh scripts/common/corpus-root.sh) cargo test --workspace
+```
+
+⭐ **2. Every entry is closed.** There is no work order and
+[`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md) says so; what it carries
+instead is five candidates this session measured and did not take, each with the
+reason it is not an entry yet. ⛔ The largest is the TCP half, and its blocker is
+a machine rather than code: [`../HUMAN.md`](../HUMAN.md) section 3.
+
+⛔ **3. Three things are the operator's own act.** A pushed tag, which is the
+only thing that cuts a release; the history reset on `main`; and the decision to
+host the capture oracle, whose mode is built and whose retention answer is
+already written into [`../../SECURITY.md`](../../SECURITY.md).
 
 ---
 
-## The one thing to know before anything else
+## What this session left that is worth not rediscovering
 
-⭐ **The capture matrix works now, and it never had.** Every lane captured,
-printed the command that would write the result, and uploaded the checkout
-unchanged; nothing ever ran `b-ids-corpus add`. The lane does it now, and the
-corpus went from six profiles to twelve on 2026-09-04.
+⚠ **A guard can report green over the exact defect it exists to catch.**
+`check-signing` did, because it matched its own explanatory COMMENT rather than
+the declaration it meant to read. ⛔ Every check in this tree that greps a file
+it also documents has that shape available to it.
 
-⚠ **A local gate pass proves less than it looks.** `check-twins` has found a
-real drift in a file that had already passed `shellcheck`, `PSScriptAnalyzer`
-and its own tests, and an exit code has been read through a pipe twice in this
-tree. ⛔ Read every exit code from the process that produced it.
+⚠ **`jq` on Windows writes CRLF**, and this project has now been bitten four
+times. ⛔ The nastiest shape is a `for` over a command substitution of a
+multi-line `jq` read: the substitution strips only the LAST line ending, so the
+last element is clean and every one before it carries a `\r`. That was correct
+for as long as the list had one element.
 
-⚠ **The `chromium` cell is disabled with a MEASURED reason.** The resolver finds
-`/usr/bin/chromium` on `ubuntu-24.04`; the launch aborts in the snap sandbox.
-⛔ Do not answer it with `--no-sandbox`.
+⚠ **A synthesised artefact must say so in a field a tool displays.** The
+published captures are pcapng rather than pcap for exactly that reason, and the
+values that were not measured are visibly impossible rather than plausible.
 
 ⛔ **A tool that purges browsers lives in `scripts/common/`.** It refuses any
 machine that is not both marked disposable by this project and running on a

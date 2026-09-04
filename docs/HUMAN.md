@@ -84,8 +84,13 @@ that needs a packet-capture library on the machine.
 | host | what is there today | what is needed |
 | --- | --- | --- |
 | the operator's Windows machine | ⭐ **Npcap IS installed**: `wpcap.dll`, `Packet.dll` and `System32\Npcap\wpcap.dll` are all present | nothing |
-| `windows-latest`, the hosted runner | ⛔ nothing | Npcap, which its installer does not place silently in every configuration |
-| `ubuntu-24.04`, the hosted runner | ⚠ unmeasured from here | `libpcap-dev`, which `apt-get` installs without a person |
+| `windows-latest`, the hosted runner | nothing its published software manifest lists | Npcap, whose installer does not place silently in every configuration |
+| `ubuntu-24.04`, the hosted runner | the same: no `libpcap`, no `tcpdump` | `libpcap-dev`, which `apt-get` installs without a person |
+
+⚠ **Both runner rows are read from `actions/runner-images`' own image manifest
+on 2026-09-04, rather than from a running machine.** A manifest that does not
+list a package is weaker evidence than a machine that does not have it, and the
+honest statement is that nothing published says the image has one.
 
 ⛔ **The consequence, stated so nobody re-derives it.** Taking a packet-capture
 dependency makes the Windows half of the gate fail at link time until Npcap is

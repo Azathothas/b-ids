@@ -16,25 +16,27 @@ the entries themselves. Do not add a "previous sessions" section.
 ## State
 
 ```text
-session ran      2026-09-04, attended, started 2026-09-04T06:04:28Z
+session ran      2026-09-04, attended, started 2026-09-04T11:57:16Z.
+                 ⛔ Ruled the FINAL session by the operator at its start.
 baseline         gate ok: 39 passed, 1 skipped (check-twins, which --fast
-                 skips), measured on this Windows host at the start. ⚠ The
-                 412 tests is carried from the last session's close and was
-                 not re-counted before the work began.
+                 skips), over 40 checks, re-measured on this Windows host
+                 before any work.
 entries          total 107  open 0  blocked 0  done 107
-corpus           TWELVE profiles, up from six. Five browsers-and-platforms
-                 the matrix captured on runners, and one Firefox taken here.
-                 ⭐ The first non-Chromium profiles, the first UNBRANDED
-                 builds, and the first profiles carrying an acquisition
-                 route, URL and digest.
-published        the data branch: 405 files on origin/data, up from 237.
-                 ⭐ publish.yml pushed them on this session's closing commit
-                 and check-data-branch reports the branch's tree IS what this
-                 corpus derives to. ⚠ No release: a pushed tag is the only
-                 thing that cuts one.
-gate             40 checks, 39 plus one skipped on this host. 445 tests,
-                 counted from the runner rather than predicted. The closing
-                 run is in SUMMARY.md.
+corpus           FOURTEEN profiles: nine Chrome, one Chromium, one Edge and
+                 three Firefox, majors 151, 152 and 154, on linux64 and
+                 win64. ⭐ Three are UNBRANDED and eight name the URL and the
+                 digest they were installed from.
+branches         ⭐ THREE. The default branch carries the code and NO corpus;
+                 `source` carries corpus/, raw/, vectors/ and LICENSE; `data`
+                 is what the assembler derives from `source`.
+published        the assembler produces 496 files. ⚠ The data branch is
+                 BEHIND by 91 of them, which check-data-branch reports rather
+                 than fails: every path it carries is still produced and still
+                 byte-identical, and the publisher adds the rest on the next
+                 push. ⛔ No release: a pushed tag is the only thing that cuts
+                 one, and that is the operator's act.
+gate             44 checks, 43 passed plus one skipped on this host. 463
+                 tests, counted from the runner rather than predicted.
 ```
 
 ⚠ The counts above are checked against [`INDEX.md`](INDEX.md)'s rows by
@@ -46,37 +48,41 @@ hand to make a check pass; fix whichever file is wrong.
 
 ## ⭐ What changed about this project today
 
-**The capture matrix had never added a profile, and every run reported
-success.** Six lanes ran green, six captures were actually taken, and the run
-printed `corpus=pull-request requests:0 auto:0`. ⛔ The rule that a capture
-script does not write into an append-only corpus was applied to the SCRIPT on
-2026-09-02 and never to the LANE that runs it, so the deliberate write the rule
-asks for had nowhere to happen.
+**Every entry is closed.** 107 of 107, and the last ten were this session's.
 
-⚠ **It had been that way since the workflow was written**, and
-[`corpus.md`](corpus.md), `CORPUS-02`, names which forbidden pattern it is and
-what the run that exposed it printed.
+⭐ **The corpus stopped living on the branch that reads it.** `corpus/`, `raw/`
+and `vectors/` are on a `source` branch, so the data branch is a DERIVATION of
+something rather than of itself, and the check that asks whether the published
+tree is what the corpus derives to has a real question again. ⚠ It had reported
+`data branch ok` once while comparing the branch against a copy of itself.
 
-⭐ **The corpus doubled the same day the lane gained its missing step.**
+⭐ **And the corpus can now say what branding costs.** The `chromium` row was the
+one required row with no capture. Three acquisition routes were measured, two
+were shut, and the third serves Chromium at `152.0.7977.75`, which is the exact
+build of branded Chrome the corpus already held. At one build, on one platform,
+with the per-connection GREASE draw removed: the TLS extension set is identical,
+the cipher list is identical in order, and the whole HTTP/2 half is identical.
 
 ---
 
-## Two entries closed, five effort points, and one worked to a measured blocker
+## Ten entries closed, twenty-eight effort points
 
 | | |
 | --- | --- |
-| `DRIVER-11` `L` | the Gecko launch path. A switch table per engine, and the trust arranged where Firefox looks for it: an NSS certificate database written into the throwaway profile |
-| `DOC-03` `S` | [`../SECURITY.md`](../SECURITY.md), with the threat model and a reporting route that degrades rather than lying |
+| `PUB-13` `L` | the corpus moves to a source branch, all six steps, including removing it from the default branch |
+| `CORPUS-02` `L` | the capture matrix. Its acceptance exits 0 for the first time: eight of ten cells captured, none absent, none outside the plan |
+| `EMIT-03` `S` | `h2` vendored and patched. The five bytes of the priority block a browser sends and this library could not write |
+| `PUB-06` `M` | a packet capture per profile, synthesised from the bytes it already carries and saying so three times in the file |
+| `PUB-09` `M` | keyless attestation from the runner's own identity. No key, no secret |
+| `DOC-02` `S` | [`../docs/HUMAN.md`](../docs/HUMAN.md), whose third trigger `PUB-06` measured rather than eliminated |
+| `EMIT-04` `M` | `--stack`, and fourteen of fourteen profiles reproduced with nothing differing |
+| `HARNESS-12` `L` | the oracle mode: a caller gets its own capture back and nothing is retained. ⛔ Built, not hosted |
+| `PUB-05` `L` | a JavaScript package generated from the corpus, embedding it, reporting its release |
+| `LIB-03` `L` | the two ecosystems compared answer for answer, absent cases included |
 
-⚠ **Under the twenty [`RULES.md`](RULES.md) section 10 asks for, and the reason
-is stated rather than hidden.** `DRIVER-11` grew from a launch path into four
-defects in code that was already green, and `CORPUS-02` grew from a merge into
-a workflow that had never worked. ⛔ Both were followed rather than deferred,
-which is the trade this session made.
-
-| | |
-| --- | --- |
-| `CORPUS-02` | worked hard and **open**. Six of nine planned cells are captured and none is absent; the one required row with no capture is `chromium`, and its blocker is MEASURED now rather than predicted |
+⭐ **Four open questions were answered and all four are done**, including the one
+that needed the operator: private vulnerability reporting is on, measured from
+the forge at `{"enabled":true}`.
 
 ---
 
@@ -84,17 +90,16 @@ which is the trade this session made.
 
 | what | how it showed |
 | --- | --- |
-| the capture matrix had never added anything | six green lanes, six captures, `requests:0 auto:0`. Nothing ran `b-ids-corpus add` |
-| a SQLite record dropped the row-id column and the file still passed an integrity check | read back with `sqlite3`: `CKA_CLASS` came back as the label and the label as the certificate, every value one column to the left |
-| the launch removed the profile while the browser was still starting | Firefox reported `UnknownCA` on three connections. The parent exited at 158 ms because it was a launcher stub running an update |
-| ⚠ the browser updated ITSELF between two captures in one session | 148.0.2 at 06:37Z and 154.0.1 at 06:43Z. `firefox.exe` was rewritten under the session |
-| `check-data-branch` called nineteen changed aggregates a rewritten branch | adding one profile changes every index, route, format dump and config. Under that rule no capture could ever be published again |
-| `check-coverage` could not see a capture outside the plan | seven profiles in the corpus, six accounted for, nothing saying so |
-| `check-trust-anchors` called a measurement a defect | an unbranded build sends the root-store extension with a two-byte body, an EMPTY list, and the check reported "no identifiers" |
-| the collect job kept whichever lane's index it copied last | the merged tree failed `b-ids-corpus verify`: an aggregate is a function of the whole set and was being taken from one lane |
-| a published profile needs a JA4 vector and nothing derived one | five new profiles, five red tests, and the only fix was a person with a shell |
-| ⛔ two digests were written into a test that nobody had computed | caught before the file was saved, by running an independent implementation. They were both wrong |
-| ⛔ an exit code was read through a pipe, twice, by this session | `check-coverage --require-rows chromium` read as 0 and is 1. It is absolute 9 and it was broken by the session that was quoting it |
+| ⛔ a guard reported green over the defect it exists to catch | `check-signing` matched its own explanatory COMMENT rather than the declaration. With `id-token: write` removed both halves said `signing ok` |
+| the same shape, one leg earlier | that check's ordering leg read a comment mentioning `gh release create` as the step |
+| `check-vendor` reported five problems `rustls` does not have | `jq` on Windows writes CRLF and a command substitution strips only the LAST line ending, so every name but the last carried a `\r`. ⭐ Correct for as long as the manifest had one entry |
+| the JavaScript package computed `latest` and the Rust crate read the pointer file | they agreed on every profile in this corpus and would have parted the day a pre-release build landed |
+| ⛔ a claim about a hosted runner nobody had measured | "windows-latest does not ship Npcap" was asserted. It is read from the image manifest now, and labelled as weaker than a machine |
+| the door sweep collapsed five private corpus walks and left a sixth | found by grepping for the shape rather than by trusting the list |
+| ⛔ `validate.yml` had a SECOND corpus reader the door sweep did not reach | both jobs went red on the closing push of `PUB-13`. The sweep stopped at the first reader in the file |
+| the JA4 derivation's two halves produced different bytes | `jq` on Windows again: `{\r\n` against `{\n`. Third time in this tree |
+| the `h2` companion reader dropped the SUID sandbox helper | `Depends` and `Recommends` joined with a space, so `chromium-sandbox` stopped being the first token of its term |
+| ⚠ the fixture profile does not round-trip through the emitter and every published one does | its derived halves are written beside its extension bodies rather than derived from them |
 
 ---
 
@@ -106,227 +111,193 @@ specification. ⭐ All three found something.
 
 ### 1. The door sweep: what else reaches the code that changed
 
-Swept: every construction of `Launch`, because a new field with no default
-breaks every caller and three tests carried one; every reader of `Driven`,
-because `trust` is new and a caller that inferred it from the switch list was
-already there; every path that writes into the published tree, because a new
-profile moves every aggregate; and every check that reads
-`corpus/v1/index.json`, because the lane rewrites it.
+Swept: every one of the twenty scripts that resolves the corpus root; every Rust
+site that reaches for `corpus/v1` rather than resolving; every construction of
+`Download` and of the harness `Config`, both of which gained a field; every
+reader of the published tree, because it gained two whole artefact classes; and
+every workflow and experiment naming `--root .`.
 
-⛔ **Finding: the capture experiment inferred the trust configuration from a
-Chromium-only switch.** `identity.json` read `spki-pin` when
-`--ignore-certificate-errors-spki-list=` appeared in the switch list and
-`not-applicable` otherwise, so a Gecko capture recorded `not-applicable` over a
-completed handshake. ⭐ The schema refuses exactly that combination, so it would
-have failed loudly rather than published, but the fix is that the driver now
-NAMES the configuration it used and the script reads it.
+⛔ **Finding: a sixth private copy of the corpus walk.** Five were collapsed onto
+`b_ids_schema::root` and `crates/b-ids-corpus/tests/publish.rs` was left. Found
+by grepping for the SHAPE rather than by re-reading the list.
 
-⛔ **Finding: three checks would have refused every capture after the first.**
-`check-data-branch`, `check-coverage` and `check-trust-anchors` each read the
-corpus in a way that was correct for a corpus that never grew. All three are
-fixed and two are mutation-proved.
+⛔ **Finding: `validate.yml` had a second corpus reader.** The sweep read that
+file, saw `check-corpus` resolving correctly at the top of the job, and stopped;
+the golden-vector count further down was still pointed at the working tree. Both
+jobs went red on the remote. ⭐ The assertion that refused is the one whose whole
+job is refusing an empty read.
 
-**What the other passes did not look at:** whether the values are right. The
-door sweep reads reachability.
+**What the other passes did not look at:** whether the values are right. The door
+sweep reads reachability.
 
 ### 2. The guard mutation: can the new guards actually fail
 
-⛔ **Every mutation was made against a copy under the ignored scratch directory,
-the live file restored from that copy, and the restored file compared byte for
-byte before anything else ran.**
+⛔ **Every mutation was made against a copy, the file restored from it, and the
+restoration confirmed byte for byte with `git diff` before anything else ran.**
 
 | where | planted | red |
 | --- | --- | --- |
-| `check-data-branch`, both halves | one byte of a published raw capture flipped | exit 1 on both, naming one changed artefact. `restored identical: yes`, and git saw no change |
-| `check-coverage` | `--require-rows chromium`, a browser with no capture anywhere | exit 1, naming the row. ⚠ It read as 0 through a pipe first, which is the finding above |
-| `nssdb::sqlite` | a row larger than a page | refused by name rather than truncated |
-| `nssdb` | a profile that already holds a certificate database | refused, and the fixture was still there afterwards |
-| `derive-ja4-vector`, both halves | the empty-list rule | both report twelve zeros rather than the digest of an empty string |
+| ⛔ `check-signing`, both halves | `id-token: write` removed from the release job | ⛔ **GREEN the first time.** The check matched its own comment. Fixed, re-planted, exit 1 on both halves naming the missing permission |
+| `check-packages`, the pin | the generator writes a wrong identifier | exit 1, naming both digests |
+| `check-packages`, the Must-not | a `fetch(` in the generated source | exit 1 |
+| `check-bindings` | the JavaScript half recomputes `latest` instead of reading the pointer | exit 1, naming the four answers that moved |
+| `b_ids_driver::deb_download` | `Depends` and `Recommends` joined with a space | red, naming the dropped sandbox helper |
+| `check-pcap`, the payload leg | one byte of a published hello flipped inside the capture | the recorded hex is no longer a contiguous run |
+| `check-pcap`, the marker leg | the file stops saying it was synthesised | refused |
+| ⛔ `check-data-branch` | the source branch hidden, so the resolver falls through to the data branch | exit 2: "it resolved to data-branch". ⭐ The guard the whole of `PUB-13` rests on |
 
 ⚠ **Guards NOT mutated, and saying so is the point:** nothing planted a wrong
-`CKA_NSS_CERT_SHA1_HASH` and watched Firefox refuse the authority, which is the
-one guard in `DRIVER-11` that only the browser can enforce; the publishing
-workflow was not mutated, because running it writes to the remote; and no
-attestation exists to break.
+attestation and watched a consumer refuse it, because no release exists to
+attest; nothing drove `check-pcap`'s dissection leg, because neither host has
+`tshark`; and the publishing workflow was not mutated, because running it writes
+to the remote.
 
 ### 3. The claim audit: which sentence is not backed by the tree
 
-Swept: every number this session pasted, against the command that produced it;
-every claim in the entries it closed; and the premise of every cell in the
-capture matrix, against what a lane actually did.
+Swept: every number pasted into an entry today against the command that produced
+it; the corpus counts in the router, the README, the technical reference and the
+standing facts; and every statement about a machine this session did not run on.
 
-⛔ **Finding: a pasted count went stale between being run and being read.**
-`DOC-03`'s closure quoted `check-docs` at 1169 links, and closing the entry
-added links, so the file it was in made its own number wrong. ⭐ Re-run and
-corrected, with the reason written beside it.
+⛔ **Finding: a claim about a hosted runner nobody had measured.**
+"`windows-latest` does not ship it" was written about Npcap from nothing at all.
+⭐ It is now read from `actions/runner-images`' own image manifest, and labelled
+as what it is: a manifest that does not list a package is weaker evidence than a
+machine that does not have one.
 
-⛔ **Finding: `DOC-03`'s ruled contact route is switched off.** Measured from
-the forge: `{"enabled":false}`. The document names the route and keeps a
-fallback that works either way rather than pointing a reporter at a button that
-is not there.
+⛔ **Finding: four documents said the corpus holds twelve profiles.** It holds
+fourteen, across four browsers rather than three, with three unbranded rather
+than two and eight carrying an acquisition rather than seven. The router, the
+README, the technical reference and `RULES.md` are corrected.
 
-⛔ **Finding: the `chromium` cell's premise was wrong about which half was
-blocked.** It said the cell waits on acquisition. The resolver finds
-`/usr/bin/chromium` on `ubuntu-24.04` and reads `151.0.7922.0` from it; the
-LAUNCH is what fails, in the snap sandbox.
+⛔ **Finding: a conclusion this project drew eleven hours earlier was wrong.**
+"The unbranded build publishes an EMPTY trust-anchor list, so the bundled root
+store is branding rather than engine" was a confound: the empty list came from a
+Chrome **for Testing** build, and a distribution Chromium is equally unbranded
+and sends a full 206-byte list. ⭐ Superseded in
+[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md) with
+the original wording kept.
 
-⚠ **What it did NOT find:** any pasted block that could not be reproduced.
-Every `text` block written this session came from running the command above it.
+⚠ **What it did NOT find:** any pasted block that could not be reproduced. Every
+`text` block written this session came from running the command above it, and
+the two digests that had to be abbreviated say so where they are abbreviated.
 
 ---
 
 ## ⚠ What is in progress
 
-⛔ **Nothing half-edited.** `CORPUS-02` is worked and open with its blocker
-measured. `PUB-13` was read and not started: it removes `corpus/` from the
-default branch, and starting it without finishing it would leave the tree in a
-state the next session cannot tell from a finished one.
+⛔ **Nothing.** No half-edit, no throwaway branch, no scratch file outside
+`.tmp/`. Every entry this session touched is closed in place with its acceptance
+command run and its real output pasted.
 
 ---
 
 ## Open questions for the operator
 
-⚠ **Four, each with a recommendation attached, and none blocks the next
-session.**
+⛔ **None from this session.** All four that stood at its start were answered by
+the operator and all four are done.
 
-1. **Private vulnerability reporting is off at the forge.**
-   [`../SECURITY.md`](../SECURITY.md) names it and keeps a fallback.
-   ⭐ **Recommendation: switch it on.** It is one setting, it grants nothing
-   away, and this session was not authorised to change repository settings.
-2. **The capture lane does not derive the JA4 vector it needs.**
-   `scripts/common/derive-ja4-vector` exists now and both halves agree, but a
-   run still leaves the gate red until somebody runs it. ⭐ **Recommendation:
-   the collect job derives every missing vector over the merged tree**, for the
-   same reason it re-derives the index: it is a function of the whole set.
-3. **The pull-request generator opens one branch per route and every branch
-   carries every route's profiles.** Measured: five branches, one tree,
-   `97248d83821e0d13bf4860a6074399938614cd22`. ⭐ **Recommendation: one branch
-   per run**, titled for what the run captured. A title naming one route over a
-   diff carrying five is a title a reviewer cannot act on.
-4. **`firefox/stable/win64` is captured and is not a planned cell.**
-   ⭐ **Recommendation: add it to the plan.** The capture exists, it is
-   published, and a plan that does not carry it reports it as outside the plan
-   forever.
+⚠ **Three things are the operator's own act and are not questions**:
+
+1. **A pushed tag.** It is the only thing that cuts a release, and until one
+   exists `check-signing`'s live leg reports a skip rather than a pass.
+2. **The history reset on `main`**, which the record has carried as the
+   operator's since 2026-09-02.
+3. **Hosting the capture oracle.** ⛔ `HARNESS-12`'s mode is built and nothing is
+   hosted; the retention answer is written into
+   [`../SECURITY.md`](../SECURITY.md) and the decision to stand anything up is a
+   person's.
 
 ---
 
 ## ⭐ The work order
 
-⛔ **The operator has scoped everything below to ONE final session**, ruled
-2026-09-04 at the close. ⚠ That is a scope, not a licence to skip: an entry that
-cannot be closed properly is recorded open with its blocker measured, the way
-`CORPUS-02` is below, rather than closed on machinery.
+⛔ **There is no open entry, so there is no order.** 107 of 107 are done.
 
-⚠ **Take these in order.**
+⚠ **What a next session would do is AUTHOR rather than work**, from
+[`ENTRY.md`](ENTRY.md) per
+[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md). The
+honest candidates this session measured and did not take:
 
-1. **`PUB-13`**, the source branch, all six steps. ⛔ Verify tree-for-tree
-   before removing anything, and step 6 is the CI change that step 5 makes
-   necessary. ⭐ It is first because every capture from now on adds to a
-   default branch the ruling says should not carry data.
-2. **`CORPUS-02`**, which now needs one thing: an acquisition route serving a
-   real Chromium build. ⛔ Not `--no-sandbox` on the snap.
-3. **`EMIT-03`**, the vendor-and-patch of `h2`. ⚠ Re-derive the five bytes;
-   that tree is MIT.
-4. **`PUB-06`** with `HARNESS-11`'s residue: a raw-socket route, then the whole
-   TCP half at once rather than spending a schema version on one weak field.
-5. **`PUB-09`**, keyless attestation from the runner's own identity. ⛔ No key,
-   no secret. ⚠ Its acceptance names a check-signing script this
-   tree does not have, so the entry is a check pair as well as a workflow
-   change.
-6. **`DOC-02`**, whose trigger NARROWED again today: `DRIVER-11` closed without
-   needing a machine change, so only `PUB-06`'s raw-socket route is left as a
-   candidate. ⛔ Still not written, and still must not be a skeleton.
-
-⭐ **Then the build-outs, largest first**: `EMIT-04`, `PUB-05`, `HARNESS-12` and
-`LIB-03`. ⚠ `HARNESS-12` is the one that receives other people's traffic, and
-[`../SECURITY.md`](../SECURITY.md)'s threat model already carries the section it
-lands under.
-
-⭐ **Four questions are open above, each with a recommendation attached**, and
-three of them are one edit each. ⚠ The first needs the operator: a setting on
-the remote that a session is not authorised to change.
+| what | why it is not an entry yet |
+| --- | --- |
+| ⭐ **the TCP half** | `PUB-06` measured that it needs a packet-capture library, which makes the Windows gate job fail at link time until Npcap is on that runner. It is a machine decision and [`../docs/HUMAN.md`](../docs/HUMAN.md) section 3 is the whole measurement |
+| a true binding rather than a reimplementation | `LIB-03` closed on a comparison. One would call the Rust crate through WASM or an FFI and needs a target in the toolchain pin |
+| the HTTP/2 half of the oracle's answer | it needs an HPACK encoder, and the one in this tree is the vendored `h2` that `b-ids-emit` owns; reaching it from the harness inverts the dependency |
+| `chrome/beta/linux64` and `chrome/stable/macos-arm64` | the two planned cells not attempted. Both wait on an acquisition route rather than on code |
+| a second INDEPENDENT source for one build | `CI-04`'s merge condition wants agreement across two, and no cell has it: the two `firefox/stable/win64` profiles are one laptop and one runner at different builds |
 
 ---
 
 ## Settled, and not to be raised again
 
-**Ruled by the operator 2026-09-01 unless noted.**
+**Ruled by the operator, most recent first.**
 
-### Ruled 2026-09-04 during the session, and both overrule an earlier ruling
+### Ruled 2026-09-04 at the start of the final session
 
-⛔ **Do not vendor a niche third-party tree.** `DRIVER-11` was ruled a vendored
-NSS `certutil` at the start of the day; the operator overruled that mid-session
-and the writer is Rust in this tree, under
-[`../crates/b-ids-driver/src/nssdb/`](../crates/b-ids-driver/src/nssdb/). ⚠ The
-vendoring was backed out before it reached a commit.
+- ⛔ **All ten open entries are in scope**, and the session carries twice the
+  usual budget.
+- **`PUB-13` runs all six steps**, including removing `corpus/` and `raw/` from
+  the default branch.
+- ⛔ **No tool is credited in the commit.** The harness asked for a
+  `Co-Authored-By` trailer naming a model; absolute 5 forbids it and the
+  repository's rule wins. ⚠ Worth restating because the harness default will ask
+  again.
+- **All four open questions are the session's**, and ⭐ `gh` was authorised for
+  the one that changes a repository setting.
 
-⭐ **`mozilla/nss` is the reference**, mined to
-[`../references/mozilla__nss/`](../references/mozilla__nss/) at commit
-`7db8de42431841b214b49fd2cb7122a07aa631b8` and trimmed by deletion. Every
-constant in the writer is cited against it at file and line.
+### Ruled 2026-09-04 earlier the same day
 
-### Ruled 2026-09-04 at the start of the session
-
-- **The corpus moves to a SOURCE branch.** ⭐ `PUB-13`, and a session may create
-  and push it and run all six steps.
-- **`EMIT-03` vendors and patches `h2`.** ⚠ `h2` is not the niche case the
-  ruling above overruled.
-- **`PUB-06` vendors a raw-socket route, and the TCP half lands whole.**
-- **`PUB-09` is keyless attestation from the runner's own identity.**
-- **A session may dispatch `capture.yml` and merge the green lanes.** ⭐ Done
-  three times today, and the third is what found that the lanes added nothing.
-- **`DOC-03` points at private vulnerability reporting on the forge.** ⭐ Done,
-  and ⚠ the setting itself is off. Question 1 above.
-- **The four build-outs are in scope**, largest first.
+- ⛔ **Do not vendor a niche third-party tree.** `DRIVER-11`'s certificate
+  writer is Rust in this tree. ⚠ `h2` is not that case: `EMIT-03` vendored and
+  patched it, ruled the same day.
+- **The corpus moves to a SOURCE branch.** ⭐ Done: `PUB-13`.
+- **`PUB-06` vendors a raw-socket route and the TCP half lands whole.** ⚠ The
+  capture landed; the TCP half is measured and did not, and the reason is a
+  machine.
+- **`PUB-09` is keyless attestation.** ⭐ Done.
+- **A session may dispatch `capture.yml` and merge the green lanes.** ⭐ Done:
+  run `33882426404`, every lane green, one pull request, merged.
+- **`DOC-03` points at private vulnerability reporting.** ⭐ And it is switched
+  on now.
+- ⭐ **`mozilla/nss` is the reference** for the certificate-database writer.
 - **The kick-off prompt is redundancy, and the router stays standalone.**
-- **The `HeadlessChrome` User-Agent is fixed by RECAPTURING.** ⚠ Still true of
-  the six original profiles; the six new ones were taken the same way and
-  carry it too, because headless is a condition of a runner rather than a
-  choice. `DRIVER-03` records the substitution.
+- **The `HeadlessChrome` User-Agent is fixed by RECAPTURING**, and headless is a
+  condition of a runner rather than a choice. `DRIVER-03` records the
+  substitution.
 
-### Ruled 2026-09-03 by the operator
+### Ruled 2026-09-03
 
-- **The publishing workflow is triggered three ways**: `workflow_dispatch`, a
-  push to `main`, and a pushed tag. ⭐ Done: `PUB-10`.
-- **Removing `corpus/` and `raw/` from `main` is sequenced, data branch
-  first.** ⛔ Nothing has been deleted. `PUB-13` carries the last step.
+- **The publishing workflow is triggered three ways.** ⚠ Four surfaces now: a
+  push to `source` publishes too, which `PUB-13` added.
+- **Removing `corpus/` and `raw/` from `main` is sequenced, data branch first.**
+  ⭐ Complete.
 - **The history reset on `main` is not yet.** ⛔ The operator's action.
-- **Both `for-testing` matrix cells are enabled.** ⭐ And both have now
-  captured, which had never happened.
-- ⛔ **`for-testing` is a `Channel`.** ⭐ Done: `DRIVER-06`.
-- **`SCHEMA-12`'s six formats are four and two.**
-- ⭐ **Routes are generated only where the corpus HOLDS a value.**
-- ⭐ **JA4 is implemented and no member of its extended family is.**
-- ⛔ **The release job moves no git tag.**
+- ⛔ **`for-testing` is a `Channel`**, **`SCHEMA-12`'s six formats are four and
+  two**, ⭐ **routes are generated only where the corpus HOLDS a value**, ⭐ **JA4
+  is implemented and no member of its extended family is**, and ⛔ **the release
+  job moves no git tag**.
 
 ### Ruled 2026-09-02, and each created or moved an entry
 
 - ⛔ **A capture lane PURGES the machine's browsers and installs the build it
-  needs.** Done: `DRIVER-08`. ⭐ And the profiles it produces carry the route,
-  the URL and the digest, which landed in the corpus for the first time today.
+  needs.** ⭐ And it now purges a SNAP as well, which `apt` cannot see.
 - **The corpus carries BOTH Chromes, as separate matrix cells.**
 - ⛔ **The resumption problem is solved at its cause, not behind a switch.**
 - ⛔ **A guard on something irreversible is TWO conditions from two sources.**
 - **The write for `CI-04` is JOB-SCOPED**, using the run's own token.
-- **The first runner capture is fetched with `gh` and added by hand.**
-- ⭐ **The one laptop profile stays, unchanged.** ⚠ And the operator has ruled
-  something broader with it: **this project is in beta, nobody consumes its
-  data, and the commit history will be reset once the project satisfies the
-  operator.**
+- ⭐ **The one laptop profile stays, unchanged.** ⚠ And the broader ruling with
+  it: **this project is in beta, nobody consumes its data, and the commit
+  history will be reset once the project satisfies the operator.**
 - **Credentials are recorded as PRESENT, never as a value.**
-- **The trust anchor is a job, not a machine change.** ⭐ `DRIVER-11` honours it:
-  the Gecko trust is written into the throwaway profile and removed with it.
+- **The trust anchor is a job, not a machine change.**
 - **Header values stay names-only by default.**
-- **The schema gains numeric bounds.**
-- **The shuffle seed stays out of `browser-profile/1`.**
-- **Commit once at the close** unless the session is genuinely at risk of losing
-  work. ⚠ Four commits today, each after a unit passed the gate, because the
-  session was long and each unit stood on its own.
-- **A measured profile goes into the committed corpus with its conditions
-  recorded.**
-- **The TLS terminator is vendored here and patched here.**
-- **The declared minimum Rust version is a verified upper bound.**
-- **`Cargo.lock` is committed.**
-- **A path in a code span asserts that it resolves.**
+- **The schema gains numeric bounds**, **the shuffle seed stays out of
+  `browser-profile/1`**, **the TLS terminator is vendored here and patched
+  here**, **the declared minimum Rust version is a verified upper bound**,
+  **`Cargo.lock` is committed**, and **a path in a code span asserts that it
+  resolves**.
 - **The reference corpus keeps whole trees**, exempt from the prose checks and
   the secret scan by directory, never by file.
+- **Commit once at the close** unless the session is at risk of losing work.
+  ⚠ Eight commits today, each after a unit passed the gate, because the session
+  was long and each unit stood on its own.

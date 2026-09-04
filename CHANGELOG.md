@@ -16,6 +16,49 @@ anything here has reached.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-04T19:32:53Z - the corpus moves to its own branch, and the last ten entries close
+
+**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and the ten entries it names:
+`PUB-13`, `CORPUS-02`, `EMIT-03`, `PUB-06`, `PUB-09`, `DOC-02`, `EMIT-04`,
+`HARNESS-12`, `PUB-05` and `LIB-03`.
+**Deployed:** no. ⛔ No tag was pushed and no release cut. ⚠ Two surfaces DID
+change on the remote: the `source` branch was created and now carries the
+canonical corpus, and the `data` branch is behind by 91 artefacts the publisher
+adds on its next push.
+
+What landed:
+
+- ⭐ **Three branches, where there were two.** `corpus/`, `raw/`, `vectors/` and
+  `LICENSE` moved to a `source` branch and left the default branch entirely, so
+  the `data` branch is a derivation of something rather than of itself.
+  ⛔ `check-data-branch` had once reported `data branch ok` while comparing the
+  published branch against a copy of itself; it now refuses to run at all unless
+  the canonical corpus resolves to this tree or to `source`, which was seen to
+  refuse by hiding the branch.
+- ⭐ **The `chromium` row is captured**, which was the one required row with no
+  capture anywhere. Three acquisition routes were measured and the third serves
+  Chromium at the exact build of branded Chrome the corpus already held, so the
+  branding control is same-build rather than same-major: identical TLS extension
+  set, identical cipher list, identical HTTP/2 half.
+- ⛔ **`h2` is vendored and patched**, which is the five bytes of the HTTP/2
+  priority block every profile in this corpus carries and that library could not
+  write. `patches/h2/` records what changed and why upstream will not take it.
+- ⭐ **A packet capture per profile**, synthesised from the bytes the profile
+  already carries, in pcapng so it can say three times over that it is not a
+  real capture.
+- ⭐ **Keyless attestation**, from the runner's own identity, so no key exists and
+  no workflow names a secret.
+- ⭐ **A JavaScript package** generated from the corpus, embedding it, reporting
+  the release it embeds, and compared answer for answer against the Rust crate.
+- ⭐ **The capture oracle's mode**, which hands a caller its own capture back and
+  retains nothing. ⛔ Built and not hosted, which is that entry's own decision.
+- ⭐ [`docs/HUMAN.md`](docs/HUMAN.md), written once it had something in it: the
+  machine checklist, and the one machine change the pipeline needs.
+
+⛔ **A guard reported green over the exact defect it exists to catch**, and the
+mutation pass is what found it: `check-signing` matched its own explanatory
+comment rather than the declaration it meant to read.
+
 ### 2026-09-04T08:30:00Z - the capture matrix added five profiles, which is five more than it has ever added
 
 **Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02` (open),

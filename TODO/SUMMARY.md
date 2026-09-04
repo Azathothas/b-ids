@@ -1,74 +1,73 @@
 # SUMMARY.md
 
-⚠ **A snapshot of one session, never an authority.**
-[`PROGRESS.md`](PROGRESS.md) is the record and
-[`INDEX.md`](INDEX.md) is the list. ⛔ Overwritten every session.
-
-Session of 2026-09-04, attended, started `2026-09-04T06:04:28Z`.
-
-| row | before | after | measured by |
-| --- | --- | --- | --- |
-| Elapsed | `06:04:28Z` | `10:29Z`, about 4h 25m | the recorded start instant and `date -u` |
-| Commits | `e368f54` | `dec86de`, 8 commits | `git log --oneline e368f54..HEAD` |
-| Work | 12 open | **2 completed**, 0 deferred, 0 failed. 5 effort points | `DRIVER-11` `L`, `DOC-03` `S`, each closed in place with both acceptance commands run |
-| Work, not counted | | `CORPUS-02` advanced and still open; `DOC-02`'s premise corrected | an entry closes on its acceptance command, and `CORPUS-02`'s still exits 1 |
-| Changes | | 51 files, +5833 -427, excluding the mined reference tree | `git diff --shortstat e368f54 HEAD -- . ':(exclude)references/'` |
-| Changes, everything | | 804 files, +746089 -427 | the same command without the exclusion. ⚠ The difference is `mozilla/nss` |
-| Size | 162,152 lines | 167,552 lines, +5,400 | tracked files excluding `references/`, concatenated and counted |
-| Size, everything | | 4,030,911 lines | the same, with the reference corpus |
-| Checks | gate ok: 39 passed, 1 skipped | **gate ok over all 40**, `check-twins` included | the FULL `check-gate.sh` was run at the close on a still tree. ⚠ Its first run failed on one check, `check-markers`, over two U+2212 minus signs this summary itself had introduced; fixed, and the re-run is green. ⭐ `check-twins` passed, which is what says the new pair's two halves agree |
-| Tests | 412, carried from the last session | **445**, counted | `cargo test --workspace`, summing the runner's own `test result: ok` lines |
-| Corpus | 6 profiles | **12 profiles** | `b-ids-corpus verify`: `corpus=profiles:12 problems:0` |
-| Coverage | 3 of 9 cells captured, 3 absent | **6 of 9 captured, 0 absent** | `check-coverage.sh` |
-| Cost | | no money. One reference clone, trimmed to 26 MiB on disk; four workflow runs on hosted runners | the clone is `references/mozilla__nss`; the runs are `33849365530`, `33849934489`, `33851238648`, `33854002345` |
-| Health | | debts cleared: 4 checks that would have refused every future capture. Introduced: none known. Tree clean, pushed, and all three remote workflows green on the closing commit. ⭐ The data branch caught up on that push: 237 files to **405**, and its tree IS what this corpus derives to. ⚠ No release | `check-data-branch` after the publish run, and `gh run list` on `0b25a62` |
+⚠ **The last session's table, and a snapshot rather than an authority.**
+[`PROGRESS.md`](PROGRESS.md) is the record. ⛔ Overwritten every session.
 
 ---
 
-## What the session actually delivered
+## 2026-09-04, the final session
 
-⭐ **The corpus has profiles from a stack that is not a Chromium**, and it has
-them because `DRIVER-11` built a launch path for Gecko. Firefox takes no
-command-line equivalent of the Chromium certificate switches, so the trust is
-arranged where Firefox looks for it: an NSS certificate database written into
-the throwaway profile the launcher already creates, carrying the run's own
-authority and a trust record for it.
+⛔ **Ruled the final session by the operator at its start**, with all ten open
+entries in scope and twice the usual budget.
 
-⭐ **The capture matrix adds profiles now.** It never had. Six lanes ran green
-this morning, six captures were actually taken, and the run added nothing and
-reported success.
+| row | before | after | from |
+| --- | --- | --- | --- |
+| **Elapsed** | started `2026-09-04T11:57:16Z` | `2026-09-04T19:32:53Z` | `date -u`, at both ends. About 7h35m |
+| **Commits** | `e7e521e` | 8 pushed, plus this one | `git log --oneline e7e521e..HEAD` |
+| **Work** | 10 open, 97 done | **10 completed, 0 deferred, 0 failed. 107 done, 0 open** | `scripts/common/check-record.sh` |
+| **Effort** | not counted | **28 points**, against the 20 `RULES.md` section 10 asks for | four `L`, three `M`, two `S`, one `L`: the table in [`PROGRESS.md`](PROGRESS.md) |
+| **Changes** | not counted | 173 files, +30,580 / -5,105 | `git diff --shortstat e7e521e..HEAD` |
+| **Size** | 97,951 lines | 99,927 lines, **+1,976** | `git ls-files`, excluding `references/` and `vendor/`, over `.rs .sh .ps1 .mjs .md .json .toml .yml` |
+| **Checks** | 40, 39 passed and 1 skipped | **44, 43 passed and 1 skipped** | `check-gate.sh --fast`, at both ends. The skip is `check-twins`, which `--fast` skips by design |
+| **Tests** | 445, carried from the last close | **463**, counted | `cargo test --workspace --all-features`, summed from the runner |
+| **Corpus** | 12 profiles, 3 browsers | **14 profiles, 4 browsers.** 8 of 10 planned cells captured, 0 absent, 0 outside the plan | `b-ids-corpus verify` and `check-coverage.sh` |
+| **Cost** | none | one dispatched `capture.yml` run, 11 jobs, all green. No money, no registry, no host | run `33882426404` |
+| **Health** | 1 vendored tree, 1 patch | 2 vendored trees, 5 patches, 9 crates, 40 check pairs. Tree clean, pushed. Nothing deployed | `check-vendor.sh`, `git status` |
 
-⛔ **Four checks that were green would have refused every capture after the
-first**, and all four were found by profiles actually landing rather than by
-reading:
+---
+
+## ⭐ What actually moved
+
+⛔ **The corpus stopped living on the branch that reads it.** Three branches now:
+the default branch is the code, `source` is the canonical corpus, `data` is what
+the assembler derives from `source`. That makes the derivation checkable again;
+it had once reported `data branch ok` while comparing the published branch
+against a copy of itself.
+
+⭐ **The `chromium` row is captured, and it answers the question it existed for.**
+At build `152.0.7977.75` on `linux64`, with the per-connection GREASE draw
+removed, branded Chrome and Chromium have an identical TLS extension set, an
+identical cipher list in order, and an identical HTTP/2 half. ⚠ What differs is
+one HTTP header, which is a navigation condition, and the CONTENT of the bundled
+root store: both send 206 bytes and the bytes are different.
+
+⛔ **And that refutes something this project believed the same morning.** "An
+unbranded build publishes an empty trust-anchor list" was a confound: the empty
+one was a Chrome for Testing build.
+
+---
+
+## ⚠ What did NOT move, stated rather than omitted
 
 | | |
 | --- | --- |
-| `check-data-branch` | called nineteen changed aggregates a rewritten branch |
-| `check-coverage` | could not see a capture outside the plan |
-| `check-trust-anchors` | called an unbranded build's EMPTY root-store list a defect |
-| the collect job | kept whichever lane's index it copied last, rather than deriving it |
-
-⚠ **And one hole that is now an instrument rather than a manual step.** A
-published profile needs a JA4 vector and nothing derived one, so five new
-profiles left the gate red until a person ran a command out of a document.
-`scripts/common/derive-ja4-vector` is that command, in both halves, compared.
+| **the TCP half** | five of six fields are still unread. `PUB-06` measured why: it needs a packet-capture library, which makes the Windows gate fail at link time until one is installed on that runner. A machine decision, and [`../docs/HUMAN.md`](../docs/HUMAN.md) section 3 is the measurement |
+| **a release** | none. A pushed tag is the only thing that cuts one, and that is the operator's act. `check-signing`'s live leg reports a skip because of it |
+| **anything hosted** | ⛔ nothing. `HARNESS-12`'s oracle mode is built and no endpoint of this project's is reachable |
+| **a registry** | ⛔ nothing published to one. Publishing needs a credential and this tree has none |
+| **a true binding** | ⚠ `LIB-03` closed on a comparison rather than on a binding, which is the Approach's central choice not taken. The entry says so in its own words |
+| **the data branch** | ⚠ behind by 91 artefacts, which is the designed state: `check-data-branch` distinguishes behind from wrong, and the next push adds them |
 
 ---
 
-## ⛔ What did not move, and what was measured instead
+## ⛔ The three review passes each found something
 
-⚠ **`CORPUS-02` did not close**, and its acceptance command still exits 1 on one
-row: `chromium`. ⭐ That blocker is measured now rather than predicted. The
-resolver finds `/usr/bin/chromium` on `ubuntu-24.04` and reads `151.0.7922.0`
-from it, so the cell was never blocked on resolution; the launch aborts on
-signal 6 inside `content::ZygoteHostImpl::Init`, which is the snap sandbox.
+| pass | the finding that mattered most |
+| --- | --- |
+| the door sweep | `validate.yml` had a SECOND corpus reader the sweep did not reach, and both CI jobs went red on the closing push of `PUB-13` |
+| ⛔ the guard mutation | `check-signing` reported **green** over the exact defect it exists to catch: it matched its own explanatory comment rather than the declaration |
+| the claim audit | a sentence about a hosted runner that nobody had measured, and four documents saying the corpus holds twelve profiles when it holds fourteen |
 
-⛔ **`PUB-13` was read and not started.** It removes `corpus/` from the default
-branch, and starting it without finishing it would leave the tree in a state the
-next session cannot tell from a finished one.
-
-⚠ **Five effort points against the twenty
-[`RULES.md`](RULES.md) section 10 asks for.** Both entries taken grew: a launch
-path became four defects in shipped code, and a merge became a workflow that had
-never worked. Following them was the trade, and it is stated rather than hidden.
+⭐ **Eight guards were planted against and seen to refuse**, each against a copy
+with the file restored byte for byte afterwards. The full table is in
+[`PROGRESS.md`](PROGRESS.md).

@@ -10,13 +10,6 @@ use b_ids_corpus::publish::{
     would_rewrite,
 };
 
-/// The environment variable that names a corpus root explicitly.
-///
-/// ⭐ **The same seam [`b-ids/build.rs`] reads**, and it has to be, because a
-/// suite that built from a different corpus than the crate embedded would
-/// report on one and ship the other.
-const ROOT_ENV: &str = "B_IDS_CORPUS_ROOT";
-
 /// The workspace root, canonicalised. ⚠ **This is where scratch output goes and
 /// it is NOT where the corpus is read from.** The two were one function until
 /// `PUB-11`, which is what coupled this suite to the working tree.
@@ -39,24 +32,12 @@ fn workspace_root() -> std::path::PathBuf {
 /// the nearest ancestor that actually holds a corpus. A checker that exports
 /// `B_IDS_CORPUS_ROOT` therefore gets the same answer here, in the crate's build
 /// script, and in every check that asks `corpus-root.sh`.
+/// ⛔ **ONE RESOLVER, and this was the sixth copy of it.** `PUB-13`'s door sweep
+/// collapsed five private walks onto `b_ids_schema::root` and left this one,
+/// which is the shape that sweep exists to catch: the list you wrote from
+/// memory has never once been complete.
 fn corpus_root() -> std::path::PathBuf {
-    if let Some(named) = std::env::var_os(ROOT_ENV) {
-        return std::path::PathBuf::from(named);
-    }
-    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mut here: &Path = manifest;
-    loop {
-        if here.join("corpus").join("v1").join("index.json").is_file() {
-            return here.to_path_buf();
-        }
-        match here.parent() {
-            Some(parent) => here = parent,
-            None => panic!(
-                "no corpus above {}. Set {ROOT_ENV} to a corpus root.",
-                manifest.display()
-            ),
-        }
-    }
+    b_ids_schema::root::corpus_root_or_explain(Path::new(env!("CARGO_MANIFEST_DIR")))
 }
 
 /// Build the repository's own corpus into a throwaway directory.

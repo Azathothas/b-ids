@@ -946,7 +946,7 @@ question rather than a code one.
 
 | route | measured 2026-09-04 | verdict |
 | --- | --- | --- |
-| a packet-capture library (`pcap`, `pnet`) | ⭐ this host HAS Npcap: `wpcap.dll`, `Packet.dll` and `System32\Npcap\wpcap.dll` are all present. ⛔ `windows-latest` does not ship it | **open on a machine somebody set up, shut on a hosted Windows runner.** Taking it makes the Windows gate job fail at link time until Npcap is installed there |
+| a packet-capture library (`pcap`, `pnet`) | ⭐ this host HAS Npcap: `wpcap.dll`, `Packet.dll` and `System32\Npcap\wpcap.dll` are all present. ⚠ `windows-latest`'s published image manifest lists no `npcap`, `winpcap`, `wireshark` or `libpcap`, read from `actions/runner-images` on 2026-09-04, which is weaker evidence than a machine that does not have one | **open on a machine somebody set up, shut on a hosted Windows runner.** Taking it makes the Windows gate job fail at link time until Npcap is installed there |
 | `getsockopt(TCP_INFO)` | it answers the negotiated maximum segment size and window scale, and reaching it needs `unsafe` or a crate wrapping it. ⛔ `Cargo.toml` line 35: `unsafe_code = "deny"` | **shut without a dependency**, and the dependency is the same question one row up |
 | a sibling observer reading the SYN | `tcpdump`, `ss` and `ip` are all ABSENT on this host; only `netstat` is here, and it reports no TCP options | **open on Linux, shut on Windows.** It also reads no option ORDER, which is one of the six fields |
 
