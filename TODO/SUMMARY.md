@@ -8,9 +8,9 @@ Session ran 2026-09-04, attended. Started `2026-09-04T00:07:59Z`.
 | row | measured | from |
 | --- | --- | --- |
 | Elapsed | 4 h 5 min, `00:07:59Z` to `04:13:28Z` | the recorded start instant and `date -u` |
-| Commits | 1. ⚠ This table is written INTO that commit, so the number is what the change makes rather than a reading of the log. | the change itself |
+| Commits | **3**, pushed. ⚠ Two of them exist because the first push was green here and red on both runners. | `git log 601a5a4..HEAD` |
 | Work | **6 completed, 2 worked and open, 0 failed, 0 deferred**. 14 effort points. | the entries, each closed in place with its acceptance command run |
-| Changes | 60 files, +4982 / -342 | `git diff --cached --shortstat` |
+| Changes | 61 files, +5132 / -384 | `git diff --shortstat 601a5a4..HEAD` |
 | Size | 94,268 lines, up from 89,628. Delta +4,640 | `git ls-files` less `references/` and `vendor/`, through `wc -l` |
 | Checks | gate ok, 39 passed and 1 skipped over **40**. At the start it was 38 and 1 over 39. ⛔ The skip is `check-twins`, which `--fast` skips, and it was run separately on a still tree: `check-twins exit=0`, 62 pairs, every one agreeing. So all 40 are covered rather than 39. | `check-gate.ps1 -Fast` and `check-twins.sh`, each read from the process, unpiped |
 | Remote | ⭐ **`ci` green on both jobs**, run `33839660924`. ⚠ The first push of the session was green here and red on both runners; each found one defect this host could not, and both are fixed. | `gh run view`, and the two findings are in `CORPUS-02` |
