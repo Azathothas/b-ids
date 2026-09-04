@@ -27,10 +27,11 @@ corpus           TWELVE profiles, up from six. Five browsers-and-platforms
                  ⭐ The first non-Chromium profiles, the first UNBRANDED
                  builds, and the first profiles carrying an acquisition
                  route, URL and digest.
-published        the data branch: 237 files on origin/data. ⚠ BEHIND, which
-                 is the designed pending state: the publisher adds the rest
-                 on the next push to the default branch. No release: a
-                 pushed tag is the only thing that cuts one.
+published        the data branch: 405 files on origin/data, up from 237.
+                 ⭐ publish.yml pushed them on this session's closing commit
+                 and check-data-branch reports the branch's tree IS what this
+                 corpus derives to. ⚠ No release: a pushed tag is the only
+                 thing that cuts one.
 gate             40 checks, 39 plus one skipped on this host. 445 tests,
                  counted from the runner rather than predicted. The closing
                  run is in SUMMARY.md.

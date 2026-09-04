@@ -21,7 +21,7 @@ Session of 2026-09-04, attended, started `2026-09-04T06:04:28Z`.
 | Corpus | 6 profiles | **12 profiles** | `b-ids-corpus verify`: `corpus=profiles:12 problems:0` |
 | Coverage | 3 of 9 cells captured, 3 absent | **6 of 9 captured, 0 absent** | `check-coverage.sh` |
 | Cost | | no money. One reference clone, trimmed to 26 MiB on disk; four workflow runs on hosted runners | the clone is `references/mozilla__nss`; the runs are `33849365530`, `33849934489`, `33851238648`, `33854002345` |
-| Health | | debts cleared: 4 checks that would have refused every future capture. Introduced: none known. Tree clean, pushed. ⚠ No release, and the data branch is BEHIND by 168 artefacts, which is the designed pending state | `check-data-branch`: `matched:false pending:168 problems:0` |
+| Health | | debts cleared: 4 checks that would have refused every future capture. Introduced: none known. Tree clean, pushed, and all three remote workflows green on the closing commit. ⭐ The data branch caught up on that push: 237 files to **405**, and its tree IS what this corpus derives to. ⚠ No release | `check-data-branch` after the publish run, and `gh run list` on `0b25a62` |
 
 ---
 

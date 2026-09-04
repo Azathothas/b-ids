@@ -45,8 +45,9 @@ through a pipe twice.
 
 ## The conditions this session leaves
 
-⚠ **The data branch is BEHIND by 168 artefacts**, which is the designed pending
-state rather than a failure. The publisher adds them on the next push to `main`.
+⭐ **The data branch carries 405 files, up from 237**, and its tree is what
+this corpus derives to. `publish.yml` pushed them on the closing commit, and all
+three remote workflows are green on it.
 
 ⛔ **Four checks that were green would have refused every capture after the
 first**, and all four are fixed. The publish manifest is `corpus-publish/2` and
