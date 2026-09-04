@@ -1,0 +1,17 @@
+# impit, for chrome-152.0.7977.75-linux64-stable
+#
+# ⛔ NO SNIPPET IS GENERATED FOR THIS PAIR, and that is the answer
+# rather than a gap. The support matrix records this stack as unable to
+# emit what this profile carries, so a snippet here would produce a
+# client that is almost right, which is more distinguishing than an
+# honestly old one.
+#
+# What it cannot do, each read at a file and a line in a tree this
+# project holds at a named commit:
+#
+#   any unenumerated codepoint at all: its extension set is a boolean per extension beside a closed enum
+#     read at references/apify__impit/tree/impit/src/fingerprint/types.rs:87
+#     patchable in this tree: no
+#
+# A hole that closes upstream is a hole this project re-reads. It is not
+# a permanent verdict about the stack.

@@ -21,6 +21,191 @@
       "bytes": 823
     },
     {
+      "path": "configs/README.md",
+      "sha256": "3cac07b620537449da3e2b2cfb612a6e3a6cadbacab91510d9e3401b26b1f3e8",
+      "bytes": 939
+    },
+    {
+      "path": "configs/chrome/stable/linux64/151.0.7922.173/b-ids-emit.rs",
+      "sha256": "6ea20fffd1a33595e474b92f5770b73402383f856b448fd5210223ea1980b445",
+      "bytes": 4566
+    },
+    {
+      "path": "configs/chrome/stable/linux64/151.0.7922.173/detect.conf",
+      "sha256": "cbed95ff6136453c9f5a93406693557d1624f8230d77a35a30c6acc1a20618e3",
+      "bytes": 1016
+    },
+    {
+      "path": "configs/chrome/stable/linux64/151.0.7922.173/h2.txt",
+      "sha256": "29e78948fddf61abdd9f7fb24e4a750e028fc0d17f238f8d6f05e214749bf823",
+      "bytes": 817
+    },
+    {
+      "path": "configs/chrome/stable/linux64/151.0.7922.173/impit.txt",
+      "sha256": "6b7d38090b885f821378c27f0b2e366e6aaf09b5fcaf630ca4d6cd079cf50f48",
+      "bytes": 783
+    },
+    {
+      "path": "configs/chrome/stable/linux64/151.0.7922.173/rustls.txt",
+      "sha256": "4b5d905519017341738fdb1eb429ce56382a7918bf2ce951843ce76b7244798c",
+      "bytes": 1135
+    },
+    {
+      "path": "configs/chrome/stable/linux64/151.0.7922.173/utls.txt",
+      "sha256": "59fae7fd77eb9b4939e6fe62f7999013f4def6959e5da4ca6abc94ef35e1859a",
+      "bytes": 844
+    },
+    {
+      "path": "configs/chrome/stable/linux64/152.0.7977.75/b-ids-emit.rs",
+      "sha256": "eaab302af5ed43608316a6f37e0ccf9df379cd0d157990c1b5710c3b31d96738",
+      "bytes": 4924
+    },
+    {
+      "path": "configs/chrome/stable/linux64/152.0.7977.75/detect.conf",
+      "sha256": "b773e05eae9bd0835174f38ca8304c6ffe02ee243259205f87cb2615360e4cf3",
+      "bytes": 1014
+    },
+    {
+      "path": "configs/chrome/stable/linux64/152.0.7977.75/h2.txt",
+      "sha256": "d99223a6c441f8a25be61a659b7cc771e96529a1b564907f27460e8ac500df46",
+      "bytes": 816
+    },
+    {
+      "path": "configs/chrome/stable/linux64/152.0.7977.75/impit.txt",
+      "sha256": "236e10ff88697f816e66f493366003244b3ced0cab3b9ef72d57c792b2adb858",
+      "bytes": 782
+    },
+    {
+      "path": "configs/chrome/stable/linux64/152.0.7977.75/rustls.txt",
+      "sha256": "dddce74fe5b843f0ec86e3e31336b366c628179d55e0c156a10a43d39b4b003a",
+      "bytes": 1134
+    },
+    {
+      "path": "configs/chrome/stable/linux64/152.0.7977.75/utls.txt",
+      "sha256": "0d0831f3a81876ac08324facd0c4f5c289277dd179d4093ee854925fab09b86c",
+      "bytes": 843
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.174/b-ids-emit.rs",
+      "sha256": "855171eaf3616be76b8a60b8bd0b9bd071572ea5a73a0e2b70d8b2755bb78b6b",
+      "bytes": 4498
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.174/detect.conf",
+      "sha256": "e0e50fa4e71a97a77dc4a02dd3d4f29cedddf2e7cd6c23091df327feaca2c86e",
+      "bytes": 1012
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.174/h2.txt",
+      "sha256": "f27f6ced56bf6c4c1bac030f851975cf5c30e2f42770534cd171f95fac516862",
+      "bytes": 815
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.174/impit.txt",
+      "sha256": "062712f6be3061f5449ae953ababc2934e29c4b5eb6a844e67e8ede6512d1136",
+      "bytes": 781
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.174/rustls.txt",
+      "sha256": "927652b0f009f67d04d9f0f2859defb6fa2140576b0eb36a5e3a671eddf46780",
+      "bytes": 1133
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.174/utls.txt",
+      "sha256": "ce342cc3aaa155a908a4ac8d5f803067fa048923450ad1ce48a52e8799e54c92",
+      "bytes": 842
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.76/b-ids-emit.rs",
+      "sha256": "3617a158ec07fcfe441ff7001c455e53d895ce534579ae56c8ed67b58ef43405",
+      "bytes": 4496
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.76/detect.conf",
+      "sha256": "14eb81b34c9cd6ed9f0a130e03c195a7fcd6b46a8e9048314932dc4ccefd939b",
+      "bytes": 1010
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.76/h2.txt",
+      "sha256": "2de46d023f5628bc30c4ac3505f624b77de415abb2c915ef1d1b789ad25bc1dd",
+      "bytes": 814
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.76/impit.txt",
+      "sha256": "2e2aa06896c314ebc281f35dabdcbcdcf9df990ed5bb6e3b048d7598ece52b43",
+      "bytes": 780
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.76/rustls.txt",
+      "sha256": "6a23ebc1370aed964e2601a094ae95b21317106f795bad80876407d37652b6dd",
+      "bytes": 1132
+    },
+    {
+      "path": "configs/chrome/stable/win64/151.0.7922.76/utls.txt",
+      "sha256": "0ef7285c2ef32fba67e28d80d0f2741826e6424689ff73c32c799910344d3baf",
+      "bytes": 841
+    },
+    {
+      "path": "configs/chrome/stable/win64/152.0.7977.76/b-ids-emit.rs",
+      "sha256": "9f084c6b68c6ddcef11c79bd950c2e0ebca4e6fd596fceafea4c38fdcf8c0e39",
+      "bytes": 4920
+    },
+    {
+      "path": "configs/chrome/stable/win64/152.0.7977.76/detect.conf",
+      "sha256": "e5bf53d40feaeb2fb45f492304f32242dcc1ca20f424c3d4fda2e9165fde9af5",
+      "bytes": 1010
+    },
+    {
+      "path": "configs/chrome/stable/win64/152.0.7977.76/h2.txt",
+      "sha256": "a2a1000e481c731ee71aff320d2c51eaca6e52821789284348080b17c267255c",
+      "bytes": 814
+    },
+    {
+      "path": "configs/chrome/stable/win64/152.0.7977.76/impit.txt",
+      "sha256": "fc769d8b940aa5aa636a3bbe544e2b9d91dd356941f26a302d3a25def184e48e",
+      "bytes": 780
+    },
+    {
+      "path": "configs/chrome/stable/win64/152.0.7977.76/rustls.txt",
+      "sha256": "3760ae954f309af05f5fa85c5e93187f522db5eb45b88c26b0e9844b4f88d087",
+      "bytes": 1132
+    },
+    {
+      "path": "configs/chrome/stable/win64/152.0.7977.76/utls.txt",
+      "sha256": "810d58e287ab995392383ca6e6270315a80666dee516a72b4100024d3e4979bf",
+      "bytes": 841
+    },
+    {
+      "path": "configs/edge/stable/linux64/151.0.4129.101/b-ids-emit.rs",
+      "sha256": "2fee6e6b5bf3714297e920c7bfa14eec57583d876394ba03aad25b94f9481dd8",
+      "bytes": 4434
+    },
+    {
+      "path": "configs/edge/stable/linux64/151.0.4129.101/detect.conf",
+      "sha256": "c5b786ad1ca198ab112db852d51f81e70cd67dc893fc9829c977bdb21f487171",
+      "bytes": 1012
+    },
+    {
+      "path": "configs/edge/stable/linux64/151.0.4129.101/h2.txt",
+      "sha256": "d24f6d4a3bf0cd8eab28d3a232dfbca45f4e3fee0ebd9c5284fe8ac7521aa8a3",
+      "bytes": 815
+    },
+    {
+      "path": "configs/edge/stable/linux64/151.0.4129.101/impit.txt",
+      "sha256": "f101c66aefc8ebe6b5cb2bcb55a8fb76c07b8543bf67ea7cc63a8e7ce41886b2",
+      "bytes": 781
+    },
+    {
+      "path": "configs/edge/stable/linux64/151.0.4129.101/rustls.txt",
+      "sha256": "45ca078f27c7df587536559aff661acbe350feb32cae8cf881a7023ae5546850",
+      "bytes": 1133
+    },
+    {
+      "path": "configs/edge/stable/linux64/151.0.4129.101/utls.txt",
+      "sha256": "49468978cfdaf63b133669ba44b75138ca3c1c2244de303672ef4d31823d683e",
+      "bytes": 842
+    },
+    {
       "path": "corpus/v1/chrome/stable/linux64/151.0.7922.173.json",
       "sha256": "809e4341817f57d168ed2c884c0dc4eae3d0d6fa0ad3f7e1cfc40f31243a6664",
       "bytes": 15837
