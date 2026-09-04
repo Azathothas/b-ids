@@ -163,6 +163,173 @@ fn fixture(root: Option<&str>) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+/// A stack this project can emit for, and what it can emit.
+///
+/// ⛔ **A TARGET IS CLAIMED ONLY WHERE THIS PROJECT CAN PRODUCE THE BYTES.**
+/// `EMIT-04`'s rule is not to claim a target the conformance run has not
+/// passed, so the list here is what the tree can drive rather than what it
+/// intends to support. ⚠ Adding a row without an emitter behind it is exactly
+/// the claim that rule forbids.
+struct Stack {
+    /// What a caller names.
+    name: &'static str,
+    /// What it is, in one line.
+    what: &'static str,
+}
+
+/// Every stack this project emits for today.
+///
+/// ⭐ **One, and the Approach said to start with it**: "whichever stack this
+/// project already uses". That is this tree's own emitter, built on the
+/// vendored `rustls` and the vendored and patched `h2`.
+///
+/// ⚠ **The Go TLS library is the cheapest SECOND target** and it is not here,
+/// because nothing in this tree emits for it yet and a row with no emitter
+/// behind it would be a claim rather than a target.
+const STACKS: [Stack; 1] = [Stack {
+    name: "b-ids",
+    what: "this project's own emitter: b_ids_emit::hello over the vendored rustls, \
+           and b_ids_emit::priority over the vendored and patched h2",
+}];
+
+/// Run the conformance comparison against what a stack emits.
+///
+/// ⛔ **THE WRITER IS NOT THE READER, which is what makes this a comparison.**
+/// The bytes are written by `b_ids_emit` and read back by `b_ids_harness`,
+/// which is the parser every capture in the corpus went through. A run that
+/// compared the emitter's own model against itself would prove nothing.
+///
+/// ⚠ **The RANDOM is not emitted from the profile**, because a profile does not
+/// record one: it is 32 bytes a client draws per connection. A fixed value is
+/// used here and nothing downstream compares it, which is why
+/// `tls.session_id_len` rather than the session id itself is a field.
+fn stack_run(name: &str, claim: &str, root: Option<&str>, json: bool) -> ExitCode {
+    let Some(stack) = STACKS.iter().find(|s| s.name == name) else {
+        let known: Vec<&str> = STACKS.iter().map(|s| s.name).collect();
+        return fail(&format!(
+            "no emitter for stack {name:?}. This tree emits for: {}. \
+             EMIT-04's rule is not to claim a target the conformance run has not passed.",
+            known.join(", ")
+        ));
+    };
+    let Some(root) = corpus_root(root) else {
+        return fail(&format!(
+            "no corpus found above the working directory. Set {ROOT_ENV} or pass --root"
+        ));
+    };
+    let all = profiles(&root);
+    let Some((_, claimed)) = all.iter().find(|(_, p)| p.id.to_string() == claim) else {
+        return fail(&format!("{claim} is not a profile in {}", root.display()));
+    };
+
+    // ⛔ THE HOLES ARE DERIVED FROM THE EMITTER'S OWN REFUSAL, never declared in
+    // a table beside it. `extensions` returns what it cannot reproduce and why,
+    // so a hole here is a thing the code says it cannot do rather than a thing
+    // somebody remembered to write down.
+    let random = [0u8; 32];
+    let bytes = match b_ids_emit::hello::client_hello(&claimed.tls, &random) {
+        Ok(bytes) => bytes,
+        Err(refusals) => {
+            if json {
+                // ⛔ SERIALISED, NEVER FORMATTED, which is this tree's own rule
+                // and which check-placeholders enforced from the other side: an
+                // escaped brace in a format string is the shape a template
+                // placeholder takes, and that check cannot tell one from the
+                // other. A value carrying a character that has to be escaped
+                // would also emit JSON that does not parse.
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "schema": "conformance-stack/1",
+                        "stack": stack.name,
+                        "claim": claim,
+                        "emitted": false,
+                        "refusals": refusals.len(),
+                    })
+                );
+            } else {
+                println!("{} cannot emit {claim}:", stack.name);
+                for refusal in &refusals {
+                    println!("  {refusal}");
+                }
+                println!(
+                    "\n⛔ Reported rather than approximated. An emitter that wrote a plausible \
+                     value here would produce a profile wrong in a way nothing notices."
+                );
+            }
+            return ExitCode::from(1);
+        }
+    };
+
+    // ⭐ BACK THROUGH THE PARSER EVERY REAL CAPTURE WENT THROUGH.
+    let raw = b_ids_schema::Raw {
+        client_hello_hex: Some(b_ids_harness::hex(&bytes)),
+        ..claimed.raw.clone()
+    };
+    let rebuilt = b_ids_harness::rebuild::rebuild(&raw, b_ids_schema::http::ValuePolicy::NamesOnly);
+    let Some(tls) = rebuilt.tls else {
+        return fail(&format!(
+            "{} emitted {} byte(s) that this project's own parser could not read back",
+            stack.name,
+            bytes.len()
+        ));
+    };
+
+    let mut observed = claimed.clone();
+    observed.tls = tls;
+    let report = compare(claimed, &observed);
+    let differing = report.differing();
+
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({
+                "schema": "conformance-stack/1",
+                "stack": stack.name,
+                "claim": claim,
+                "emitted": true,
+                "bytes": bytes.len(),
+                "differing": differing.len(),
+                "conforming": report.conforming(),
+            })
+        );
+        return if differing.is_empty() {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::from(1)
+        };
+    }
+
+    println!("stack {} against {claim}", stack.name);
+    println!("  {}", stack.what);
+    println!(
+        "  emitted {} byte(s), read back by b_ids_harness",
+        bytes.len()
+    );
+    if differing.is_empty() {
+        println!(
+            "\n⭐ no differing field. {} conforming, {} varying per connection, {} not checkable.",
+            report.conforming(),
+            report.per_connection().len(),
+            report.not_checkable().len()
+        );
+        println!(
+            "⛔ The writer is b_ids_emit and the reader is b_ids_harness, so this is a \
+             comparison rather than the emitter checking its own arithmetic."
+        );
+        return ExitCode::SUCCESS;
+    }
+    println!("\n⛔ {} field(s) differ:", differing.len());
+    for field in &differing {
+        println!("  {}: {:?}", field.field, field.verdict);
+    }
+    println!(
+        "\n⚠ EMIT-01's support matrix records what a stack cannot reproduce. A field here \
+         that the matrix does not record as a hole is a defect in the emitter."
+    );
+    ExitCode::from(1)
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut claim: Option<String> = None;
@@ -171,6 +338,7 @@ fn main() -> ExitCode {
     let mut json = false;
     let mut list = false;
     let mut run_fixture = false;
+    let mut stack: Option<String> = None;
 
     let mut i = 0;
     while i < args.len() {
@@ -195,6 +363,17 @@ fn main() -> ExitCode {
                     return fail("--root needs a directory");
                 };
                 root = Some(v.clone());
+            }
+            // ⭐ EMIT-04. Compare a claimed profile against what this project's
+            // own emitter produces for a named stack, with no capture and no
+            // network: the bytes are written by b_ids_emit and read back by
+            // b_ids_harness.
+            "--stack" => {
+                i += 1;
+                let Some(v) = args.get(i) else {
+                    return fail("--stack needs the name of a stack this project emits for");
+                };
+                stack = Some(v.clone());
             }
             "--json" => json = true,
             "--list" => list = true,
@@ -222,6 +401,13 @@ fn main() -> ExitCode {
     let Some(claim) = claim else {
         return fail("a run needs --claim, the profile this client says it is");
     };
+
+    // ⚠ BEFORE --observed IS REQUIRED, because --stack replaces it: the
+    // observed side comes from this project's own emitter rather than from a
+    // file somebody captured.
+    if let Some(name) = stack {
+        return stack_run(&name, &claim, root.as_deref(), json);
+    }
     let Some(root) = corpus_root(root.as_deref()) else {
         return fail(&format!(
             "no corpus found above the working directory. Set {ROOT_ENV} or pass --root"

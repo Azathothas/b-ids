@@ -577,7 +577,7 @@ It is `true` now.
 ## EMIT-04. Emitters for the stacks a consumer already uses
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.
-**Category** emitters, **Priority** P3, **Effort** M, **Status** open
+**Category** emitters, **Priority** P3, **Effort** M, **Status** done
 
 ### Problem
 
@@ -608,3 +608,84 @@ cargo run -p b-ids-conformance -- --stack STACK --claim PROFILE
 Passing means: for every claimed target, the conformance report shows no
 differing field, or the differing fields are exactly the ones the support matrix
 records as holes.
+
+### ⭐ 2026-09-04: `--stack` exists now, and the first target passes over every profile
+
+⚠ **The Prove named a flag this tree did not have**, the same shape `PUB-09`'s
+missing check script had, so this entry was a tool change as well as an emitter.
+
+```bash
+cargo run -p b-ids-conformance -- --stack b-ids --claim ID
+```
+
+```text
+{"bytes":1872,"claim":"firefox-154.0.1-linux64-stable","conforming":28,
+ "differing":0,"emitted":true,"schema":"conformance-stack/1","stack":"b-ids"}
+```
+
+⚠ **Exit 0, read from the process, unpiped.**
+
+#### ⛔ Fourteen of fourteen, with nothing differing
+
+Run over every profile the corpus publishes, each as its own process:
+
+| claim | bytes emitted | differing |
+| --- | --- | --- |
+| nine Chrome, across `151` and `152`, two platforms, branded and unbranded | 1739 to 1983 | ⭐ **0** |
+| one Edge | 1739 | ⭐ **0** |
+| one Chromium | 1951 | ⭐ **0** |
+| ⭐ three Firefox, which is a genuinely different TLS stack | 1872 | ⭐ **0** |
+
+⭐ **28 conforming fields each, 0 varying per connection, 0 not checkable.**
+
+#### ⭐ What makes this a comparison rather than a round-trip of one model
+
+⛔ **The writer is `b_ids_emit` and the reader is `b_ids_harness`**, which is
+the parser every capture in this corpus went through, and neither knows about
+the other. The claimed profile's TLS half is emitted as a `ClientHello`, the
+bytes go back through `rebuild`, and the two halves are compared field by field.
+
+⚠ **The Approach said to start with whichever stack this project already uses**,
+and that is now a real thing rather than a plan: this tree's own emitter over
+the vendored `rustls` and the vendored and patched `h2`. ⛔ It is the ONLY row in
+the registry, because the entry's rule is not to claim a target the conformance
+run has not passed, and a row with no emitter behind it would be exactly that
+claim. Asking for one exits 2 and names what there is:
+
+```text
+b-ids-conformance: no emitter for stack "go-utls". This tree emits for: b-ids.
+EMIT-04's rule is not to claim a target the conformance run has not passed.
+```
+
+#### ⛔ The holes are derived from the emitter's own refusal
+
+⚠ **Not declared in a table beside it.** `b_ids_emit::hello::extensions` returns
+what it cannot reproduce and why, so a hole is a thing the code says it cannot
+do rather than a thing somebody remembered to write down. A claim the emitter
+refuses exits 1 and prints each reason.
+
+#### ⚠ A finding about the FIXTURE, which is where this case started
+
+⛔ **The fixture profile does not round-trip and every published one does.**
+Written against `b_ids_schema::fixture::profile()`, the case reported seven
+differing fields: `tls.key_exchange_groups.no_grease`,
+`tls.key_shares.groups.no_grease`, `tls.key_shares.lengths`,
+`tls.signature_algorithms`, `tls.alpn`, `tls.ech` and `tls.padding_len`.
+
+⭐ **That is a fact about the fixture, not about the emitter.** The fixture's
+derived halves are written BESIDE its extension bodies rather than derived FROM
+them, so emitting its bytes and reading them back produces the fields the bytes
+actually spell. ⚠ `EMIT-02`'s suite already reads the real corpus for exactly
+this reason, in its own words: a fixture would prove the emitter can write a
+hello somebody made up. The case reads the corpus now.
+
+#### ⚠ What is NOT claimed
+
+⛔ **The HTTP/2 half is not emitted here.** `EMIT-03` writes a HEADERS frame
+carrying the priority block and this comparison covers the TLS half, so the
+`http2.*` fields in the report are the claim's own on both sides. ⚠ A stack row
+that asserted the HTTP/2 half would need a settings emitter, and claiming it
+without one is the thing the Must-not forbids.
+
+⛔ **And the Go TLS library is still the cheapest second target**, exactly as the
+Approach says, and it is still not a row here.

@@ -13,7 +13,7 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 4  blocked 0  done 103
+total 107  open 3  blocked 0  done 104
 ```
 
 | priority | open | blocked | done | total |
@@ -21,8 +21,8 @@ total 107  open 4  blocked 0  done 103
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 0 | 0 | 49 | 49 |
 | P2 | 2 | 0 | 40 | 42 |
-| P3 | 2 | 0 | 3 | 5 |
-| **all** | **4** | **0** | **103** | **107** |
+| P3 | 1 | 0 | 4 | 5 |
+| **all** | **3** | **0** | **104** | **107** |
 
 ---
 
@@ -63,7 +63,7 @@ total 107  open 4  blocked 0  done 103
 | EMIT-01 | P2 | L | done | The support matrix, with the holes left in | [`emitters.md`](emitters.md) |
 | EMIT-02 | P2 | L | done | The escape hatch, and where it has to live | [`emitters.md`](emitters.md) |
 | EMIT-03 | P2 | S | done | The priority block patch, if the measurement says it is needed | [`emitters.md`](emitters.md) |
-| EMIT-04 | P3 | M | open | Emitters for the stacks a consumer already uses | [`emitters.md`](emitters.md) |
+| EMIT-04 | P3 | M | done | Emitters for the stacks a consumer already uses | [`emitters.md`](emitters.md) |
 | HARNESS-01 | P0 | L | done | The oracle is a server, not a client | [`harness.md`](harness.md) |
 | HARNESS-02 | P0 | M | done | The switches, each of which exists because something went wrong without it | [`harness.md`](harness.md) |
 | HARNESS-03 | P1 | M | done | Read HTTP/2 settings, the window update and the priority block | [`harness.md`](harness.md) |

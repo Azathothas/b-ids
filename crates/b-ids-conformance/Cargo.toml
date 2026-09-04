@@ -15,6 +15,10 @@ publish = false
 # field by field; a second renderer in this crate would be two spellings of one
 # value with nothing checking that they agree. TODO/validator.md, VALID-05.
 b-ids-harness = { path = "../b-ids-harness" }
+# ⭐ EMIT-04. --stack emits a ClientHello from the claimed profile and reads it
+# back, so the emitter and the parser are both in this graph and neither is the
+# other. TODO/emitters.md, EMIT-04.
+b-ids-emit = { path = "../b-ids-emit" }
 b-ids-schema = { path = "../b-ids-schema" }
 serde_json.workspace = true
 

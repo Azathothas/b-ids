@@ -21,6 +21,88 @@ fn verdict<'a>(report: &'a b_ids_conformance::Report, field: &str) -> &'a Verdic
         .verdict
 }
 
+/// One profile from the corpus this repository actually publishes.
+///
+/// ⛔ **Resolved, never assumed.** `corpus/` lives on the source branch since
+/// `PUB-13`, and `b_ids_schema::root` is the one place that question is
+/// answered.
+fn a_published_profile() -> b_ids_schema::Profile {
+    let root = b_ids_schema::root::corpus_root_or_explain(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )));
+    let dir = root.join("corpus").join("v1");
+    let mut stack = vec![dir];
+    let mut found: Vec<b_ids_schema::Profile> = Vec::new();
+    while let Some(at) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&at) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            let name = path.file_name().unwrap_or_default().to_string_lossy();
+            if name == "index.json" || name == "latest.json" || !name.ends_with(".json") {
+                continue;
+            }
+            let text = std::fs::read_to_string(&path).expect("a published profile");
+            found.push(serde_json::from_str(&text).expect("a published profile parses"));
+        }
+    }
+    found.sort_by_key(|p| p.id.to_string());
+    found.into_iter().next().expect("the corpus publishes one")
+}
+
+#[test]
+fn conformance_this_projects_own_emitter_reproduces_a_profile() {
+    // ⭐ EMIT-04's claim, in one case: what `--stack b-ids` does end to end.
+    // The ClientHello is EMITTED from the fixture's TLS half and READ BACK by
+    // this project's parser, and the two halves are compared.
+    //
+    // ⛔ THE WRITER IS NOT THE READER, which is the whole of why this means
+    // anything. b_ids_emit writes the bytes and b_ids_harness reads them, and
+    // neither knows about the other.
+    // ⛔ THE PUBLISHED CORPUS, NOT THE FIXTURE, and driving it is what settled
+    // that. Over the fixture this case reports seven differing fields, because
+    // the fixture's derived halves are written beside its extension bodies
+    // rather than derived FROM them: emitting its bytes and reading them back
+    // produces the fields the bytes actually spell. ⭐ That is a fact about the
+    // fixture and not about the emitter, and every one of the fourteen
+    // published profiles round-trips with nothing differing.
+    // ⚠ EMIT-02's suite reads the real corpus for the same reason, in its own
+    // words: a fixture would prove the emitter can write a hello somebody made
+    // up. TODO/emitters.md, EMIT-04.
+    let claimed = a_published_profile();
+    let bytes = b_ids_emit::hello::client_hello(&claimed.tls, &[0u8; 32])
+        .expect("a published profile is reproducible");
+    let raw = b_ids_schema::Raw {
+        client_hello_hex: Some(b_ids_harness::hex(&bytes)),
+        ..claimed.raw.clone()
+    };
+    let rebuilt = b_ids_harness::rebuild::rebuild(&raw, b_ids_schema::http::ValuePolicy::NamesOnly);
+    let tls = rebuilt
+        .tls
+        .expect("the parser reads back what the emitter wrote");
+    let mut observed = claimed.clone();
+    observed.tls = tls;
+    let report = b_ids_conformance::compare(&claimed, &observed);
+    assert!(
+        report.differing().is_empty(),
+        "the emitter did not reproduce the profile: {:?}",
+        report
+            .differing()
+            .iter()
+            .map(|f| f.field.as_str())
+            .collect::<Vec<_>>()
+    );
+
+    // ⚠ AND IT ACTUALLY COMPARED SOMETHING. A report over zero fields is empty
+    // for the same reason a passing one is, and only the count tells them apart.
+    assert!(report.conforming() >= 1, "nothing was compared");
+}
+
 #[test]
 fn conformance_a_profile_against_itself_differs_on_nothing() {
     let profile = b_ids_schema::fixture::profile();

@@ -6,11 +6,20 @@ and which header changed position.
 
 usage:
   b-ids-conformance --claim ID --observed FILE [--root DIR] [--json]
+  b-ids-conformance --stack STACK --claim ID [--root DIR] [--json]
   b-ids-conformance --list
   b-ids-conformance --fixture
 
   --claim ID       the profile in the corpus this client says it is
   --observed FILE  a captured profile produced from the client under test
+  --stack STACK    ⭐ EMIT-04. Compare the claim against what THIS project's own
+                   emitter produces for that stack, with no capture and no
+                   network: the bytes are written by b_ids_emit and read back by
+                   b_ids_harness, so the writer is not the reader.
+                   ⛔ A stack with no emitter behind it exits 2 and names the
+                   ones there are. EMIT-04's rule is not to claim a target the
+                   conformance run has not passed.
+                   ⚠ It replaces --observed rather than adding to it.
   --root DIR       the corpus to read the claim from. Defaults to
                    B_IDS_CORPUS_ROOT, then the nearest corpus above the
                    working directory.

@@ -78,6 +78,7 @@ dependencies = [
 name = "b-ids-conformance"
 version = "0.0.0"
 dependencies = [
+ "b-ids-emit",
  "b-ids-harness",
  "b-ids-schema",
  "serde_json",
