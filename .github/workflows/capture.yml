@@ -374,6 +374,15 @@ jobs:
               [ -d "$d/raw" ] && cp -r "$d/raw" .tmp/collect/after/
             done
           fi
+          # ⛔ THE INDEX IS RE-DERIVED OVER THE UNION, never taken from a lane.
+          # Every lane rewrites index.json and latest.json when it adds its own
+          # profile, so each carries only its own view, and copying them over
+          # each other leaves whichever lane was copied last. Measured
+          # 2026-09-04 on run 33851238648: five lanes added five profiles and
+          # the merged tree failed `b-ids-corpus verify` with `index.json does
+          # not match what the corpus derives to`. ⭐ The aggregates are a
+          # function of the profile set, so they are derived once here.
+          cargo run -q -p b-ids-corpus -- index --write --root .tmp/collect/after
           before=$(find .tmp/collect/before/corpus -name '*.json' 2>/dev/null | wc -l)
           after=$(find .tmp/collect/after/corpus -name '*.json' 2>/dev/null | wc -l)
           echo "profile files before=$before after=$after"

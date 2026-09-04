@@ -136,14 +136,32 @@ fi
 
 [ "$LISTS" = "$CARRIERS" ] || note "$CARRIERS profile(s) carry the extension and $LISTS list(s) were published"
 
+# ⚠ Counted and reported rather than hidden: a corpus where every list is empty
+# has published nothing useful, and a reader needs the number to see that.
+EMPTY_ON_THE_WIRE=0
+
 # 2. every published list names its date and at least one identifier
 for f in "$OUT"/*.json; do
   [ -f "$f" ] || continue
   name=$(basename "$f")
   at=$(jq -r '.captured_at // ""' "$f" 2>/dev/null | tr -d '\r')
   n=$(jq -r '.identifiers | length' "$f" 2>/dev/null | tr -d '\r')
+  len=$(jq -r '.extension_length // 0' "$f" 2>/dev/null | tr -d '\r')
   [ -n "$at" ] || note "$name: no capture instant, so nobody can place this list in time"
-  [ "${n:-0}" -gt 0 ] 2>/dev/null || note "$name: no identifiers"
+  # ⛔ AN EMPTY LIST IS A MEASUREMENT WHEN THE WIRE CARRIED AN EMPTY LIST, and a
+  # defect only when it did not. Measured 2026-09-04: an UNBRANDED Chrome for
+  # Testing build sends the extension with a two-byte body, `0000`, which is a
+  # list of length zero, while the branded build beside it sends 206 bytes and
+  # 32 identifiers. ⚠ Reporting the first as "no identifiers" called a genuine
+  # finding about branding a failure of this tree, and it is the finding the
+  # `chromium` control cell exists to produce. TODO/corpus.md, CORPUS-04.
+  if [ "${n:-0}" -gt 0 ] 2>/dev/null; then
+    :
+  elif [ "${len:-0}" = 2 ]; then
+    EMPTY_ON_THE_WIRE=$((EMPTY_ON_THE_WIRE + 1))
+  else
+    note "$name: no identifiers, from a ${len}-byte extension body that is not an empty list"
+  fi
 done
 
 # 3. ⛔ ALL THREE OPTIONS, each with its cost. A document that named two would be
@@ -154,8 +172,8 @@ done
 grep -qF 'asserts no preference' "$DOC" || note "the recommendation does not say that it asserts no preference"
 
 if [ "$JSON" = 1 ]; then
-  printf '{"schema":"check-trust-anchors/1","carriers":%s,"lists":%s,"profiles":%s,"problems":%s}\n' \
-    "${CARRIERS:-0}" "${LISTS:-0}" "${PROFILES:-0}" "$COUNT"
+  printf '{"schema":"check-trust-anchors/2","carriers":%s,"lists":%s,"profiles":%s,"empty_on_the_wire":%s,"problems":%s}\n' \
+    "${CARRIERS:-0}" "${LISTS:-0}" "${PROFILES:-0}" "${EMPTY_ON_THE_WIRE:-0}" "$COUNT"
   [ "$COUNT" = 0 ] || exit 1
   exit 0
 fi
@@ -165,6 +183,11 @@ if [ "$COUNT" = 0 ]; then
     "$CARRIERS" "$PROFILES"
   printf '  published list with its capture instant. The recommendation states all three\n'
   printf '  options and asserts no preference.\n'
+  if [ "${EMPTY_ON_THE_WIRE:-0}" -gt 0 ]; then
+    printf '  %s of them publish an EMPTY list, which is what the wire carried rather\n' \
+      "$EMPTY_ON_THE_WIRE"
+    printf '  than a decode that produced nothing: an unbranded build ships no root store.\n'
+  fi
   exit 0
 fi
 

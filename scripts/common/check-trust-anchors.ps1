@@ -144,14 +144,27 @@ if ($lists -ne $carriers) {
     $problems += ('  ' + $carriers + ' profile(s) carry the extension and ' + $lists + ' list(s) were published')
 }
 
-# 2. every published list names its date and at least one identifier
+# 2. every published list names its date, and an empty one is a measurement
+# only when the wire carried an empty list.
+# An UNBRANDED Chrome for Testing build sends the extension with a two-byte
+# body, 0000, which is a list of length zero, while the branded build beside
+# it sends 206 bytes and 32 identifiers. Measured 2026-09-04. Reporting the
+# first as "no identifiers" called a genuine finding about branding a failure
+# of this tree.
+$emptyOnTheWire = 0
 foreach ($file in (Get-ChildItem -LiteralPath $out -Filter '*.json')) {
     $list = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json
     if (-not $list.captured_at) {
         $problems += ('  ' + $file.Name + ': no capture instant, so nobody can place this list in time')
     }
     if (@($list.identifiers).Count -eq 0) {
-        $problems += ('  ' + $file.Name + ': no identifiers')
+        $len = if ($null -eq $list.extension_length) { 0 } else { [int]$list.extension_length }
+        if ($len -eq 2) {
+            $emptyOnTheWire++
+        } else {
+            $problems += ('  ' + $file.Name + ': no identifiers, from a ' + $len +
+                          '-byte extension body that is not an empty list')
+        }
     }
 }
 
@@ -169,7 +182,7 @@ if (-not $text.Contains('asserts no preference')) {
 $count = $problems.Count
 
 if ($Json) {
-    Write-Output ('{"schema":"check-trust-anchors/1","carriers":' + $carriers + ',"lists":' + $lists + ',"profiles":' + $profiles + ',"problems":' + $count + '}')
+    Write-Output ('{"schema":"check-trust-anchors/2","carriers":' + $carriers + ',"lists":' + $lists + ',"profiles":' + $profiles + ',"empty_on_the_wire":' + $emptyOnTheWire + ',"problems":' + $count + '}')
     if ($count -gt 0) { exit 1 }
     exit 0
 }
@@ -178,6 +191,10 @@ if ($count -eq 0) {
     Write-Output ('trust anchors ok: ' + $carriers + ' of ' + $profiles + ' profile(s) carry codepoint 0xca34, and every one has a')
     Write-Output '  published list with its capture instant. The recommendation states all three'
     Write-Output '  options and asserts no preference.'
+    if ($emptyOnTheWire -gt 0) {
+        Write-Output ('  ' + $emptyOnTheWire + ' of them publish an EMPTY list, which is what the wire carried rather')
+        Write-Output '  than a decode that produced nothing: an unbranded build ships no root store.'
+    }
     exit 0
 }
 

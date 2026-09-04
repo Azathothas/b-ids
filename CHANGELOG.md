@@ -16,6 +16,37 @@ anything here has reached.
 `### ` heading under a `## ` section, and a file with no section has no
 entries a check can read. TOOL-14.
 
+### 2026-09-04T08:30:00Z - the capture matrix added five profiles, which is five more than it has ever added
+
+**Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02` (open),
+[`TODO/docs.md`](TODO/docs.md) `DOC-03`.
+**Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch gains
+five profiles, five raw sidecars and the regenerated aggregates on the next push
+to the default branch.
+
+What landed:
+
+- ⛔ **The capture lane adds the profile it took.** Nothing ever did: the rule
+  that a capture script does not write into an append-only corpus was applied to
+  the script and never to the lane, so six green lanes on run `33849934489` took
+  six captures and added nothing, and the run reported success.
+- ⭐ **Five profiles**, verified locally and merged: the first Gecko capture on a
+  runner, the first two UNBRANDED builds, and two stable Chrome builds an hour
+  apart on two platforms carrying two different versions.
+- ⭐ **The first profiles carrying `captured.acquisition`**: a route, a URL and
+  the digest of the archive that was fetched.
+- ⛔ **The trust-anchor check called a measurement a defect.** An unbranded build
+  publishes an EMPTY root-store list, two bytes on the wire, and the check
+  reported "no identifiers" and went red. It tells an empty list from a decode
+  that produced nothing now.
+- ⛔ **The collect job re-derives the index** rather than keeping whichever
+  lane's copy it merged last, which left the tree failing `b-ids-corpus verify`.
+- ⭐ **`SECURITY.md` exists**, with the threat model: what the harness accepts
+  connections from, what a hosted oracle would receive, and what is in scope.
+  `DOC-03`.
+- ⚠ **The `chromium` cell is enabled**, so the next run answers whether a snap
+  can be driven rather than leaving it predicted.
+
 ### 2026-09-04T07:20:00Z - the corpus has a non-Chromium profile, and three checks that were green would have refused every capture after it
 
 **Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-11`.

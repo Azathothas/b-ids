@@ -680,6 +680,129 @@ permission**: `firefox` on `DRIVER-11`'s launcher and `chromium` on an
 acquisition route. Dispatching a lane for a family the driver cannot drive
 produces an honest failure, not a profile.
 
+### ⛔ 2026-09-04: the matrix had never added a profile, and that is why this entry looked built
+
+⚠ **Half of this entry was called "built" and the built half did nothing.** Six
+lanes ran green on 2026-09-04, run `33849934489`, six captures were actually
+taken, and the run reported:
+
+```text
+corpus=pull-request requests:0 auto:0
+```
+
+⛔ **The cause: nothing ever ran `b-ids-corpus add`.**
+[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh)
+deliberately writes nothing into the corpus, because the corpus is append-only
+and a profile in it is permanent, so the write is a deliberate act rather than a
+side effect of measuring. ⭐ That rule was applied to the SCRIPT on 2026-09-02
+and never to the LANE that runs it, so the deliberate act had nowhere to happen:
+each lane uploaded the checkout unchanged, `collect` merged nothing over
+nothing, and the run reported success.
+
+⚠ **It is the "step that exits 0 having done nothing it was asked to do" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+at the scale of a whole workflow**, and it had been that way since the workflow
+was written.
+
+#### What the lane does now
+
+| | |
+| --- | --- |
+| the add | between the capture and the upload, so the lane's artefact carries the profile it took |
+| the channel and the branded flag | ⛔ from the CELL, not from the script's laptop defaults. A `for-testing` build is UNBRANDED, and a lane taking the default would publish an unbranded build labelled branded, which is a wrong value rather than a missing one |
+| the operator | the run that took it, because "who or what took it" on a runner is the run |
+| the method | `vm`. A hosted runner is a virtual machine, and `captured.method` is a condition rather than a label |
+| an already-published build | ⛔ reported and NOT a failure. The store refuses to overwrite a published profile by design, so a lane whose runner serves a build the corpus already holds would otherwise go red on a state that is correct. ⚠ Any other refusal is still red |
+
+#### ⭐ What run `33851238648` then produced
+
+```text
+profiles collected: 59
+profile files before=9 after=14
+corpus=pull-request requests:5 auto:3
+```
+
+Five profiles, merged after being verified locally rather than on the
+generator's word:
+
+| | |
+| --- | --- |
+| `firefox-154.0.1-linux64-stable` | ⭐ **the first Gecko capture on a runner.** `trust: trust-store`, from the certificate database `DRIVER-11` writes into the throwaway profile |
+| `chrome-151.0.7922.76-linux64-for-testing` | ⭐ **the first unbranded build in the corpus**, and the first profile carrying a real `captured.acquisition`: a route, a URL and a digest |
+| `chrome-151.0.7922.76-win64-for-testing` | the same build on the other platform |
+| `chrome-152.0.7977.82-linux64-stable` | the vendor route, with the archive's digest recorded |
+| `chrome-152.0.7977.83-win64-stable` | ⚠ and it is a DIFFERENT build from the linux one an hour apart, which is the measurement the cell's own note predicts |
+
+⭐ **Six of nine planned cells are captured and none is absent**, up from three
+captured and three absent. ⚠ The `for-testing` lane had never run before today.
+
+#### ⛔ Three more defects, each found by the profiles actually landing
+
+⚠ **The index was taken from a lane rather than derived over the union.** Every
+lane rewrites `index.json` and `latest.json` when it adds its own profile, so
+each carries only its own view and `collect` kept whichever it copied last. The
+merged tree failed `b-ids-corpus verify` with `index.json does not match what the
+corpus derives to`. ⭐ `collect` re-derives them now, because an aggregate is a
+function of the profile set.
+
+⚠ **The trust-anchor check called a measurement a defect.** An unbranded Chrome
+for Testing build sends codepoint `0xca34` with a two-byte body, `0000`, which is
+a list of length zero; the branded build beside it sends 206 bytes and 32
+identifiers. ⛔ The check reported "no identifiers" and went red on the finding
+the `chromium` control cell exists to produce. It distinguishes an empty list on
+the wire from a decode that produced nothing now, and reports the count.
+
+⚠ **A published profile needs a JA4 vector and nothing in the pipeline derives
+one.** Five new profiles failed
+`digest_vectors_every_capture_vector_matches_the_profile_it_names` until five
+vectors were derived by hand with `jq` and `sha256sum`. ⛔ That derivation is
+deliberately NOT this project's Rust, so automating it inside the corpus tool
+would defeat the vector; a tracked derivation script is what it needs, and it is
+recorded in [`PROGRESS.md`](PROGRESS.md) with a recommendation.
+
+⚠ **And one about the pull requests themselves**: five branches were opened, one
+per route, and all five carry the identical tree. Measured: every branch resolves
+to tree `97248d83821e0d13bf4860a6074399938614cd22`. ⛔ A pull request titled for
+one route whose diff carries five is a title a reviewer cannot act on.
+
+⚠ **None of the five could get its required checks.** The forge does not run
+workflows on a pull request created with the run's own token, so every one was
+`MERGEABLE` and `BLOCKED` with no checks at all. ⭐ They were re-derived locally
+instead, which is what
+[`../docs/security/remote-ops.md`](../docs/security/remote-ops.md) asks for
+anyway: fetched, compared against the default branch, read, merged, and then
+`b-ids-corpus verify` and `validate` run over the result.
+
+#### ⛔ Still open, and the blocker is one row
+
+```bash
+sh scripts/common/check-coverage.sh --require-rows chrome,edge,chromium,firefox
+```
+
+```text
+6 captured, 1 absent, 2 not attempted, 1 outside the plan.
+
+coverage check failed, 1 required row(s) with no capture:
+
+  chromium: no capture at all, on any channel or platform
+```
+
+⚠ **Exit 1, read from the process, unpiped.** ⭐ The `chromium` cell is ENABLED
+as of 2026-09-04 rather than left predicted: the resolver knows three paths for
+it and `route: installed` takes whatever the image ships, so a lane answers the
+question either way. ⛔ What is genuinely unknown is whether a snap can be
+driven, and a lane that resolves one and cannot launch it is the finding.
+
+⚠ **And one thing the `for-testing` captures already settled that this cell was
+for.** The unbranded build publishes an EMPTY trust-anchor list and the branded
+one publishes 32 identifiers, so the bundled root store is branding rather than
+engine. ⛔ That does not retire the row: the two for-testing builds are 151 and
+the two stable ones are 152, so the comparison confounds the major with the
+branding, and a chromium capture beside a chrome one of the same major is what
+separates them.
+
+---
+
 ## CORPUS-03. `latest` means stable, and beta is how the project gets ahead
 
 **Source** the founding brief. ⚠ Design reasoning, never measured.

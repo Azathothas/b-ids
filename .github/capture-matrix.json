@@ -137,9 +137,9 @@
       "route": "installed",
       "branded": false,
       "build": null,
-      "enabled": false,
-      "required": false,
-      "why": "The control that proves which fields are branding and which are engine: whatever differs from the chrome cell beside it is branding. \u26d4 THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02's acceptance names chromium as a required row, so the plan and the acceptance disagreed about what was even planned. \u26a0 Waiting on acquisition rather than on the resolver, which knows the family now: there is no vendor channel serving a Chromium build addressable by the version a profile records, and the runner image serves it as a snap, which is a different install mechanism and a different sandbox. DRIVER-10 says this cell may end as a recorded refusal rather than a lane."
+      "enabled": true,
+      "required": true,
+      "why": "The control that proves which fields are branding and which are engine: whatever differs from the chrome cell beside it is branding. \u26d4 THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02's acceptance names chromium as a required row, so the plan and the acceptance disagreed about what was even planned. \u2b50 Enabled 2026-09-04 to take the measurement rather than keep predicting it. The resolver knows /usr/bin/chromium, /usr/bin/chromium-browser and /snap/bin/chromium, and route installed takes whatever the image ships. \u26a0 A runner with no chromium at all exits 2, which this workflow treats as this runner has no browser rather than as a failure, so the lane answers the question either way. \u26d4 What is genuinely unknown is whether a SNAP can be driven: it is a different install mechanism and a different sandbox, and DRIVER-10 says so. A lane that resolves one and cannot launch it is the finding."
     }
   ]
 }

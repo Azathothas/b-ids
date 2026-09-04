@@ -2,15 +2,17 @@
   "schema": "corpus-latest/2",
   "layout": "v1",
   "latest": {
-    "chrome/linux64": "corpus/v1/chrome/stable/linux64/152.0.7977.75.json",
-    "chrome/win64": "corpus/v1/chrome/stable/win64/152.0.7977.76.json",
+    "chrome/linux64": "corpus/v1/chrome/stable/linux64/152.0.7977.82.json",
+    "chrome/win64": "corpus/v1/chrome/stable/win64/152.0.7977.83.json",
     "edge/linux64": "corpus/v1/edge/stable/linux64/151.0.4129.101.json",
     "firefox/linux64": "corpus/v1/firefox/stable/linux64/154.0.1.json",
     "firefox/win64": "corpus/v1/firefox/stable/win64/154.0.1.json"
   },
   "per_channel": {
-    "chrome/stable/linux64": "corpus/v1/chrome/stable/linux64/152.0.7977.75.json",
-    "chrome/stable/win64": "corpus/v1/chrome/stable/win64/152.0.7977.76.json",
+    "chrome/for-testing/linux64": "corpus/v1/chrome/for-testing/linux64/151.0.7922.76.json",
+    "chrome/for-testing/win64": "corpus/v1/chrome/for-testing/win64/151.0.7922.76.json",
+    "chrome/stable/linux64": "corpus/v1/chrome/stable/linux64/152.0.7977.82.json",
+    "chrome/stable/win64": "corpus/v1/chrome/stable/win64/152.0.7977.83.json",
     "edge/stable/linux64": "corpus/v1/edge/stable/linux64/151.0.4129.101.json",
     "firefox/stable/linux64": "corpus/v1/firefox/stable/linux64/154.0.1.json",
     "firefox/stable/win64": "corpus/v1/firefox/stable/win64/154.0.1.json"
