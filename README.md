@@ -94,22 +94,36 @@ passed check. On Windows, run the `.ps1` twin of either command.
 
 ## Where the data lives, and where it is published
 
-⭐ **The canonical corpus is committed on the default branch**, as JSON, one file
-per profile, with the raw bytes beside it. That is deliberate and it is what
-makes an automated capture reviewable: a change to a profile shows up as a diff
-a person reads, rather than as an opaque artefact somebody has to fetch and
-compare.
+⭐ **Three branches, and each answers a different question.**
 
-⛔ **The default branch is not the publishing surface.** An orphan **data
-branch** carries only generated artefacts: the corpus, the raw bytes, the
-generated formats, the flat fetchable routes, the per-build trust-anchor lists,
-an index, a manifest and a checksums file. It is append-only, ⛔ it is never
-force-pushed, and a build that would change nothing writes nothing.
+| branch | what is on it | who wants it |
+| --- | --- | --- |
+| the default branch | the code, the checks, the documents and the reference corpus. ⛔ **No corpus at all** since 2026-09-04 | somebody reading or changing how this works |
+| ⭐ **`source`** | the canonical corpus: `corpus/`, `raw/`, `vectors/` and the licence, and nothing else | somebody reviewing a capture as a diff |
+| **`data`** | what the assembler derives from `source`: the corpus, the raw bytes, every generated format, the flat fetchable routes, the per-build trust-anchor lists, an index, a manifest and a checksums file | ⭐ **a program.** This is the surface to fetch |
 
-⭐ **That branch exists**, and a push to the default branch is what updates it.
+⭐ **The canonical corpus is committed as JSON**, one file per profile with the
+raw bytes beside it, because that is what makes an automated capture reviewable:
+a change shows up as a diff a person reads rather than as an opaque artefact
+somebody has to fetch and compare.
+
+⛔ **It is on its own branch so that the derivation stays checkable.** The data
+branch is a FUNCTION of the source branch, and while both the source and the
+derivation sat on one branch the check that asks "is what is published what the
+corpus derives to" could compare the published branch against a copy of itself.
+It did, once, and reported success.
+
+⛔ **The data branch is append-only, it is never force-pushed, and a build that
+would change nothing writes nothing.** A push to `source` or to the default
+branch is what updates it: a capture changes the corpus, and a code change can
+change what the assembler emits from an unchanged one.
 
 ```bash
 git fetch origin data
+```
+
+```bash
+git fetch origin source
 ```
 
 ⚠ **No release has been cut**, because a pushed tag is the only thing that cuts

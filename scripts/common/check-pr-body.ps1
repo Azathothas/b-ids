@@ -11,9 +11,10 @@
 #
 #   1. the suite that owns the body's contents is present, case by case, and
 #      passes. ⚠ THE ASSERTIONS ARE THE CRATE'S;
-#   2. ⭐ END TO END OVER THE REAL CORPUS, the generator opens one request per
-#      route, and each body carries every section, the validator's output and a
-#      named list of what the run could not do;
+#   2. ⭐ END TO END OVER THE REAL CORPUS, the generator opens ONE request for
+#      the run, carrying every route that moved, and its body carries every
+#      section, the validator's output and a named list of what the run could
+#      not do. ⛔ One branch per ROUTE was withdrawn on 2026-09-04;
 #   3. ⛔ A NO-OP CHANGE OPENS NOTHING AT ALL;
 #   4. a run file that does not parse is a refusal rather than a body with a
 #      blank in it.
@@ -67,6 +68,16 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
     exit 2
 }
 
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED TO BE THIS TREE. Until
+# PUB-13 this passed the repository root as `--after`, which stopped holding a
+# corpus the day corpus/ left the default branch. TODO/publish.md, PUB-13.
+$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
+    [Console]::Error.WriteLine('check-pr-body: no corpus is reachable, so the generator has nothing to run over')
+    exit 2
+}
+$corpusRoot = "$corpusRoot".Trim()
+
 $suite = Join-Path $root 'crates/b-ids-corpus/tests/pull_request.rs'
 if (-not (Test-Path -LiteralPath $suite)) {
     [Console]::Error.WriteLine('check-pr-body: no suite at ' + $suite)
@@ -80,7 +91,8 @@ $want = @(
     'pull_request_a_no_op_change_opens_nothing_at_all',
     'pull_request_a_body_names_what_the_run_could_not_do',
     'pull_request_two_runs_over_one_change_produce_identical_text',
-    'pull_request_a_branch_name_is_one_per_route_and_schema_major',
+    'pull_request_one_branch_per_run_carries_every_route_that_moved',
+    'pull_request_a_run_identifier_that_is_not_a_branch_name_is_made_into_one',
     'pull_request_the_merge_conditions_can_fail_and_say_which',
     'pull_request_every_condition_holding_is_reachable_rather_than_impossible',
     'pull_request_the_labels_carry_the_class_the_confidence_and_the_subject',
@@ -144,7 +156,7 @@ Set-Content -LiteralPath $runPath -Value $runJson -NoNewline
 
 # -- 2: end to end, over the real corpus ------------------------------------
 $generateLog = Join-Path $out 'generate.log'
-& $bin pull-request --before (Join-Path $out 'empty') --after $root --run $runPath --out (Join-Path $out 'requests') > $generateLog 2>&1
+& $bin pull-request --before (Join-Path $out 'empty') --after $corpusRoot --run $runPath --out (Join-Path $out 'requests') > $generateLog 2>&1
 $rcG = $LASTEXITCODE
 if ($rcG -ne 0) {
     $problems += ('  the generator exited ' + $rcG + '. Its output is in .tmp/check-pr-body-ps/generate.log')
@@ -203,7 +215,7 @@ foreach ($dir in (Get-ChildItem -LiteralPath (Join-Path $out 'requests') -Direct
 $none = Join-Path $out 'none'
 New-Item -ItemType Directory -Force -Path $none | Out-Null
 $noopLog = Join-Path $out 'noop.log'
-& $bin pull-request --before $root --after $root --run $runPath --out $none > $noopLog 2>&1
+& $bin pull-request --before $corpusRoot --after $corpusRoot --run $runPath --out $none > $noopLog 2>&1
 $rcN = $LASTEXITCODE
 if ($rcN -ne 0) { $problems += ('  the no-op run exited ' + $rcN) }
 $noopStatus = Get-Content -LiteralPath $noopLog | Where-Object { $_ -like 'corpus=pull-request *' } | Select-Object -Last 1
@@ -218,7 +230,7 @@ if ((Get-ChildItem -LiteralPath $none -Force | Measure-Object).Count -gt 0) {
 # -- 4: a run file that does not parse is a refusal --------------------------
 $half = Join-Path $out 'half.json'
 Set-Content -LiteralPath $half -Value '{"workflow":"capture.yml"}' -NoNewline
-& $bin pull-request --before (Join-Path $out 'empty') --after $root --run $half --out (Join-Path $out 'half') > (Join-Path $out 'half.log') 2>&1
+& $bin pull-request --before (Join-Path $out 'empty') --after $corpusRoot --run $half --out (Join-Path $out 'half') > (Join-Path $out 'half.log') 2>&1
 $rcH = $LASTEXITCODE
 if ($rcH -ne 2) {
     $problems += ('  a run file missing fields exited ' + $rcH + ' where 2 was expected')

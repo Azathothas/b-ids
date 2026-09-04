@@ -5,7 +5,7 @@
 //! alone.
 
 use b_ids_corpus::notes::facts;
-use b_ids_corpus::pull_request::{Run, requests, required_lines};
+use b_ids_corpus::pull_request::{Run, batch, requests, required_lines};
 use b_ids_schema::{Os, Profile, ProvenanceEntry, ProvenanceKind};
 
 /// A profile at one build, on the platform the fixture already carries.
@@ -133,9 +133,13 @@ fn pull_request_two_runs_over_one_change_produce_identical_text() {
 }
 
 #[test]
-fn pull_request_a_branch_name_is_one_per_route_and_schema_major() {
-    // ⭐ DETERMINISTIC, so a re-run updates the open request rather than
-    // opening a second one, and two routes never share a branch.
+fn pull_request_one_branch_per_run_carries_every_route_that_moved() {
+    // ⛔ MEASURED, NOT ARGUED. The generator opened one branch per route and
+    // the workflow pushed the SAME merged tree to each: run 33851238648 opened
+    // five branches and all five resolved to tree
+    // 97248d83821e, abbreviated because this project's secret scan refuses a
+    // 40-character hex run in a tracked file. A title naming one route over a
+    // diff carrying five is a title a reviewer cannot act on.
     let before = vec![at("151.0.7922.76", 151)];
     let after = vec![
         at("152.0.7977.75", 152),
@@ -143,14 +147,73 @@ fn pull_request_a_branch_name_is_one_per_route_and_schema_major() {
     ];
     let opened = requests(&before, &after, &clean_run());
     assert_eq!(opened.len(), 2, "two routes moved");
-    let mut branches: Vec<&str> = opened.iter().map(|r| r.branch.as_str()).collect();
-    branches.sort_unstable();
-    branches.dedup();
-    assert_eq!(branches.len(), 2, "two routes shared a branch");
-    for request in &opened {
-        assert!(request.branch.starts_with("capture/"), "{}", request.branch);
-        assert!(request.branch.ends_with("/v1"), "{}", request.branch);
+
+    let one = batch(&before, &after, &clean_run()).expect("two routes moved, so one request");
+    // ⭐ DETERMINISTIC IN THE RUN IDENTIFIER, so a re-run of the same run
+    // updates its request rather than opening a second one.
+    assert!(one.branch.starts_with("capture/run-"), "{}", one.branch);
+    assert!(one.branch.ends_with("/v1"), "{}", one.branch);
+    assert_eq!(
+        one.branch,
+        batch(&before, &after, &clean_run()).unwrap().branch,
+        "the branch is not deterministic"
+    );
+
+    // ⛔ THE TITLE SAYS HOW MANY ROUTES THE DIFF CARRIES AND NAMES THEM, which
+    // is the whole point of the change.
+    assert!(one.title.contains("2 route(s)"), "{}", one.title);
+    for profile in &after {
+        let token = profile.platform_token().as_str().to_owned();
+        assert!(
+            one.title.contains(&token),
+            "the title {:?} does not name {token}",
+            one.title
+        );
     }
+
+    // ⛔ AND THE BODY CARRIES BOTH ROUTES' OWN SECTIONS, so the per-route body a
+    // reviewer reads is composed rather than replaced.
+    for request in &opened {
+        assert!(
+            one.body.contains(request.body.trim_end()),
+            "the batch body dropped a route's body"
+        );
+    }
+
+    // ⛔ ONE CONFIDENCE LABEL, NEVER TWO. A union of the routes' labels would
+    // carry both confidence:auto and confidence:review on one request.
+    let confidence: Vec<&String> = one
+        .labels
+        .iter()
+        .filter(|label| label.starts_with("confidence:"))
+        .collect();
+    assert_eq!(confidence.len(), 1, "{:?}", one.labels);
+
+    // ⛔ A NO-OP OPENS NOTHING HERE TOO, and the two must agree.
+    assert!(batch(&before, &before, &clean_run()).is_none());
+}
+
+#[test]
+fn pull_request_a_run_identifier_that_is_not_a_branch_name_is_made_into_one() {
+    // ⛔ THE FIXTURE'S OWN RUN IDENTIFIER IS A SENTENCE WITH SPACES, and git
+    // refuses a branch name carrying one at push time, which is the worst place
+    // to find out. check-pr-body drives exactly that value.
+    let mut run = clean_run();
+    run.run_id = "a fixture run".to_owned();
+    let after = vec![at("152.0.7977.75", 152)];
+    let one = batch(&[], &after, &run).expect("a new route moved");
+    assert_eq!(one.branch, "capture/run-a-fixture-run/v1");
+    assert!(
+        !one.branch.contains(' '),
+        "a branch name may not carry a space: {}",
+        one.branch
+    );
+
+    // ⚠ AND AN IDENTIFIER WITH NOTHING USABLE IN IT still produces a branch,
+    // rather than `capture/run-/v1`, which git also refuses.
+    run.run_id = "///".to_owned();
+    let one = batch(&[], &after, &run).expect("a new route moved");
+    assert_eq!(one.branch, "capture/run-unknown/v1");
 }
 
 #[test]

@@ -479,12 +479,30 @@ fi
 # workspace TOOL-01 created is eight empty crates. The line is here anyway,
 # because the defect it removes is a gate that grows a suite line months after
 # the first crate lands. TOOL-02 mutation-proved it by planting a failing test.
+#
+# ⛔ AND THE CORPUS ROOT IS EXPORTED FOR THESE THREE AND FOR NOTHING ELSE.
+# crates/b-ids/build.rs embeds the corpus at build time and finds it by walking
+# up from its own manifest, which answered until PUB-13 moved corpus/ off the
+# default branch. Measured the moment it did: `cargo clippy` and `cargo test`
+# both exited 101 with `b-ids: no corpus above crates/b-ids`. ⭐ B_IDS_CORPUS_ROOT
+# is the seam that file already documents, and corpus-root.sh is the one thing
+# that answers where the corpus is, so the fix is to join them rather than to
+# teach a build script a third copy of the resolution order.
+#
+# ⛔ SCOPED, AND THE SCOPE IS LOAD-BEARING. An export left standing would reach
+# check-twins below, which runs BOTH gates, and inside those the resolver would
+# answer `explicit` for every check. check-data-branch REFUSES that answer by
+# design, so a wider export would turn its comparison into a skip and the gate
+# would stop checking the published branch at all.
 if command -v cargo >/dev/null 2>&1; then
+  CARGO_CORPUS=$(sh "$HERE/corpus-root.sh" 2>/dev/null) || CARGO_CORPUS=""
+  [ -n "$CARGO_CORPUS" ] && export B_IDS_CORPUS_ROOT="$CARGO_CORPUS"
   check_simple 'cargo fmt'    cargo fmt --all --check
   check_simple 'cargo clippy' cargo clippy --workspace --all-targets --all-features -- -D warnings
   # ⚠ No --all-targets here on purpose: it would drop the doc-tests, and a
   # doc-test is the one test that proves the documentation compiles.
   check_simple 'cargo test'   cargo test --workspace --all-features
+  unset B_IDS_CORPUS_ROOT
 else
   record_skip 'cargo fmt'    'cargo is not on this host'
   record_skip 'cargo clippy' 'cargo is not on this host'

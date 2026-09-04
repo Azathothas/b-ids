@@ -38,9 +38,13 @@ fn reachable_dimensions_the_published_corpus_is_wholly_reachable() {
     // ⭐ THE POSITIVE CONTROL. A check that only ever reports a problem on a
     // fixture has not been shown to pass over anything real, and this reads the
     // corpus this repository actually publishes.
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..");
+    // ⛔ RESOLVED, NEVER ASSUMED. This walked two directories up until PUB-13
+    // moved corpus/ onto the source branch. ⚠ It would not have FAILED: the
+    // read below prints "SKIPPED, no corpus" and carries on, so a positive
+    // control would have quietly stopped controlling anything.
+    let root = b_ids_schema::root::corpus_root_or_explain(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )));
     let dir = root.join("corpus").join("v1");
     let mut profiles = Vec::new();
     let mut walk = vec![dir.clone()];

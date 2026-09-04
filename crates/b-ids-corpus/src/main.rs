@@ -15,9 +15,9 @@
 use std::process::ExitCode;
 
 use b_ids_corpus::{
-    Built, Format, Identity, Run, SUPPORT_MATRIX_FILE, Store, build, indexes, manifest, model,
-    parse_tag, plan_release, profile_from, release_body, render, requests, routes, support_matrix,
-    verify as verify_format, would_rewrite,
+    Built, Format, Identity, Run, SUPPORT_MATRIX_FILE, Store, batch, build, indexes, manifest,
+    model, parse_tag, plan_release, profile_from, release_body, render, requests, routes,
+    support_matrix, verify as verify_format, would_rewrite,
 };
 use b_ids_harness::Capture;
 use b_ids_schema::Profile;
@@ -110,14 +110,19 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    publishes nothing: no tag, no asset, no remote. Its LAST line
                    is a fixed
                    `corpus=release tag:T files:N bytes:N profiles:N notes:N from:D`.
-  pull-request     what a scheduled run that found a change should open: one
-                   request per route that moved, each with a deterministic
-                   branch, a body a reviewer can read without checking anything
-                   out, labels, and the five merge conditions with the ones that
-                   failed named. ⛔ A NO-OP CHANGE PRODUCES NOTHING: silence is
-                   the correct output for a browser that did not change. It
-                   opens nothing itself; the workflow does. Its LAST line is a
-                   fixed `corpus=pull-request requests:N auto:N`.
+  pull-request     what a scheduled run that found a change should open: ⭐ ONE
+                   request for the RUN, carrying every route it captured, with a
+                   branch deterministic in the run identifier, a body a reviewer
+                   can read without checking anything out, labels, and the five
+                   merge conditions aggregated over every route with the ones
+                   that failed named. ⛔ One branch per route was measured and
+                   withdrawn: the workflow pushed the same merged tree to each,
+                   five branches over one tree on run 33851238648. ⛔ A NO-OP
+                   CHANGE PRODUCES NOTHING: silence is the correct output for a
+                   browser that did not change. It opens nothing itself; the
+                   workflow does. Its LAST line is a fixed
+                   `corpus=pull-request requests:N auto:N routes:N`, where
+                   requests is 0 or 1 and routes is how many moved.
   --before DIR     the corpus root as it is published today.
   --after DIR      the corpus root with this run's captures merged in.
   --run FILE       what the run knows and the corpus cannot say, as JSON: the
@@ -842,7 +847,7 @@ fn release_command(
 /// text, so a generator that could not reach a network is testable and a step
 /// that calls an API is one thing with one job. `TODO/ci.md`, `CI-04`.
 ///
-/// ⛔ **The last line is a fixed `corpus=pull-request requests:N auto:N`**,
+/// ⛔ **The last line is a fixed `corpus=pull-request requests:N auto:N routes:N`**,
 /// which is what `scripts/common/check-pr-body` and the workflow both read.
 fn pull_request_command(before: &str, after: &str, run_file: &str, out_dir: &str) -> ExitCode {
     let load = |root: &str| -> Result<Vec<Profile>, String> {
@@ -882,12 +887,18 @@ fn pull_request_command(before: &str, after: &str, run_file: &str, out_dir: &str
         return ExitCode::from(2);
     }
 
-    let opened = requests(&before, &after, &run);
+    // ⛔ ONE REQUEST PER RUN, AND THE ROUTE COUNT IS REPORTED BESIDE IT. The
+    // generator opened one request per route until 2026-09-04 and the workflow
+    // pushed the same merged tree to each branch: five branches, one tree,
+    // `97248d83821e`, abbreviated for the secret scan, on run 33851238648.
+    // ⚠ `requests` is still the model: `batch` composes it, so the per-route
+    // body a reviewer reads is unchanged and there is now one place to read it.
+    let routes = requests(&before, &after, &run).len();
+    let opened: Vec<b_ids_corpus::Request> = batch(&before, &after, &run).into_iter().collect();
     let mut auto = 0_usize;
     for request in &opened {
         // ⚠ The branch is a path, so the directory it is written under replaces
-        // the separators. Two routes never collide because the branch itself is
-        // unique.
+        // the separators.
         let dir = std::path::Path::new(out_dir).join(request.branch.replace('/', "_"));
         if let Err(why) = std::fs::create_dir_all(&dir) {
             eprintln!("b-ids-corpus: cannot create {}: {why}", dir.display());
@@ -920,7 +931,10 @@ fn pull_request_command(before: &str, after: &str, run_file: &str, out_dir: &str
         println!("{} -> {}", request.branch, dir.display());
     }
 
-    println!("corpus=pull-request requests:{} auto:{auto}", opened.len());
+    println!(
+        "corpus=pull-request requests:{} auto:{auto} routes:{routes}",
+        opened.len()
+    );
     ExitCode::SUCCESS
 }
 

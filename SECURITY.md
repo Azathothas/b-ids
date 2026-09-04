@@ -13,6 +13,20 @@ surface actually is.
 reporting.** It is on the repository's Security tab, it carries no address that
 outlives whoever wrote it, and nothing you send through it is public.
 
+⭐ **It is switched on**, measured from the forge on 2026-09-04 rather than
+assumed:
+
+```bash
+gh api repos/OWNER/REPO/private-vulnerability-reporting
+```
+
+```text
+{"enabled":true}
+```
+
+⚠ **That was `{"enabled":false}` when this document was written**, which is why
+the paragraph below exists and why it stays.
+
 ⚠ **If that route is not offered to you, open an issue that says only that you
 have a report and asks for a private channel.** ⛔ Do not put the detail in it.
 A one-line issue with no detail is safe to write in public and is the fallback

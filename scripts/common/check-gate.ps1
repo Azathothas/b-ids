@@ -514,15 +514,35 @@ Invoke-PsCheck -Name 'doctor probe' -Script 'scripts/doctor/doctor.ps1' -Argumen
 # workspace TOOL-01 created is eight empty crates. The line is here anyway,
 # because the defect it removes is a gate that grows a suite line months after
 # the first crate lands. TOOL-02 mutation-proved it by planting a failing test.
+#
+# ⛔ AND THE CORPUS ROOT IS EXPORTED FOR THESE THREE AND FOR NOTHING ELSE.
+# crates/b-ids/build.rs embeds the corpus at build time and finds it by walking
+# up from its own manifest, which answered until PUB-13 moved corpus/ off the
+# default branch. Measured the moment it did: `cargo clippy` and `cargo test`
+# both exited 101 with `b-ids: no corpus above crates/b-ids`.
+#
+# ⛔ SCOPED, AND THE SCOPE IS LOAD-BEARING. A variable left set would reach
+# check-twins below, which runs BOTH gates, and inside those the resolver would
+# answer `explicit` for every check. check-data-branch REFUSES that answer by
+# design, so a wider export would turn its comparison into a skip.
 $cargo = Get-Command 'cargo' -CommandType Application -ErrorAction SilentlyContinue |
          Select-Object -First 1
 if ($cargo) {
-    Invoke-Check -Name 'cargo fmt'    -FilePath $cargo.Source -Arguments @('fmt', '--all', '--check')
-    Invoke-Check -Name 'cargo clippy' -FilePath $cargo.Source `
-        -Arguments @('clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings')
-    # ⚠ No --all-targets here on purpose: it would drop the doc-tests, and a
-    # doc-test is the one test that proves the documentation compiles.
-    Invoke-Check -Name 'cargo test'   -FilePath $cargo.Source -Arguments @('test', '--workspace', '--all-features')
+    $cargoCorpus = (& pwsh -NoProfile -File "$common/corpus-root.ps1" | Select-Object -First 1)
+    if ($LASTEXITCODE -eq 0 -and $cargoCorpus) {
+        $env:B_IDS_CORPUS_ROOT = "$cargoCorpus".Trim()
+    }
+    try {
+        Invoke-Check -Name 'cargo fmt'    -FilePath $cargo.Source -Arguments @('fmt', '--all', '--check')
+        Invoke-Check -Name 'cargo clippy' -FilePath $cargo.Source `
+            -Arguments @('clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings')
+        # ⚠ No --all-targets here on purpose: it would drop the doc-tests, and a
+        # doc-test is the one test that proves the documentation compiles.
+        Invoke-Check -Name 'cargo test'   -FilePath $cargo.Source -Arguments @('test', '--workspace', '--all-features')
+    }
+    finally {
+        Remove-Item Env:B_IDS_CORPUS_ROOT -ErrorAction SilentlyContinue
+    }
 }
 else {
     Add-Skip 'cargo fmt'    'cargo is not on this host'

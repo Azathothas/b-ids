@@ -42,7 +42,7 @@ pub use formats::{
 };
 pub use notes::{Change, Movement, changelog_entry, facts, model, release_body};
 pub use publish::{Artefact, Built, build, parse_tag, plan_release, would_rewrite};
-pub use pull_request::{ChangeClass, Condition, Conditions, Request, Run, requests};
+pub use pull_request::{ChangeClass, Condition, Conditions, Request, Run, batch, requests};
 pub use route::{CORPUS_DIR, LAYOUT, NoRoute, RAW_DIR, Route, route};
 pub use routes::{Manifest, Property, indexes, manifest, routes};
 pub use store::{Added, Index, IndexEntry, Pointers, Published, STABLE, Store};

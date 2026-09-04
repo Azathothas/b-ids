@@ -42,17 +42,12 @@ fn corpus_root(explicit: Option<&str>) -> Option<PathBuf> {
     if let Some(named) = explicit {
         return Some(PathBuf::from(named));
     }
-    if let Some(named) = std::env::var_os(ROOT_ENV) {
-        return Some(PathBuf::from(named));
-    }
+    // ⛔ AND THE REST IS b_ids_schema::root's, NOT A SECOND COPY. PUB-13 moved
+    // corpus/ off the default branch and four files had their own walk; this one
+    // keeps only the layer above it, which is the `--root` argument this command
+    // takes and the library has no opinion about.
     let here = std::env::current_dir().ok()?;
-    let mut at: &Path = &here;
-    loop {
-        if at.join("corpus").join("v1").join("index.json").is_file() {
-            return Some(at.to_path_buf());
-        }
-        at = at.parent()?;
-    }
+    b_ids_schema::root::corpus_root_from(&here)
 }
 
 /// Every profile in the corpus, read from the tree rather than from the index.

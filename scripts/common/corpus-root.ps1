@@ -4,24 +4,36 @@
 # check-twins.sh is what stops the two drifting.
 #
 # ⛔ TWELVE CHECKS READ THE CORPUS AND EVERY ONE OF THEM ASSUMED THE WORKING
-# TREE, which is leaving the default branch. TODO/publish.md, PUB-11.
+# TREE, which has now LEFT the default branch. TODO/publish.md, PUB-11 and
+# PUB-13.
 #
 # ⛔ THE ORDER: $env:B_IDS_CORPUS_ROOT if set, then the working tree if it holds
-# corpus/v1/index.json, then a materialised copy of the data branch under
-# .tmp/data-branch. ⚠ An explicit root is never second guessed: if it holds no
-# corpus this exits 2 rather than falling through to something the caller did
-# not ask for.
+# corpus/v1/index.json, then a materialised copy of the SOURCE branch under
+# .tmp/source-branch, then one of the data branch under .tmp/data-branch.
+# ⚠ An explicit root is never second guessed: if it holds no corpus this exits 2
+# rather than falling through to something the caller did not ask for.
 #
-# ⚠ THE ENTRY PROPOSED THE BRANCH BEFORE THE WORKING TREE. That order is wrong
+# ⚠ THE ENTRY PROPOSED A BRANCH BEFORE THE WORKING TREE. That order is wrong
 # while both exist: a session adding a profile would have every check read the
 # published corpus and report green over the one it is about to publish.
+#
+# ⛔ AND SOURCE BEFORE DATA IS THE WHOLE OF PUB-13. The data branch is DERIVED
+# from the source branch, so a resolver answering `data-branch` first would hand
+# check-data-branch the branch it is meant to be checking and the comparison
+# would be against itself. That defect has shipped here once already.
 #
 # ⚠ MATERIALISED THROUGH A TEMPORARY INDEX, so no tar and no pipe are involved:
 # PowerShell is not byte-exact through a native pipe, and the two tar builds
 # this project meets disagree about flags. ⛔ It never touches this
 # repository's own index and registers no worktree.
 #
-# ⭐ IT DOES NOT FETCH. refs/heads/data then refs/remotes/origin/data.
+# ⛔ A COPY IS REUSED ONLY WHILE THE REF IT CAME FROM HAS NOT MOVED. The sha is
+# stamped beside the copy and compared on every call. Reuse-on-presence alone
+# was survivable while this was a rare route and is not now that it is the only
+# one: a profile pushed to the source branch would otherwise be invisible to
+# every check until somebody deleted .tmp by hand.
+#
+# ⭐ IT DOES NOT FETCH. refs/heads/NAME then refs/remotes/origin/NAME.
 #
 # Usage:
 #   pwsh -NoProfile -File scripts/common/corpus-root.ps1
@@ -65,7 +77,9 @@ if ($LASTEXITCODE -ne 0 -or -not $repoRoot) {
 }
 $repoRoot = ($repoRoot | Select-Object -First 1).Trim()
 
-$branch = 'data'
+# ⛔ THE BRANCHES ARE NAMED ONCE, IN ORDER, and the sh half carries the same
+# list. A rename moves both halves and nothing else here knows a branch name.
+$branches = @('source', 'data')
 $mark = 'corpus/v1/index.json'
 
 # ⭐ THE ONE TEST FOR "IS THERE A CORPUS HERE".
@@ -76,10 +90,11 @@ function Test-Corpus {
 }
 
 function Get-BranchRef {
-    & git rev-parse -q --verify "refs/heads/$branch" 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) { return "refs/heads/$branch" }
-    & git rev-parse -q --verify "refs/remotes/origin/$branch" 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) { return "refs/remotes/origin/$branch" }
+    param([string]$Name)
+    & git rev-parse -q --verify "refs/heads/$Name" 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { return "refs/heads/$Name" }
+    & git rev-parse -q --verify "refs/remotes/origin/$Name" 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { return "refs/remotes/origin/$Name" }
     return ''
 }
 
@@ -104,6 +119,25 @@ function Copy-BranchTree {
     return $true
 }
 
+# ⛔ A CACHED COPY IS ONLY AS GOOD AS THE SHA IT CAME FROM.
+function Get-BranchCopy {
+    param([string]$FromRef, [string]$Dest)
+    $want = (& git rev-parse -q --verify "$FromRef^{commit}" 2>$null)
+    if ($LASTEXITCODE -ne 0 -or -not $want) { return $false }
+    $want = ($want | Select-Object -First 1).Trim()
+    $stamp = $Dest + '.ref'
+    $have = ''
+    if (Test-Path -LiteralPath $stamp -PathType Leaf) {
+        $have = (Get-Content -LiteralPath $stamp -Raw -ErrorAction SilentlyContinue)
+        if ($have) { $have = $have.Trim() }
+    }
+    if ($have -ne $want -or -not (Test-Corpus -Root $Dest)) {
+        if (-not (Copy-BranchTree -FromRef $FromRef -Dest $Dest)) { return $false }
+        Set-Content -LiteralPath $stamp -Value $want -NoNewline
+    }
+    return (Test-Corpus -Root $Dest)
+}
+
 function Resolve-CorpusRoot {
     param([string]$Root)
     $explicit = [Environment]::GetEnvironmentVariable('B_IDS_CORPUS_ROOT')
@@ -117,23 +151,21 @@ function Resolve-CorpusRoot {
     if (Test-Corpus -Root $Root) {
         return @{ Root = $Root; Source = 'working-tree'; Ref = '' }
     }
-    $ref = Get-BranchRef
-    if (-not $ref) {
-        [Console]::Error.WriteLine("corpus-root: no corpus in the working tree and no local ref for $branch")
-        return $null
-    }
-    $dest = Join-Path (Join-Path $Root '.tmp') 'data-branch'
-    if (-not (Test-Corpus -Root $dest)) {
-        if (-not (Copy-BranchTree -FromRef $ref -Dest $dest)) {
-            [Console]::Error.WriteLine("corpus-root: could not materialise $ref into $dest")
-            return $null
+    $tried = ''
+    foreach ($branch in $branches) {
+        $branchRef = Get-BranchRef -Name $branch
+        if (-not $branchRef) {
+            $tried += " $branch(no ref)"
+            continue
         }
+        $dest = Join-Path (Join-Path $Root '.tmp') "$branch-branch"
+        if (Get-BranchCopy -FromRef $branchRef -Dest $dest) {
+            return @{ Root = $dest; Source = "$branch-branch"; Ref = $branchRef }
+        }
+        $tried += " $branch(no $mark)"
     }
-    if (-not (Test-Corpus -Root $dest)) {
-        [Console]::Error.WriteLine("corpus-root: $ref carries no $mark")
-        return $null
-    }
-    return @{ Root = $dest; Source = 'data-branch'; Ref = $ref }
+    [Console]::Error.WriteLine("corpus-root: no corpus in the working tree, and no branch carried one:$tried")
+    return $null
 }
 
 function Measure-Profile {
@@ -145,16 +177,18 @@ function Measure-Profile {
 }
 
 if ($Fixture) {
-    # ⛔ THE FALLBACK IS DRIVEN RATHER THAN REASONED ABOUT.
+    # ⛔ THE FALLBACKS ARE DRIVEN RATHER THAN REASONED ABOUT, and since PUB-13
+    # what this protects is the ORDER and the route the order HIDES.
     #
-    # ⚠ NAMED $branchRef RATHER THAN $ref, AND THAT IS NOT STYLE. PowerShell
+    # ⚠ NAMED $sourceRef RATHER THAN $ref, AND THAT IS NOT STYLE. PowerShell
     # variable names are case-insensitive, so a script-scope `$ref` IS the
     # `[switch]$Ref` parameter above, and assigning a string to it throws
     # "cannot convert System.String to SwitchParameter" before anything runs.
     # Found by running this flag. docs/conventions/shell.md.
-    $branchRef = Get-BranchRef
-    if (-not $branchRef) {
-        [Console]::Error.WriteLine("corpus-root: no local ref for $branch, so the fallback cannot be driven")
+    $sourceRef = Get-BranchRef -Name 'source'
+    $dataRef = Get-BranchRef -Name 'data'
+    if (-not $sourceRef) {
+        [Console]::Error.WriteLine('corpus-root: no local ref for source, so the fallback cannot be driven')
         exit 2
     }
     $fix = Join-Path (Join-Path $repoRoot '.tmp') 'corpus-root-fixture-ps'
@@ -176,18 +210,43 @@ if ($Fixture) {
         [Console]::Error.WriteLine('corpus-root: the fallback did not resolve')
         exit 2
     }
-    if ($r.Source -ne 'data-branch') {
-        [Console]::Error.WriteLine("corpus-root: the fixture resolved $($r.Source) where data-branch was expected")
+    if ($r.Source -ne 'source-branch') {
+        [Console]::Error.WriteLine("corpus-root: the fixture resolved $($r.Source) where source-branch was expected")
         exit 2
     }
     $count = Measure-Profile -Root $r.Root
+    # ⛔ AND THE HIDDEN ROUTE, driven on its own. The resolver will never reach
+    # it while the source branch answers, so nothing else here exercises it.
+    $dataCount = 0
+    if ($dataRef) {
+        $dataDest = Join-Path (Join-Path $fix '.tmp') 'data-branch'
+        if (Get-BranchCopy -FromRef $dataRef -Dest $dataDest) {
+            $dataCount = Measure-Profile -Root $dataDest
+        }
+        else {
+            Remove-Item -LiteralPath $fix -Recurse -Force -ErrorAction SilentlyContinue
+            [Console]::Error.WriteLine('corpus-root: the data branch exists and could not be materialised')
+            exit 2
+        }
+    }
     Remove-Item -LiteralPath $fix -Recurse -Force -ErrorAction SilentlyContinue
     if ($count -lt 1) {
-        [Console]::Error.WriteLine('corpus-root: the materialised branch carried no profile')
+        [Console]::Error.WriteLine('corpus-root: the materialised source branch carried no profile')
         exit 2
     }
-    Write-Output "corpus-root fixture ok: a tree with no corpus resolves to the $branch branch,"
-    Write-Output "carrying $count profile(s)."
+    if ($dataRef -and $dataCount -lt 1) {
+        [Console]::Error.WriteLine('corpus-root: the materialised data branch carried no profile')
+        exit 2
+    }
+    Write-Output 'corpus-root fixture ok: a tree with no corpus resolves to the source branch,'
+    if ($dataRef) {
+        Write-Output "carrying $count profile(s). ⛔ The data branch is reachable and NOT chosen: it"
+        Write-Output "materialises to $dataCount profile(s) when asked for directly."
+    }
+    else {
+        Write-Output "carrying $count profile(s). ⛔ The data branch is reachable and NOT chosen: it"
+        Write-Output 'has no local ref here, so only the order was proved.'
+    }
     exit 0
 }
 
@@ -196,14 +255,14 @@ if (-not $resolved) { exit 2 }
 
 # ⭐ THE REF THE ANSWER CAME FROM, empty for the working tree and for an explicit
 # root. check-corpus asks for it because its own question is about a HISTORY:
-# once the corpus is only on the data branch, the history to read is that
-# branch's and not this repository's. TODO/publish.md, PUB-11.
+# now that the corpus is only on a branch, the history to read is that branch's
+# and not this repository's HEAD. TODO/publish.md, PUB-11 and PUB-13.
 if ($Ref) {
     Write-Output $resolved.Ref
     exit 0
 }
 
-# ⛔ WHICH OF THE THREE ANSWERED, WHICH IS NOT THE SAME QUESTION AS -Ref.
+# ⛔ WHICH OF THE FOUR ANSWERED, WHICH IS NOT THE SAME QUESTION AS -Ref.
 # -Ref is empty for TWO different reasons: the working tree answered, or the
 # caller named a root explicitly. A check that reads an empty ref as "the
 # working tree is canonical" is therefore wrong whenever B_IDS_CORPUS_ROOT is
@@ -216,7 +275,7 @@ if ($Source) {
 }
 
 if ($Json) {
-    Write-Output ('{"schema":"corpus-root/1","source":"' + $resolved.Source +
+    Write-Output ('{"schema":"corpus-root/2","source":"' + $resolved.Source +
                   '","ref":"' + $resolved.Ref +
                   '","profiles":' + (Measure-Profile -Root $resolved.Root) + '}')
     exit 0

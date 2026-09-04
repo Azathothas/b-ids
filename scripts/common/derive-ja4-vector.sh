@@ -2,9 +2,15 @@
 # derive-ja4-vector.sh - derive one JA4 test vector from a published profile,
 # with tools that are NOT this project's code.
 #
-# ⭐ A HELPER, NOT A CHECK. It prints; it writes nothing. scripts/README.md's
-# five-point contract is for checks, and this is held to the header rule and the
-# exit-code rule.
+# ⭐ A HELPER, NOT A CHECK. scripts/README.md's five-point contract is for
+# checks, and this is held to the header rule and the exit-code rule.
+#
+# ⚠ IT WRITES IN EXACTLY ONE MODE AND SAYS SO: `--fill ROOT` rewrites that
+# root's vectors/ja4/v1.json with the vectors that were MISSING from it, and
+# every other mode prints. ⛔ It never edits a vector that is already there: a
+# published expectation that moves is a vector nobody can trust, and a profile
+# whose vector disagrees is a finding for the suite rather than something to
+# overwrite here.
 #
 # -- ⛔ THE DEFECT THIS EXISTS TO CATCH -------------------------------------
 #
@@ -39,6 +45,14 @@
 #   sh scripts/common/derive-ja4-vector.sh corpus/v1/chrome/stable/win64/151.0.7922.76.json
 #   sh scripts/common/derive-ja4-vector.sh --json PROFILE
 #   sh scripts/common/derive-ja4-vector.sh --selftest        prove it, offline
+#   sh scripts/common/derive-ja4-vector.sh --fill ROOT       every missing one
+#
+# ⭐ --fill IS WHY THE CAPTURE PIPELINE CAN FINISH ITS OWN JOB. A capture that
+# lands a profile leaves the gate red until a vector exists for it, and before
+# this mode the only fix was a person with a shell. The collect job derives them
+# over the MERGED tree, for the same reason it re-derives the index there: a
+# vector is a function of the profile set the run would publish, not of one
+# lane's view of it.
 #
 # Exit codes: 0 derived, 1 the profile could not be read, 2 could not run.
 #
@@ -48,12 +62,22 @@ set -u
 
 JSON=0
 SELFTEST=0
+FILL=""
 PROFILE=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --json) JSON=1 ;;
     --selftest) SELFTEST=1 ;;
+    # ⚠ --fill TAKES ITS ROOT AS THE NEXT ARGUMENT rather than reusing the
+    # positional, because the positional is a PROFILE and a root is not one.
+    # A flag that silently accepted either would derive one vector when it was
+    # asked to fill a tree.
+    --fill)
+      shift
+      [ $# -gt 0 ] || { printf 'derive-ja4-vector: --fill needs a corpus root\n' >&2; exit 2; }
+      FILL="$1"
+      ;;
     -h|--help) awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print } else exit }' "$0"; exit 0 ;;
     -*) printf 'derive-ja4-vector: unknown argument: %s\n' "$1" >&2; exit 2 ;;
     *) PROFILE="$1" ;;
@@ -143,6 +167,85 @@ if [ "$SELFTEST" = 1 ]; then
       "$empty" "${#known}" "$problems"
   fi
   [ "$problems" = 0 ] || exit 1
+  exit 0
+fi
+
+# -- ⭐ FILL: EVERY VECTOR THE TREE IS MISSING, AND NOT ONE IT ALREADY HAS ----
+#
+# ⛔ THE ONE MODE THAT WRITES. It appends the capture vectors for profiles that
+# have none and leaves every existing vector byte for byte. A vector already in
+# the file is a published expectation, and rewriting one would replace the thing
+# the suite checks against with whatever this run computed, which is the exact
+# circularity VALID-04 forbids.
+if [ -n "$FILL" ]; then
+  VECTORS="$FILL/vectors/ja4/v1.json"
+  [ -d "$FILL/corpus/v1" ] || {
+    printf 'derive-ja4-vector: %s holds no corpus/v1\n' "$FILL" >&2
+    exit 2
+  }
+  [ -f "$VECTORS" ] || {
+    # ⛔ REFUSED RATHER THAN CREATED. The file carries the specification vectors
+    # and the provenance block as well as the captures, and a fresh one written
+    # here would carry neither while looking complete.
+    printf 'derive-ja4-vector: no %s to fill\n' "$VECTORS" >&2
+    exit 2
+  }
+  PRESENT_IDS=$(jq -r '[.vectors[] | select(.kind == "capture") | .id] | .[]' "$VECTORS" | tr -d '\r')
+  DERIVED=0
+  PRESENT=0
+  TOTAL=0
+  WORK="$FILL/.tmp-ja4-fill"
+  rm -rf "$WORK"
+  mkdir -p "$WORK" || { printf 'derive-ja4-vector: cannot create %s\n' "$WORK" >&2; exit 2; }
+  cp "$VECTORS" "$WORK/current.json" || exit 2
+  # ⚠ SORTED, so two runs over one tree produce one file. LC_ALL=C because a
+  # locale-aware sort orders differently and this file is compared byte for byte
+  # by check-data-branch once it is published.
+  for p in $(find "$FILL/corpus/v1" -name '*.json' ! -name index.json ! -name latest.json | LC_ALL=C sort); do
+    TOTAL=$((TOTAL + 1))
+    id=$(jq -r '.id' "$p" | tr -d '\r')
+    if printf '%s\n' "$PRESENT_IDS" | grep -qxF "$id"; then
+      PRESENT=$((PRESENT + 1))
+      continue
+    fi
+    derive "$p" || exit 1
+    # ⚠ RELATIVE TO THE ROOT BEING FILLED, not to this repository. The tree may
+    # be a merged copy under .tmp, and a path relative to the wrong base is a
+    # sidecar reference that resolves nowhere.
+    rel=${p#"$FILL"/}
+    hello=$(printf '%s' "$rel" | sed 's|^corpus/|raw/|; s|\.json$|.hello.hex|')
+    jq -n --arg id "$id" --arg hello "$hello" --arg ja4 "$JA4" \
+      --arg r "$JA4_R" --arg ro "$JA4_RO" \
+      '{kind: "capture", id: $id, hello: $hello, ja4: $ja4, ja4_r: $r, ja4_ro: $ro}' \
+      > "$WORK/one.json" || exit 1
+    jq --slurpfile add "$WORK/one.json" '.vectors += $add' "$WORK/current.json" \
+      > "$WORK/next.json" || exit 1
+    mv "$WORK/next.json" "$WORK/current.json"
+    DERIVED=$((DERIVED + 1))
+    printf 'derived %s\n' "$id"
+  done
+  if [ "$DERIVED" -gt 0 ]; then
+    # ⚠ TWO SPACES OF INDENT AND A TRAILING NEWLINE, which is what the file
+    # already carries. jq's default is two spaces; the newline is jq's too.
+    #
+    # ⛔ AND THE CARRIAGE RETURN IS STRIPPED. jq ON WINDOWS WRITES CRLF, which
+    # this project has now been bitten by three times: the capture matrix's plan
+    # reader, check-data-branch's manifest leg, and this. Measured here by
+    # running both halves over one planted tree: the sh half wrote `{\r\n` and
+    # the PowerShell half wrote `{\n`, so the twins produced different bytes for
+    # the same derivation. A raw CR cannot appear in this file legitimately,
+    # because jq escapes one inside a string as \r.
+    tr -d '\r' < "$WORK/current.json" > "$VECTORS" || exit 1
+  fi
+  rm -rf "$WORK"
+  if [ "$JSON" = 1 ]; then
+    printf '{"schema":"derive-ja4-vector/2","fill":true,"profiles":%s,"derived":%s,"present":%s}\n' \
+      "$TOTAL" "$DERIVED" "$PRESENT"
+  else
+    printf 'derive-ja4-vector fill: %s profile(s), %s vector(s) derived, %s already present.\n' \
+      "$TOTAL" "$DERIVED" "$PRESENT"
+    printf '⛔ Nothing already in the file was rewritten.\n'
+  fi
   exit 0
 fi
 

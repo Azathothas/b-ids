@@ -86,6 +86,9 @@ project's rules are mostly about one of them.**
         v
   corpus/v1/<browser>/<channel>/<platform>/<version>.json
   raw/v1/...  the ClientHello beside it
+        |  ⛔ on the SOURCE branch, not the default one. Section 4.
+        v
+  one pull request per RUN, against `source`
 ```
 
 ### ⛔ The four things that go wrong at those arrows
@@ -110,9 +113,32 @@ checksums file. ⛔ It reads no clock and it writes to no remote: a workflow
 pushes what it built, and the manifest is stamped with a digest of the corpus,
 so a rebuild is byte-identical and a change is not.
 
+### ⭐ Three branches, and each one answers a different question
+
+⛔ **Since `PUB-13`, 2026-09-04.** The default branch carries no corpus at all.
+
+| branch | carries | why it is not one of the others |
+| --- | --- | --- |
+| the default branch | the code, the checks, the documents, the reference corpus | it is what READS the corpus. A branch that carried both would make the derivation below a comparison of a tree against itself, which is a defect this repository has already shipped once |
+| ⭐ `source` | `corpus/`, `raw/`, `vectors/` and `LICENSE`, and nothing else | ⛔ **the CANONICAL corpus.** Append-only. A capture opens ONE pull request per run against this branch |
+| `data` | what the assembler produces from `source` | ⭐ DERIVED, and that is the whole point: something has to be canonical for "is the published branch what the corpus derives to" to be a real question |
+
+⚠ **`LICENSE` and `vectors/` are on `source` because the code put them there
+first**, not as a layout preference. `publish::build` reads both from the corpus
+root it is given, and the digest suite asserts one JA4 vector per published
+profile, so a profile and its vector on two branches leave the gate red until
+both land, in either merge order.
+
+⛔ **Every reader resolves the root rather than assuming it.**
+[`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh) is the
+one answer for a shell and
+[`../crates/b-ids-schema/src/root.rs`](../crates/b-ids-schema/src/root.rs) for
+Rust, and the gate exports `B_IDS_CORPUS_ROOT` around its three `cargo` steps so
+the suite and the crate's build script read one corpus rather than two.
+
 | surface | state |
 | --- | --- |
-| the `data` branch | ⭐ published. `origin/data` carries that tree. Every push to the default branch appends to it, a push that would change nothing is a no-op, and ⛔ it is never force-pushed. |
+| the `data` branch | ⭐ published. `origin/data` carries that tree. A push to the default branch OR to `source` appends to it, a push that would change nothing is a no-op, and ⛔ it is never force-pushed. |
 | a tagged release | ⚠ none. A pushed tag is the only thing that cuts one, and pushing one is the operator's act. |
 
 ⭐ **A digest is derived, never stored.**

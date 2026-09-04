@@ -46,26 +46,25 @@ struct Published {
     vectors: Vec<Vector>,
 }
 
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .canonicalize()
-        .expect("the repository root")
+/// ⛔ **Resolved, never assumed, and the VECTORS come from the same root.**
+/// `PUB-13` moved `corpus/`, `raw/` and `vectors/` onto the source branch
+/// together, because `b_ids_corpus::publish::build` reads the vector file from
+/// the corpus root and because this suite asserts one vector per published
+/// profile: a profile and its vector on two different branches leave the gate
+/// red until both land, and there is no order of two merges that avoids it.
+fn corpus_root() -> PathBuf {
+    b_ids_schema::root::corpus_root_or_explain(Path::new(env!("CARGO_MANIFEST_DIR")))
 }
 
 fn published() -> Published {
-    let path = repository_root()
-        .join("vectors")
-        .join("ja4")
-        .join("v1.json");
+    let path = corpus_root().join("vectors").join("ja4").join("v1.json");
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
 }
 
 /// Every published profile, by identifier.
 fn profiles() -> Vec<Profile> {
-    let corpus = repository_root().join("corpus").join("v1");
+    let corpus = corpus_root().join("corpus").join("v1");
     let mut found = Vec::new();
     let mut stack = vec![corpus];
     while let Some(dir) = stack.pop() {

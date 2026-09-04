@@ -11,9 +11,11 @@
 #      passes. ⚠ THE ASSERTIONS ARE THE CRATE'S: a second idea of what a body
 #      must carry, written here, would disagree with the crate's the first time
 #      either moved;
-#   2. ⭐ END TO END OVER THE REAL CORPUS, the generator opens one request per
-#      route, and each body carries every section, the validator's output and a
-#      named list of what the run could not do;
+#   2. ⭐ END TO END OVER THE REAL CORPUS, the generator opens ONE request for
+#      the run, carrying every route that moved, and its body carries every
+#      section, the validator's output and a named list of what the run could
+#      not do. ⛔ One branch per ROUTE was withdrawn on 2026-09-04: the workflow
+#      pushed the same merged tree to each, five branches over one tree;
 #   3. ⛔ A NO-OP CHANGE OPENS NOTHING AT ALL. Silence is the correct output for
 #      a browser that did not change, and a bot that writes on a schedule trains
 #      people to ignore it;
@@ -68,6 +70,16 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-pr-body: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 command -v cargo >/dev/null 2>&1 || { printf 'check-pr-body: cargo not found\n' >&2; exit 2; }
 
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED TO BE THIS TREE. Until
+# PUB-13 this check passed $REPO_ROOT as `--after`, which stopped holding a
+# corpus the day corpus/ left the default branch: the generator would have read
+# an empty store, produced no request, and this check would have failed on a
+# tree that is correct. TODO/publish.md, PUB-11 and PUB-13.
+CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
+  printf 'check-pr-body: no corpus is reachable, so the generator has nothing to run over\n' >&2
+  exit 2
+}
+
 SUITE="$REPO_ROOT/crates/b-ids-corpus/tests/pull_request.rs"
 [ -f "$SUITE" ] || { printf 'check-pr-body: no suite at %s\n' "$SUITE" >&2; exit 2; }
 
@@ -78,7 +90,8 @@ WANT='pull_request_a_body_carries_every_fact_the_model_holds
 pull_request_a_no_op_change_opens_nothing_at_all
 pull_request_a_body_names_what_the_run_could_not_do
 pull_request_two_runs_over_one_change_produce_identical_text
-pull_request_a_branch_name_is_one_per_route_and_schema_major
+pull_request_one_branch_per_run_carries_every_route_that_moved
+pull_request_a_run_identifier_that_is_not_a_branch_name_is_made_into_one
 pull_request_the_merge_conditions_can_fail_and_say_which
 pull_request_every_condition_holding_is_reachable_rather_than_impossible
 pull_request_the_labels_carry_the_class_the_confidence_and_the_subject
@@ -144,7 +157,7 @@ JSON
 # ⭐ EVERY ROUTE IS NEW, which is the case that is deterministic whatever the
 # corpus holds. `--before` is an empty directory rather than a state this check
 # invented, so nothing here fabricates a profile.
-"$BIN" pull-request --before "$OUT/empty" --after "$REPO_ROOT" \
+"$BIN" pull-request --before "$OUT/empty" --after "$CORPUS_ROOT" \
   --run "$OUT/run.json" --out "$OUT/requests" > "$OUT/generate.log" 2>&1
 rc_g=$?
 [ "$rc_g" = 0 ] || note "the generator exited $rc_g. Its output is in .tmp/check-pr-body/generate.log"
@@ -183,7 +196,7 @@ done
 # ⛔ NOT A FIXTURE. The real corpus against itself is the truest no-op there is,
 # and it needs nothing invented.
 rm -rf "$OUT/none" && mkdir -p "$OUT/none"
-"$BIN" pull-request --before "$REPO_ROOT" --after "$REPO_ROOT" \
+"$BIN" pull-request --before "$CORPUS_ROOT" --after "$CORPUS_ROOT" \
   --run "$OUT/run.json" --out "$OUT/none" > "$OUT/noop.log" 2>&1
 rc_n=$?
 [ "$rc_n" = 0 ] || note "the no-op run exited $rc_n"
@@ -198,7 +211,7 @@ fi
 # ⛔ A BODY WITH A BLANK WHERE A RUN IDENTIFIER BELONGS is a fabricated
 # provenance block in a project whose product is provenance.
 printf '{"workflow":"capture.yml"}\n' > "$OUT/half.json"
-"$BIN" pull-request --before "$OUT/empty" --after "$REPO_ROOT" \
+"$BIN" pull-request --before "$OUT/empty" --after "$CORPUS_ROOT" \
   --run "$OUT/half.json" --out "$OUT/half" > "$OUT/half.log" 2>&1
 rc_h=$?
 [ "$rc_h" = 2 ] || note "a run file missing fields exited $rc_h where 2 was expected"

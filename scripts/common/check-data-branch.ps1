@@ -73,11 +73,19 @@ if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     exit 2
 }
 $corpusRoot = "$corpusRoot".Trim()
-# ⛔ THIS CHECK RESOLVES THE ROOT AND THEN REFUSES ONE ANSWER. Its question is
+# ⛔ THIS CHECK RESOLVES THE ROOT AND THEN REFUSES SOME ANSWERS. Its question is
 # whether the published branch equals what the CANONICAL corpus derives to, so
-# a run that resolved to the branch would compare it against itself and pass
-# without asking anything. ⚠ Once corpus/ leaves the default branch that is
-# this check's honest state: exit 2, "could not run". TODO/publish.md, PUB-11.
+# a run that resolved to the DATA branch would compare it against itself and
+# pass without asking anything.
+#
+# ⭐ SINCE PUB-13 THE CANONICAL CORPUS IS THE SOURCE BRANCH, and this check runs
+# against it rather than skipping. TODO/publish.md, PUB-11 and PUB-13.
+#
+#   working-tree    a session that has the corpus checked out. Canonical.
+#   source-branch   the everyday answer since PUB-13. Canonical.
+#   data-branch     ⛔ REFUSED. It is what this check is checking.
+#   explicit        ⛔ REFUSED. B_IDS_CORPUS_ROOT may name anything, including a
+#                   copy of the data branch, and this guard cannot tell which.
 #
 # ⛔ THE GUARD IS ASKED BEFORE THE EXPORT, AND IT ASKS FOR THE SOURCE RATHER
 # THAN THE REF. Both halves of that sentence were defects. The export sets
@@ -90,9 +98,10 @@ $corpusRoot = "$corpusRoot".Trim()
 $corpusSource = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Source | Select-Object -First 1)
 if ($null -eq $corpusSource) { $corpusSource = '' }
 $corpusSource = "$corpusSource".Trim()
-if ($corpusSource -ne 'working-tree') {
-    [Console]::Error.WriteLine('check-data-branch: the canonical corpus is not in this tree, so the')
-    [Console]::Error.WriteLine("branch has nothing to be compared against. It resolved to $corpusSource.")
+if ($corpusSource -ne 'working-tree' -and $corpusSource -ne 'source-branch') {
+    [Console]::Error.WriteLine('check-data-branch: the canonical corpus did not resolve to this tree or')
+    [Console]::Error.WriteLine('to the source branch, so the data branch has nothing independent to be')
+    [Console]::Error.WriteLine("compared against. It resolved to $corpusSource.")
     exit 2
 }
 # ⛔ AND EXPORTED ONLY AFTER THE GUARD HAS RUN, because cargo is downstream of

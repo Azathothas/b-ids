@@ -35,6 +35,10 @@ pub mod fixture;
 pub mod http;
 pub mod http2;
 pub mod instant;
+// ⛔ WHERE THE CORPUS IS, IN ONE PLACE. PUB-13 moved corpus/ off the default
+// branch and four test files each had their own copy of the walk that used to
+// find it. This crate is the one every reader already depends on.
+pub mod root;
 pub mod tls;
 
 pub use error::Defect;

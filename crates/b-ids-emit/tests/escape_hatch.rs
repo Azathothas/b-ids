@@ -14,18 +14,17 @@ use std::path::{Path, PathBuf};
 use b_ids_emit::{extensions_block, unnamed_codepoints};
 use b_ids_schema::Profile;
 
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .canonicalize()
-        .expect("the repository root")
+/// ⛔ **Resolved, never assumed.** `corpus/` left the default branch in
+/// `PUB-13`, and this suite walked up from its own manifest to find it.
+/// `b_ids_schema::root` is the one place that question is answered now.
+fn corpus_root() -> PathBuf {
+    b_ids_schema::root::corpus_root_or_explain(Path::new(env!("CARGO_MANIFEST_DIR")))
 }
 
 /// Every published profile that carries a raw `ClientHello`.
 fn profiles() -> Vec<Profile> {
     let mut found = Vec::new();
-    let mut stack = vec![repository_root().join("corpus").join("v1")];
+    let mut stack = vec![corpus_root().join("corpus").join("v1")];
     while let Some(dir) = stack.pop() {
         let Ok(entries) = std::fs::read_dir(&dir) else {
             continue;

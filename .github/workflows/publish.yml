@@ -56,7 +56,15 @@ name: publish
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    # ⛔ BOTH BRANCHES, AND THE SECOND ONE IS THE POINT SINCE PUB-13. A push to
+    # the SOURCE branch is a new capture, which is the change a consumer of the
+    # data branch is actually waiting for; a push to the DEFAULT branch can
+    # change what the assembler emits from an unchanged corpus, because the
+    # formats, the routes and the generated configs are this repository's code.
+    # ⚠ Neither can be named indirectly: GitHub does not accept an expression in
+    # an `on:` filter, so these two literals are the one place in this tree's
+    # workflows that name a branch.
+    branches: [main, source]
     tags: ['v1.*']
 
 # Least privilege at the top. The two jobs that write say so themselves.
@@ -89,9 +97,38 @@ jobs:
       # ⛔ fetch-depth: 0 IS LOAD-BEARING. check-release asks git which tags
       # exist and check-corpus runs inside check-data-branch's suite; both are
       # answered "none" by a shallow clone.
+      #
+      # ⛔ AND THE REF IS CHOSEN RATHER THAN INHERITED, SINCE PUB-13. This
+      # workflow now triggers on a push to the SOURCE branch, and that branch
+      # carries corpus/, raw/ and vectors/ and NO CODE: a default checkout of it
+      # would give this job a tree with no scripts/ and no crates/, and every
+      # step below would fail on a missing file. A tag is checked out as itself,
+      # because a release is cut from the code the tag names; everything else is
+      # checked out at the default branch and takes its corpus from the step
+      # after this one. ⚠ The default branch is read from the event rather than
+      # written here, so nothing in this file names it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: >-
+            ${{ startsWith(github.ref, 'refs/tags/') && github.ref
+                || github.event.repository.default_branch }}
+
+      # ⛔ THE CORPUS COMES FROM THE SOURCE BRANCH. `publish --root .` reads
+      # corpus/, raw/ and vectors/ from the root it is given, and the default
+      # branch carries none of them since PUB-13. ⭐ Checking them into the
+      # WORKING TREE rather than materialising them under .tmp is deliberate:
+      # corpus-root.sh then answers `working-tree`, which is what
+      # check-data-branch requires as its canonical side, and this job's tree is
+      # thrown away when it ends.
+      - name: the canonical corpus, from the source branch
+        shell: bash
+        run: |
+          git fetch --no-tags origin '+refs/heads/source:refs/remotes/origin/source'
+          git checkout origin/source -- corpus raw vectors
+          n=$(find corpus/v1 -name '*.json' ! -name index.json ! -name latest.json | wc -l)
+          echo "the source branch carries $n profile(s)"
+          [ "$n" -ge 1 ]
 
       - name: the pinned Rust toolchain
         shell: bash
@@ -146,15 +183,24 @@ jobs:
     # ⚠ NOT ON A TAG. A tag cuts a release; the branch tracks the default
     # branch, and pushing the same bytes from two events would put two commits
     # on it for one change.
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.ref == 'refs/heads/main'
+      || github.ref == 'refs/heads/source'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: write
     steps:
+      # ⛔ THE SAME REF RULE AS THE ASSEMBLE JOB, and for the same reason: this
+      # job runs `cargo run -p b-ids-corpus data-branch`, so it needs the code
+      # rather than the corpus. It takes its content from the artefact above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: >-
+            ${{ startsWith(github.ref, 'refs/tags/') && github.ref
+                || github.event.repository.default_branch }}
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -277,9 +323,15 @@ jobs:
     permissions:
       contents: write
     steps:
+      # ⛔ THE SAME REF RULE AS THE ASSEMBLE JOB, and for the same reason: this
+      # job runs `cargo run -p b-ids-corpus data-branch`, so it needs the code
+      # rather than the corpus. It takes its content from the artefact above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: >-
+            ${{ startsWith(github.ref, 'refs/tags/') && github.ref
+                || github.event.repository.default_branch }}
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:

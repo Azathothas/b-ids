@@ -57,12 +57,18 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || {
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-data-branch: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
-# ⛔ THIS CHECK RESOLVES THE CORPUS ROOT AND THEN REFUSES ONE ANSWER. Its
+# ⛔ THIS CHECK RESOLVES THE CORPUS ROOT AND THEN REFUSES SOME ANSWERS. Its
 # question is whether the published branch equals what the CANONICAL corpus
-# derives to, so a run that resolved to the branch would compare the branch
-# against itself and pass without asking anything. ⚠ Once corpus/ leaves the
-# default branch that is the honest state of this check: exit 2, "could not
-# run", which CI-07 rules is not a failure. TODO/publish.md, PUB-11.
+# derives to, so a run that resolved to the DATA branch would compare that
+# branch against itself and pass without asking anything.
+#
+# ⭐ SINCE PUB-13 THE CANONICAL CORPUS IS THE SOURCE BRANCH, and this check runs
+# against it rather than skipping. Before that ruling, corpus/ leaving the
+# default branch left this check with nothing to compare and its honest state
+# was exit 2, "could not run". That state cost two CI jobs: ubuntu runs
+# --strict, which fails on any skip, and windows asserts that only check-twins
+# may skip. ⚠ Neither job needed changing in the end, because the source branch
+# gave this check its question back. TODO/publish.md, PUB-11 and PUB-13.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-data-branch: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -85,12 +91,26 @@ CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
 # two builds` and exited 0, having compared the published branch against a
 # materialised copy of that same branch. ⛔ A check cannot pass by comparing
 # something to itself, and this one could. TODO/publish.md, PUB-11.
+# ⛔ TWO ANSWERS ARE CANONICAL AND TWO ARE REFUSED, and the refusals are what
+# this guard is for.
+#
+#   working-tree    a session that has the corpus checked out. Canonical.
+#   source-branch   the everyday answer since PUB-13. Canonical.
+#   data-branch     ⛔ REFUSED. It is what this check is checking, and comparing
+#                   it against itself is how this check reported `data branch
+#                   ok` over a corpus nobody had looked at.
+#   explicit        ⛔ REFUSED. B_IDS_CORPUS_ROOT may name anything, including a
+#                   copy of the data branch, and this guard cannot tell which.
 CORPUS_SOURCE=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --source)
-if [ "$CORPUS_SOURCE" != "working-tree" ]; then
-  printf 'check-data-branch: the canonical corpus is not in this tree, so the\n' >&2
-  printf 'branch has nothing to be compared against. It resolved to %s.\n' "$CORPUS_SOURCE" >&2
-  exit 2
-fi
+case "$CORPUS_SOURCE" in
+  working-tree | source-branch) ;;
+  *)
+    printf 'check-data-branch: the canonical corpus did not resolve to this tree or\n' >&2
+    printf 'to the source branch, so the data branch has nothing independent to be\n' >&2
+    printf 'compared against. It resolved to %s.\n' "$CORPUS_SOURCE" >&2
+    exit 2
+    ;;
+esac
 # ⛔ AND EXPORTED ONLY AFTER THE GUARD HAS RUN, because cargo is downstream of
 # this decision but the guard must not be.
 export B_IDS_CORPUS_ROOT="$CORPUS_ROOT"

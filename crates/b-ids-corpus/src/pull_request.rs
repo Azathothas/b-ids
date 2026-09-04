@@ -534,6 +534,199 @@ pub fn requests(before: &[Profile], after: &[Profile], run: &Run) -> Vec<Request
     out
 }
 
+/// A run identifier, reduced to what a git branch name may carry.
+///
+/// ⛔ **Sanitised rather than trusted.** The run identifier is a value the
+/// platform hands the workflow, and the fixture this project checks the
+/// generator against uses a human sentence for it. A space in a branch name is
+/// refused by git at push time, which is the worst place to find out.
+fn branch_token(run_id: &str) -> String {
+    let mut out = String::new();
+    for ch in run_id.chars() {
+        if ch.is_ascii_alphanumeric() || ch == '.' || ch == '_' || ch == '-' {
+            out.push(ch);
+        } else if !out.ends_with('-') {
+            out.push('-');
+        }
+    }
+    let trimmed = out.trim_matches(['-', '.']).to_owned();
+    if trimmed.is_empty() {
+        "unknown".to_owned()
+    } else {
+        trimmed
+    }
+}
+
+/// ⭐ **The ONE pull request a run opens**, carrying every route it captured.
+///
+/// ⛔ **One branch per RUN, not one per route, and it was measured rather than
+/// argued.** The generator opened one branch per route, and the workflow then
+/// pushed the whole merged corpus to each of them: on run `33851238648` five
+/// branches were opened and all five resolved to tree
+/// `97248d83821e`, abbreviated because this project's secret scan refuses a
+/// 40-character hex run in a tracked file. ⚠ A title naming one route over
+/// a diff carrying five is a title a reviewer cannot act on, and five reviews
+/// of one tree is four reviews nobody needed.
+///
+/// ⭐ **[`requests`] is still the model underneath**, one per route that moved,
+/// because the per-route body is what a reviewer actually reads. This composes
+/// them; it does not replace them.
+///
+/// ⚠ **The branch is deterministic in the run identifier**, so a re-run of the
+/// same run updates its request rather than opening a second one. That is the
+/// same property the per-route branch had, moved to the unit that is actually
+/// pushed.
+///
+/// Returns `None` for a no-op change, for the reason [`requests`] returns an
+/// empty vector: silence is the correct output for a browser that did not
+/// change.
+#[must_use]
+#[allow(clippy::too_many_lines)]
+pub fn batch(before: &[Profile], after: &[Profile], run: &Run) -> Option<Request> {
+    let opened = requests(before, after, run);
+    if opened.is_empty() {
+        return None;
+    }
+    let change = model(before, after);
+
+    // ⚠ THE SAME FILTER `requests` USES, so the two lists are index-aligned: a
+    // movement with no route produces neither a request nor an entry here.
+    let per_request_route: Vec<String> = change
+        .movements
+        .iter()
+        .filter_map(|movement| movement_route(movement, after))
+        .collect();
+    let mut routes = per_request_route.clone();
+    routes.sort();
+    routes.dedup();
+
+    // ⛔ THE CONDITIONS ARE AGGREGATED BY NAME, never concatenated. A run is
+    // mergeable when a condition held for EVERY route in it, so the aggregate
+    // takes the worst answer and names the routes that produced it.
+    let mut merged: Vec<Condition> = Vec::new();
+    for condition in &opened[0].conditions.0 {
+        let mut met = true;
+        let mut failing: Vec<String> = Vec::new();
+        let mut first_detail = condition.detail.clone();
+        for (index, request) in opened.iter().enumerate() {
+            let Some(theirs) = request
+                .conditions
+                .0
+                .iter()
+                .find(|other| other.name == condition.name)
+            else {
+                continue;
+            };
+            if !theirs.met {
+                met = false;
+                let route = per_request_route
+                    .get(index)
+                    .map_or("unknown route", String::as_str);
+                failing.push(format!("{route}: {}", theirs.detail));
+            } else if index == 0 {
+                first_detail.clone_from(&theirs.detail);
+            }
+        }
+        merged.push(Condition {
+            name: condition.name,
+            met,
+            detail: if met {
+                first_detail
+            } else {
+                failing.join("; ")
+            },
+        });
+    }
+    let conditions = Conditions(merged);
+
+    let title = if opened.len() == 1 {
+        opened[0].title.clone()
+    } else {
+        format!(
+            "corpus: {} capture(s) on {} route(s): {}",
+            opened.len(),
+            routes.len(),
+            routes.join(", ")
+        )
+    };
+
+    let mut body = String::new();
+    body.push_str("## What changed\n\n");
+    for movement in &change.movements {
+        if movement_route(movement, after).is_some() {
+            body.push_str(&format!("- {}\n", movement.headline()));
+        }
+    }
+    body.push_str(&format!(
+        "\nThe corpus holds {} profile(s) after this change.\n",
+        change.profiles_after
+    ));
+    body.push_str(&format!(
+        "\nRoutes in this request: {}.\n",
+        routes.join(", ")
+    ));
+    body.push_str(
+        "\n⛔ ONE BRANCH PER RUN, carrying every route this run captured. The\n\
+         generator used to open one per route and the workflow pushed the SAME\n\
+         merged tree to each: five branches, one tree, on run 33851238648. A\n\
+         title naming one route over a diff carrying five is a title a reviewer\n\
+         cannot act on.\n",
+    );
+    for (index, request) in opened.iter().enumerate() {
+        let route = per_request_route
+            .get(index)
+            .map_or("unknown route", String::as_str);
+        body.push_str(&format!("\n---\n\n# {route}\n\n"));
+        body.push_str(&request.body);
+    }
+    body.push_str("\n---\n\n## Merging\n\n");
+    body.push_str("Over every route in this run:\n\n");
+    for condition in &conditions.0 {
+        body.push_str(&format!(
+            "- {} {}: {}\n",
+            if condition.met {
+                "\u{2705}"
+            } else {
+                "\u{274c}"
+            },
+            condition.name,
+            condition.detail
+        ));
+    }
+    body.push_str(if conditions.met() {
+        "\nEvery condition holds on every route, so this may merge without a human.\n"
+    } else {
+        "\nAt least one condition does not hold, so this needs review.\n"
+    });
+
+    // ⚠ THE CONFIDENCE LABEL IS THE RUN'S, not a union of the routes'. A union
+    // would carry both `confidence:auto` and `confidence:review` on one request,
+    // which is two answers to one question.
+    let mut labels: Vec<String> = opened
+        .iter()
+        .flat_map(|request| request.labels.iter().cloned())
+        .filter(|label| !label.starts_with("confidence:"))
+        .collect();
+    labels.sort();
+    labels.dedup();
+    labels.push(format!(
+        "confidence:{}",
+        if conditions.met() { "auto" } else { "review" }
+    ));
+
+    Some(Request {
+        branch: format!(
+            "capture/run-{}/v{}",
+            branch_token(&run.run_id),
+            schema_major()
+        ),
+        title,
+        body,
+        labels,
+        conditions,
+    })
+}
+
 /// Every fact a request's body is required to carry, in order.
 ///
 /// ⛔ **This is what makes the body checkable rather than readable.** It is the

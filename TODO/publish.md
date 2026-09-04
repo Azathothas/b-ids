@@ -1655,7 +1655,7 @@ right one is a checkout that fetched the branch, which is what
 ## PUB-13. The corpus moves to a source branch, and the default branch carries neither
 
 **Source** the operator, ruled 2026-09-04, answering `PROGRESS.md`'s open question 1
-**Category** publish, **Priority** P2, **Effort** L, **Status** open
+**Category** publish, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
 
@@ -1778,6 +1778,129 @@ operator's own action, and nothing here is written to any other repository.
 ⛔ **Verify before removing.** The source branch is compared tree-for-tree
 against a local build the way `PUB-02` verified the data branch, and every step
 before the last stays reversible.
+
+### ⭐ 2026-09-04: all six steps run, and the entry closes
+
+⛔ **Ruled by the operator at the start of the final session: run all six**,
+including removing the directories from the default branch.
+
+| step | what landed |
+| --- | --- |
+| 1 | ⭐ the branch is `source`, at `ea7d76b`, carrying `corpus/`, `raw/`, `vectors/` and `LICENSE`. ⛔ Verified as ONE TREE OBJECT before it existed as a branch: `aaf0a3589db5d6b8d61383c03eecc8344bae3da4` from `git ls-tree HEAD corpus raw \| git mktree` AND from an independent build of the working tree through a temporary index |
+| 2 | [`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh) and its twin resolve explicit, then the working tree, then **source**, then data. `--source` answers `source-branch` |
+| 3 | [`../scripts/common/check-data-branch.sh`](../scripts/common/check-data-branch.sh) accepts `working-tree` and `source-branch` as canonical and ⛔ still refuses `data-branch` and `explicit` |
+| 4 | [`../.github/workflows/capture.yml`](../.github/workflows/capture.yml) takes its corpus from `origin/source` and opens its pull request against `source` |
+| 5 | ⛔ `corpus/`, `raw/` and `vectors/` are gone from the default branch |
+| 6 | the CI change step 5 made necessary, which is **not the one this entry predicted**. Below. |
+
+#### ⛔ The parent is the default branch's history, and that was the design decision
+
+⚠ **An orphan commit was the obvious shape and it is wrong here.**
+`check-corpus`'s only irreplaceable leg asks git whether a published file was
+ever modified, deleted or renamed after its first commit. An orphan branch
+answers that over ONE commit, forever, and reports clean: the "step that exits 0
+having done nothing it was asked to do" row of
+[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+in the check whose whole job is reading a history.
+
+```text
+$ sh scripts/common/check-corpus.sh
+corpus ok: 12 profile(s), nothing edited after publication, index and
+pointers agree with the tree.
+```
+
+⭐ **Eleven commits touching `corpus/` and `raw/` are still reachable from the
+source branch**, because its first commit's parent is `e7e521e`.
+
+#### ⛔ Two things had to move that this entry did not name, and the CODE named them
+
+⚠ **Both were found by running it, not by reading it.** With the directories
+removed, three checks failed identically:
+
+```text
+b-ids-corpus: .tmp/source-branch\LICENSE: The system cannot find the file
+specified. (os error 2)
+```
+
+`b_ids_corpus::publish::build` reads `ROOT/LICENSE` and `ROOT/vectors/ja4/v1.json`
+from the corpus root it is handed. So the coupling was in the code before it was
+a branch layout, and both belong on the source branch.
+
+⭐ **The vector file has a second, independent reason**, and it is the stronger
+one. `digest_vectors_every_capture_vector_matches_the_profile_it_names` asserts
+one capture vector per published profile. A profile on `source` and its vector on
+the default branch leaves the gate red until BOTH land, and there is no order of
+two merges that avoids it: vectors first panics with `id is not in the corpus`,
+profiles first fails the count.
+
+#### ⛔ And the corpus root was assumed in six places in Rust, which `PUB-11` had not reached
+
+⚠ **`PUB-11` moved every CHECK off the working tree and no test.** Measured the
+moment the directories left:
+
+| where | how it failed |
+| --- | --- |
+| `crates/b-ids/build.rs` | `cargo clippy` and `cargo test` both exit 101: `no corpus above crates/b-ids` |
+| `crates/b-ids/tests/library.rs` | one case panics `NotFound` on the index while six pass, because only that one goes back to disk |
+| `crates/b-ids-emit/tests/escape_hatch.rs` | three cases fail |
+| ⛔ `crates/b-ids-validator/tests/reachable_dimensions.rs` | **did not fail.** It prints `SKIPPED, no corpus at` and carries on, so the positive control would have quietly stopped controlling anything |
+| `crates/b-ids-validator/tests/digest_vectors.rs` | the vectors AND the corpus, both assumed |
+| `crates/b-ids-conformance/src/main.rs` | its own copy of the walk |
+
+⭐ [`../crates/b-ids-schema/src/root.rs`](../crates/b-ids-schema/src/root.rs) is
+the one answer now, in the crate every reader already depends on, and
+[`../scripts/common/check-gate.sh`](../scripts/common/check-gate.sh) exports
+`B_IDS_CORPUS_ROOT` around its three `cargo` steps and ⛔ **unsets it
+immediately after**, because `check-twins` runs both gates below and an export
+left standing would make every check inside them resolve `explicit`, which
+`check-data-branch` refuses, turning its comparison into a skip.
+
+#### ⚠ Step 6's premise was wrong, and the correction is written here
+
+⛔ **This entry predicted that `check-data-branch` would SKIP once `corpus/`
+left, taking the ubuntu `--strict` job and the windows `skipped -gt 1`
+assertion red.** That is not what happened, and the reason is step 3: the check
+resolves the SOURCE branch as canonical and compares against it, so it runs and
+passes. ⭐ Neither job needed changing.
+
+⚠ **What DID need changing is the thing the entry did not predict:** every
+workflow that reached for `corpus/` in its own checkout.
+
+| file | what it does now |
+| --- | --- |
+| `publish.yml` | ⛔ checks out the DEFAULT branch rather than the pushed ref, unless the ref is a tag. It triggers on a push to `source` now, and a default checkout of that branch would give the job a tree with no `scripts/` and no `crates/`. Then it takes `corpus/`, `raw/` and `vectors/` from `origin/source` |
+| `capture.yml` | the same corpus checkout in the lane and the collect job, because `b-ids-corpus add` WRITES and needs them in the working tree |
+| `cold-start.yml` | `publish --root .` became `publish --root "$(sh scripts/common/corpus-root.sh)"`. ⚠ It resolved to an empty tree silently, which is the assumption a cold start exists to catch |
+
+#### The acceptance, run and read
+
+```bash
+sh scripts/common/check-gate.sh --fast
+```
+
+```text
+gate ok: 39 passed, but 1 SKIPPED on this host: check-twins
+```
+
+⚠ **Exit 0, read from the process, unpiped.** The skip is `--fast`'s own, and
+`check-twins` was run separately over the same tree:
+
+```text
+✅ every twin pair agrees on this tree.
+```
+
+⭐ **And the comparison the whole entry exists to preserve still has a question
+to ask:**
+
+```text
+$ sh scripts/common/check-data-branch.sh --json
+{"schema":"check-data-branch/3","files":403,"present":405,"recorded":403,
+"cases":11,"published":"remote","matched":true,"pending":0,"problems":0}
+```
+
+⛔ `matched:true` over a corpus that is no longer in this tree at all. Before
+this entry, the same `true` could have come from comparing the data branch
+against a copy of itself.
 
 ## PUB-14. The data branch check cannot tell a branch that is behind from one that is wrong
 

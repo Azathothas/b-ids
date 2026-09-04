@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 10  blocked 0  done 97
+total 107  open 9  blocked 0  done 98
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 1 | 0 | 48 | 49 |
-| P2 | 6 | 0 | 36 | 42 |
+| P2 | 5 | 0 | 37 | 42 |
 | P3 | 3 | 0 | 2 | 5 |
-| **all** | **10** | **0** | **97** | **107** |
+| **all** | **9** | **0** | **98** | **107** |
 
 ---
 
@@ -95,7 +95,7 @@ total 107  open 10  blocked 0  done 97
 | PUB-10 | P1 | L | done | Nothing triggers the two surfaces that were built to publish | [`publish.md`](publish.md) |
 | PUB-11 | P2 | M | done | Every check reads the corpus from the working tree, and the corpus is leaving it | [`publish.md`](publish.md) |
 | PUB-12 | P2 | S | done | The licence check declines the one surface a consumer actually fetches | [`publish.md`](publish.md) |
-| PUB-13 | P2 | L | open | The corpus moves to a source branch, and the default branch carries neither | [`publish.md`](publish.md) |
+| PUB-13 | P2 | L | done | The corpus moves to a source branch, and the default branch carries neither | [`publish.md`](publish.md) |
 | PUB-14 | P1 | M | done | The data branch check cannot tell a branch that is behind from one that is wrong | [`publish.md`](publish.md) |
 | SCHEMA-01 | P0 | M | done | The profile: one browser, one build, one platform, one channel, one instant | [`schema.md`](schema.md) |
 | SCHEMA-02 | P0 | M | done | The TLS half, in wire order, with unknown codepoints kept | [`schema.md`](schema.md) |

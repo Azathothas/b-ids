@@ -20,7 +20,8 @@ where it is checked.
 | fact | value | where it is read from |
 | --- | --- | --- |
 | visibility and licence | public, 0BSD | [`../LICENSE`](../LICENSE) |
-| what it publishes | twelve profiles, on the default branch under `corpus/v1/` with their bytes under `raw/v1/`, and ⭐ **405 files on the `data` branch since 2026-09-03**, pushed by `publish.yml` and verified tree-for-tree against a local build. ⚠ No release has been cut: a tag is the only thing that produces one. | `b-ids-corpus verify` and `scripts/common/check-data-branch.sh`, each of whose last line is a fixed count |
+| what it publishes | twelve profiles under `corpus/v1/` with their bytes under `raw/v1/`, ⛔ **on the `source` branch since 2026-09-04 and not on the default one**, and ⭐ **405 files on the `data` branch since 2026-09-03**, pushed by `publish.yml` and verified tree-for-tree against the source branch. ⚠ No release has been cut: a tag is the only thing that produces one. | `b-ids-corpus verify` and `scripts/common/check-data-branch.sh`, each of whose last line is a fixed count |
+| ⭐ the three branches | the default branch is the code, `source` is the canonical corpus, `data` is what the assembler derives from it. ⛔ A reader resolves the root rather than assuming it. | [`../docs/architecture.md`](../docs/architecture.md) section 4, and `scripts/common/corpus-root.sh --source` |
 | work model | todo | [`../docs/methodology/work-todo.md`](../docs/methodology/work-todo.md) |
 | push policy | commit and push, to this repository's own remote only, on the working branch | [`../docs/conventions/git.md`](../docs/conventions/git.md) section 2 |
 | the local gate | `sh scripts/common/check-gate.sh --fast`, or its `.ps1` twin | [`../scripts/README.md`](../scripts/README.md) |

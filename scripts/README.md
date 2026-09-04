@@ -1141,7 +1141,14 @@ only, and refuses a `--version` rather than accepting one it cannot honour.
 ### `common/derive-ja4-vector.sh`
 
 Derive one JA4 test vector from a published profile, and print it in the shape
-[`../vectors/ja4/v1.json`](../vectors/ja4/v1.json) wants.
+the vector file wants.
+
+⚠ **The vector file is `vectors/ja4/v1.json` on the SOURCE branch, so there is
+no link to it here.** It moved there with the corpus in `PUB-13`, because
+`b_ids_corpus::publish::build` reads it from the corpus root and because a
+profile whose vector is on another branch leaves the gate red until both land.
+A path in a code span in this tree asserts that it resolves, and that one does
+not resolve on the default branch.
 
 ⛔ **The arithmetic is not this project's, and that is the whole point.**
 [`../TODO/validator.md`](../TODO/validator.md), `VALID-04`, forbids a vector
@@ -1163,7 +1170,7 @@ document, so deriving a vector was a job somebody did by hand.
 That is the one change that would make the vector check itself.
 
 ```bash
-sh scripts/common/derive-ja4-vector.sh --json corpus/v1/chrome/stable/win64/151.0.7922.76.json
+sh scripts/common/derive-ja4-vector.sh --json "$(sh scripts/common/corpus-root.sh)/corpus/v1/chrome/stable/win64/151.0.7922.76.json"
 ```
 
 ```bash
@@ -1173,6 +1180,32 @@ pwsh -NoProfile -File scripts/common/derive-ja4-vector.ps1 -Selftest
 ⭐ **The self-test needs no corpus and no network**, which is what lets
 `check-twins` compare the pair: it drives the rule with no other cover, that an
 empty list hashes to twelve zeros rather than to the digest of an empty string.
+
+#### ⭐ `--fill`, the one mode that writes
+
+⛔ **It derives every vector a tree is MISSING and rewrites nothing that is
+already there.** A published expectation that moves is a vector nobody can
+trust, and a profile whose vector disagrees is a finding for the suite rather
+than something to overwrite here.
+
+```bash
+sh scripts/common/derive-ja4-vector.sh --fill "$(sh scripts/common/corpus-root.sh)"
+```
+
+⭐ **This is what lets the capture pipeline finish its own job.**
+[`../.github/workflows/capture.yml`](../.github/workflows/capture.yml)'s collect
+job runs it over the MERGED tree, for the same reason it re-derives the index
+there: a vector is a function of the profile set the run would publish rather
+than of one lane's view of it.
+
+⚠ **Proved by planting the defect rather than by reading it.** Three capture
+vectors were removed from a copy of the tree, both halves were run over it, and
+both produced a file byte-identical to the tracked one that had been derived by
+hand. ⛔ That run also found a real defect: `jq` on Windows writes CRLF, so the
+sh half wrote `{\r\n` where the PowerShell half wrote `{\n` and the twins
+disagreed on bytes for an identical derivation. The carriage return is stripped
+on the write now. It is the third time this project has been bitten by that
+exact behaviour.
 
 ### `common/git-sync.sh`
 

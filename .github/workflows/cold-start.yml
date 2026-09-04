@@ -153,15 +153,24 @@ jobs:
         shell: bash
         run: sh experiments/10-first-profile.sh --headless --browser chrome
 
-      # ⛔ THE PUBLISH HALF, over the corpus as checked out. It assembles and
+      # ⛔ THE PUBLISH HALF, OVER THE CORPUS THE RESOLVER FINDS. It assembles and
       # checks and publishes nothing: PUB-10's workflow is the only thing that
       # writes anywhere.
+      #
+      # ⚠ `--root .` UNTIL PUB-13, and that is exactly the assumption this job
+      # exists to catch. corpus/ is on the source branch now, so a cold start
+      # that walked into the default branch and asked for `.` would assemble an
+      # empty tree. ⭐ corpus-root.sh materialises the branch under .tmp with no
+      # network, so this stays the cold-start property it claims to be: one
+      # clone, and nothing fetched that the clone did not bring.
       - name: a publish, end to end
         id: publish
         shell: bash
         run: |
           rm -rf .tmp/cold-start
-          cargo run -q --locked -p b-ids-corpus -- publish --root . --out .tmp/cold-start/tree
+          root=$(sh scripts/common/corpus-root.sh)
+          echo "the corpus resolved to $root ($(sh scripts/common/corpus-root.sh --source))"
+          cargo run -q --locked -p b-ids-corpus -- publish --root "$root" --out .tmp/cold-start/tree
           sh scripts/common/check-release.sh --dry-run
 
       # ⭐ THE FIRST STAGE THAT FAILED, BY NAME. A run whose log a person has to

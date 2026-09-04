@@ -9,13 +9,21 @@ use b_ids::schema::Channel;
 use b_ids::schema::http::Variant;
 use b_ids::{Version, at, client_hints, header_order, latest_stable, profiles, release, select};
 
-/// The repository root, so the suite can read the corpus the build embedded.
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .canonicalize()
-        .expect("the repository root")
+/// ⭐ **The same seam [`b-ids/build.rs`] reads**, and it has to be, because a
+/// suite that read a different corpus than the crate embedded would report on
+/// one and ship the other.
+/// The corpus this build embedded, so the suite can recompute its identifier.
+///
+/// ⛔ **Resolved, never assumed.** `corpus/` and `raw/` LEFT the default branch
+/// in `PUB-13`, and this suite reached them by walking up from its own manifest.
+/// Measured the day they left:
+/// `the_embedded_release_identifier_is_the_corpus_this_build_was_cut_from`
+/// panicked with `NotFound` on the index while every other case here passed,
+/// because the others read what the BUILD embedded and only this one goes back
+/// to disk. ⭐ That asymmetry is the point of the case and it is why it is the
+/// one that broke. TODO/publish.md, `PUB-11` and `PUB-13`.
+fn corpus_root() -> PathBuf {
+    b_ids_schema::root::corpus_root_or_explain(Path::new(env!("CARGO_MANIFEST_DIR")))
 }
 
 #[test]
@@ -23,10 +31,7 @@ fn the_embedded_release_identifier_is_the_corpus_this_build_was_cut_from() {
     // ⛔ THE BUILD SCRIPT DOES NOT GRADE ITSELF. The identifier is recomputed
     // here from the index on disk, with the same digest the rest of the tree
     // uses, and compared with the one the build embedded.
-    let index = repository_root()
-        .join("corpus")
-        .join("v1")
-        .join("index.json");
+    let index = corpus_root().join("corpus").join("v1").join("index.json");
     let bytes = std::fs::read(&index).expect("the corpus index");
     let want = b_ids_harness::hex(&b_ids_harness::sha256(&bytes));
     assert_eq!(

@@ -125,6 +125,26 @@ jobs:
           rustup show active-toolchain
           cargo --version
 
+      # ⛔ THE CORPUS COMES FROM THE SOURCE BRANCH, BECAUSE THE DEFAULT BRANCH
+      # NO LONGER CARRIES IT. PUB-13 moved corpus/, raw/ and vectors/ onto a
+      # branch of their own: the default branch holds the code that reads them
+      # and the data branch is a derivation of them, so the canonical copy needs
+      # somewhere of its own for the derivation to stay checkable.
+      # ⚠ `b-ids-corpus add --root .` writes into corpus/ and raw/, so this lane
+      # needs them in the WORKING TREE rather than materialised under .tmp, which
+      # is what every read-only check uses. TODO/publish.md, PUB-13.
+      # ⛔ AND IT ASSERTS THE BRANCH CARRIED SOMETHING. A checkout of an empty or
+      # missing ref would leave this lane adding a profile to nothing and
+      # uploading it as though it had merged.
+      - name: the canonical corpus, from the source branch
+        shell: bash
+        run: |
+          git fetch --no-tags origin '+refs/heads/source:refs/remotes/origin/source'
+          git checkout origin/source -- corpus raw vectors
+          n=$(find corpus/v1 -name '*.json' ! -name index.json ! -name latest.json | wc -l)
+          echo "the source branch carries $n profile(s)"
+          [ "$n" -ge 1 ]
+
       # ⭐ PROVISION FIRST, WHERE THE CELL ASKS FOR IT. A cell whose route is
       # `installed` measures whatever the image shipped, which is what every
       # profile in the corpus records today and why DRIVER-08 exists. A cell
@@ -317,6 +337,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ⛔ THE CORPUS COMES FROM THE SOURCE BRANCH. The default branch carries
+      # neither corpus/ nor raw/ since PUB-13, so `before` would be an empty
+      # store and every route would read as new. ⚠ That failure is silent: the
+      # generator treats an absent corpus as an empty one, deliberately, because
+      # the first run on a fresh tree has nothing to compare against.
+      - name: the canonical corpus, from the source branch
+        shell: bash
+        run: |
+          git fetch --no-tags origin '+refs/heads/source:refs/remotes/origin/source'
+          git checkout origin/source -- corpus raw vectors
+          n=$(find corpus/v1 -name '*.json' ! -name index.json ! -name latest.json | wc -l)
+          echo "the source branch carries $n profile(s)"
+          [ "$n" -ge 1 ]
+
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: lanes
@@ -365,8 +399,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p .tmp/collect/before .tmp/collect/after
-          cp -r corpus raw .tmp/collect/before/ 2>/dev/null || true
-          cp -r corpus raw .tmp/collect/after/ 2>/dev/null || true
+          cp -r corpus raw vectors .tmp/collect/before/ 2>/dev/null || true
+          cp -r corpus raw vectors .tmp/collect/after/ 2>/dev/null || true
           if [ -d lanes ]; then
             for d in lanes/*/; do
               [ -d "$d" ] || continue
@@ -383,6 +417,16 @@ jobs:
           # not match what the corpus derives to`. ⭐ The aggregates are a
           # function of the profile set, so they are derived once here.
           cargo run -q -p b-ids-corpus -- index --write --root .tmp/collect/after
+          # ⛔ AND THE JA4 VECTORS ARE DERIVED OVER THE UNION, FOR THE SAME
+          # REASON. A published profile with no capture vector takes
+          # `digest_vectors_every_capture_vector_matches_the_profile_it_names`
+          # red, so before this step a working capture pipeline ended with a red
+          # gate and the only fix was a person with a shell: measured on run
+          # 33851238648, five profiles landed and five vectors were derived by
+          # hand. ⚠ The arithmetic is still jq's and sha256sum's rather than this
+          # project's, which is the property VALID-04 asks for, and a vector
+          # already in the file is never rewritten.
+          sh scripts/common/derive-ja4-vector.sh --fill .tmp/collect/after
           before=$(find .tmp/collect/before/corpus -name '*.json' 2>/dev/null | wc -l)
           after=$(find .tmp/collect/after/corpus -name '*.json' 2>/dev/null | wc -l)
           echo "profile files before=$before after=$after"
@@ -434,20 +478,33 @@ jobs:
       # branch is checked for a commit whose author is not the platform's own
       # actor, and a lane that finds one stops with a message rather than
       # destroying somebody's work.
-      - name: open or update one pull request per route
+      # ⛔ ONE PULL REQUEST FOR THE RUN, AGAINST THE SOURCE BRANCH.
+      #
+      # ⚠ IT USED TO BE ONE PER ROUTE and every branch carried the SAME tree.
+      # Measured on run 33851238648: five branches opened, all five resolving to
+      # tree 97248d83821e, abbreviated because this project's secret scan
+      # refuses a 40-character hex run in a tracked file, because the step below
+      # copies the whole merged corpus onto whichever branch it is on. A title
+      # naming one route over a diff carrying five is a title a reviewer cannot
+      # act on, and four of the five reviews were of the same bytes.
+      # `b-ids-corpus pull-request` composes one request per run now.
+      #
+      # ⛔ AND THE BASE IS THE SOURCE BRANCH, NOT THE DEFAULT ONE. The default
+      # branch carries no corpus/ since PUB-13, so a pull request adding one
+      # there would put back exactly what that entry removed.
+      - name: open or update this run's one pull request
         if: steps.requests.outputs.requests != '0'
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          base=$(git rev-parse --abbrev-ref HEAD)
+          base=source
+          git fetch --no-tags origin "+refs/heads/$base:refs/remotes/origin/$base"
           for dir in .tmp/collect/requests/*/; do
             [ -d "$dir" ] || continue
             branch=$(cat "$dir/branch")
             title=$(cat "$dir/title")
-            echo "== $branch =="
+            echo "== $branch onto $base =="
             if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
               git fetch origin "$branch"
               author=$(git log -1 --format='%an' "origin/$branch")
@@ -457,13 +514,16 @@ jobs:
               fi
               git checkout -B "$branch" "origin/$branch"
             else
-              git checkout -B "$branch" "$base"
+              git checkout -B "$branch" "origin/$base"
             fi
-            cp -r .tmp/collect/after/corpus .tmp/collect/after/raw .
-            git add corpus raw
+            # ⛔ THE VECTORS GO WITH THE PROFILES. A profile whose capture vector
+            # is on another branch leaves the gate red until both land, and there
+            # is no order of two merges that avoids it.
+            cp -r .tmp/collect/after/corpus .tmp/collect/after/raw \
+                  .tmp/collect/after/vectors .
+            git add corpus raw vectors
             if git diff --cached --quiet; then
               echo "nothing to commit on $branch"
-              git checkout "$base"
               continue
             fi
             git commit -m "$title"
@@ -481,5 +541,6 @@ jobs:
               [ -n "$label" ] || continue
               gh pr edit "$branch" --add-label "$label" || echo "no label $label"
             done < "$dir/labels"
-            git checkout "$base"
           done
+        env:
+          GH_TOKEN: ${{ github.token }}
