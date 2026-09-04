@@ -787,11 +787,44 @@ coverage check failed, 1 required row(s) with no capture:
   chromium: no capture at all, on any channel or platform
 ```
 
-⚠ **Exit 1, read from the process, unpiped.** ⭐ The `chromium` cell is ENABLED
-as of 2026-09-04 rather than left predicted: the resolver knows three paths for
-it and `route: installed` takes whatever the image ships, so a lane answers the
-question either way. ⛔ What is genuinely unknown is whether a snap can be
-driven, and a lane that resolves one and cannot launch it is the finding.
+⚠ **Exit 1, read from the process, unpiped.**
+
+#### ⭐ And the chromium blocker is MEASURED now rather than predicted
+
+⛔ **The cell was enabled, dispatched, and read.** `capture.yml` run
+`33854002345`, 2026-09-04, on `ubuntu-24.04`:
+
+```text
+{"family":"chromium","name":"Chromium","path":"/usr/bin/chromium","version":"151.0.7922.0","answers":[["version-flag","151.0.7922.0"]],"disagreement":false}
+resolve exit=0
+```
+
+⭐ **So the cell is NOT blocked on resolution**, which is what the previous note
+implied. The resolver finds it and reads a version from it. The launch is where
+it ends:
+
+```text
+Received signal 6
+#12 0x55aa97e7d6e3 content::ZygoteHostImpl::Init()
+#13 0x55aa99a0e2e9 content::ContentMainRunnerImpl::Initialize()
+```
+
+⚠ **That is the snap sandbox refusing to start a zygote on that image**, and it
+answers the question `DRIVER-10` left open in as many words: whether a snap can
+be driven. On this image, at this version, it cannot.
+
+⛔ **The cell is disabled again on the same day.** A lane that resolves a browser
+and then cannot launch it goes red on every run, and a red lane nobody can fix
+trains everybody to ignore the workflow.
+
+⛔ **What must not be done about it: pass `--no-sandbox`.** That captures a
+browser in a configuration nobody runs, which is the derived value this project
+refuses wearing another costume.
+
+⚠ **What would open it** is an acquisition route serving a real Chromium build
+addressable by the version a profile records. That is `DRIVER-10`'s question
+rather than this cell's, and it is the one thing between this entry and its
+acceptance command.
 
 ⚠ **And one thing the `for-testing` captures already settled that this cell was
 for.** The unbranded build publishes an EMPTY trust-anchor list and the branded
