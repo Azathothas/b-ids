@@ -1,54 +1,74 @@
 # SUMMARY.md
 
-⚠ **The last session's table, and it is a snapshot rather than an authority.**
-[`PROGRESS.md`](PROGRESS.md) is the record. ⛔ Overwritten every session.
+⚠ **A snapshot of one session, never an authority.**
+[`PROGRESS.md`](PROGRESS.md) is the record and
+[`INDEX.md`](INDEX.md) is the list. ⛔ Overwritten every session.
 
-Session ran 2026-09-04, attended. Started `2026-09-04T00:07:59Z`.
+Session of 2026-09-04, attended, started `2026-09-04T06:04:28Z`.
 
-| row | measured | from |
-| --- | --- | --- |
-| Elapsed | 4 h 5 min, `00:07:59Z` to `04:13:28Z` | the recorded start instant and `date -u` |
-| Commits | **3**, pushed. ⚠ Two of them exist because the first push was green here and red on both runners. | `git log 601a5a4..HEAD` |
-| Work | **6 completed, 2 worked and open, 0 failed, 0 deferred**. 14 effort points. | the entries, each closed in place with its acceptance command run |
-| Changes | 61 files, +5132 / -384 | `git diff --shortstat 601a5a4..HEAD` |
-| Size | 94,268 lines, up from 89,628. Delta +4,640 | `git ls-files` less `references/` and `vendor/`, through `wc -l` |
-| Checks | gate ok, 39 passed and 1 skipped over **40**. At the start it was 38 and 1 over 39. ⛔ The skip is `check-twins`, which `--fast` skips, and it was run separately on a still tree: `check-twins exit=0`, 62 pairs, every one agreeing. So all 40 are covered rather than 39. | `check-gate.ps1 -Fast` and `check-twins.sh`, each read from the process, unpiped |
-| Remote | ⭐ **`ci` green on both jobs**, run `33839660924`. ⚠ The first push of the session was green here and red on both runners; each found one defect this host could not, and both are fixed. | `gh run view`, and the two findings are in `CORPUS-02` |
-| Tests | **425**, up from 401 | `cargo test --workspace` |
-| Cost | no money and no bandwidth beyond `cargo` resolving the workspace. ⛔ No capture was taken, no workflow was dispatched, and nothing was pushed to any remote until the closing commit. | measured by what was run |
-| Health | 4 debts cleared, 1 introduced and named, tree clean, nothing deployed | below |
+| row | before | after | measured by |
+| --- | --- | --- | --- |
+| Elapsed | `06:04:28Z` | `09:05Z`, about 3h 00m | the recorded start instant and `date -u` |
+| Commits | `e368f54` | `e7d2918`, 6 commits | `git log --oneline e368f54..HEAD` |
+| Work | 12 open | **2 completed**, 0 deferred, 0 failed. 5 effort points | `DRIVER-11` `L`, `DOC-03` `S`, each closed in place with both acceptance commands run |
+| Work, not counted | | `CORPUS-02` advanced and still open; `DOC-02`'s premise corrected | an entry closes on its acceptance command, and `CORPUS-02`'s still exits 1 |
+| Changes | | 43 files, +5163 -149, excluding the mined reference tree | `git diff --shortstat e368f54 HEAD -- . ':(exclude)references/'` |
+| Changes, everything | | 796 files, +745419 -149 | the same command without the exclusion. ⚠ The difference is `mozilla/nss` |
+| Size | 162,152 lines | 167,187 lines, +5,035 | tracked files excluding `references/`, concatenated and counted |
+| Size, everything | | 4,030,911 lines | the same, with the reference corpus |
+| Checks | gate ok: 39 passed, 1 skipped | **gate ok over all 40**, `check-twins` included | the FULL `check-gate.sh` was run at the close on a still tree. ⚠ Its first run failed on one check, `check-markers`, over two U+2212 minus signs this summary itself had introduced; fixed, and the re-run is green. ⭐ `check-twins` passed, which is what says the new pair's two halves agree |
+| Tests | 412, carried from the last session | **445**, counted | `cargo test --workspace`, summing the runner's own `test result: ok` lines |
+| Corpus | 6 profiles | **12 profiles** | `b-ids-corpus verify`: `corpus=profiles:12 problems:0` |
+| Coverage | 3 of 9 cells captured, 3 absent | **6 of 9 captured, 0 absent** | `check-coverage.sh` |
+| Cost | | no money. One reference clone, trimmed to 26 MiB on disk; four workflow runs on hosted runners | the clone is `references/mozilla__nss`; the runs are `33849365530`, `33849934489`, `33851238648`, `33854002345` |
+| Health | | debts cleared: 4 checks that would have refused every future capture. Introduced: none known. Tree clean, pushed. ⚠ No release, and the data branch is BEHIND by 168 artefacts, which is the designed pending state | `check-data-branch`: `matched:false pending:168 problems:0` |
 
 ---
 
-## What the six closed entries were
+## What the session actually delivered
+
+⭐ **The corpus has profiles from a stack that is not a Chromium**, and it has
+them because `DRIVER-11` built a launch path for Gecko. Firefox takes no
+command-line equivalent of the Chromium certificate switches, so the trust is
+arranged where Firefox looks for it: an NSS certificate database written into
+the throwaway profile the launcher already creates, carrying the run's own
+authority and a trust record for it.
+
+⭐ **The capture matrix adds profiles now.** It never had. Six lanes ran green
+this morning, six captures were actually taken, and the run added nothing and
+reported success.
+
+⛔ **Four checks that were green would have refused every capture after the
+first**, and all four were found by profiles actually landing rather than by
+reading:
 
 | | |
 | --- | --- |
-| `CI-09` `M` | the Windows toolchain failure, traced to this tree's own probe and fixed from two sources |
-| `PUB-11` `M` | ten of ten with the corpus moved out, plus two checks that passed by comparing something to itself |
-| `PUB-04` `M` | thirty-seven generated config files, twenty-four of them refusals naming a hole at a file and a line |
-| `PUB-14` `M` | the data branch check could not tell BEHIND from WRONG |
-| `VALID-05` `L` | the conformance suite, with a third verdict for what a browser varies per connection |
-| `HARNESS-11` `M` | the TCP layer, and the capability answer is one field of six |
+| `check-data-branch` | called nineteen changed aggregates a rewritten branch |
+| `check-coverage` | could not see a capture outside the plan |
+| `check-trust-anchors` | called an unbranded build's EMPTY root-store list a defect |
+| the collect job | kept whichever lane's index it copied last, rather than deriving it |
 
-⚠ **Fourteen points, under the twenty [`RULES.md`](RULES.md) section 10 asks
-for.** The reason is stated rather than hidden: by the end every remaining open
-entry needed an operator ruling, a capability this host does not have, or was a
-large new build. ⭐ Eight rulings were taken at the close, and the work order is
-now unblocked end to end.
+⚠ **And one hole that is now an instrument rather than a manual step.** A
+published profile needs a JA4 vector and nothing derived one, so five new
+profiles left the gate red until a person ran a command out of a document.
+`scripts/common/derive-ja4-vector` is that command, in both halves, compared.
 
-## Debts
+---
 
-**Cleared:** the Windows CI failure, which had been misdiagnosed in the record
-for three sessions; two checks that reported green over a tautology; a probe
-that mutated the machine it was measuring; a validator message that reported
-three different facts identically.
+## ⛔ What did not move, and what was measured instead
 
-**Introduced and closed within the session:** the data branch went **behind by
-37 artefacts** when `PUB-04` added a `configs/` tree. ⭐ `check-data-branch`
-reported that as pending rather than failing, which is `PUB-14`, and the closing
-push triggered `publish.yml`, which pushed 235 artefacts. The check now reports
-`matched:true pending:0`, so the design was confirmed end to end rather than
-argued.
+⚠ **`CORPUS-02` did not close**, and its acceptance command still exits 1 on one
+row: `chromium`. ⭐ That blocker is measured now rather than predicted. The
+resolver finds `/usr/bin/chromium` on `ubuntu-24.04` and reads `151.0.7922.0`
+from it, so the cell was never blocked on resolution; the launch aborts on
+signal 6 inside `content::ZygoteHostImpl::Init`, which is the snap sandbox.
 
-**Deployed version:** none. No tag was pushed and no release cut.
+⛔ **`PUB-13` was read and not started.** It removes `corpus/` from the default
+branch, and starting it without finishing it would leave the tree in a state the
+next session cannot tell from a finished one.
+
+⚠ **Five effort points against the twenty
+[`RULES.md`](RULES.md) section 10 asks for.** Both entries taken grew: a launch
+path became four defects in shipped code, and a merge became a workflow that had
+never worked. Following them was the trade, and it is stated rather than hidden.

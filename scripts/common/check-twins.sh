@@ -535,6 +535,16 @@ compare_pair "check-notes-generator" check-notes-generator.sh "--json"        ch
 # ⛔ Never add a row here that needs the network.
 compare_pair "mine-repo selftest"   mine-repo.sh            "--selftest --json" mine-repo.ps1          "-Selftest -Json"
 
+# ⚠ THE VECTOR DERIVATION, THROUGH ITS OFFLINE SELF-TEST ONLY, for the same
+# reason as the fetcher above: deriving a real vector needs a profile, and the
+# half of this pair that has actually been wrong elsewhere is the hashing rule.
+# ⭐ An empty list hashes to twelve zeros rather than to the digest of an empty
+# string, and the two halves compute the digest with DIFFERENT third-party
+# arithmetic: the sh half uses sha256sum and the ps half the platform's own
+# SHA-256. Two implementations of one rule is exactly what this file compares.
+# TODO/validator.md, VALID-04.
+compare_pair "derive-ja4-vector"    derive-ja4-vector.sh    "--selftest --json" derive-ja4-vector.ps1  "-Selftest -Json"
+
 # ⚠ THE GATE RUNNER'S TWO HALVES RUN DIFFERENT PROGRAMS TO REACH THE SAME
 # ANSWER, which is exactly the drift this file exists to catch. The sh half
 # runs every check's sh implementation and spawns a PowerShell for the

@@ -33,12 +33,14 @@ project says so.** A server deciding whether a caller is a real browser needs
 the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
-⭐ **The corpus holds six profiles**: five Chrome and one Edge, across majors
-`151` and `152`, on `linux64` and `win64`, each with the `ClientHello` it was
-read from beside it. ⭐ Three of them name the URL and the digest of the artefact
-the browser was installed from; the other three record that nobody chose the
-build. ⚠ Six profiles is still not a matrix, and `CORPUS-02` is the entry that
-makes it one.
+⭐ **The corpus holds twelve profiles**: nine Chrome, one Edge and two
+Firefox, across majors `151`, `152` and `154`, on `linux64` and `win64`, each
+with the `ClientHello` it was read from beside it. ⭐ Two of them are UNBRANDED
+builds, which is what separates branding from engine, and seven name the URL
+and the digest of the artefact the browser was installed from. ⚠ Twelve profiles is
+still not a matrix, and `CORPUS-02` is the entry that makes it one: six of nine
+planned cells are captured and the one required row with no capture is
+`chromium`.
 [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next, and
 [`architecture.md`](architecture.md) is what the thing is.
 
@@ -179,7 +181,7 @@ replaced by a code-graph query.
 | ⭐ [`inherited-claims.md`](inherited-claims.md) | every value carried from somewhere else, with its source and its status. **When another document disagrees with it about provenance, this one wins.** |
 | ⭐ [`architecture.md`](architecture.md) | **the technical reference.** What a profile is, what the nine crates do to one, the state a capture passes through, and the limits. ⛔ When two documents disagree about a technical fact, this one settles it. |
 | ⭐ [`glossary.md`](glossary.md) | the terms, with the caveat attached to each rather than to the page that uses it |
-| [`reference-sweeps/findings.md`](reference-sweeps/findings.md) | what eighteen repositories were read at, and what was true in them. ⭐ One of them is the origin this project's values came from. |
+| [`reference-sweeps/findings.md`](reference-sweeps/findings.md) | what eighteen of the twenty trees in [`../references/`](../references/) were read at, and what was true in them. ⭐ One of them is the origin this project's values came from, and the two with no verdict are named in [`../TODO/RULES.md`](../TODO/RULES.md) section 5. |
 | [`reference-sweeps/usable.md`](reference-sweeps/usable.md) | the mechanisms from those repositories, at file and line, for the session doing the work |
 | ⭐ [`methodology/gate.md`](methodology/gate.md) | the three parts a unit of work passes. None is skippable. |
 | ⭐ [`methodology/reviews.md`](methodology/reviews.md) | the three review lenses, and why one sweep written up three times is not three passes |

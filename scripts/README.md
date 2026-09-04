@@ -1138,6 +1138,42 @@ measure.
 the promise is not kept yet; the branded `vendor` route serves the current build
 only, and refuses a `--version` rather than accepting one it cannot honour.
 
+### `common/derive-ja4-vector.sh`
+
+Derive one JA4 test vector from a published profile, and print it in the shape
+[`../vectors/ja4/v1.json`](../vectors/ja4/v1.json) wants.
+
+⛔ **The arithmetic is not this project's, and that is the whole point.**
+[`../TODO/validator.md`](../TODO/validator.md), `VALID-04`, forbids a vector
+whose expected value came from running the implementation it checks, so the
+lists come from `jq` over
+[`fixtures/ja4-derive.jq`](fixtures/ja4-derive.jq) and the digest from a
+general-purpose SHA-256. ⚠ The two halves use DIFFERENT ones: the sh half uses
+`sha256sum` and the PowerShell half the platform's own.
+
+⚠ **It exists because a working capture pipeline left the gate red.** On
+2026-09-04 the capture matrix added five profiles in one run and every one of
+them failed
+`digest_vectors_every_capture_vector_matches_the_profile_it_names`, because a
+published profile needs a vector and nothing derived one. The command was in a
+document, so deriving a vector was a job somebody did by hand.
+[`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`.
+
+⛔ **Do not derive a vector from `b-ids-corpus` or from `b_ids_harness::digest`.**
+That is the one change that would make the vector check itself.
+
+```bash
+sh scripts/common/derive-ja4-vector.sh --json corpus/v1/chrome/stable/win64/151.0.7922.76.json
+```
+
+```bash
+pwsh -NoProfile -File scripts/common/derive-ja4-vector.ps1 -Selftest
+```
+
+⭐ **The self-test needs no corpus and no network**, which is what lets
+`check-twins` compare the pair: it drives the rule with no other cover, that an
+empty list hashes to twelve zeros rather than to the digest of an empty string.
+
 ### `common/git-sync.sh`
 
 Commit and push with the rules in
