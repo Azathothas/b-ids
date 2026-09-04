@@ -146,12 +146,12 @@
       "channel": "stable",
       "platform": "linux64",
       "os": "ubuntu-latest",
-      "route": "installed",
+      "route": "for-testing",
       "branded": false,
-      "build": null,
-      "enabled": false,
+      "build": "152.0.7977.75",
+      "enabled": true,
       "required": true,
-      "why": "The control that proves which fields are branding and which are engine: whatever differs from the chrome cell beside it is branding. \u26d4 THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02's acceptance names chromium as a required row, so the plan and the acceptance disagreed about what was even planned. \u2b50 MEASURED 2026-09-04 rather than predicted. It was enabled, dispatched as capture.yml run 33854002345, and the answer is in: the resolver found /usr/bin/chromium on ubuntu-24.04 and reported 151.0.7922.0 from the version flag, so the cell is NOT blocked on resolution. The launch then aborted on signal 6 inside content::ZygoteHostImpl::Init, which is the snap sandbox refusing to start a zygote on that image. \u26d4 Disabled again on the same day, because a lane that resolves a browser and cannot launch it goes red on every run, and a red lane nobody can fix trains everybody to ignore the workflow. \u26d4 WHAT MUST NOT BE DONE ABOUT IT: pass --no-sandbox. That captures a browser in a configuration nobody runs, which is the derived value this project refuses in another costume. \u26a0 What would open it is an acquisition route serving a real Chromium build addressable by the version a profile records, which is DRIVER-10's question rather than this cell's."
+      "why": "\u2b50 THE CONTROL THAT SEPARATES BRANDING FROM ENGINE, and since 2026-09-04 it can be taken at the SAME BUILD as the branded Chrome beside it. \u26d4 THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02 acceptance names chromium as a required row. \u26a0 THREE ROUTES WERE MEASURED AND TWO ARE SHUT. Ubuntu own chromium on noble is a shim for a snap: capture.yml run 33854002345 resolved /usr/bin/chromium at 151.0.7922.0 and the launch aborted on signal 6 inside content::ZygoteHostImpl::Init, which is the snap sandbox refusing to start a zygote on that image. Google chromium-browser-snapshots bucket answers 200 and serves a real unpatched Chromium, measured at revision 1692381, but it is keyed by a trunk revision rather than by a version a profile records and a continuous trunk build belongs to no channel anybody runs. \u2b50 THE THIRD ANSWERS BY VERSION AND PUBLISHES A DIGEST: an APT archive serving Chromium 152.0.7977.75 for noble with a SHA-256 and a Size per artefact, which is the exact build of branded Chrome this corpus already holds at chrome/stable/linux64. So the pair is same-build rather than same-major. \u26d4 WHAT THIS PAIR DOES NOT SEPARATE: the archive is a distributor repackaging, which may build against system libraries and disable features, so what differs between the two is branding OR packaging. That is a smaller confound than the major and it is not none, and it is recorded here rather than discovered later. \u26d4 WHAT MUST NOT BE DONE: pass --no-sandbox. That captures a browser in a configuration nobody runs."
     }
   ]
 }

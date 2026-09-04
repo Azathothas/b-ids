@@ -133,6 +133,13 @@ packages_for() {
   case "$1" in
     chrome) printf 'google-chrome-stable google-chrome-beta google-chrome-unstable\n' ;;
     edge) printf 'microsoft-edge-stable microsoft-edge-beta microsoft-edge-dev\n' ;;
+    # ⛔ chromium-browser IS THE SHIM, AND REMOVING IT IS THE WHOLE POINT. On
+    # ubuntu-24.04 that package installs a snap, and capture.yml run
+    # 33854002345 measured what that costs: the resolver finds
+    # /usr/bin/chromium, reads 151.0.7922.0 from it, and the launch aborts on
+    # signal 6 inside content::ZygoteHostImpl::Init. ⚠ The snap itself is
+    # removed by purge_linux's own snap step, because apt does not own it.
+    chromium) printf 'chromium chromium-browser chromium-common chromium-sandbox chromium-l10n\n' ;;
     *) printf '\n' ;;
   esac
 }
@@ -141,6 +148,7 @@ paths_for() {
   case "$1" in
     chrome) printf '/opt/google/chrome /opt/google/chrome-beta /opt/google/chrome-unstable\n' ;;
     edge) printf '/opt/microsoft/msedge /opt/microsoft/msedge-beta /opt/microsoft/msedge-dev\n' ;;
+    chromium) printf '/usr/lib/chromium /usr/lib/chromium-browser /snap/chromium\n' ;;
     *) printf '\n' ;;
   esac
 }
@@ -149,6 +157,7 @@ links_for() {
   case "$1" in
     chrome) printf '/usr/bin/google-chrome /usr/bin/google-chrome-stable\n' ;;
     edge) printf '/usr/bin/microsoft-edge /usr/bin/microsoft-edge-stable\n' ;;
+    chromium) printf '/usr/bin/chromium /usr/bin/chromium-browser\n' ;;
     *) printf '\n' ;;
   esac
 }
@@ -157,6 +166,21 @@ sandbox_for() {
   case "$1" in
     chrome) printf '/opt/google/chrome/chrome-sandbox\n' ;;
     edge) printf '/opt/microsoft/msedge/msedge-sandbox\n' ;;
+    # ⚠ The distributor lays it out under /usr/lib rather than /opt, which is
+    # what a Debian-policy package does. confirm_sandbox_linux reports what it
+    # found rather than assuming either.
+    chromium) printf '/usr/lib/chromium/chrome-sandbox\n' ;;
+    *) printf '\n' ;;
+  esac
+}
+
+# ⛔ SNAPS ARE A SECOND PACKAGE MANAGER AND apt CANNOT SEE THEM. Empty for every
+# family the vendor ships as a deb, which is why this is a table rather than a
+# flag: the one family that needs it is the one whose distribution ships it that
+# way. TODO/corpus.md, CORPUS-02.
+snaps_for() {
+  case "$1" in
+    chromium) printf 'chromium\n' ;;
     *) printf '\n' ;;
   esac
 }
@@ -216,6 +240,19 @@ plan_for() {
       printf 'fetch   the MicrosoftEdgeEnterpriseX64.msi that index names for the build asked for\n'
       printf 'install msiexec /qn, which is the silent unattended mode\n'
       ;;
+    chromium/linux/for-testing)
+      printf 'index   the APT archive b_ids_driver::acquire owns the URL of. ⛔ NOT A VENDOR\n'
+      printf '        index: Chromium is source rather than a product with channels, so what\n'
+      printf '        serves it by version is a distributor. The archive publishes a SHA-256\n'
+      printf '        and a Size per artefact, which this run checks what arrived against\n'
+      printf 'fetch   the chromium deb that index names for the build asked for. ⚠ The index\n'
+      printf '        is gzipped and there is no uncompressed Packages, so it is decompressed\n'
+      printf 'install apt-get install of the deb, whose own post-install sets the sandbox up\n'
+      ;;
+    chromium/*/*)
+      printf 'fetch   nothing. This project reads one archive for this family and it serves\n'
+      printf '        linux64 only, so no other platform or route is implemented\n'
+      ;;
     edge/*/vendor)
       printf 'fetch   nothing. The vendor publishes no current-build URL for this family,\n'
       printf '        so this route is refused and --route for-testing is the one to use\n'
@@ -235,8 +272,10 @@ plan_for() {
 # family that was asked for. It reads the same table the purge itself reads.
 purge_line() {
   if [ "$OS" = linux ]; then
-    printf 'apt-get remove --purge of %s, then %s and the /usr/bin links' \
-      "$(packages_for "$BROWSER")" "$(paths_for "$BROWSER")"
+    printf 'apt-get remove --purge of %s, ' "$(packages_for "$BROWSER")"
+    _snaps=$(snaps_for "$BROWSER")
+    [ -z "$_snaps" ] || printf 'snap remove --purge of %s, ' "$_snaps"
+    printf 'then %s and the /usr/bin links' "$(paths_for "$BROWSER")"
   else
     printf 'the vendor uninstaller for every install matching %s, then the program directories' \
       "$(uninstall_match_for "$BROWSER")"
@@ -330,6 +369,16 @@ printf 'before  %s\n' "${before:-nothing resolved}"
 purge_linux() {
   for pkg in $(packages_for "$BROWSER"); do
     sudo apt-get remove --purge -y "$pkg" >/dev/null 2>&1
+  done
+  # ⛔ THE SNAP, WHICH apt DOES NOT OWN. On ubuntu-24.04 the chromium the image
+  # serves is a snap, and `apt-get remove --purge chromium-browser` removes the
+  # shim while leaving the snap mounted and /usr/bin/chromium resolving to it.
+  # ⚠ The confirm step after the purge would then refuse correctly and nobody
+  # would know why. ⭐ It is scoped to the family's own snap names, for the same
+  # reason the apt list is: a lane provisioning one family must not remove
+  # another family's browser off the same runner.
+  for snap in $(snaps_for "$BROWSER"); do
+    sudo snap remove --purge "$snap" >/dev/null 2>&1
   done
   for path in $(paths_for "$BROWSER"); do
     sudo rm -rf "$path" >/dev/null 2>&1
@@ -447,10 +496,25 @@ index_fetch() {
   fi
 
   printf 'index   %s\n' "$index_url"
-  curl -fsSL -o "$OUT/index.json" "$index_url" || {
+  curl -fsSL -o "$OUT/index.raw" "$index_url" || {
     printf 'provision-browser: the automation index did not fetch\n' >&2
     return 1
   }
+  # ⛔ DECOMPRESSED WHERE THE INDEX IS COMPRESSED, decided by the URL the driver
+  # named rather than by the family. Measured 2026-09-04: the APT archive this
+  # project reads for Chromium serves Packages.gz at 200 and Packages at 404, so
+  # there is no uncompressed form to prefer. ⚠ The file keeps the name the rest
+  # of this function uses, so nothing downstream has to know which arm ran.
+  case "$index_url" in
+    *.gz)
+      gzip -dc "$OUT/index.raw" > "$OUT/index.json" || {
+        printf 'provision-browser: the index did not decompress\n' >&2
+        return 1
+      }
+      printf 'index   decompressed, %s bytes\n' "$(wc -c < "$OUT/index.json" | tr -d ' ')"
+      ;;
+    *) mv "$OUT/index.raw" "$OUT/index.json" || return 1 ;;
+  esac
 
   # ⛔ READ UNPIPED. A guard on the left of a pipe reports the pipeline's
   # status, and this one distinguishes "the index does not publish that build"
@@ -503,6 +567,28 @@ index_fetch() {
   else
     printf 'verified no, this index publishes no digest to compare against\n'
   fi
+
+  # ⛔ THE SIBLINGS THE INDEX NAMES, WHICH AN ARCHIVE-PER-BUILD INDEX HAS NONE
+  # OF. An APT archive splits one build across several binary packages: the one
+  # carrying the browser Depends on a sibling at the same exact version, and
+  # Recommends the SUID sandbox helper without which it launches and opens
+  # nothing. ⚠ The driver reads which ones from the index's own Depends and
+  # Recommends fields; this fetches what it named and nothing else.
+  COMPANIONS=""
+  for extra in $(printf '%s' "$ACQUIRED_JSON" | node -e '
+    let s = ""; process.stdin.on("data", d => s += d).on("end", () => {
+      const j = JSON.parse(s);
+      for (const u of (j.companions || [])) console.log(u);
+    });
+  '); do
+    dest="$OUT/$(basename "$extra")"
+    curl -fsSL -o "$dest" "$extra" || {
+      printf 'provision-browser: a companion artefact did not fetch from %s\n' "$extra" >&2
+      return 1
+    }
+    COMPANIONS="$COMPANIONS $dest"
+    printf 'sibling %s\n' "$(basename "$extra")"
+  done
   return 0
 }
 
@@ -540,8 +626,16 @@ unpack_archive() {
 # the SUID sandbox helper in place, which is why `confirm_sandbox_linux` reports
 # rather than assumes.
 install_package_linux() {
-  sudo apt-get install -y "$ARCHIVE" >/dev/null 2>&1 ||
-    { sudo dpkg -i "$ARCHIVE" >/dev/null 2>&1; sudo apt-get -f install -y >/dev/null 2>&1; }
+  # ⛔ EVERY ARTEFACT IN ONE apt INVOCATION, and that is not tidiness. A build
+  # split across binary packages has a dependency on a sibling AT AN EXACT
+  # VERSION, which is on no configured apt source: installing them one at a time
+  # fails on the first, and installing the main one alone leaves a browser that
+  # cannot start. ⚠ COMPANIONS is empty for every index that serves one archive
+  # per build, so this is the same command it was for those.
+  # shellcheck disable=SC2086 # COMPANIONS is a deliberate list of paths this
+  # script itself wrote under .tmp, and quoting it would pass one argument.
+  sudo apt-get install -y "$ARCHIVE" $COMPANIONS >/dev/null 2>&1 ||
+    { sudo dpkg -i "$ARCHIVE" $COMPANIONS >/dev/null 2>&1; sudo apt-get -f install -y >/dev/null 2>&1; }
   return 0
 }
 
@@ -627,6 +721,7 @@ printf 'after   nothing resolves, resolve exits 2\n'
 printf '\n-- installing %s via %s --\n' "$BROWSER" "$ROUTE"
 URL=""
 ARCHIVE=""
+COMPANIONS=""
 
 # ⛔ KEYED ON THE FAMILY AS WELL AS THE PLATFORM AND THE ROUTE, which is what
 # DRIVER-10 needed: two families do not install the same way, and a case that
@@ -659,6 +754,18 @@ case "$BROWSER/$OS/$ROUTE" in
   # ⭐ EDGE IS A PACKAGE ON BOTH PLATFORMS, from the vendor's own enterprise
   # index, which publishes a digest this run compares what arrived against.
   edge/linux/for-testing)
+    index_fetch || exit $?
+    install_package_linux
+    confirm_sandbox_linux
+    ;;
+  # ⭐ CHROMIUM IS A PACKAGE FROM A DISTRIBUTOR'S ARCHIVE, and it is the one
+  # family here whose index is not the vendor's. Chromium is source rather than
+  # a product with channels: the snapshot bucket is keyed by a trunk revision
+  # that is not a version a profile records, and Ubuntu's own package is a shim
+  # for a snap whose zygote will not start on a hosted runner. The archive that
+  # remains publishes a SHA-256 per artefact, which is what makes it usable.
+  # TODO/corpus.md, CORPUS-02.
+  chromium/linux/for-testing)
     index_fetch || exit $?
     install_package_linux
     confirm_sandbox_linux

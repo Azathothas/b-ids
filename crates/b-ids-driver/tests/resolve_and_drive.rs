@@ -601,7 +601,139 @@ fn resolve_and_drive_a_family_with_no_index_offers_no_index_route() {
         );
     }
     assert!(b_ids_driver::acquire::index_url(Family::Firefox).is_none());
-    assert!(b_ids_driver::acquire::index_url(Family::Chromium).is_none());
+    // ⭐ CHROMIUM ANSWERS NOW, and this line used to assert that it did not.
+    // The measurement changed rather than the rule: an APT archive publishing a
+    // Packages index with a SHA-256 per artefact serves it by version, which
+    // neither the snapshot bucket nor Ubuntu's own snap shim can do.
+    // TODO/corpus.md, CORPUS-02.
+    assert_eq!(
+        b_ids_driver::acquire::index_route(Family::Chromium),
+        Some(b_ids_driver::acquire::Route::ChromiumUbuntuPpa)
+    );
+    // ⛔ AND IT IS UNBRANDED, which is the whole reason the row exists.
+    assert_eq!(
+        b_ids_driver::acquire::Route::ChromiumUbuntuPpa.branded(),
+        Some(false)
+    );
+}
+
+#[test]
+fn resolve_and_drive_the_chromium_archive_names_a_build_by_its_upstream_version() {
+    // ⛔ A FIXTURE SHAPED LIKE THE REAL INDEX, not the real one: a reader that
+    // needs the network is a reader nothing can test offline. The stanzas below
+    // are the shape measured from the archive on 2026-09-04.
+    //
+    // ⚠ THE DIGESTS ARE BUILT RATHER THAN PASTED, and that is this project's
+    // own secret scan rather than style. It refuses a bare 64-character hex run
+    // in a tracked file, with a handful of exclusions narrowed by NAME or by
+    // PATH-AND-SHAPE, and a Rust string literal is neither. ⛔ Widening that
+    // rule to let a test paste one would be the fix that removes the check.
+    // A repeated seed is also honestly what these are: fixture values, not the
+    // archive's own digest.
+    let ours = "6bb5".repeat(16);
+    let theirs = "11".repeat(32);
+    assert_eq!(ours.len(), 64, "the fixture digest is not digest-shaped");
+    let index = format!(
+        "Package: chromium-common\n\
+         Version: 152.0.7977.75-1xtradeb1.2404.1\n\
+         Filename: pool/main/c/chromium/chromium-common_152_amd64.deb\n\
+         SHA256: {theirs}\n\
+         Size: 111\n\
+         \n\
+         Package: chromium-sandbox\n\
+         Version: 152.0.7977.75-1xtradeb1.2404.1\n\
+         Filename: pool/main/c/chromium/chromium-sandbox_152_amd64.deb\n\
+         Size: 222\n\
+         \n\
+         Package: chromium-l10n\n\
+         Version: 152.0.7977.75-1xtradeb1.2404.1\n\
+         Filename: pool/main/c/chromium/chromium-l10n_152_all.deb\n\
+         Size: 99999999\n\
+         \n\
+         Package: chromium\n\
+         Version: 152.0.7977.75-1xtradeb1.2404.1\n\
+         Architecture: amd64\n\
+         Depends: libc6 (>= 2.38), libgtk-3-0t64 | xdg-desktop-portal-backend, \
+         chromium-common (= 152.0.7977.75-1xtradeb1.2404.1)\n\
+         Recommends: chromium-sandbox\n\
+         Suggests: chromium-l10n\n\
+         Filename: pool/main/c/chromium/chromium_152.0.7977.75-1xtradeb1.2404.1_amd64.deb\n\
+         Size: 104857600\n\
+         SHA256: {ours}\n"
+    );
+    let index = index.as_str();
+    let got = b_ids_driver::acquire::download(
+        Family::Chromium,
+        index,
+        "152.0.7977.75",
+        b_ids_driver::acquire::Platform::Linux64,
+    )
+    .expect("the archive publishes this build");
+    assert!(
+        got.url
+            .ends_with("/pool/main/c/chromium/chromium_152.0.7977.75-1xtradeb1.2404.1_amd64.deb"),
+        "{}",
+        got.url
+    );
+    assert!(got.url.starts_with("https://"), "{}", got.url);
+    // ⛔ NOT THE chromium-common STANZA ABOVE IT, which carries the same
+    // version and a different digest. The package name is matched exactly.
+    assert_eq!(got.published_sha256.as_deref(), Some(ours.as_str()));
+    assert_ne!(
+        got.published_sha256.as_deref(),
+        Some(theirs.as_str()),
+        "the digest came from the wrong stanza"
+    );
+    assert_eq!(got.published_bytes, Some(104_857_600));
+
+    // ⛔ BOTH SIBLINGS THE STANZA NAMES, AND NEITHER THE ONE IT ONLY SUGGESTS.
+    // Driving this against the real archive is what found the defect it guards:
+    // Depends and Recommends were joined with a SPACE, so the last term of one
+    // was glued to the first of the other and `chromium-sandbox` stopped being
+    // the first token of its term. It was silently dropped, and the SUID helper
+    // it carries is the difference between a browser that launches and one that
+    // opens a socket. ⚠ chromium-l10n is a hundred megabytes of translations
+    // and is only Suggested, so a rule that took every same-version sibling
+    // would download it.
+    assert!(
+        got.companions
+            .iter()
+            .any(|u| u.contains("chromium-common_")),
+        "{:?}",
+        got.companions
+    );
+    assert!(
+        got.companions
+            .iter()
+            .any(|u| u.contains("chromium-sandbox_")),
+        "the sandbox helper was dropped: {:?}",
+        got.companions
+    );
+    assert!(
+        !got.companions.iter().any(|u| u.contains("chromium-l10n")),
+        "a merely suggested sibling was pulled in: {:?}",
+        got.companions
+    );
+
+    // ⛔ THE UPSTREAM MATCH IS ANCHORED. A prefix that is not the whole
+    // upstream part is refused rather than answered with the nearest build.
+    let refused = b_ids_driver::acquire::download(
+        Family::Chromium,
+        index,
+        "152.0.7977.7",
+        b_ids_driver::acquire::Platform::Linux64,
+    );
+    assert!(refused.is_err(), "a prefix matched a longer build");
+
+    // ⚠ AND THE INDEX IS PER ARCHITECTURE, so another platform is refused here
+    // rather than answered out of the wrong one.
+    let wrong_platform = b_ids_driver::acquire::download(
+        Family::Chromium,
+        index,
+        "152.0.7977.75",
+        b_ids_driver::acquire::Platform::Win64,
+    );
+    assert!(wrong_platform.is_err(), "an amd64 index served win64");
 }
 
 #[test]

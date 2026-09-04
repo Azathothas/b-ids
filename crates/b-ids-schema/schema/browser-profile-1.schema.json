@@ -221,7 +221,8 @@
                 "cache",
                 "vendor",
                 "chrome-for-testing",
-                "edge-enterprise"
+                "edge-enterprise",
+                "chromium-ubuntu-ppa"
               ]
             },
             "url": {

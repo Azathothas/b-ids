@@ -415,12 +415,13 @@ impl Connections {
 /// for it to drift, and the two that can be compared are compared: a profile
 /// carrying a route outside this list is refused here, and the schema refuses
 /// it to a consumer.
-pub const ACQUISITION_ROUTES: [&str; 5] = [
+pub const ACQUISITION_ROUTES: [&str; 6] = [
     "installed",
     "cache",
     "vendor",
     "chrome-for-testing",
     "edge-enterprise",
+    "chromium-ubuntu-ppa",
 ];
 
 /// Where a build came from, and the digest of what arrived.

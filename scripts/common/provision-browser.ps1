@@ -151,6 +151,26 @@ $familyRoutes = @{
         uninstallMatch = '^Microsoft Edge$'
         vendorDir      = 'Microsoft\Edge'
     }
+    # ⭐ THE ONE FAMILY THIS HALF KNOWS AND CANNOT SERVE, and saying so is the
+    # point of carrying it. The archive b_ids_driver::acquire reads for Chromium
+    # is per architecture and serves linux64 only, so a Windows request is
+    # refused with its reason rather than with "no route table", which reads as
+    # a family nobody has implemented. ⚠ The rows below are the sh half's, and
+    # they exist here so the two halves describe one machine.
+    chromium = @{
+        packages       = @('chromium', 'chromium-browser', 'chromium-common', 'chromium-sandbox', 'chromium-l10n')
+        paths          = @('/usr/lib/chromium', '/usr/lib/chromium-browser', '/snap/chromium')
+        links          = @('/usr/bin/chromium', '/usr/bin/chromium-browser')
+        # ⚠ Under /usr/lib rather than /opt, which is where a Debian-policy
+        # package puts it.
+        sandbox        = '/usr/lib/chromium/chrome-sandbox'
+        # ⛔ Chromium is not a product with an installer entry on Windows, and
+        # an empty pattern would match every uninstall entry on the machine.
+        # ^$ matches nothing, which is the correct answer for a family this
+        # platform cannot serve.
+        uninstallMatch = '^$'
+        vendorDir      = ''
+    }
 }
 
 if (-not $familyRoutes.ContainsKey($Browser)) {
@@ -203,8 +223,20 @@ function Write-Plan {
             Write-Output 'fetch   the MicrosoftEdgeEnterpriseX64.msi that index names for the build asked for'
             Write-Output 'install msiexec /qn, which is the silent unattended mode'
         }
+        'chromium/linux/for-testing' {
+            Write-Output 'index   the APT archive b_ids_driver::acquire owns the URL of. ⛔ NOT A VENDOR'
+            Write-Output '        index: Chromium is source rather than a product with channels, so what'
+            Write-Output '        serves it by version is a distributor. The archive publishes a SHA-256'
+            Write-Output '        and a Size per artefact, which this run checks what arrived against'
+            Write-Output 'fetch   the chromium deb that index names for the build asked for. ⚠ The index'
+            Write-Output '        is gzipped and there is no uncompressed Packages, so it is decompressed'
+            Write-Output 'install apt-get install of the deb, whose own post-install sets the sandbox up'
+        }
         default {
-            if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
+            if ($Browser -eq 'chromium') {
+                Write-Output 'fetch   nothing. This project reads one archive for this family and it serves'
+                Write-Output '        linux64 only, so no other platform or route is implemented'
+            } elseif ($Browser -eq 'edge' -and $Route -eq 'vendor') {
                 Write-Output 'fetch   nothing. The vendor publishes no current-build URL for this family,'
                 Write-Output '        so this route is refused and -Route for-testing is the one to use'
             } else {

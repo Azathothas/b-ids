@@ -251,6 +251,12 @@ fn acquire(
                     // fact about the index rather than a gap here.
                     "published_sha256": found.published_sha256,
                     "published_bytes": found.published_bytes,
+                    // ⛔ THE SIBLINGS THE ARCHIVE NAMES, because a caller that
+                    // installed the main artefact alone would install a package
+                    // whose dependency is not on the machine. Empty for an
+                    // index that serves one archive per build, which is both
+                    // JSON ones. TODO/corpus.md, CORPUS-02.
+                    "companions": found.companions,
                 });
                 match serde_json::to_string(&object) {
                     Ok(line) => println!("{line}"),

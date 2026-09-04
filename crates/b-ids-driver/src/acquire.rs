@@ -63,6 +63,28 @@ pub enum Route {
     /// the automation index for Chrome does not, so an acquisition through this
     /// route can be checked against the publisher rather than only recorded.
     EdgeEnterprise,
+    /// An APT archive publishing Chromium as a `.deb` for Ubuntu.
+    ///
+    /// ⛔ **NOT A VENDOR ROUTE, and the name says so.** Chromium is source
+    /// rather than a product with channels: Google publishes continuous
+    /// snapshots keyed by a revision that is not the version a profile records,
+    /// and Ubuntu's own `chromium-browser` package is a shim for a snap that
+    /// cannot be launched on a hosted runner. What remains is a distributor,
+    /// and a distributor's build is a REPACKAGING rather than the upstream one.
+    ///
+    /// ⭐ **The archive states a SHA-256 and a byte count per artefact in its
+    /// `Packages` index**, so an acquisition through it is checkable against
+    /// the publisher, which is the property that makes it usable here at all.
+    ///
+    /// ⚠ **What the resulting profile does and does not isolate.** Measured
+    /// 2026-09-04: this archive serves Chromium `152.0.7977.75` for `noble`,
+    /// which is the exact build of branded Chrome the corpus already holds at
+    /// `chrome/stable/linux64`. So the pair is same-build rather than
+    /// same-major, and the confound is no longer the version. ⛔ It IS the
+    /// packaging: a distributor may build against system libraries and disable
+    /// features, so what differs between the two is branding OR packaging and
+    /// this pair does not separate them. `TODO/corpus.md`, `CORPUS-02`.
+    ChromiumUbuntuPpa,
 }
 
 impl Route {
@@ -74,13 +96,14 @@ impl Route {
     /// ⚠ It is NOT the order [`plan`] tries, and it never was a promise that
     /// it would be: [`Route::Vendor`] is not a plannable route at all.
     #[must_use]
-    pub fn all() -> [Self; 5] {
+    pub fn all() -> [Self; 6] {
         [
             Self::Installed,
             Self::Cache,
             Self::Vendor,
             Self::ChromeForTesting,
             Self::EdgeEnterprise,
+            Self::ChromiumUbuntuPpa,
         ]
     }
 
@@ -105,7 +128,9 @@ impl Route {
         match self {
             Self::Installed | Self::Cache => None,
             Self::Vendor | Self::EdgeEnterprise => Some(true),
-            Self::ChromeForTesting => Some(false),
+            // ⚠ Chromium is unbranded by construction rather than by which
+            // index served it: there is no vendor brand entry to carry.
+            Self::ChromeForTesting | Self::ChromiumUbuntuPpa => Some(false),
         }
     }
 
@@ -118,6 +143,7 @@ impl Route {
             Self::Vendor => "vendor",
             Self::ChromeForTesting => "chrome-for-testing",
             Self::EdgeEnterprise => "edge-enterprise",
+            Self::ChromiumUbuntuPpa => "chromium-ubuntu-ppa",
         }
     }
 }
@@ -519,6 +545,40 @@ pub fn download_url(
 const EDGE_ENTERPRISE_INDEX: &str =
     "https://edgeupdates.microsoft.com/api/products?view=enterprise";
 
+/// The APT archive this project reads for Chromium, and the one it measured.
+///
+/// ⛔ **Three routes were considered and two were measured shut.** Google's
+/// `chromium-browser-snapshots` bucket answers `200` and serves a real
+/// unpatched Chromium, measured 2026-09-04 at revision `1692381`, but it is
+/// keyed by a trunk revision rather than by a version a profile records and a
+/// continuous trunk build belongs to no channel anybody runs. Ubuntu's own
+/// `chromium-browser` package on `noble` is a shim for a snap, and
+/// `capture.yml` run `33854002345` measured what that costs: the resolver finds
+/// `/usr/bin/chromium`, reads `151.0.7922.0` from it, and the launch aborts on
+/// signal 6 inside `content::ZygoteHostImpl::Init`.
+///
+/// ⭐ **This one answers by VERSION and publishes a digest.** Measured
+/// 2026-09-04: `Packages.gz` for `noble` carries `chromium` at
+/// `152.0.7977.75-1xtradeb1.2404.1`, with a `SHA256` and a `Size` beside it.
+///
+/// ⚠ **It is served gzipped and there is no uncompressed `Packages`.**
+/// Measured the same day: `Packages` is `404`, `Packages.gz` is `200`. A caller
+/// fetching this decompresses before handing the bytes to [`deb_download`].
+const CHROMIUM_UBUNTU_PPA_INDEX: &str = "https://ppa.launchpadcontent.net/xtradeb/apps/ubuntu/dists/noble/main/binary-amd64/Packages.gz";
+
+/// Where the archive's `Filename` fields are relative to.
+///
+/// ⛔ **Derived from the index URL rather than written twice.** A `Packages`
+/// index states `Filename: pool/main/c/chromium/...`, relative to the archive
+/// root, and the root is the index URL with `dists/...` cut off it. Two
+/// literals here would be two things to move on the day the archive does.
+fn archive_base(index_url: &str) -> &str {
+    match index_url.find("/dists/") {
+        Some(at) => &index_url[..at],
+        None => index_url,
+    }
+}
+
 /// What one index answered about one build on one platform.
 ///
 /// ⛔ **The digest is the publisher's claim, not a measurement of what
@@ -538,6 +598,21 @@ pub struct Download {
     pub published_sha256: Option<String>,
     /// The size the publisher states, where it states one.
     pub published_bytes: Option<u64>,
+    /// Other artefacts from the same index this build cannot be installed
+    /// without, in the order the index lists them.
+    ///
+    /// ⛔ **READ FROM THE INDEX, NEVER A LIST WRITTEN HERE.** An APT archive
+    /// splits one build across several binary packages, and the one carrying
+    /// the browser `Depends` on a sibling at the same exact version: measured
+    /// 2026-09-04, `chromium` depends on `chromium-common (= 152.0.7977.75-...)`
+    /// and recommends `chromium-sandbox`, which is the SUID helper without
+    /// which the browser launches and opens nothing.
+    ///
+    /// ⚠ **Empty for an index that serves one archive per build**, which both
+    /// the Chrome and the Edge indexes do. An empty vector is the honest answer
+    /// there rather than a shape those readers have to pretend to fill.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub companions: Vec<String>,
 }
 
 /// Which index serves a family, and the URL it is served at.
@@ -552,11 +627,8 @@ pub fn index_url(family: Family) -> Option<&'static str> {
     match family {
         Family::Chrome => Some(FOR_TESTING_INDEX),
         Family::Edge => Some(EDGE_ENTERPRISE_INDEX),
-        // ⛔ NONE IS THE MEASURED ANSWER FOR BOTH, not a gap left for later.
-        //
-        // Chromium has no vendor channel serving a build by version: the
-        // snapshot index is keyed by a build number that is not the version a
-        // profile records, and the runner image serves a snap.
+        Family::Chromium => Some(CHROMIUM_UBUNTU_PPA_INDEX),
+        // ⛔ NONE IS THE MEASURED ANSWER, not a gap left for later.
         //
         // Firefox has a first-party archive, and this project has not read it.
         // ⚠ Writing a URL here from memory is exactly what TODO/RULES.md rule 1
@@ -564,10 +636,10 @@ pub fn index_url(family: Family) -> Option<&'static str> {
         // fetcher pointed at a URL nobody checked fails at provisioning time
         // with an error nobody can attribute.
         //
-        // ⭐ `plan` offers no candidate for a family that answers None, so both
-        // are reachable through Route::Installed and Route::Cache and nothing
+        // ⭐ `plan` offers no candidate for a family that answers None, so it
+        // is reachable through Route::Installed and Route::Cache and nothing
         // else. TODO/corpus.md, CORPUS-02.
-        Family::Chromium | Family::Firefox => None,
+        Family::Firefox => None,
     }
 }
 
@@ -582,7 +654,8 @@ pub fn index_route(family: Family) -> Option<Route> {
     match family {
         Family::Chrome => Some(Route::ChromeForTesting),
         Family::Edge => Some(Route::EdgeEnterprise),
-        Family::Chromium | Family::Firefox => None,
+        Family::Chromium => Some(Route::ChromiumUbuntuPpa),
+        Family::Firefox => None,
     }
 }
 
@@ -615,11 +688,181 @@ pub fn download(
                 // from "the publisher states nothing useful".
                 published_sha256: None,
                 published_bytes: None,
+                companions: Vec::new(),
             })
         }
         Family::Edge => edge_download(index_json, version, platform),
-        Family::Chromium | Family::Firefox => Err(IndexRefusal::NoIndexForFamily(family)),
+        Family::Chromium => deb_download(
+            index_json,
+            version,
+            platform,
+            archive_base(CHROMIUM_UBUNTU_PPA_INDEX),
+        ),
+        Family::Firefox => Err(IndexRefusal::NoIndexForFamily(family)),
     }
+}
+
+/// The artefact an APT archive's `Packages` index names for one build.
+///
+/// ⛔ **A third shape, and a third reader, for the reason the other two have
+/// their own.** A `Packages` index is neither JSON nor a list of products: it
+/// is RFC-822-shaped stanzas separated by blank lines, one per binary package,
+/// with continuation lines indented. A reader that tried to cover it and a JSON
+/// index at once would have two meanings for every field.
+///
+/// ⚠ **THE VERSION IS MATCHED ON ITS UPSTREAM PART, and that is not laxness.**
+/// A Debian version carries the packager's own revision after a hyphen:
+/// `152.0.7977.75-1xtradeb1.2404.1`. The version a PROFILE records is what the
+/// binary reports about itself, which is the upstream part alone, so a caller
+/// asking for `152.0.7977.75` is asking the only question it can ask. ⛔ The
+/// match is anchored: `152.0.7977.7` does not match `152.0.7977.75`, because
+/// the character after the upstream part has to be a hyphen or the end.
+///
+/// ⚠ **One architecture, because the index is per architecture.** The URL
+/// already names `binary-amd64`, so a request for another platform is refused
+/// here rather than answered from the wrong index.
+///
+/// # Errors
+///
+/// [`IndexRefusal`], distinguishing bytes that are not a `Packages` index from
+/// a build the archive does not carry from a platform this index cannot serve.
+fn deb_download(
+    index_text: &str,
+    version: &str,
+    platform: Platform,
+    base: &str,
+) -> Result<Download, IndexRefusal> {
+    if platform != Platform::Linux64 {
+        return Err(IndexRefusal::NoDownloadForPlatform {
+            version: version.to_owned(),
+            platform,
+            had: vec!["linux64".to_owned()],
+        });
+    }
+
+    // ⛔ THE STANZAS ARE SPLIT ON A BLANK LINE, which is the format's own
+    // record separator, and a run with no `Package:` field at all is not one.
+    let stanzas: Vec<&str> = index_text
+        .split("\n\n")
+        .filter(|s| s.contains("Package:"))
+        .collect();
+    if stanzas.is_empty() {
+        return Err(IndexRefusal::Unparsable(
+            "no Packages stanza with a Package field".to_owned(),
+        ));
+    }
+
+    let field = |stanza: &str, name: &str| -> Option<String> {
+        stanza.lines().find_map(|line| {
+            let rest = line.strip_prefix(name)?.strip_prefix(':')?;
+            Some(rest.trim().to_owned())
+        })
+    };
+
+    // ⚠ The binary package is named `chromium`, matched exactly. An archive
+    // carrying `chromium-common` and `chromium-l10n` beside it would otherwise
+    // match on a prefix and provision a language pack.
+    let ours: Vec<&&str> = stanzas
+        .iter()
+        .filter(|s| field(s, "Package").as_deref() == Some("chromium"))
+        .collect();
+
+    let upstream_is = |deb_version: &str| -> bool {
+        deb_version
+            .strip_prefix(version)
+            .is_some_and(|rest| rest.is_empty() || rest.starts_with('-'))
+    };
+
+    let Some(stanza) = ours
+        .iter()
+        .find(|s| field(s, "Version").as_deref().is_some_and(upstream_is))
+    else {
+        let nearest: Vec<String> = ours
+            .iter()
+            .filter_map(|s| field(s, "Version"))
+            .take(8)
+            .collect();
+        return Err(IndexRefusal::NoSuchBuild {
+            version: version.to_owned(),
+            known: ours.len(),
+            nearest,
+        });
+    };
+
+    let filename = field(stanza, "Filename").ok_or_else(|| {
+        IndexRefusal::Unparsable(format!(
+            "the chromium stanza for {version} carries no Filename"
+        ))
+    })?;
+
+    // ⛔ THE SIBLINGS THE ARCHIVE ITSELF NAMES, at the archive's own exact
+    // version, and no list written here. An APT archive splits one build across
+    // several binary packages: `chromium` cannot be installed without
+    // `chromium-common` at the same version, and without `chromium-sandbox` it
+    // launches and opens nothing, which is the failure DRIVER-10 already paid
+    // for once on the Edge lane.
+    //
+    // ⚠ SELECTED BY BEING NAMED, not by being present. The archive also
+    // publishes `chromium-l10n`, `chromium-driver` and `chromium-shell` at the
+    // same version, and a rule that took every sibling would download a hundred
+    // megabytes of translations to run a browser. This reads the chosen
+    // stanza's own Depends and Recommends and keeps the siblings that appear in
+    // them.
+    let deb_version = field(stanza, "Version").unwrap_or_default();
+    // ⛔ JOINED WITH A COMMA, NOT A SPACE, AND DRIVING IT IS WHAT FOUND THAT.
+    // A dependency field is comma-separated, so a space here glued the last
+    // term of Depends to the first of Recommends: the run against the real
+    // index returned `chromium-common` and NOT `chromium-sandbox`, because
+    // `chromium-sandbox` was no longer the first token of its term. ⚠ The
+    // sandbox helper is the difference between a browser that launches and one
+    // that opens a socket, which DRIVER-10 already paid for once on the Edge
+    // lane, so this would have been a lane that installed and captured nothing.
+    let wanted = format!(
+        "{}, {}",
+        field(stanza, "Depends").unwrap_or_default(),
+        field(stanza, "Recommends").unwrap_or_default()
+    );
+    let base = base.trim_end_matches('/');
+    let companions: Vec<String> = stanzas
+        .iter()
+        .filter(|s| field(s, "Version").as_deref() == Some(deb_version.as_str()))
+        .filter_map(|s| {
+            let name = field(s, "Package")?;
+            if name == "chromium" || !named_in(&wanted, &name) {
+                return None;
+            }
+            field(s, "Filename").map(|f| format!("{base}/{f}"))
+        })
+        .collect();
+
+    Ok(Download {
+        url: format!("{base}/{filename}"),
+        version: version.to_owned(),
+        // ⛔ LOWERCASED AND LENGTH-CHECKED. A `Packages` index may carry MD5Sum
+        // and SHA1 beside SHA256, and a digest recorded under the wrong
+        // algorithm looks comparable and never matches.
+        published_sha256: field(stanza, "SHA256")
+            .map(|d| d.to_ascii_lowercase())
+            .filter(|d| d.len() == 64 && d.chars().all(|c| c.is_ascii_hexdigit())),
+        published_bytes: field(stanza, "Size").and_then(|s| s.parse().ok()),
+        companions,
+    })
+}
+
+/// Whether a dependency field names a package, as a whole token.
+///
+/// ⛔ **Whole-token, because a substring match is wrong here in both
+/// directions.** `chromium-common` contains `chromium`, and `chromium-shell`
+/// appears inside nothing but itself; a `contains` would pull in every sibling
+/// whose name is a prefix of another. A Debian dependency field separates
+/// alternatives with `|` and terms with `,`, and a term may carry a version
+/// constraint in parentheses, so the token ends at any of those or at a space.
+fn named_in(field: &str, package: &str) -> bool {
+    field.split([',', '|']).any(|term| {
+        term.split_whitespace()
+            .next()
+            .is_some_and(|name| name == package)
+    })
 }
 
 /// The artefact the Edge enterprise index names, and the digest it publishes.
@@ -732,5 +975,6 @@ fn edge_download(
         published_bytes: artifact
             .get("SizeInBytes")
             .and_then(serde_json::Value::as_u64),
+        companions: Vec::new(),
     })
 }
