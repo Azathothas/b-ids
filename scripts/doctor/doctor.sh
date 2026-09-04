@@ -290,7 +290,15 @@ run_fixture() {
     > "$_fx_dir/rust-toolchain.toml"
 
   _fx_rustc=$(command -v rustc)
-  _fx_out=$(cd "$_fx_dir" && "$_fx_rustc" --version 2>&1 </dev/null || true)
+  # ⚠ A SUBSHELL WITH ITS OWN EXIT RATHER THAN `A && B || C`. That shape is
+  # SC2015, and it is not an if-then-else: the fallback runs when A succeeds and
+  # B fails too. ⛔ Two shellcheck versions disagreed about flagging it, this
+  # host's 0.11.0 passing it and the ubuntu runner's refusing it, so the
+  # construct is avoided rather than argued about. TODO/ci.md, CI-09.
+  _fx_out=$(
+    cd "$_fx_dir" || exit 0
+    "$_fx_rustc" --version 2>&1 </dev/null
+  )
 
   _fx_made=0
   for _fx_t in "$_fx_home/toolchains/$_fx_chan-"*; do

@@ -1423,9 +1423,28 @@ info: rolling back changes
 error: failed to install component: 'rustfmt-preview-x86_64-pc-windows-msvc', detected conflict: 'bin\cargo-fmt.exe'
 ```
 
-⚠ **That is why it is intermittent.** Five components, and only a kill landing
-inside the `rustfmt-preview` unpack produces this conflict. Where six seconds
-lands depends on the runner's download speed that minute.
+⚠ **That is why it is intermittent.** Five components, and the kill lands inside
+whichever one was unpacking. Where six seconds lands depends on the runner's
+download speed that minute.
+
+⛔ **CONFIRMED ON THE RUNNER, and it corrects the paragraph above.** Run
+`33760180207`, the `ci` run for commit `601a5a4`, is the last one before this
+fix, and its `gate (windows)` job failed while `gate (ubuntu)` passed:
+
+```text
+gate (windows)  failure
+gate (ubuntu)   success
+
+error: failed to install component: 'clippy-preview-x86_64-pc-windows-msvc', detected conflict: 'bin\cargo-clippy.exe'
+```
+
+⚠ **A DIFFERENT COMPONENT FROM THE ONE THE RECORD NAMED.**
+[`RULES.md`](RULES.md) section 8.5 carried the `rustfmt-preview` spelling and
+this run reports `clippy-preview`. ⭐ That is the mechanism confirming itself:
+the conflict names whichever component was mid-unpack when the probe's kill
+landed, so the recorded string was one member of a family rather than the
+signature. ⛔ A session matching on `rustfmt-preview` alone would have called
+this a different defect.
 
 ⭐ **And that is why only one host ever saw it.** The Ubuntu job runs
 `doctor.sh --fast`, which skips version probes entirely, so no proxy is ever

@@ -589,6 +589,28 @@ second one had a second defect: with `firefox` it would have become
 HOST-DEPENDENT, answering 0 on a machine with Firefox installed and 2 on one
 without, for a different reason each time.
 
+#### ⛔ Two defects the runners found and this host structurally could not
+
+⚠ **Both were pushed green from here and refused by CI**, which is the
+strongest argument in this entry for the two-host gate.
+
+**1. A Firefox version has TWO components, and a test asserted three.**
+`resolve_and_drive_reports_a_build_from_a_source_it_names` required a version of
+at least three dot-separated parts. Both runners ship Firefox `154.0`, and both
+panicked with `154.0 is not a build`.
+
+⛔ **It passed here for a reason that is pure luck**: this host carries
+`148.0.2`, a point release. ⭐ The assertion was a Chromium assumption wearing a
+general name, and `b_ids_schema::check_version` had the right rule all along:
+fewer than two numeric components is refused, and two is accepted. The test
+reads the schema's rule now, and a check confirmed it still refuses `154`, `""`,
+`unknown`, `154.`, `154.0-beta` and `Firefox 154.0`.
+
+**2. Two shellcheck versions disagreed about one line.** `A && B || C` in the
+doctor's new fixture is `SC2015`; this host's shellcheck 0.11.0 passed it and
+the `ubuntu-latest` runner's refused it. ⛔ The construct is avoided rather than
+argued about, because it is genuinely not an if-then-else.
+
 #### ⚠ Where the blocker actually is now, measured
 
 ⛔ **`firefox` is blocked on the LAUNCHER, and `chromium` on ACQUISITION.**

@@ -226,6 +226,12 @@ see whether it goes away. ⚠ If a toolchain conflict does appear again, the
 machine is carrying a half-installed toolchain from before this fix, and
 `rustup toolchain uninstall` on the named version clears it.
 
+⚠ **And it does not always name the same component.** This section carried the
+`rustfmt-preview` spelling for three sessions; the last run before the fix,
+`33760180207`, reported `clippy-preview` instead. ⛔ The conflict names whichever
+component was mid-unpack when the kill landed, so matching on one spelling would
+read a second instance as a different defect.
+
 ---
 
 ## 9. What a session owes at its end

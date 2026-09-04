@@ -40,11 +40,11 @@ rule, and `TODO/RULES.md` section 8.5 states it.
 
 ## The conditions this session leaves
 
-⚠ **The data branch is BEHIND by 37 artefacts and nothing published is wrong.**
-`PUB-04` added a `configs/` tree the publisher has not pushed yet.
-`check-data-branch` reports that as a pending publish rather than a failure,
-which is `PUB-14`, and the push at the end of this session is what triggers
-`publish.yml` to close the gap.
+⭐ **The data branch carries 237 files, up from 200.** `PUB-04`'s `configs/`
+tree was pushed by `publish.yml` on this session's own commit, and
+`check-data-branch` reports `matched:true pending:0` against it. ⚠ It was behind
+by 37 in between, and `PUB-14` is why that read as a pending publish rather than
+as a failure.
 
 ⛔ **Two checks were passing by comparing something to itself**, and both are
 fixed: `check-data-branch` compared the published branch against a materialised

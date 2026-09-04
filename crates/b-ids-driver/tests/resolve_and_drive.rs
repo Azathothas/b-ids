@@ -56,8 +56,24 @@ fn resolve_and_drive_reports_a_build_from_a_source_it_names() {
             !browser.answers.is_empty(),
             "{browser:?} carries no source for its version"
         );
+        // ⛔ TWO COMPONENTS, WHICH IS THE SCHEMA'S OWN RULE, not three. This
+        // asserted three and that was a Chromium assumption wearing a general
+        // name: `b_ids_schema::check_version` refuses a version with fewer than
+        // TWO numeric components, because a major alone cannot say which build
+        // sent the bytes, and it accepts two.
+        //
+        // ⚠ MEASURED ON THE RUNNERS, 2026-09-04, and only there. Firefox ships
+        // `154.0` on both `ubuntu-latest` and `windows-latest`, and this test
+        // panicked with `154.0 is not a build` on both. It passed on the
+        // development host because that machine happens to carry `148.0.2`, a
+        // point release with three components. ⛔ A local pass proved nothing
+        // about the assumption. TODO/corpus.md, CORPUS-02.
         assert!(
-            browser.version.split('.').count() >= 3,
+            browser.version.split('.').count() >= 2
+                && browser
+                    .version
+                    .split('.')
+                    .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit())),
             "{} is not a build",
             browser.version
         );

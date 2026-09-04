@@ -43,9 +43,11 @@ for three sessions; two checks that reported green over a tautology; a probe
 that mutated the machine it was measuring; a validator message that reported
 three different facts identically.
 
-**Introduced, and named:** the data branch is **behind by 37 artefacts**,
-because `PUB-04` added a `configs/` tree the publisher has not pushed.
-⛔ Nothing published is wrong, `check-data-branch` reports it as pending rather
-than failing, and the closing push is what triggers `publish.yml` to close it.
+**Introduced and closed within the session:** the data branch went **behind by
+37 artefacts** when `PUB-04` added a `configs/` tree. ⭐ `check-data-branch`
+reported that as pending rather than failing, which is `PUB-14`, and the closing
+push triggered `publish.yml`, which pushed 235 artefacts. The check now reports
+`matched:true pending:0`, so the design was confirmed end to end rather than
+argued.
 
 **Deployed version:** none. No tag was pushed and no release cut.

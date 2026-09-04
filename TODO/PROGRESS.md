@@ -20,10 +20,11 @@ session ran      2026-09-04, attended, started 2026-09-04T00:07:59Z
 baseline         gate ok: 38 passed, 1 skipped (check-twins, which --fast skips)
                  on this Windows host at the start. 401 tests.
 entries          total 107  open 12  blocked 0  done 95
-published        the data branch: 200 files on origin/data. ⚠ BEHIND by 37:
-                 PUB-04 added a configs/ tree the publisher has not pushed yet.
-                 Nothing published is wrong. ⚠ No release: a pushed tag is the
-                 only thing that cuts one.
+published        the data branch: 237 files on origin/data, up from 200.
+                 PUB-04's configs/ tree was pushed by publish.yml on this
+                 session's own commit, and check-data-branch reports
+                 matched:true pending:0 against it. ⚠ No release: a pushed tag
+                 is the only thing that cuts one.
 gate             check-generated-configs joined it, taking the gate from 39
                  checks to 40. 412 tests. The closing run is in SUMMARY.md.
 ```
