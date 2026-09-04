@@ -11,7 +11,7 @@
 #
 #   the priority block inside a headers frame: both send-path constructors hardcode no dependency, and the closure that would carry it is passed empty
 #     read at references/hyperium__h2/tree/src/frame/headers.rs:123
-#     patchable in this tree: no
+#     patchable in this tree: yes
 #
 # A hole that closes upstream is a hole this project re-reads. It is not
 # a permanent verdict about the stack.

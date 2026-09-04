@@ -2,8 +2,8 @@
   "schema": "corpus-publish/2",
   "license": "0BSD",
   "layout": "v1",
-  "generated_from": "c2224dae8919716e79e3a3afc43cc3013d11ad3466ca28c1f3b00b16132528bb",
-  "profiles": 12,
+  "generated_from": "a06091c5eb8c8915d8318135372dc145fb739d03ccf56a40f643e05bc52a60a7",
+  "profiles": 14,
   "artefacts": [
     {
       "path": "LICENSE",
@@ -48,8 +48,14 @@
       "derived": true
     },
     {
+      "path": "anchors/chromium-152.0.7977.75-linux64.json",
+      "sha256": "9ffb07e64923bbea310b44b2155b5619dab0df9b0152e6f997ef0865cdf5e674",
+      "bytes": 831,
+      "derived": true
+    },
+    {
       "path": "configs/README.md",
-      "sha256": "b97d546e8138d262c55605fc31eda47344606f66598d4d4b0f0fab2ec19b2904",
+      "sha256": "422a258427ec57af727621dcc1ab12317038ec953ee8bb647a129da9da79aa4a",
       "bytes": 939,
       "derived": true
     },
@@ -67,8 +73,8 @@
     },
     {
       "path": "configs/chrome/for-testing/linux64/151.0.7922.76/h2.txt",
-      "sha256": "aa61d3d01180041d27641e3bf39ec9f574c57ed584bab0f23b861ab54da26cd4",
-      "bytes": 821,
+      "sha256": "71f1ba6d4cdb797f14e157d2d02a848924c7b8cebc9a879635082c4e682ac097",
+      "bytes": 822,
       "derived": true
     },
     {
@@ -103,8 +109,8 @@
     },
     {
       "path": "configs/chrome/for-testing/win64/151.0.7922.76/h2.txt",
-      "sha256": "4f4471f06b1521c9025dc053f00e65669ee944075c550e85970029a4f6cf2210",
-      "bytes": 819,
+      "sha256": "0a9e198e92d99429e0de2b778e972975411a09f5c61ebcb488d41982db2dc069",
+      "bytes": 820,
       "derived": true
     },
     {
@@ -139,8 +145,8 @@
     },
     {
       "path": "configs/chrome/stable/linux64/151.0.7922.173/h2.txt",
-      "sha256": "29e78948fddf61abdd9f7fb24e4a750e028fc0d17f238f8d6f05e214749bf823",
-      "bytes": 817,
+      "sha256": "ef11f75db59c37f6bb708929965fde86dd5a6b3f27f36c98e43b5eb939af64ed",
+      "bytes": 818,
       "derived": true
     },
     {
@@ -175,8 +181,8 @@
     },
     {
       "path": "configs/chrome/stable/linux64/152.0.7977.75/h2.txt",
-      "sha256": "d99223a6c441f8a25be61a659b7cc771e96529a1b564907f27460e8ac500df46",
-      "bytes": 816,
+      "sha256": "08b84a4a7cc7f0ae63458eac9a46fb41427173b8cc4c3c75688a288a7d3909de",
+      "bytes": 817,
       "derived": true
     },
     {
@@ -211,8 +217,8 @@
     },
     {
       "path": "configs/chrome/stable/linux64/152.0.7977.82/h2.txt",
-      "sha256": "e3c48e7f67e54e4aa7db5e700f5cc1a5dcf3776fb983c732d5526ca7f7e62914",
-      "bytes": 816,
+      "sha256": "79b0b91b234e9642c3023e985961f4e617fec3110334619e97d06a01b33045dc",
+      "bytes": 817,
       "derived": true
     },
     {
@@ -247,8 +253,8 @@
     },
     {
       "path": "configs/chrome/stable/win64/151.0.7922.174/h2.txt",
-      "sha256": "f27f6ced56bf6c4c1bac030f851975cf5c30e2f42770534cd171f95fac516862",
-      "bytes": 815,
+      "sha256": "d5fbb01104ddf6ea0897096f10315150fb7636a4e4b85b47f0eb9bf0324d00e5",
+      "bytes": 816,
       "derived": true
     },
     {
@@ -283,8 +289,8 @@
     },
     {
       "path": "configs/chrome/stable/win64/151.0.7922.76/h2.txt",
-      "sha256": "2de46d023f5628bc30c4ac3505f624b77de415abb2c915ef1d1b789ad25bc1dd",
-      "bytes": 814,
+      "sha256": "093fa18516af9ffd6ba0b9b9bcd602ea8ed7ee1b888c18861daf1567928b53a0",
+      "bytes": 815,
       "derived": true
     },
     {
@@ -319,8 +325,8 @@
     },
     {
       "path": "configs/chrome/stable/win64/152.0.7977.76/h2.txt",
-      "sha256": "a2a1000e481c731ee71aff320d2c51eaca6e52821789284348080b17c267255c",
-      "bytes": 814,
+      "sha256": "242b0eb62de8134fcdf0d09b09756cf4edf0db809ebc8457512a63b769ae83e2",
+      "bytes": 815,
       "derived": true
     },
     {
@@ -355,8 +361,8 @@
     },
     {
       "path": "configs/chrome/stable/win64/152.0.7977.83/h2.txt",
-      "sha256": "f17ab90132f50a32538615aa6d3ceadf26deb80ef6456f2cfdaa04a6ed39b1cc",
-      "bytes": 814,
+      "sha256": "3044749712cc35d01af3117d8ba85cfa91662eea6f559d6f2b328b8d4d28ecec",
+      "bytes": 815,
       "derived": true
     },
     {
@@ -378,6 +384,42 @@
       "derived": true
     },
     {
+      "path": "configs/chromium/stable/linux64/152.0.7977.75/b-ids-emit.rs",
+      "sha256": "67097f0a56c0878ad283e162534c90c0ba769ece6a2175024a452c9af60ac7b6",
+      "bytes": 4864,
+      "derived": true
+    },
+    {
+      "path": "configs/chromium/stable/linux64/152.0.7977.75/detect.conf",
+      "sha256": "3def12ec72bbfd9341a38fa27edcff32276d6e213cde1134886a93d648e8402f",
+      "bytes": 1040,
+      "derived": true
+    },
+    {
+      "path": "configs/chromium/stable/linux64/152.0.7977.75/h2.txt",
+      "sha256": "78f3b74146f0b99cab735a12942ddcf8f25f603cea95c1fdcb55f33027614bfa",
+      "bytes": 819,
+      "derived": true
+    },
+    {
+      "path": "configs/chromium/stable/linux64/152.0.7977.75/impit.txt",
+      "sha256": "2dc7ef58ed3a28ccc0300fd60b062d83c105bd1856447a3349402b0c459ec0bb",
+      "bytes": 784,
+      "derived": true
+    },
+    {
+      "path": "configs/chromium/stable/linux64/152.0.7977.75/rustls.txt",
+      "sha256": "89f7a9009f0c10c0a06e2ca951fe2cc7f92a5578fb8e01a2416dc7a935aad6b5",
+      "bytes": 1136,
+      "derived": true
+    },
+    {
+      "path": "configs/chromium/stable/linux64/152.0.7977.75/utls.txt",
+      "sha256": "69178c80725938887da02be3ca54f3be62d792cae25d07fe80b69ce417fc4ecd",
+      "bytes": 845,
+      "derived": true
+    },
+    {
       "path": "configs/edge/stable/linux64/151.0.4129.101/b-ids-emit.rs",
       "sha256": "2fee6e6b5bf3714297e920c7bfa14eec57583d876394ba03aad25b94f9481dd8",
       "bytes": 4434,
@@ -391,8 +433,8 @@
     },
     {
       "path": "configs/edge/stable/linux64/151.0.4129.101/h2.txt",
-      "sha256": "d24f6d4a3bf0cd8eab28d3a232dfbca45f4e3fee0ebd9c5284fe8ac7521aa8a3",
-      "bytes": 815,
+      "sha256": "5c0bae2bf77d8e38e8772f4902cb07eace3edf7d8ceb88a921672364374ff5b2",
+      "bytes": 816,
       "derived": true
     },
     {
@@ -427,8 +469,8 @@
     },
     {
       "path": "configs/firefox/stable/linux64/154.0.1/h2.txt",
-      "sha256": "970e9b2192ee3033ea1cc974e28fdcb3196045de9d756f731fc128de82a4c416",
-      "bytes": 811,
+      "sha256": "60a2e654e887c6c9c54dae8bd558dcda1557e4b5c14811b85e6bcdf02838fca1",
+      "bytes": 812,
       "derived": true
     },
     {
@@ -463,8 +505,8 @@
     },
     {
       "path": "configs/firefox/stable/win64/154.0.1/h2.txt",
-      "sha256": "95fdcfb53c4fbd023033c8934c3e8a7546fad925e9bd0c034307f6c4b942069e",
-      "bytes": 809,
+      "sha256": "6d10b50f42fd8b468396901dac2813e8093ee379a88b8b3bbfc0141c69b5be07",
+      "bytes": 810,
       "derived": true
     },
     {
@@ -483,6 +525,42 @@
       "path": "configs/firefox/stable/win64/154.0.1/utls.txt",
       "sha256": "f168aa9bd4c45682c5a988013a9495406b18f9b2bb0b85eca6b45f4447e21d1e",
       "bytes": 836,
+      "derived": true
+    },
+    {
+      "path": "configs/firefox/stable/win64/154.0/b-ids-emit.rs",
+      "sha256": "d57b0e4733b5576cff954f356cef17919601e2372d615170cd6116028d243c68",
+      "bytes": 4684,
+      "derived": true
+    },
+    {
+      "path": "configs/firefox/stable/win64/154.0/detect.conf",
+      "sha256": "005304b68bba66ce0dd06430bca723120f67978d58493ea9bd30cc0fd1429148",
+      "bytes": 937,
+      "derived": true
+    },
+    {
+      "path": "configs/firefox/stable/win64/154.0/h2.txt",
+      "sha256": "059ca48c4e1536c3aac8a62e4bc0212d24459c1dccccf91af3cc1c815b00a119",
+      "bytes": 808,
+      "derived": true
+    },
+    {
+      "path": "configs/firefox/stable/win64/154.0/impit.txt",
+      "sha256": "150b0c7a3111f110c6550fb396105d8290d9b8d67204e4283f73e2e023fb2dd3",
+      "bytes": 773,
+      "derived": true
+    },
+    {
+      "path": "configs/firefox/stable/win64/154.0/rustls.txt",
+      "sha256": "cccb460a31bfc8a16bcd838ebe96d493e91c4caea2a9fbfdcf64b56ffc1e0abd",
+      "bytes": 1125,
+      "derived": true
+    },
+    {
+      "path": "configs/firefox/stable/win64/154.0/utls.txt",
+      "sha256": "09a0e258b1774d97669fa286221292e7e612b9e5cf50f16eed5a8916584753f9",
+      "bytes": 834,
       "derived": true
     },
     {
@@ -540,6 +618,12 @@
       "derived": false
     },
     {
+      "path": "corpus/v1/chromium/stable/linux64/152.0.7977.75.json",
+      "sha256": "4b066b82de2d7361e24b9610a9a6038b9e2016f1ccc7f734831093dc2993472a",
+      "bytes": 16950,
+      "derived": false
+    },
+    {
       "path": "corpus/v1/edge/stable/linux64/151.0.4129.101.json",
       "sha256": "02c1ad7c2936db983656f6fe0434c749b02829ef26360d8da2ff485de41d8dea",
       "bytes": 15990,
@@ -558,39 +642,45 @@
       "derived": false
     },
     {
+      "path": "corpus/v1/firefox/stable/win64/154.0.json",
+      "sha256": "0dcf493fad7f4254a6d938f527ea73b462f3ac4bbec6450520edcfe216ba80ed",
+      "bytes": 14739,
+      "derived": false
+    },
+    {
       "path": "corpus/v1/index.json",
-      "sha256": "f9c339d3f6f8e188083075253abc719e006dfb778e18965b0b85a82157f3eebe",
-      "bytes": 8610,
+      "sha256": "6d2a751c71a95086bf60d3ff9bfff0753616eaa6862bf7f0502c49f603dcb947",
+      "bytes": 10011,
       "derived": true
     },
     {
       "path": "corpus/v1/latest.json",
-      "sha256": "75a4d34e42770d70dff23b8fd8dadea161a6f126d346461ba0e5675438ce82a8",
-      "bytes": 1032,
+      "sha256": "65835db464827b0b4d00e9c8bbe471e9b337fade78cd6f81ff00f2de3df28780",
+      "bytes": 1199,
       "derived": true
     },
     {
       "path": "formats/corpus.csv",
-      "sha256": "95dcf619bb7dcb88d93ab522247d44b017d2539182b7acdbe5c7d7213d5d5d9f",
-      "bytes": 1295,
+      "sha256": "6fc01eee695d571c772732bf74b076b2d3724a3e9c2a3c01ec598e573f58f870",
+      "bytes": 1492,
       "derived": true
     },
     {
       "path": "formats/corpus.json",
-      "sha256": "4e59258361dd4f4068c3f59837a6957a7170150e50f6e50c81ffb08d4db01fdd",
-      "bytes": 201406,
+      "sha256": "89e493d2472d228968169aeffb196765f5f56adec3960aee0363a016525b8505",
+      "bytes": 234489,
       "derived": true
     },
     {
       "path": "formats/corpus.md",
-      "sha256": "00774fd39517b94ad278b0ae1e0815e5838baa735d8279f1204f7b4c7310f5df",
-      "bytes": 1855,
+      "sha256": "dcc79860bb595610fc450579f1f752cbdff9ef3e816ad5921208a91735b4fb25",
+      "bytes": 2088,
       "derived": true
     },
     {
       "path": "formats/corpus.ndjson",
-      "sha256": "2e3a8c8f0b6ccb49ade6eae62df4fc59c76f2b6734d3048bb3ed720da3e46846",
-      "bytes": 158236,
+      "sha256": "beb644b73a848d36352c2e8266ae8a2a03b683d529b5f1efcfa5eb260ec16732",
+      "bytes": 184229,
       "derived": true
     },
     {
@@ -601,26 +691,26 @@
     },
     {
       "path": "formats/corpus.sql",
-      "sha256": "4d932eb59a57149aa1a70c717fe3bbdd0b0771ba866e96fb1037647e23856322",
-      "bytes": 160521,
+      "sha256": "1ce622ef4a584a670aa977171c00bf867a972f736a0a62e62aca2420d3cfb5d4",
+      "bytes": 186794,
       "derived": true
     },
     {
       "path": "formats/corpus.toml",
-      "sha256": "1573ebc1fa9d4a46cd01875e6a1de53d9339d3d76349a2c42ea9b6aab958164c",
-      "bytes": 171400,
+      "sha256": "c814ceb5ea67ff3bb7e51f942967a59fa803a0bf8ea6d260b879730830204e78",
+      "bytes": 199509,
       "derived": true
     },
     {
       "path": "formats/corpus.tsv",
-      "sha256": "a4e7508b469218792b66e3808d5a8c646f5c094491fdbedc069d3ebfe302a4e3",
-      "bytes": 1295,
+      "sha256": "734fb558f70bd9870c51782397d07685286fd637fb028adf9f8607ed1bc7d639",
+      "bytes": 1492,
       "derived": true
     },
     {
       "path": "formats/corpus.yaml",
-      "sha256": "a0b533058ab526ed5e5c34ded17c894a8d0fe2fc38c2590a98312fe311c86afa",
-      "bytes": 184082,
+      "sha256": "428cbe2647e4592ea2f703e466ba083ec05ebf07df0afdcf393c0fdc19342cc7",
+      "bytes": 214315,
       "derived": true
     },
     {
@@ -684,6 +774,12 @@
       "derived": false
     },
     {
+      "path": "raw/v1/chromium/stable/linux64/152.0.7977.75.hello.hex",
+      "sha256": "c1fb274c710983a77db8048f7b63b1db81818a4b9ca4297f4990d2d5fbda777e",
+      "bytes": 3902,
+      "derived": false
+    },
+    {
       "path": "raw/v1/edge/stable/linux64/151.0.4129.101.hello.hex",
       "sha256": "56b16a972c5a19ee89e127b3fe1cd65de1abab251d5499bb3e1d029f8713f66f",
       "bytes": 3478,
@@ -698,6 +794,12 @@
     {
       "path": "raw/v1/firefox/stable/win64/154.0.1.hello.hex",
       "sha256": "e9728399e4e7c52c62da9696882c3b2335e036d05815a9dd4dfede1c92437541",
+      "bytes": 3744,
+      "derived": false
+    },
+    {
+      "path": "raw/v1/firefox/stable/win64/154.0.hello.hex",
+      "sha256": "4889b99da656444cc17ce9a18e6d9a01c816e6d225cc2c9a102b1dbeb6fbc273",
       "bytes": 3744,
       "derived": false
     },
@@ -906,6 +1008,54 @@
       "derived": true
     },
     {
+      "path": "routes/accept-language/chromium/index.txt",
+      "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
+      "bytes": 8,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chromium/stable/152.0.7977.75/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chromium/stable/152.0.7977.75/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chromium/stable/152.0.7977.75/linux64/navigate.txt",
+      "sha256": "6b133d39c5c555d1042c8b62ed6d0beb3edd2f2794a7432e0b629bf9b5f4fec2",
+      "bytes": 14,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chromium/stable/index.txt",
+      "sha256": "458ca979ea97f37ee03f9fffb66957d6ea40b166f351adcd848a0ffb960e3111",
+      "bytes": 23,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chromium/stable/latest/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chromium/stable/latest/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chromium/stable/latest/linux64/navigate.txt",
+      "sha256": "6b133d39c5c555d1042c8b62ed6d0beb3edd2f2794a7432e0b629bf9b5f4fec2",
+      "bytes": 14,
+      "derived": true
+    },
+    {
       "path": "routes/accept-language/edge/index.txt",
       "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
       "bytes": 8,
@@ -990,9 +1140,27 @@
       "derived": true
     },
     {
+      "path": "routes/accept-language/firefox/stable/154.0/index.txt",
+      "sha256": "10e3bb004763d306f2d3418d5678fbf79c0b04ecacfadf95f427fecf08903b68",
+      "bytes": 7,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/firefox/stable/154.0/win64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/firefox/stable/154.0/win64/navigate.txt",
+      "sha256": "6b133d39c5c555d1042c8b62ed6d0beb3edd2f2794a7432e0b629bf9b5f4fec2",
+      "bytes": 14,
+      "derived": true
+    },
+    {
       "path": "routes/accept-language/firefox/stable/index.txt",
-      "sha256": "c0144b4beea550c120f56a27e6b93641d30ddefdf61722612696d23f6800a357",
-      "bytes": 17,
+      "sha256": "a5c0a5c3714c59ef808230be3861bdcdf5af3f6bbe003a4206ab331eb577860d",
+      "bytes": 24,
       "derived": true
     },
     {
@@ -1027,8 +1195,8 @@
     },
     {
       "path": "routes/accept-language/index.txt",
-      "sha256": "2a311927fe45ee0389ab71fe8bb74badba5d5af8b2ab568177d7f7746745fa87",
-      "bytes": 23,
+      "sha256": "c7f00f5d1203b47f9fb270d15aaaa69139f036392c1a8f8e5c1096a6984cad36",
+      "bytes": 33,
       "derived": true
     },
     {
@@ -1170,6 +1338,42 @@
       "derived": true
     },
     {
+      "path": "routes/alpn/chromium/index.txt",
+      "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
+      "bytes": 8,
+      "derived": true
+    },
+    {
+      "path": "routes/alpn/chromium/stable/152.0.7977.75/index.txt",
+      "sha256": "08cc6c1573c3659a4f7999fc618df793bfabd8a2530ff03cdacb44f5a7d45d8a",
+      "bytes": 17,
+      "derived": true
+    },
+    {
+      "path": "routes/alpn/chromium/stable/152.0.7977.75/linux64.list.txt",
+      "sha256": "f922ee8146071813c94038689cdced3bc1a4a7ff0d40887b1ede7246949c1114",
+      "bytes": 12,
+      "derived": true
+    },
+    {
+      "path": "routes/alpn/chromium/stable/index.txt",
+      "sha256": "458ca979ea97f37ee03f9fffb66957d6ea40b166f351adcd848a0ffb960e3111",
+      "bytes": 23,
+      "derived": true
+    },
+    {
+      "path": "routes/alpn/chromium/stable/latest/index.txt",
+      "sha256": "08cc6c1573c3659a4f7999fc618df793bfabd8a2530ff03cdacb44f5a7d45d8a",
+      "bytes": 17,
+      "derived": true
+    },
+    {
+      "path": "routes/alpn/chromium/stable/latest/linux64.list.txt",
+      "sha256": "f922ee8146071813c94038689cdced3bc1a4a7ff0d40887b1ede7246949c1114",
+      "bytes": 12,
+      "derived": true
+    },
+    {
       "path": "routes/alpn/edge/index.txt",
       "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
       "bytes": 8,
@@ -1230,9 +1434,21 @@
       "derived": true
     },
     {
+      "path": "routes/alpn/firefox/stable/154.0/index.txt",
+      "sha256": "2c85d356a01dc1d18af3a1802b4d94a48e4e92cce048572026d821fe47058ece",
+      "bytes": 15,
+      "derived": true
+    },
+    {
+      "path": "routes/alpn/firefox/stable/154.0/win64.list.txt",
+      "sha256": "f922ee8146071813c94038689cdced3bc1a4a7ff0d40887b1ede7246949c1114",
+      "bytes": 12,
+      "derived": true
+    },
+    {
       "path": "routes/alpn/firefox/stable/index.txt",
-      "sha256": "c0144b4beea550c120f56a27e6b93641d30ddefdf61722612696d23f6800a357",
-      "bytes": 17,
+      "sha256": "a5c0a5c3714c59ef808230be3861bdcdf5af3f6bbe003a4206ab331eb577860d",
+      "bytes": 24,
       "derived": true
     },
     {
@@ -1255,8 +1471,8 @@
     },
     {
       "path": "routes/alpn/index.txt",
-      "sha256": "2a311927fe45ee0389ab71fe8bb74badba5d5af8b2ab568177d7f7746745fa87",
-      "bytes": 23,
+      "sha256": "c7f00f5d1203b47f9fb270d15aaaa69139f036392c1a8f8e5c1096a6984cad36",
+      "bytes": 33,
       "derived": true
     },
     {
@@ -1398,6 +1614,42 @@
       "derived": true
     },
     {
+      "path": "routes/client-hello-hex/chromium/index.txt",
+      "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
+      "bytes": 8,
+      "derived": true
+    },
+    {
+      "path": "routes/client-hello-hex/chromium/stable/152.0.7977.75/index.txt",
+      "sha256": "3d5c53b59d204dc6fee6bc2851dce674bbf124a5c84b29e93d15f03d887c2f65",
+      "bytes": 12,
+      "derived": true
+    },
+    {
+      "path": "routes/client-hello-hex/chromium/stable/152.0.7977.75/linux64.txt",
+      "sha256": "c1fb274c710983a77db8048f7b63b1db81818a4b9ca4297f4990d2d5fbda777e",
+      "bytes": 3902,
+      "derived": true
+    },
+    {
+      "path": "routes/client-hello-hex/chromium/stable/index.txt",
+      "sha256": "458ca979ea97f37ee03f9fffb66957d6ea40b166f351adcd848a0ffb960e3111",
+      "bytes": 23,
+      "derived": true
+    },
+    {
+      "path": "routes/client-hello-hex/chromium/stable/latest/index.txt",
+      "sha256": "3d5c53b59d204dc6fee6bc2851dce674bbf124a5c84b29e93d15f03d887c2f65",
+      "bytes": 12,
+      "derived": true
+    },
+    {
+      "path": "routes/client-hello-hex/chromium/stable/latest/linux64.txt",
+      "sha256": "c1fb274c710983a77db8048f7b63b1db81818a4b9ca4297f4990d2d5fbda777e",
+      "bytes": 3902,
+      "derived": true
+    },
+    {
       "path": "routes/client-hello-hex/edge/index.txt",
       "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
       "bytes": 8,
@@ -1458,9 +1710,21 @@
       "derived": true
     },
     {
+      "path": "routes/client-hello-hex/firefox/stable/154.0/index.txt",
+      "sha256": "b34a8b1c3a8d399a4d359dfa1b39e18b77d23399b7f0d92abcb75a2b48c95a5f",
+      "bytes": 10,
+      "derived": true
+    },
+    {
+      "path": "routes/client-hello-hex/firefox/stable/154.0/win64.txt",
+      "sha256": "4889b99da656444cc17ce9a18e6d9a01c816e6d225cc2c9a102b1dbeb6fbc273",
+      "bytes": 3744,
+      "derived": true
+    },
+    {
       "path": "routes/client-hello-hex/firefox/stable/index.txt",
-      "sha256": "c0144b4beea550c120f56a27e6b93641d30ddefdf61722612696d23f6800a357",
-      "bytes": 17,
+      "sha256": "a5c0a5c3714c59ef808230be3861bdcdf5af3f6bbe003a4206ab331eb577860d",
+      "bytes": 24,
       "derived": true
     },
     {
@@ -1483,8 +1747,8 @@
     },
     {
       "path": "routes/client-hello-hex/index.txt",
-      "sha256": "2a311927fe45ee0389ab71fe8bb74badba5d5af8b2ab568177d7f7746745fa87",
-      "bytes": 23,
+      "sha256": "c7f00f5d1203b47f9fb270d15aaaa69139f036392c1a8f8e5c1096a6984cad36",
+      "bytes": 33,
       "derived": true
     },
     {
@@ -1692,6 +1956,54 @@
       "derived": true
     },
     {
+      "path": "routes/header-order/chromium/index.txt",
+      "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
+      "bytes": 8,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chromium/stable/152.0.7977.75/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chromium/stable/152.0.7977.75/linux64/index.txt",
+      "sha256": "051a465f8178bb1e32e4586605cb519d07297a748ff8050ca69f471c7f4094ff",
+      "bytes": 18,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chromium/stable/152.0.7977.75/linux64/navigate.list.txt",
+      "sha256": "64b16e3c92f36e171b0b64a2f9af57b432858c47bcc7131f08806306fafe96db",
+      "bytes": 205,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chromium/stable/index.txt",
+      "sha256": "458ca979ea97f37ee03f9fffb66957d6ea40b166f351adcd848a0ffb960e3111",
+      "bytes": 23,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chromium/stable/latest/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chromium/stable/latest/linux64/index.txt",
+      "sha256": "051a465f8178bb1e32e4586605cb519d07297a748ff8050ca69f471c7f4094ff",
+      "bytes": 18,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chromium/stable/latest/linux64/navigate.list.txt",
+      "sha256": "64b16e3c92f36e171b0b64a2f9af57b432858c47bcc7131f08806306fafe96db",
+      "bytes": 205,
+      "derived": true
+    },
+    {
       "path": "routes/header-order/edge/index.txt",
       "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
       "bytes": 8,
@@ -1776,9 +2088,27 @@
       "derived": true
     },
     {
+      "path": "routes/header-order/firefox/stable/154.0/index.txt",
+      "sha256": "10e3bb004763d306f2d3418d5678fbf79c0b04ecacfadf95f427fecf08903b68",
+      "bytes": 7,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/firefox/stable/154.0/win64/index.txt",
+      "sha256": "051a465f8178bb1e32e4586605cb519d07297a748ff8050ca69f471c7f4094ff",
+      "bytes": 18,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/firefox/stable/154.0/win64/navigate.list.txt",
+      "sha256": "795f2e97e073b979087beda3c867b7a36deacc6177ff52290d060f0a0229a638",
+      "bytes": 148,
+      "derived": true
+    },
+    {
       "path": "routes/header-order/firefox/stable/index.txt",
-      "sha256": "c0144b4beea550c120f56a27e6b93641d30ddefdf61722612696d23f6800a357",
-      "bytes": 17,
+      "sha256": "a5c0a5c3714c59ef808230be3861bdcdf5af3f6bbe003a4206ab331eb577860d",
+      "bytes": 24,
       "derived": true
     },
     {
@@ -1813,8 +2143,8 @@
     },
     {
       "path": "routes/header-order/index.txt",
-      "sha256": "2a311927fe45ee0389ab71fe8bb74badba5d5af8b2ab568177d7f7746745fa87",
-      "bytes": 23,
+      "sha256": "c7f00f5d1203b47f9fb270d15aaaa69139f036392c1a8f8e5c1096a6984cad36",
+      "bytes": 33,
       "derived": true
     },
     {
@@ -1825,8 +2155,8 @@
     },
     {
       "path": "routes/routes.json",
-      "sha256": "584bf6b64e74087c84a2f3495ad5e97ddcdeb758787c753a82cee4a78b14db97",
-      "bytes": 95496,
+      "sha256": "5080f2003a562eaeae9eeb7f01e4035e509bd110a060dddab673a15659d6f8dc",
+      "bytes": 112535,
       "derived": true
     },
     {
@@ -2034,6 +2364,54 @@
       "derived": true
     },
     {
+      "path": "routes/sec-ch-ua/chromium/index.txt",
+      "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
+      "bytes": 8,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chromium/stable/152.0.7977.75/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chromium/stable/152.0.7977.75/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chromium/stable/152.0.7977.75/linux64/navigate.txt",
+      "sha256": "37d92c87285e85cac81778d6d01db7cdd4451563800aa6b19cb731fcfe89ca85",
+      "bytes": 40,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chromium/stable/index.txt",
+      "sha256": "458ca979ea97f37ee03f9fffb66957d6ea40b166f351adcd848a0ffb960e3111",
+      "bytes": 23,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chromium/stable/latest/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chromium/stable/latest/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chromium/stable/latest/linux64/navigate.txt",
+      "sha256": "37d92c87285e85cac81778d6d01db7cdd4451563800aa6b19cb731fcfe89ca85",
+      "bytes": 40,
+      "derived": true
+    },
+    {
       "path": "routes/sec-ch-ua/edge/index.txt",
       "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
       "bytes": 8,
@@ -2083,8 +2461,8 @@
     },
     {
       "path": "routes/sec-ch-ua/index.txt",
-      "sha256": "1d9c5d6a2cd41491ebcfe30c97fac2f0f750ff0797edbdad6781b677dab255cb",
-      "bytes": 14,
+      "sha256": "07de5cf1ff327aa3e830ad14d17926351fcc9de8a8ae66b900ed6aed3e85b645",
+      "bytes": 24,
       "derived": true
     },
     {
@@ -2292,6 +2670,54 @@
       "derived": true
     },
     {
+      "path": "routes/user-agent/chromium/index.txt",
+      "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
+      "bytes": 8,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chromium/stable/152.0.7977.75/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chromium/stable/152.0.7977.75/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chromium/stable/152.0.7977.75/linux64/navigate.txt",
+      "sha256": "7484a43ed9a5cdfe5c0bea134bc7fe95bc75739359f54e82e7b03a349f66b619",
+      "bytes": 101,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chromium/stable/index.txt",
+      "sha256": "458ca979ea97f37ee03f9fffb66957d6ea40b166f351adcd848a0ffb960e3111",
+      "bytes": 23,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chromium/stable/latest/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chromium/stable/latest/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chromium/stable/latest/linux64/navigate.txt",
+      "sha256": "7484a43ed9a5cdfe5c0bea134bc7fe95bc75739359f54e82e7b03a349f66b619",
+      "bytes": 101,
+      "derived": true
+    },
+    {
       "path": "routes/user-agent/edge/index.txt",
       "sha256": "b16913980e6eb5a6d3a8ca1a4d6308596140199be7cbd771993b4497cff8dcd7",
       "bytes": 8,
@@ -2376,9 +2802,27 @@
       "derived": true
     },
     {
+      "path": "routes/user-agent/firefox/stable/154.0/index.txt",
+      "sha256": "10e3bb004763d306f2d3418d5678fbf79c0b04ecacfadf95f427fecf08903b68",
+      "bytes": 7,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/firefox/stable/154.0/win64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/firefox/stable/154.0/win64/navigate.txt",
+      "sha256": "2e91c7de4f0f00b7f98eb6f1f5fd9ce72726e7b922b4415dbc20978a36fb132c",
+      "bytes": 80,
+      "derived": true
+    },
+    {
       "path": "routes/user-agent/firefox/stable/index.txt",
-      "sha256": "c0144b4beea550c120f56a27e6b93641d30ddefdf61722612696d23f6800a357",
-      "bytes": 17,
+      "sha256": "a5c0a5c3714c59ef808230be3861bdcdf5af3f6bbe003a4206ab331eb577860d",
+      "bytes": 24,
       "derived": true
     },
     {
@@ -2413,14 +2857,14 @@
     },
     {
       "path": "routes/user-agent/index.txt",
-      "sha256": "2a311927fe45ee0389ab71fe8bb74badba5d5af8b2ab568177d7f7746745fa87",
-      "bytes": 23,
+      "sha256": "c7f00f5d1203b47f9fb270d15aaaa69139f036392c1a8f8e5c1096a6984cad36",
+      "bytes": 33,
       "derived": true
     },
     {
       "path": "vectors/ja4/v1.json",
-      "sha256": "3825b76c6208b5b83af2a0f8a590ef412756751f0c27e6e4e78fce1cfff5e013",
-      "bytes": 11410,
+      "sha256": "c766cea2176adefeb4b31ee99ff973909616da20f44772c299177774e10b9382",
+      "bytes": 12768,
       "derived": true
     }
   ]
