@@ -720,6 +720,24 @@
       "derived": true
     },
     {
+      "path": "packages/js/corpus.json",
+      "sha256": "cf3e9243af1bf0b3d3edae9af0758f09cf8e9154c1f74b199f2de3839e3e81ca",
+      "bytes": 257349,
+      "derived": true
+    },
+    {
+      "path": "packages/js/index.mjs",
+      "sha256": "bccd205717ca00cc80bb6ee2176d83073c55abd92b41c053173728e177a062b4",
+      "bytes": 4023,
+      "derived": true
+    },
+    {
+      "path": "packages/js/package.json",
+      "sha256": "a1e7f738d5f29409c5f1468f4d1b245522a226507af6a44645399b094cb28dd6",
+      "bytes": 403,
+      "derived": true
+    },
+    {
       "path": "pcap/v1/chrome/for-testing/linux64/151.0.7922.76.pcapng",
       "sha256": "e502eb1c6d8fa654b710bf5a44c5a2257b1b90408d1a4f1d326c346b7d6df7e4",
       "bytes": 2956,

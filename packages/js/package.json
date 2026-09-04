@@ -1,0 +1,17 @@
+{
+  "description": "Browser network fingerprints, measured and embedded. The corpus is embedded at build time and nothing is fetched at runtime.",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "corpus.json",
+    "LICENSE"
+  ],
+  "license": "0BSD",
+  "main": "./index.mjs",
+  "name": "b-ids",
+  "sideEffects": false,
+  "type": "module",
+  "version": "1.0.0-6d2a751c71a9"
+}
