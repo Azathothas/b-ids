@@ -236,6 +236,8 @@ $ComparedDirectly = @(
     'check-pr-body',
     'check-pcap',
     'check-signing',
+    'check-packages',
+    'check-bindings',
     'check-license-consistency',
     'check-release',
     'check-data-branch',
@@ -445,6 +447,10 @@ Invoke-PsCheck -Name 'check-pr-body' -Script 'scripts/common/check-pr-body.ps1' 
 Invoke-PsCheck -Name 'check-pcap' -Script 'scripts/common/check-pcap.ps1' -Arguments @()
 # ⭐ PUB-09. The authorship half, which a checksums file is not.
 Invoke-PsCheck -Name 'check-signing' -Script 'scripts/common/check-signing.ps1' -Arguments @()
+# ⭐ PUB-05. A package that embeds the corpus rather than fetching it.
+Invoke-PsCheck -Name 'check-packages' -Script 'scripts/common/check-packages.ps1' -Arguments @()
+# ⭐ LIB-03. The answers, compared, rather than the interfaces.
+Invoke-PsCheck -Name 'check-bindings' -Script 'scripts/common/check-bindings.ps1' -Arguments @()
 
 # ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. Six places state the
 # licence and one of them is the source every generated one reads.

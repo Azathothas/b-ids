@@ -333,6 +333,52 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
         }
     }
 
+    // -- a package per ecosystem ---------------------------------------------
+    //
+    // ⭐ GENERATED FROM THE CORPUS, never hand-maintained. A package somebody
+    // edits is a second copy of the corpus that drifts from the first, and the
+    // drift is invisible because both sides look like data.
+    // ⛔ IT EMBEDS AND IT DOES NOT FETCH, which is PUB-05's Must-not: a package
+    // that needs the network to answer fails in the environment its consumers
+    // care most about.
+    //
+    // ⚠ THE IDENTIFIER IS THE DIGEST OF THE INDEX, which is the same pin the
+    // Rust package's build script computes. Two builds reporting one identifier
+    // embedded the same bytes, and scripts/common/check-packages recomputes it
+    // with sha256sum rather than with this code.
+    {
+        let index_path = Path::new(root).join("corpus").join("v1").join("index.json");
+        if index_path.is_file() {
+            let index_bytes =
+                std::fs::read(&index_path).map_err(|e| format!("{}: {e}", index_path.display()))?;
+            let release = hex(&sha256(&index_bytes));
+            let index_json = String::from_utf8_lossy(&index_bytes).into_owned();
+            let named: Vec<(String, Profile)> = profiles
+                .iter()
+                .map(|p| {
+                    (
+                        format!(
+                            "corpus/v1/{}/{}/{}/{}.json",
+                            p.browser.name.to_ascii_lowercase(),
+                            p.browser.channel.as_str(),
+                            p.platform_token().as_str(),
+                            p.browser.version
+                        ),
+                        p.clone(),
+                    )
+                })
+                .collect();
+            let pointers_path = Path::new(root)
+                .join("corpus")
+                .join("v1")
+                .join("latest.json");
+            let pointers_json = std::fs::read_to_string(&pointers_path).unwrap_or_default();
+            for file in crate::packages::packages(&named, &index_json, &pointers_json, &release)? {
+                put(out, &file.path, file.text.as_bytes(), &mut artefacts)?;
+            }
+        }
+    }
+
     // -- the published test vectors ------------------------------------------
     //
     // ⛔ COPIED VERBATIM, never regenerated. A vector's expected value comes

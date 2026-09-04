@@ -481,6 +481,8 @@ compare_pair "check-formats"        check-formats.sh        "--json"          ch
 compare_pair "check-pr-body"        check-pr-body.sh        "--fixture --json" check-pr-body.ps1        "-Fixture -Json"
 compare_pair "check-pcap"           check-pcap.sh           "--json"           check-pcap.ps1           "-Json"
 compare_pair "check-signing"        check-signing.sh        "--json"           check-signing.ps1        "-Json"
+compare_pair "check-packages"       check-packages.sh       "--json"           check-packages.ps1       "-Json"
+compare_pair "check-bindings"       check-bindings.sh       "--json"           check-bindings.ps1       "-Json"
 
 # ⚠ EACH HALF READS THE SIX STATEMENTS ITSELF, one in jq and one in
 # ConvertFrom-Json, so this row compares two readings of the tree rather than

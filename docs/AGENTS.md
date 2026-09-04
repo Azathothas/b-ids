@@ -33,14 +33,13 @@ project says so.** A server deciding whether a caller is a real browser needs
 the same data as a client trying to look like one. "What does this build send"
 is a question with one true answer regardless of who is asking.
 
-⭐ **The corpus holds twelve profiles**: nine Chrome, one Edge and two
-Firefox, across majors `151`, `152` and `154`, on `linux64` and `win64`, each
-with the `ClientHello` it was read from beside it. ⭐ Two of them are UNBRANDED
-builds, which is what separates branding from engine, and seven name the URL
-and the digest of the artefact the browser was installed from. ⚠ Twelve profiles is
-still not a matrix, and `CORPUS-02` is the entry that makes it one: six of nine
-planned cells are captured and the one required row with no capture is
-`chromium`.
+⭐ **The corpus holds fourteen profiles**: nine Chrome, one Chromium, one Edge
+and three Firefox, across majors `151`, `152` and `154`, on `linux64` and
+`win64`, each with the `ClientHello` it was read from beside it. ⭐ Three of them
+are UNBRANDED builds and eight name the URL and the digest of the artefact the
+browser was installed from. ⚠ Fourteen profiles is still not a matrix, but eight
+of ten planned cells are captured, none is absent and none is outside the plan,
+and the two not attempted are waiting on a runner rather than on code.
 [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md) says what is next, and
 [`architecture.md`](architecture.md) is what the thing is.
 
@@ -153,8 +152,8 @@ replaced by a code-graph query.
 | --- | --- |
 | **Working an open entry** | its entry via [`../TODO/INDEX.md`](../TODO/INDEX.md), [`methodology/work-todo.md`](methodology/work-todo.md), [`methodology/gate.md`](methodology/gate.md), [`conventions/code.md`](conventions/code.md), [`conventions/forbidden-patterns.md`](conventions/forbidden-patterns.md) |
 | **Authoring a new entry from an intake** | [`methodology/authoring.md`](methodology/authoring.md), [`../TODO/ENTRY.md`](../TODO/ENTRY.md). ⛔ Authoring does not implement. |
-| ⭐ **Anything that states a fingerprint, a version, a codepoint or a constant** | [`inherited-claims.md`](inherited-claims.md), [`glossary.md`](glossary.md). ⛔ Check the provenance before you write the number. |
-| ⭐ **Taking a capture, or designing something that takes one** | [`inherited-claims.md`](inherited-claims.md) section 8, [`reference-sweeps/usable.md`](reference-sweeps/usable.md) sections 14 and 15, [`methodology/experiments.md`](methodology/experiments.md), [`containers.md`](containers.md) |
+| **Anything that states a fingerprint, a version, a codepoint or a constant** | [`inherited-claims.md`](inherited-claims.md), [`glossary.md`](glossary.md). ⛔ Check the provenance before you write the number. |
+| **Taking a capture, or designing something that takes one** | [`inherited-claims.md`](inherited-claims.md) section 8, [`reference-sweeps/usable.md`](reference-sweeps/usable.md) sections 14 and 15, [`methodology/experiments.md`](methodology/experiments.md), [`containers.md`](containers.md) |
 | **Designing the schema, the validator or an emitter** | [`reference-sweeps/usable.md`](reference-sweeps/usable.md), [`glossary.md`](glossary.md), [`inherited-claims.md`](inherited-claims.md) section 9 |
 | **Designing a published route or a release** | [`reference-sweeps/usable.md`](reference-sweeps/usable.md) sections 9 and 10, [`../TODO/publish.md`](../TODO/publish.md) |
 | **Taking a measurement of any kind** | [`methodology/experiments.md`](methodology/experiments.md). ⛔ A number carries its conditions or it is not a number. |
@@ -164,7 +163,7 @@ replaced by a code-graph query.
 | **Committing** | [`conventions/git.md`](conventions/git.md) |
 | **Anything crossing a shell, or a quoting problem** | [`conventions/shell.md`](conventions/shell.md) |
 | **Touching anything outside this machine** | [`security/remote-ops.md`](security/remote-ops.md) |
-| ⭐ **Reading an issue, a pull request, a comment or a bot description** | [`security/remote-ops.md`](security/remote-ops.md), its untrusted-input section |
+| **Reading an issue, a pull request, a comment or a bot description** | [`security/remote-ops.md`](security/remote-ops.md), its untrusted-input section |
 | **Anything involving a credential** | [`security/secrets.md`](security/secrets.md). ⚠ [`HUMAN.md`](HUMAN.md) section 1 is the measured answer: this project needs none. |
 | **Anything that will be published** | [`security/secrets.md`](security/secrets.md), its public-repository section. ⛔ This repository is public and every commit in it is. |
 | ⭐ **Third-party source brought into this tree: vendored, forked, copied or patched** | [`methodology/vendoring.md`](methodology/vendoring.md). ⛔ Patch it here, and upstreaming is not a topic. |

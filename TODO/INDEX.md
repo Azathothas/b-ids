@@ -13,16 +13,16 @@ entry a row, and that no status disagrees between the two. It runs as a gate.
 ## Counts
 
 ```text
-total 107  open 2  blocked 0  done 105
+total 107  open 0  blocked 0  done 107
 ```
 
 | priority | open | blocked | done | total |
 | --- | --- | --- | --- | --- |
 | P0 | 0 | 0 | 11 | 11 |
 | P1 | 0 | 0 | 49 | 49 |
-| P2 | 1 | 0 | 41 | 42 |
-| P3 | 1 | 0 | 4 | 5 |
-| **all** | **2** | **0** | **105** | **107** |
+| P2 | 0 | 0 | 42 | 42 |
+| P3 | 0 | 0 | 5 | 5 |
+| **all** | **0** | **0** | **107** | **107** |
 
 ---
 
@@ -82,12 +82,12 @@ total 107  open 2  blocked 0  done 105
 | HARNESS-16 | P2 | S | done | The trust store a Windows runner can be made to use without a person | [`harness.md`](harness.md) |
 | LIB-01 | P2 | M | done | A crate that hands a program a profile | [`library.md`](library.md) |
 | LIB-02 | P2 | M | done | The smallest client that proves a profile is usable | [`library.md`](library.md) |
-| LIB-03 | P3 | L | open | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
+| LIB-03 | P3 | L | done | Bindings for the ecosystems that will ask | [`library.md`](library.md) |
 | PUB-01 | P1 | M | done | Releases, tagged and versioned and immutable | [`publish.md`](publish.md) |
 | PUB-02 | P1 | M | done | The data branch, over raw file serving | [`publish.md`](publish.md) |
 | PUB-03 | P1 | M | done | Routes a program with nothing but `curl` can read | [`publish.md`](publish.md) |
 | PUB-04 | P2 | M | done | The formats that are not data files | [`publish.md`](publish.md) |
-| PUB-05 | P2 | L | open | Language packages that embed the corpus | [`publish.md`](publish.md) |
+| PUB-05 | P2 | L | done | Language packages that embed the corpus | [`publish.md`](publish.md) |
 | PUB-06 | P3 | M | done | A packet capture per profile | [`publish.md`](publish.md) |
 | PUB-07 | P1 | S | done | The licence stated in three places | [`publish.md`](publish.md) |
 | PUB-08 | P2 | S | done | One generator for the release body and the changelog | [`publish.md`](publish.md) |

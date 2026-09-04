@@ -162,12 +162,13 @@ only where the corpus holds the value and the corpus holds none.
 
 ## 5. ⛔ The limits, stated rather than discovered
 
-- **The corpus holds twelve profiles.** Nine Chrome, one Edge and two Firefox,
-  majors 151, 152 and 154, on two platforms. ⚠ Five of them were taken through
-  whatever build the machine happened to have and record
-  `captured.acquisition: null`; seven name the URL and the digest they were
-  installed from. ⭐ Two are unbranded builds.
-  [`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`, is the matrix.
+- **The corpus holds fourteen profiles.** Nine Chrome, one Chromium, one Edge
+  and three Firefox, majors 151, 152 and 154, on two platforms. ⚠ Six of them
+  were taken through whatever build the machine happened to have and record
+  `captured.acquisition: null`; eight name the URL and the digest they were
+  installed from. ⭐ Three are unbranded builds.
+  [`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`, is the matrix, and it
+  is closed: eight of ten planned cells captured, none absent.
 - **No digest is stored in a profile**, by the rule in section 4, and ⛔ JA3 is
   not computed anywhere: it is an MD5, this tree links no MD5, and a digest that
   changes with a browser's per-connection shuffle is not one to assert on.

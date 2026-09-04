@@ -3,13 +3,14 @@
 A dated, provenance-carrying corpus of what real browsers put on a wire: TLS
 `ClientHello` bytes, HTTP/2 settings and framing, and header sets in order.
 
-⭐ **The corpus holds twelve profiles**, and every one is real: nine Chrome,
-one Edge and two Firefox, across majors `151`, `152` and `154`, on Windows and
-Linux, captured between 2026-09-01 and 2026-09-04 on a laptop and on hosted
-runners. ⭐ Seven of them name the URL and the digest of the archive this project
-fetched the browser from, rather than measuring whatever a machine happened to
-have. ⭐ **Two are UNBRANDED builds**, which is what separates branding from
-engine: the unbranded build sends the browser's root-store extension with an
+⭐ **The corpus holds fourteen profiles**, and every one is real: nine Chrome,
+one Chromium, one Edge and three Firefox, across majors `151`, `152` and `154`,
+on Windows and Linux, captured between 2026-09-01 and 2026-09-04 on a laptop and
+on hosted runners. ⭐ Eight of them name the URL and the digest of the archive
+this project fetched the browser from, rather than measuring whatever a machine
+happened to have. ⭐ **Three are UNBRANDED builds**, which is what separates
+branding from engine: the unbranded build sends the browser's root-store
+extension with an
 empty list where the branded one beside it sends thirty-two identifiers. Every
 profile carries the `ClientHello` bytes it was read from, published beside it. Around them are
 the profile schema, a validator that refuses a combination no browser could

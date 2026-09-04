@@ -192,7 +192,7 @@ check_simple() {
 # ⚠ AN INTERNAL FLAG. CHECK_GATE_INNER is set by check-twins and by the
 # recursion guard further down, and nothing else reads it. A gate run by hand
 # runs everything.
-COMPARED_DIRECTLY="check-docs check-markers check-catalogues check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-pcap check-signing check-license-consistency check-release check-data-branch check-publish check-cold-start check-support-matrix check-generated-configs"
+COMPARED_DIRECTLY="check-docs check-markers check-catalogues check-one-home check-placeholders check-control-bytes check-record check-no-secrets check-vendor check-msrv check-corpus check-validate check-line-endings check-routes check-changelog check-workflows check-coverage check-exit-codes check-manual-path check-provisioning check-formats check-trust-anchors check-notes-generator check-pr-body check-pcap check-signing check-packages check-bindings check-license-consistency check-release check-data-branch check-publish check-cold-start check-support-matrix check-generated-configs"
 compared_directly() {
   [ "${CHECK_GATE_INNER:-}" = "1" ] || return 1
   case " $COMPARED_DIRECTLY " in
@@ -246,6 +246,11 @@ compared_directly 'check-pcap'         || check_simple 'check-pcap'         sh "
 # ⭐ PUB-09. A checksums file beside the artefact proves transport rather than
 # authorship, and this is what says the authorship half exists.
 compared_directly 'check-signing'      || check_simple 'check-signing'      sh "$HERE/check-signing.sh"
+# ⭐ PUB-05. Fetching and parsing a corpus is work; a dependency line is not.
+compared_directly 'check-packages'     || check_simple 'check-packages'     sh "$HERE/check-packages.sh"
+# ⭐ LIB-03. Four implementations of one selection rule is four places for it to
+# be wrong, and this compares the answers rather than the interfaces.
+compared_directly 'check-bindings'     || check_simple 'check-bindings'     sh "$HERE/check-bindings.sh"
 # ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. Six places state the
 # licence and one of them is the source every generated one reads.
 # TODO/publish.md, PUB-07.

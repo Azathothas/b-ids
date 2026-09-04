@@ -803,6 +803,87 @@ acceptance-that-cannot-fail row of
 It exits 2 there and says so.
 
 
+
+
+### `common/check-bindings.sh`
+
+Does every other ecosystem's package answer identically to the Rust crate?
+
+⛔ **The rule this exists for is `LIB-03`'s**, and that entry owns the sentence:
+[`../TODO/library.md`](../TODO/library.md). What it means here is that a package
+in another language is compared rather than trusted.
+
+⭐ **The comparison is over the ANSWERS rather than over the interfaces**, which
+is the entry's own wording: two implementations can expose the same names and
+disagree about what they mean.
+[`../crates/b-ids/examples/answers.rs`](../crates/b-ids/examples/answers.rs) and
+[`fixtures/bindings-answers.mjs`](fixtures/bindings-answers.mjs) ask the same
+questions in the same order and print the same document.
+
+⛔ **Including the case where a profile is ABSENT**, which the entry names
+specifically. Two implementations agree easily on what exists: a missing path,
+a platform the corpus has no profile on and a browser nobody captured are where
+they part, and the check refuses an answer set that does not ask all three.
+
+```bash
+sh scripts/common/check-bindings.sh
+```
+
+```bash
+pwsh -NoProfile -File scripts/common/check-bindings.ps1
+```
+
+⭐ **It was seen to refuse.** Planting the classic drift, the JavaScript half
+recomputing `latest` by comparing version numbers instead of reading the
+corpus's own pointer, takes it to exit 1 and it names the four answers that
+moved.
+
+⚠ **Both halves normalise with `jq -S` before comparing**, and the PowerShell
+half's first spelling is why. It compared each value with `ConvertTo-Json`,
+which does not sort a nested object's keys, and reported `release` as differing
+over two identical documents. ⛔ Two halves of one check disagreeing about a
+tree neither of them changed is exactly the drift `check-twins` exists to
+surface, and it surfaced this one.
+
+### `common/check-packages.sh`
+
+Does each language package build offline, report the corpus release it embeds,
+and does that release match the one it was cut from?
+
+⛔ **Fetching and parsing a corpus is work. A dependency line is not.**
+[`../TODO/publish.md`](../TODO/publish.md), `PUB-05`.
+
+⭐ **The packages are GENERATED from the corpus by the assembler**, never
+hand-maintained. A package somebody edits is a second copy of the corpus that
+drifts from the first, and the drift is invisible because both sides look like
+data.
+
+⛔ **The pin is recomputed rather than believed.** The release identifier is the
+SHA-256 of the corpus index; this check recomputes it with `sha256sum`, and the
+PowerShell half with the platform's own hash, neither of which is this project's
+code. A package that reported its own belief about its own bytes would be a pin
+nobody checked.
+
+⛔ **And it asserts the Must-not**: nothing in the generated source names a
+network call. Both mutations were driven: a wrong pin and a `fetch(` planted into
+the generator each take it to exit 1, read from the process.
+
+⚠ **The runtime is the skip.** Without `node` there is nothing to import the
+package with, and the check says so rather than claiming a package was built
+when nothing built it.
+
+```bash
+sh scripts/common/check-packages.sh
+```
+
+```bash
+pwsh -NoProfile -File scripts/common/check-packages.ps1
+```
+
+⚠ **The ecosystems are read from the crate rather than listed in the check.** A
+second list is a second answer, and the day they disagree the check is the one
+that is wrong.
+
 ### `common/check-pcap.sh`
 
 Is every published packet capture the profile's own bytes, and does it say it
