@@ -337,6 +337,14 @@ printf '  browser.log     what the BROWSER itself wrote, stdout and stderr\n'
 printf '  harness.err     the pin, and the sampling shortfall if there was one\n'
 printf '  identity.json   ⚠ the operator fills in the channel, branded and the\n'
 printf '                  operator; everything else is read from this run\n'
-printf '\nWrite the profile with:\n'
-printf '  %s add --captures %s --identity %s --root .\n' "$CORPUS" "$CAPTURES" "$IDENTITY"
+# ⚠ THE ROOT IS NAMED RATHER THAN ASSUMED TO BE HERE. corpus/ left the default
+# branch in PUB-13, so a person pasting this line in a fresh checkout would be
+# adding a profile to a directory that is not there. ⛔ The resolver materialises
+# the source branch under .tmp, and a write into THAT copy is not a publish: the
+# published corpus is a branch now, so adding a profile means committing it there.
+printf '\nWrite the profile with, from a checkout that carries the corpus:\n'
+# shellcheck disable=SC2016 # the substitution is PRINTED for a person to run,
+# not expanded here. docs/conventions/shell.md section 1.
+printf '  %s add --captures %s --identity %s --root "$(sh scripts/common/corpus-root.sh)"\n' \
+  "$CORPUS" "$CAPTURES" "$IDENTITY"
 exit 0

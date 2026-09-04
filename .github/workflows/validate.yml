@@ -142,13 +142,23 @@ jobs:
       # that protects this project's own parser from rotting. It runs inside
       # check-corpus above; this step asserts the COUNT, because a corpus that
       # became empty would pass every check above it having read no bytes.
+      #
+      # ⛔ `--root .` UNTIL PUB-13, AND THIS STEP IS HOW THAT WAS FOUND. The
+      # entry's door sweep read this file, saw check-corpus above resolving the
+      # root correctly, and stopped there; this step is a SECOND corpus reader
+      # in the same job and it was still pointed at the working tree. Both jobs
+      # went red on the closing push with `there is no corpus at ./corpus`.
+      # ⭐ It went red rather than quiet, which is the assertion doing its job:
+      # `[ "$profiles" -ge 1 ]` is exactly the line that refuses an empty read.
       - name: the golden vectors, and there is at least one
         shell: bash
         env:
           CARGO_NET_OFFLINE: 'true'
         run: |
           set +e
-          out=$(cargo run -q --offline -p b-ids-corpus -- verify --root .)
+          root=$(sh scripts/common/corpus-root.sh)
+          echo "the corpus resolved to $root ($(sh scripts/common/corpus-root.sh --source))"
+          out=$(cargo run -q --offline -p b-ids-corpus -- verify --root "$root")
           rc=$?
           set -e
           echo "$out"
