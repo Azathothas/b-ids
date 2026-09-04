@@ -8,13 +8,13 @@ Session of 2026-09-04, attended, started `2026-09-04T06:04:28Z`.
 
 | row | before | after | measured by |
 | --- | --- | --- | --- |
-| Elapsed | `06:04:28Z` | `09:05Z`, about 3h 00m | the recorded start instant and `date -u` |
-| Commits | `e368f54` | `e7d2918`, 6 commits | `git log --oneline e368f54..HEAD` |
+| Elapsed | `06:04:28Z` | `10:29Z`, about 4h 25m | the recorded start instant and `date -u` |
+| Commits | `e368f54` | `dec86de`, 8 commits | `git log --oneline e368f54..HEAD` |
 | Work | 12 open | **2 completed**, 0 deferred, 0 failed. 5 effort points | `DRIVER-11` `L`, `DOC-03` `S`, each closed in place with both acceptance commands run |
 | Work, not counted | | `CORPUS-02` advanced and still open; `DOC-02`'s premise corrected | an entry closes on its acceptance command, and `CORPUS-02`'s still exits 1 |
-| Changes | | 43 files, +5163 -149, excluding the mined reference tree | `git diff --shortstat e368f54 HEAD -- . ':(exclude)references/'` |
-| Changes, everything | | 796 files, +745419 -149 | the same command without the exclusion. ⚠ The difference is `mozilla/nss` |
-| Size | 162,152 lines | 167,187 lines, +5,035 | tracked files excluding `references/`, concatenated and counted |
+| Changes | | 51 files, +5833 -427, excluding the mined reference tree | `git diff --shortstat e368f54 HEAD -- . ':(exclude)references/'` |
+| Changes, everything | | 804 files, +746089 -427 | the same command without the exclusion. ⚠ The difference is `mozilla/nss` |
+| Size | 162,152 lines | 167,552 lines, +5,400 | tracked files excluding `references/`, concatenated and counted |
 | Size, everything | | 4,030,911 lines | the same, with the reference corpus |
 | Checks | gate ok: 39 passed, 1 skipped | **gate ok over all 40**, `check-twins` included | the FULL `check-gate.sh` was run at the close on a still tree. ⚠ Its first run failed on one check, `check-markers`, over two U+2212 minus signs this summary itself had introduced; fixed, and the re-run is green. ⭐ `check-twins` passed, which is what says the new pair's two halves agree |
 | Tests | 412, carried from the last session | **445**, counted | `cargo test --workspace`, summing the runner's own `test result: ok` lines |
