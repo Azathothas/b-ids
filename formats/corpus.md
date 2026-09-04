@@ -12,3 +12,4 @@ This table carries the keys and the capture instant only. The handshake, the fra
 | chrome-151.0.7922.76-win64-stable | Chrome | 151.0.7922.76 | stable | true | windows | x86_64 | 2026-09-01T08:26:33Z |
 | chrome-152.0.7977.76-win64-stable | Chrome | 152.0.7977.76 | stable | true | windows | x86_64 | 2026-09-02T14:53:12Z |
 | edge-151.0.4129.101-linux64-stable | Edge | 151.0.4129.101 | stable | true | linux | x86_64 | 2026-09-02T13:52:53Z |
+| firefox-154.0.1-win64-stable | Firefox | 154.0.1 | stable | true | windows | x86_64 | 2026-09-04T06:44:56Z |

@@ -84,9 +84,11 @@ message ProfileHttp2 {
 message ProfileHttp2Frames[] {
   repeated ProfileHttp2Frames[]Entries[] entries = 1;
   string frame = 2;
-  optional bool has_priority_block = 3;
-  optional int64 stream_id = 4;
-  optional int64 window_size_increment = 5;
+  optional int64 frame_type = 3;
+  optional bool has_priority_block = 4;
+  optional string payload_hex = 5;
+  optional int64 stream_id = 6;
+  optional int64 window_size_increment = 7;
 }
 
 message ProfileHttp2Frames[]Entries[] {
