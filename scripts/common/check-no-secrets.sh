@@ -279,6 +279,9 @@ if [ "$PUBLIC" = "1" ]; then
   # `base` is excluded, so any other 40-hex run in that file is still
   # reported. ⛔ Keep this identical to the ps1 twin. docs/history/todo/vendor.md.
   _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '"base":[[:space:]]*"[0-9a-f]{40}"' || true)
+  # A content-addressed OCI image names its immutable digest explicitly.
+  # Exclude only the canonical @sha256:<64 lower-case hex> reference shape.
+  _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '@sha256:[0-9a-f]{64}\b' || true)
 
   # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT EXISTS TO PRODUCE ---
   #

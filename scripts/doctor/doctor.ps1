@@ -347,7 +347,12 @@ function Resolve-Tool([string]$Name) {
     foreach ($dir in $fallbackDirs) {
         foreach ($ext in $exeExts) {
             $candidate = Join-Path $dir ($Name + $ext)
-            if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+            try {
+                if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+            }
+            catch {
+                continue
+            }
         }
     }
     return $null

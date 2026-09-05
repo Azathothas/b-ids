@@ -218,6 +218,9 @@ if ($Public) {
         # other 40-hex run in that file is still reported.
         # ⛔ Keep this identical to the sh twin. docs/history/todo/vendor.md.
         Where-Object { $_ -cnotmatch '"base":\s*"[0-9a-f]{40}"' } |
+        # A content-addressed OCI image names its immutable digest explicitly.
+        # Exclude only the canonical @sha256:<64 lower-case hex> shape.
+        Where-Object { $_ -cnotmatch '@sha256:[0-9a-f]{64}\b' } |
         # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT PRODUCES ------
         #
         # A raw ClientHello recorded as hex is hundreds of hex characters, and

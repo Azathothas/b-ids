@@ -27,6 +27,8 @@ the generic template.
 | current documentation carried volatile counts, stale paths, pre-release narrative, and contradictory security prose | current docs now use generated pointers, direct result links, concise operating rules, and a current security policy |
 | all 107 completed implementation entries remained under root `TODO/` | completion was verified before moving the record to `docs/history/todo/` |
 | dependency automation covered Actions but not Cargo | weekly grouped Actions and Cargo updates were added |
+| the public secret sweep classified a pinned OCI SHA-256 digest as a credential | the twins exclude only canonical `@sha256:<64 lowercase hex>` references; an unlabeled 64-hex mutation still fails |
+| the Windows doctor aborted on an inaccessible executable candidate | fallback discovery now skips inaccessible candidates and continues |
 
 ## Retained evidence and instruments
 
@@ -79,8 +81,13 @@ script syntax, line endings, and shell/PowerShell twin self-tests.
 
 GitHub read-back confirmed private vulnerability reporting and vulnerability
 alerts enabled, automated security fixes enabled and unpaused, and zero open
-Dependabot or secret-scanning alerts. The `dependencies` label exists for the
-weekly grouped update configuration.
+secret-scanning alerts. After the first push, dependency-graph indexing found
+202 Dependabot alerts, all in immutable third-party manifests under
+`references/`; no first-party manifest is affected. Those imported trees are
+not installed or executed by this project and remain byte- and path-exact for
+provenance. Their final `not used` classification requires an explicit
+repository-owner decision. The `dependencies` label exists for the weekly
+grouped update configuration.
 
 `main` requires current `gate (ubuntu)` and `gate (windows)` checks with strict
 status-check freshness. It requires linear history and conversation resolution,
