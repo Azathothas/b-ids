@@ -1,0 +1,135 @@
+name: BotBrowser Control — Build & Release
+
+on:
+  push:
+    tags:
+      - 'control-v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: add-botbrowser-control
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: botbrowser-control
+
+      - name: Build macOS
+        run: npm run build:mac
+        working-directory: botbrowser-control
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-builds
+          path: |
+            botbrowser-control/dist/*.dmg
+            botbrowser-control/dist/*.zip
+          retention-days: 7
+
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: add-botbrowser-control
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: botbrowser-control
+
+      - name: Build Windows
+        run: npx electron-builder --win
+        working-directory: botbrowser-control
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          DEBUG: electron-builder
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-builds
+          path: |
+            botbrowser-control/dist/*.exe
+            botbrowser-control/dist/*.zip
+          retention-days: 7
+
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: add-botbrowser-control
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libxss1 libxtst6 fakeroot
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: botbrowser-control
+
+      - name: Build Linux
+        run: npm run build:linux
+        working-directory: botbrowser-control
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-builds
+          path: |
+            botbrowser-control/dist/*.AppImage
+            botbrowser-control/dist/*.deb
+            botbrowser-control/dist/*.tar.gz
+          retention-days: 7
+
+  release:
+    name: Upload to Release
+    needs: [build-mac, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: List artifacts
+        run: find artifacts/ -type f | sort
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/mac-builds/*.dmg
+            artifacts/mac-builds/*.zip
+            artifacts/windows-builds/*.exe
+            artifacts/windows-builds/*.zip
+            artifacts/linux-builds/*.AppImage
+            artifacts/linux-builds/*.deb
+            artifacts/linux-builds/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

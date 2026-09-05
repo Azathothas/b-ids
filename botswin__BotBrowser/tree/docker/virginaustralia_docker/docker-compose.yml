@@ -1,0 +1,18 @@
+services:
+  botbrowser:
+    build:
+      context: .
+    platform: linux/amd64
+    container_name: virginaustralia-botbrowser-service
+
+    environment:
+      - BOTBROWSER_EXEC_PATH=/usr/bin/chromium-browser-stable
+      - BOT_PROFILES_DIR=/app/profiles
+      - PROXY_SERVER=
+
+    volumes:
+      - ./profiles:/app/profiles
+      - ./flight_data:/app/flight_data
+
+    stdin_open: true
+    tty: true

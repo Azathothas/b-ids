@@ -1,0 +1,65 @@
+@use '../shared/shared-styles' as shared;
+
+:host {
+    @include shared.content-panel;
+}
+
+mat-toolbar {
+    @include shared.toolbar;
+}
+
+.table-container {
+    @include shared.table-container;
+    @include shared.table-cell-flex;
+}
+
+.empty-state {
+    @include shared.empty-state;
+}
+
+.mat-column-select {
+    width: 48px;
+    max-width: 48px;
+}
+
+.mat-column-type {
+    width: 130px;
+    max-width: 130px;
+}
+
+.mat-column-username {
+    width: 120px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mat-column-status {
+    width: 140px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.status-ok {
+    color: #4caf50;
+    font-size: 12px;
+}
+
+.status-fail {
+    color: #f44336;
+    font-size: 12px;
+    cursor: default;
+}
+
+.proxy-name-link {
+    color: #1976d2;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+        color: #1565c0;
+    }
+}

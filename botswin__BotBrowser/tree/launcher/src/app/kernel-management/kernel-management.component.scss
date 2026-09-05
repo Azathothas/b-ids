@@ -1,0 +1,73 @@
+@use '../shared/shared-styles' as shared;
+
+:host {
+    @include shared.content-panel;
+}
+
+mat-toolbar {
+    @include shared.toolbar;
+}
+
+.error-banner {
+    @include shared.error-banner;
+}
+
+.download-progress {
+    @include shared.progress-banner;
+}
+
+.content {
+    @include shared.content-area;
+}
+
+.section {
+    @include shared.section;
+}
+
+.table-container {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    overflow: hidden;
+
+    table {
+        width: 100%;
+    }
+
+    .full-version {
+        @include shared.secondary-text;
+        margin-left: 4px;
+    }
+}
+
+.empty-state {
+    @include shared.empty-state;
+}
+
+.releases-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.release-card {
+    @include shared.card-item;
+
+    .release-info {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+
+        .major-version {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .full-version {
+            @include shared.secondary-text;
+        }
+
+        .release-date {
+            @include shared.tertiary-text;
+        }
+    }
+}

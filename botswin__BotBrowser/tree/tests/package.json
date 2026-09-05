@@ -1,0 +1,20 @@
+{
+    "name": "botbrowser-tests",
+    "version": "0.1.0",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "test": "playwright test"
+    },
+    "author": "",
+    "description": "",
+    "devDependencies": {
+        "@playwright/test": "^1.53.0",
+        "@types/node": "^24.0.1"
+    },
+    "dependencies": {
+        "dotenv": "^16.5.0",
+        "ghost-cursor-playwright": "^2.1.0",
+        "prettier": "^3.5.3"
+    }
+}

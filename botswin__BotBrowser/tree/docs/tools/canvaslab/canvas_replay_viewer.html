@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BotBrowser CanvasLab JSONL Replay Viewer</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 16px; color: #222; line-height: 1.5; }
+    header { margin-bottom: 16px; }
+    .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .row > * { min-width: 0; }
+    input[type="file"] { padding: 8px; max-width: 100%; }
+    .note { color: #555; font-size: 13px; }
+    .container { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+    .canvas-card { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; }
+    .card-header { padding: 10px 12px; background: #f8f8f8; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .card-title { font-weight: 600; }
+    .card-body { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 12px; }
+    /* Allow grid children to shrink to prevent overflow on narrow screens */
+    .card-body > * { min-width: 0; }
+    .preview-col { display: flex; flex-direction: column; gap: 8px; }
+    .preview-wrap { border: 1px dashed #ccc; padding: 6px; border-radius: 6px; background: #fafafa; overflow: auto; }
+    canvas.replay { width: 100%; height: auto; background: #fff; display: block; max-width: 100% !important; }
+    .meta { font-size: 12px; color: #666; }
+    .outputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .output-item { border: 1px solid #eee; border-radius: 6px; padding: 8px; background: #fafafa; }
+    .output-item h4 { margin: 0 0 6px 0; font-size: 13px; font-weight: 600; }
+    .output-item .thumb { max-width: 100%; display: block; background: #fff; border: 1px solid #ddd; }
+    .code-wrap { position: relative; width: 100%; }
+    .code { background: #0c0c0c; color: #d8d8d8; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.4; padding: 10px; border-radius: 6px; overflow: auto; overflow-x: auto; max-height: 360px; white-space: pre; box-sizing: border-box; max-width: 100%; }
+    .btn { appearance: none; border: 1px solid #ccc; padding: 6px 10px; border-radius: 6px; background: #f8f8f8; cursor: pointer; }
+    .btn:hover { background: #f1f1f1; }
+    .pill { font-size: 12px; color: #555; background: #eee; border-radius: 999px; padding: 2px 8px; }
+    .warn { color: #b14900; }
+
+    .btn-copy { position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: 12px; border: 1px solid #999; background: #fafafa; border-radius: 4px; }
+    .btn-copy.copied { background: #e6ffed; border-color: #34c759; }
+    .btn-wrap { position: absolute; top: 8px; right: 68px; padding: 4px 8px; font-size: 12px; border: 1px solid #999; background: #fafafa; border-radius: 4px; }
+
+    .loading { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(255,255,255,0.7); z-index: 9999; }
+    .loading.show { display: flex; }
+    .spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid #ccc; border-top-color: #111; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Tabs */
+    .tabs { display: flex; flex-direction: column; gap: 8px; }
+    .tab-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-button { padding: 4px 8px; border: 1px solid #ccc; background: #f8f8f8; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .tab-button.active { background: #eaeaea; border-color: #aaa; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .outputs.tab-panel { display: none; }
+    .outputs.tab-panel.active { display: grid; }
+
+    /* Code controls */
+    .code-toolbar { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+    .code-toolbar input[type="range"] { width: 140px; max-width: 40vw; }
+    .code.collapsed { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; border: none; }
+
+    @media (min-width: 960px) {
+      .card-body { grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); align-items: start; }
+    }
+
+    @media (max-width: 959px) {
+      header h1 { font-size: 1.5rem; }
+    }
+
+    @media (max-width: 720px) {
+      body { margin: 12px; }
+      header { margin-bottom: 12px; }
+      header h1 { font-size: 1.35rem; }
+      .row { flex-direction: column; align-items: stretch; gap: 8px; }
+      .row > * { width: 100%; }
+      .note { font-size: 12px; word-break: break-word; }
+      .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .code-toolbar { flex-direction: column; align-items: stretch; }
+      .code-toolbar input[type="range"] { width: 100%; max-width: 100%; }
+      .tab-button { flex: 1 1 140px; text-align: center; }
+      .outputs { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script>
+    // Export behavior toggle (light vs full-restore)
+    let fullRestoreExport = false;
+    // (Per-canvas) Live replay animation controls are created per card
+    let lastLoadedFileName = null;
+    // Store last parsed events per canvas so we can regenerate code on-the-fly
+    let lastEventsByCanvas = null; // Map(canvasId -> events[])
+    function byId(id){ return document.getElementById(id); }
+
+    function base64ToBytes(b64) {
+      if (!b64) return new Uint8Array();
+      const bin = atob(b64);
+      const len = bin.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes;
+    }
+
+    function pixelsFromB64(b64) {
+      const bytes = base64ToBytes(b64);
+      return new Uint8ClampedArray(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    }
+
+    function escapeStr(s) { return String(s).replace(/`/g, '\\`'); }
+
+    function h(tag, attrs, ...kids) {
+      const el = document.createElement(tag);
+      if (attrs) for (const [k, v] of Object.entries(attrs)) {
+        if (k === 'class') el.className = v; else if (k === 'text') el.textContent = v; else el.setAttribute(k, v);
+      }
+      for (const k of kids) {
+        if (k == null) continue;
+        if (typeof k === 'string') el.appendChild(document.createTextNode(k));
+        else el.appendChild(k);
+      }
+      return el;
+    }
+
+    async function readFileAsText(file) {
+      return new Promise((res, rej) => { const r = new FileReader(); r.onerror = () => rej(r.error); r.onload = () => res(r.result); r.readAsText(file); });
+    }
+
+    function groupByCanvas(events) {
+      const map = new Map();
+      for (let i = 0; i < events.length; i++) {
+        const e = events[i];
+        e._lineIdx = i;
+        const id = e.canvas_id ?? -1;
+        if (!map.has(id)) map.set(id, []);
+        map.get(id).push(e);
+      }
+      // De-interleave overlapping sequences on the same canvas_id.
+      // Antibots may run multiple independent operations on one canvas element,
+      // producing interleaved events with overlapping seq numbers.
+      const result = new Map();
+      for (const [id, list] of map.entries()) {
+        const byLine = [...list].sort((a,b) => a._lineIdx - b._lineIdx);
+        // Check for seq anomalies
+        const seqCounts = new Map();
+        for (const e of byLine) { const s = e.seq ?? 0; seqCounts.set(s, (seqCounts.get(s)||0)+1); }
+        const hasDup = [...seqCounts.values()].some(c => c > 1);
+        let hasReset = false;
+        for (let i = 1; i < byLine.length; i++) {
+          if ((byLine[i].seq??0) < (byLine[i-1].seq??0) - 1) { hasReset = true; break; }
+        }
+        if (!hasDup && !hasReset) {
+          list.sort((a,b)=> (a.seq??0) - (b.seq??0));
+          result.set(id, list);
+          continue;
+        }
+        // Greedy sequence assignment (patience-sort style)
+        const seqs = [];
+        for (const e of byLine) {
+          const es = e.seq ?? 0;
+          let best = -1, bestGap = Infinity;
+          for (let si = 0; si < seqs.length; si++) {
+            const gap = es - seqs[si].last;
+            if (gap > 0 && gap < bestGap) { bestGap = gap; best = si; }
+          }
+          if (best >= 0) { seqs[best].evts.push(e); seqs[best].last = es; }
+          else seqs.push({ evts: [e], last: es });
+        }
+        if (seqs.length <= 1) {
+          const evts = seqs[0]?.evts || list;
+          evts.sort((a,b)=> (a.seq??0) - (b.seq??0));
+          result.set(id, evts);
+        } else {
+          for (let si = 0; si < seqs.length; si++) {
+            const s = seqs[si];
+            s.evts.sort((a,b)=> (a.seq??0) - (b.seq??0));
+            const vid = `${id}_${si}`;
+            for (const e of s.evts) e.canvas_id = vid;
+            result.set(vid, s.evts);
+          }
+        }
+      }
+      return result;
+    }
+
+    function formatArgs(obj) {
+      try { return JSON.stringify(obj); } catch { return String(obj); }
+    }
+
+    function formatCaller(e) {
+      if (!e.caller) return '';
+      const c = e.caller;
+      // Use full URL/path
+      const url = c.url || '';
+      const location = `${url}:${c.line}:${c.column}`;
+      const func = c.function ? ` in ${c.function}()` : '';
+      return ` // @ ${location}${func}`;
+    }
+
+    // ---------- WebGL enum reverse-lookup (built from a real WebGL context + extensions) ----------
+    const GL_ENUM_MAP = (() => {
+      try {
+        const c = document.createElement('canvas');
+        const gl = c.getContext('webgl2') || c.getContext('webgl');
+        if (!gl) return {};
+        const map = {};
+        let proto = gl;
+        while (proto && proto !== Object.prototype) {
+          for (const key of Object.getOwnPropertyNames(proto)) {
+            try {
+              if (typeof proto[key] === 'number' && /^[A-Z][A-Z0-9_]+$/.test(key)) {
+                if (!map[proto[key]]) map[proto[key]] = key;
+              }
+            } catch {}
+          }
+          proto = Object.getPrototypeOf(proto);
+        }
+        // Scan extension objects for additional enum constants (e.g. UNMASKED_VENDOR_WEBGL)
+        const exts = gl.getSupportedExtensions() || [];
+        for (const name of exts) {
+          try {
+            const ext = gl.getExtension(name);
+            if (!ext) continue;
+            for (const key of Object.getOwnPropertyNames(ext)) {
+              try {
+                if (typeof ext[key] === 'number' && /^[A-Z][A-Z0-9_]+$/.test(key)) {
+                  if (!map[ext[key]]) map[ext[key]] = key;
+                }
+              } catch {}
+            }
+          } catch {}
+        }
+        // Static fallback for extension enums that may be unavailable in the viewer's browser
+        // (e.g. WEBGL_debug_renderer_info removed in Chrome 113+)
+        const extFallback = {
+          34047: 'MAX_TEXTURE_MAX_ANISOTROPY_EXT',
+          37445: 'UNMASKED_VENDOR_WEBGL', 37446: 'UNMASKED_RENDERER_WEBGL',
+          36063: 'MIN_EXT', 32775: 'MAX_EXT',
+          35723: 'FRAGMENT_SHADER_DERIVATIVE_HINT_OES',
+          34852: 'MAX_DRAW_BUFFERS_WEBGL', 36049: 'MAX_COLOR_ATTACHMENTS_WEBGL',
+          33776: 'COMPRESSED_RGB_S3TC_DXT1_EXT', 33777: 'COMPRESSED_RGBA_S3TC_DXT1_EXT',
+          33778: 'COMPRESSED_RGBA_S3TC_DXT3_EXT', 33779: 'COMPRESSED_RGBA_S3TC_DXT5_EXT',
+          36492: 'COMPRESSED_RGB_PVRTC_4BPPV1_IMG', 36493: 'COMPRESSED_RGB_PVRTC_2BPPV1_IMG',
+          35986: 'COMPRESSED_RGB_ETC1_WEBGL',
+        };
+        for (const [val, name] of Object.entries(extFallback)) {
+          if (!map[Number(val)]) map[Number(val)] = name;
+        }
+        return map;
+      } catch { return {}; }
+    })();
+
+    // Arg keys that hold GL enum values (not object IDs or dimensions)
+    const GL_ENUM_ARGS = new Set([
+      'target', 'usage', 'mode', 'type', 'format', 'internalformat',
+      'pname', 'cap', 'sfactor', 'dfactor', 'func', 'fail', 'zfail', 'zpass',
+      'eq', 'face', 'attachment', 'shadertype', 'shaderType', 'precisionType',
+      'modeRGB', 'modeAlpha', 'srcRGB', 'srcAlpha', 'dstRGB', 'dstAlpha',
+      'readbuffer', 'drawbuffer', 'filter', 'hint', 'param', 'renderbuffertarget', 'textarget',
+      'condition', 'flags', 'status', 'bufferMode', 'parami', 'paramf',
+    ]);
+
+    // WebGL method signatures: ordered param keys. Args not listed are metadata (shown as comments).
+    const GL_METHOD_PARAMS = {
+      // Lifecycle - no input params, return object IDs
+      createBuffer: [], createTexture: [], createProgram: [], createFramebuffer: [],
+      createRenderbuffer: [], createVertexArray: [], createSampler: [],
+      createTransformFeedback: [], createQuery: [],
+      createShader: ['type'],
+      // Binding
+      bindBuffer: ['target', 'buffer'], bindTexture: ['target', 'texture'],
+      bindFramebuffer: ['target', 'framebuffer'], bindRenderbuffer: ['target', 'renderbuffer'],
+      bindVertexArray: ['vao'],
+      // Shader
+      shaderSource: ['shader', 'source'], compileShader: ['shader'],
+      attachShader: ['program', 'shader'], detachShader: ['program', 'shader'],
+      linkProgram: ['program'], validateProgram: ['program'], useProgram: ['program'],
+      deleteShader: ['shader'], deleteProgram: ['program'],
+      // Buffer
+      bufferData: ['target', 'size', 'usage'], bufferSubData: ['target', 'offset'],
+      // Vertex
+      enableVertexAttribArray: ['index'], disableVertexAttribArray: ['index'],
+      vertexAttribPointer: ['index', 'size', 'type', 'normalized', 'stride', 'offset'],
+      vertexAttrib1f: ['index', 'x'], vertexAttrib2f: ['index', 'x', 'y'],
+      vertexAttrib3f: ['index', 'x', 'y', 'z'], vertexAttrib4f: ['index', 'x', 'y', 'z', 'w'],
+      // Draw
+      drawArrays: ['mode', 'first', 'count'],
+      drawElements: ['mode', 'count', 'type', 'offset'],
+      drawArraysInstanced: ['mode', 'first', 'count', 'instanceCount'],
+      drawElementsInstanced: ['mode', 'count', 'type', 'offset', 'instanceCount'],
+      drawRangeElements: ['mode', 'start', 'end', 'count', 'type', 'offset'],
+      // Texture
+      texImage2D: ['target', 'level', 'internalformat', 'width', 'height', 'format', 'type'],
+      texSubImage2D: ['target', 'level', 'xoffset', 'yoffset', 'width', 'height', 'format', 'type'],
+      texParameteri: ['target', 'pname', 'parami'], texParameterf: ['target', 'pname', 'paramf'],
+      generateMipmap: ['target'], activeTexture: ['texture'],
+      copyTexImage2D: ['target', 'level', 'internalformat', 'x', 'y', 'width', 'height', 'border'],
+      // State
+      enable: ['cap'], disable: ['cap'],
+      blendFunc: ['sfactor', 'dfactor'],
+      blendFuncSeparate: ['srcRGB', 'dstRGB', 'srcAlpha', 'dstAlpha'],
+      blendColor: ['red', 'green', 'blue', 'alpha'],
+      blendEquation: ['mode'], blendEquationSeparate: ['modeRGB', 'modeAlpha'],
+      depthFunc: ['func'], depthMask: ['flag'],
+      stencilFunc: ['func', 'ref', 'mask'], stencilOp: ['fail', 'zfail', 'zpass'],
+      stencilFuncSeparate: ['face', 'func', 'ref', 'mask'],
+      stencilOpSeparate: ['face', 'fail', 'zfail', 'zpass'],
+      stencilMask: ['mask'], stencilMaskSeparate: ['face', 'mask'],
+      colorMask: ['red', 'green', 'blue', 'alpha'],
+      viewport: ['x', 'y', 'width', 'height'], scissor: ['x', 'y', 'width', 'height'],
+      clearColor: ['r', 'g', 'b', 'a'], clearDepth: ['depth'], clearStencil: ['s'],
+      clear: ['mask'], pixelStorei: ['pname', 'param'], lineWidth: ['width'],
+      flush: [], finish: [],
+      // Framebuffer
+      framebufferTexture2D: ['target', 'attachment', 'textarget', 'texture', 'level'],
+      framebufferRenderbuffer: ['target', 'attachment', 'renderbuffertarget', 'renderbuffer'],
+      renderbufferStorage: ['target', 'internalformat', 'width', 'height'],
+      checkFramebufferStatus: ['target'],
+      // Read / Query
+      readPixels: ['x', 'y', 'width', 'height', 'format', 'type'],
+      getParameter: ['pname'], getShaderPrecisionFormat: ['shaderType', 'precisionType'],
+      getExtension: ['name'], getSupportedExtensions: [], getContextAttributes: [],
+      getAttribLocation: ['program', 'name'], getUniformLocation: ['program', 'name'],
+      getShaderParameter: ['shader', 'pname'], getProgramParameter: ['program', 'pname'],
+      getShaderInfoLog: ['shader'], getProgramInfoLog: ['program'],
+      getActiveAttrib: ['program', 'index'], getActiveUniform: ['program', 'index'],
+      isContextLost: [],
+      // Delete
+      deleteBuffer: ['buffer'], deleteTexture: ['texture'],
+      deleteFramebuffer: ['framebuffer'], deleteRenderbuffer: ['renderbuffer'],
+      deleteVertexArray: ['vao'],
+      // Uniform
+      uniform1i: ['location', 'x'], uniform1f: ['location', 'x'],
+      uniform2f: ['location', 'x', 'y'], uniform3f: ['location', 'x', 'y', 'z'],
+      uniform4f: ['location', 'x', 'y', 'z', 'w'],
+      uniform2i: ['location', 'x', 'y'], uniform3i: ['location', 'x', 'y', 'z'],
+      uniform4i: ['location', 'x', 'y', 'z', 'w'],
+      uniformMatrix2fv: ['location', 'transpose', 'count'],
+      uniformMatrix3fv: ['location', 'transpose', 'count'],
+      uniformMatrix4fv: ['location', 'transpose', 'count'],
+    };
+
+    // ---------- WebGL code-generation helpers ----------
+    function glFormatValue(key, val) {
+      if (val === null || val === undefined) return 'null';
+      // Bitmask for clear()
+      if (key === 'mask' && typeof val === 'number') {
+        const bits = [];
+        if (val & 16384) bits.push('gl.COLOR_BUFFER_BIT');
+        if (val & 256) bits.push('gl.DEPTH_BUFFER_BIT');
+        if (val & 1024) bits.push('gl.STENCIL_BUFFER_BIT');
+        if (bits.length > 0) return bits.join(' | ');
+      }
+      // Numeric GL enum lookup for known enum arg keys
+      if (typeof val === 'number' && GL_ENUM_ARGS.has(key)) {
+        const name = GL_ENUM_MAP[val];
+        if (name) return `gl.${name}`;
+      }
+      // String GL enum (uppercase)
+      if (typeof val === 'string' && /^[A-Z][A-Z0-9_]*$/.test(val)) return `gl.${val}`;
+      if (typeof val === 'string') return JSON.stringify(val);
+      if (typeof val === 'boolean') return String(val);
+      if (typeof val === 'number') return String(val);
+      if (Array.isArray(val)) {
+        if (val.length <= 16) return `[${val.join(', ')}]`;
+        return `[${val.slice(0, 8).join(', ')}, /* ...${val.length} items */]`;
+      }
+      if (typeof val === 'object') {
+        const s = JSON.stringify(val);
+        return s.length > 80 ? s.slice(0, 77) + '...' : s;
+      }
+      return String(val);
+    }
+
+    function glOrderedArgs(glMethod, args) {
+      const sig = GL_METHOD_PARAMS[glMethod];
+      if (!sig) {
+        // Fallback: JSON key order
+        return { params: Object.entries(args).map(([k, v]) => glFormatValue(k, v)), meta: [] };
+      }
+      const params = sig.filter(k => k in args).map(k => glFormatValue(k, args[k]));
+      const meta = Object.keys(args).filter(k => !sig.includes(k));
+      return { params, meta };
+    }
+
+    function glMetaComment(meta, args) {
+      if (meta.length === 0) return '';
+      const parts = meta.map(k => {
+        const v = args[k];
+        if (typeof v === 'string') return `${k}=${JSON.stringify(v)}`;
+        return `${k}=${v}`;
+      });
+      return ` // ${parts.join(', ')}`;
+    }
+
+    function glCodeLine(glMethod, args, category, callerComment) {
+      const { params, meta } = glOrderedArgs(glMethod, args);
+      const catComment = category ? ` /* ${category} */` : '';
+      const metaStr = glMetaComment(meta, args);
+      return `gl.${glMethod}(${params.join(', ')});${catComment}${metaStr}${callerComment}`;
+    }
+
+    function glReadCodeLine(glMethod, args, result, callerComment) {
+      const { params, meta } = glOrderedArgs(glMethod, args);
+      let resultStr = '';
+      if (result !== undefined && result !== null) {
+        const rs = typeof result === 'object' ? JSON.stringify(result) : String(result);
+        resultStr = rs.length > 80 ? ` // => ${rs.slice(0, 77)}...` : ` // => ${rs}`;
+      }
+      const metaStr = glMetaComment(meta, args);
+      return `gl.${glMethod}(${params.join(', ')});${resultStr}${metaStr}${callerComment}`;
+    }
+
+    function codeLineForEvent(e, isWebGL) {
+      const m = e.method;
+      const a = e.args || {};
+      const callerComment = formatCaller(e);
+      switch (e.type) {
+        case 'canvas_init': {
+          const src = e.exec_url ? `, exec_url=${e.exec_url}` : '';
+          return `// canvas_init width=${e.width}, height=${e.height}${src}${callerComment}`;
+        }
+        case 'context_create': {
+          const ctxType = e.context_type || '2d';
+          const isGL = (ctxType === 'webgl' || ctxType === 'webgl2');
+          const attrs = e.attributes || {};
+          const attrsStr = Object.keys(attrs).length ? `, ${JSON.stringify(attrs)}` : '';
+          const src = e.exec_url ? ` // exec_url=${e.exec_url}` : '';
+          const ctxLabel = e.ctx ? ` // ctx=${e.ctx}` : '';
+          const varName = isGL ? 'gl' : 'ctx';
+          return `const ${varName} = canvas.getContext('${ctxType}'${attrsStr});${src}${ctxLabel}${callerComment}`;
+        }
+        case 'resize': return `canvas.width = ${e.width}; canvas.height = ${e.height};${callerComment}`;
+        case 'state': {
+          const v = e.value;
+          if (e.property === 'lineDash') {
+            let arr = [];
+            try { arr = typeof v === 'string' ? JSON.parse(v) : (Array.isArray(v) ? v : []); } catch {}
+            return `ctx.setLineDash(${JSON.stringify(arr)});${callerComment}`;
+          }
+          if (e.property === 'imageSmoothingEnabled') {
+            const b = (v === true || v === 'true');
+            return `ctx.imageSmoothingEnabled = ${b};${callerComment}`;
+          }
+          if (v && typeof v === 'object' && v.type === 'CanvasGradient' && v.gradient_id) {
+            return `ctx.${e.property} = g${v.gradient_id};${callerComment}`;
+          }
+          if (v === '[Pattern]') {
+            return `try{ ctx.${e.property} = ptn; }catch(e){ /* pattern not available */ }${callerComment}`;
+          }
+          return `ctx.${e.property} = ${typeof e.value === 'string' ? JSON.stringify(e.value) : formatArgs(e.value)};${callerComment}`;
+        }
+        case 'draw': {
+          if (e.gl_method) {
+            // BotBrowser(#776): bufferData with recorded vertex data
+            if (e.gl_method === 'bufferData') {
+              const t = glFormatValue('target', a.target);
+              const u = glFormatValue('usage', a.usage);
+              if (a.data_b64) {
+                return `gl.bufferData(${t}, new Float32Array(Uint8Array.from(atob(${JSON.stringify(a.data_b64)}), c => c.charCodeAt(0)).buffer), ${u});${callerComment}`;
+              }
+              if (Array.isArray(a.data)) {
+                return `gl.bufferData(${t}, new Float32Array(${JSON.stringify(a.data)}), ${u});${callerComment}`;
+              }
+              // No data field = bufferData(target, sizeInBytes, usage) allocation only (zeros per WebGL spec)
+              const floatCount = Math.floor((a.size || 0) / 4);
+              return `gl.bufferData(${t}, new Float32Array(${floatCount}), ${u});${callerComment}`;
+            }
+            if (e.gl_method === 'uniform1f') return `gl.uniform1f(uniformLoc_${a.location ?? 0}, ${a.x});${callerComment}`;
+            if (e.gl_method === 'uniform1i') return `gl.uniform1i(uniformLoc_${a.location ?? 0}, ${a.x});${callerComment}`;
+            if (e.gl_method === 'uniform2f') return `gl.uniform2f(uniformLoc_${a.location ?? 0}, ${a.x}, ${a.y});${callerComment}`;
+            if (e.gl_method === 'uniform3f') return `gl.uniform3f(uniformLoc_${a.location ?? 0}, ${a.x}, ${a.y}, ${a.z});${callerComment}`;
+            if (e.gl_method === 'uniform4f') return `gl.uniform4f(uniformLoc_${a.location ?? 0}, ${a.x}, ${a.y}, ${a.z}, ${a.w});${callerComment}`;
+            if (e.gl_method === 'drawElements') return `gl.drawElements(${glFormatValue('mode', a.mode)}, ${a.count}, ${glFormatValue('type', a.type)}, ${a.offset ?? 0});${callerComment}`;
+            return glCodeLine(e.gl_method, a, e.gl_category, callerComment);
+          }
+          if (m === 'fillRect' || m === 'strokeRect' || m === 'clearRect') {
+            return `ctx.${m}(${a.x}, ${a.y}, ${a.w}, ${a.h});${callerComment}`;
+          }
+          if (m === 'scale') return `ctx.scale(${a.sx}, ${a.sy});${callerComment}`;
+          if (m === 'rotate') return `ctx.rotate(${a.angle});${callerComment}`;
+          if (m === 'translate') return `ctx.translate(${a.x}, ${a.y});${callerComment}`;
+          if (m === 'transform') return `ctx.transform(${a.a}, ${a.b}, ${a.c}, ${a.d}, ${a.e}, ${a.f});${callerComment}`;
+          if (m === 'setTransform') {
+            if (a && typeof a === 'object' && 'a' in a) return `ctx.setTransform(${a.a}, ${a.b}, ${a.c}, ${a.d}, ${a.e}, ${a.f});${callerComment}`;
+            return `ctx.setTransform(${formatArgs(a)});${callerComment}`;
+          }
+          if (m === 'resetTransform') return `ctx.resetTransform();${callerComment}`;
+          if (m === 'reset') return `if (typeof ctx.reset === 'function') ctx.reset();${callerComment}`;
+          if (m === 'beginPath') return `ctx.beginPath();${callerComment}`;
+          if (m === 'closePath') return `ctx.closePath();${callerComment}`;
+          if (m === 'moveTo') return `ctx.moveTo(${a.x}, ${a.y});${callerComment}`;
+          if (m === 'lineTo') return `ctx.lineTo(${a.x}, ${a.y});${callerComment}`;
+          if (m === 'quadraticCurveTo') return `ctx.quadraticCurveTo(${a.cpx}, ${a.cpy}, ${a.x}, ${a.y});${callerComment}`;
+          if (m === 'bezierCurveTo') return `ctx.bezierCurveTo(${a.cp1x}, ${a.cp1y}, ${a.cp2x}, ${a.cp2y}, ${a.x}, ${a.y});${callerComment}`;
+          if (m === 'arcTo') return `ctx.arcTo(${a.x1}, ${a.y1}, ${a.x2}, ${a.y2}, ${a.radius});${callerComment}`;
+          if (m === 'beginLayer') {
+            const opts = [];
+            if (a && a.filter) opts.push(`{filter: ${JSON.stringify(a.filter)}}`);
+            return `try{ ctx.beginLayer(${opts.join(', ')}); }catch(e){ /* fallback */ ctx.save(); ${a && a.filter ? `ctx.filter=${JSON.stringify(a.filter)};` : ''} }${callerComment}`;
+          }
+          if (m === 'endLayer') return `try{ ctx.endLayer(); }catch(e){ ctx.restore(); }${callerComment}`;
+          if (m === 'arc') return `ctx.arc(${a.x}, ${a.y}, ${a.radius}, ${a.startAngle}, ${a.endAngle}, ${a.anticlockwise});${callerComment}`;
+          if (m === 'ellipse') return `ctx.ellipse(${a.x}, ${a.y}, ${a.radiusX}, ${a.radiusY}, ${a.rotation}, ${a.startAngle}, ${a.endAngle}, ${a.anticlockwise});${callerComment}`;
+          if (m === 'rect') return `ctx.rect(${a.x}, ${a.y}, ${a.w ?? a.width}, ${a.h ?? a.height});${callerComment}`;
+          if (m === 'roundRect') return `ctx.roundRect(${a.x}, ${a.y}, ${a.width}, ${a.height}, ${JSON.stringify(a.radius)});${callerComment}`;
+          if (m === 'fill' && a.path) {
+            const cmds = a.path || [];
+            const lines = ['(() => {','const path = new Path2D();'];
+            for (const c of cmds) {
+              const op = c[0]; const args = c.slice(1);
+              if (op === 'M') lines.push(`path.moveTo(${args[0]}, ${args[1]});`);
+              else if (op === 'L') lines.push(`path.lineTo(${args[0]}, ${args[1]});`);
+              else if (op === 'Q') lines.push(`path.quadraticCurveTo(${args[0]}, ${args[1]}, ${args[2]}, ${args[3]});`);
+              else if (op === 'C') lines.push(`path.bezierCurveTo(${args[0]}, ${args[1]}, ${args[2]}, ${args[3]}, ${args[4]}, ${args[5]});`);
+              else if (op === 'Z') lines.push('path.closePath();');
+            }
+            const _fw1 = a.fillRule || a.winding || a.fill_rule;
+            lines.push(`ctx.fill(path${_fw1 && _fw1 !== 'nonzero'?`, ${JSON.stringify(_fw1)}`:''});`);
+            lines.push(`})();${callerComment}`);
+            return lines.join('\n');
+          }
+          if (m === 'stroke' && a.path) {
+            const cmds = a.path || [];
+            const lines = ['(() => {','const path = new Path2D();'];
+            for (const c of cmds) {
+              const op = c[0]; const args = c.slice(1);
+              if (op === 'M') lines.push(`path.moveTo(${args[0]}, ${args[1]});`);
+              else if (op === 'L') lines.push(`path.lineTo(${args[0]}, ${args[1]});`);
+              else if (op === 'Q') lines.push(`path.quadraticCurveTo(${args[0]}, ${args[1]}, ${args[2]}, ${args[3]});`);
+              else if (op === 'C') lines.push(`path.bezierCurveTo(${args[0]}, ${args[1]}, ${args[2]}, ${args[3]}, ${args[4]}, ${args[5]});`);
+              else if (op === 'Z') lines.push('path.closePath();');
+            }
+            lines.push('ctx.stroke(path);');
+            lines.push(`})();${callerComment}`);
+            return lines.join('\n');
+          }
+          if (m === 'fill') { const _fw = a.fillRule || a.winding || a.fill_rule; return `ctx.fill(${_fw && _fw !== 'nonzero'?JSON.stringify(_fw):''});${callerComment}`; }
+          if (m === 'stroke') return `ctx.stroke();${callerComment}`;
+          if (m === 'clip') {
+            if (a.path) {
+              const cmds = a.path || [];
+              const lines = ['(() => {','const path = new Path2D();'];
+              for (const c of cmds) {
+                const op = c[0]; const args = c.slice(1);
+                if (op === 'M') lines.push(`path.moveTo(${args[0]}, ${args[1]});`);
+                else if (op === 'L') lines.push(`path.lineTo(${args[0]}, ${args[1]});`);
+                else if (op === 'Q') lines.push(`path.quadraticCurveTo(${args[0]}, ${args[1]}, ${args[2]}, ${args[3]});`);
+                else if (op === 'C') lines.push(`path.bezierCurveTo(${args[0]}, ${args[1]}, ${args[2]}, ${args[3]}, ${args[4]}, ${args[5]});`);
+                else if (op === 'Z') lines.push('path.closePath();');
+              }
+              const _cw1 = a.fillRule || a.winding || a.fill_rule;
+              lines.push(`ctx.clip(path${_cw1 && _cw1 !== 'nonzero'?`, ${JSON.stringify(_cw1)}`:''});`);
+              lines.push(`})();${callerComment}`);
+              return lines.join('\n');
+            }
+            { const _cw = a.fillRule || a.winding || a.fill_rule; return `ctx.clip(${_cw && _cw !== 'nonzero'?JSON.stringify(_cw):''});${callerComment}`; }
+          }
+          if (m === 'beginLayer') {
+            const opts = [];
+            if (a && a.filter) opts.push(`{filter: ${JSON.stringify(a.filter)}}`);
+            return `try{ ctx.beginLayer(${opts.join(', ')}); }catch(e){ /* fallback */ ctx.save(); ${a && a.filter ? `ctx.filter=${JSON.stringify(a.filter)};` : ''} }${callerComment}`;
+          }
+          if (m === 'endLayer') return `try{ ctx.endLayer(); }catch(e){ ${/* fallback */''} ctx.restore(); }${callerComment}`;
+          if (m === 'save') return `ctx.save();${callerComment}`;
+          if (m === 'restore') return `ctx.restore();${callerComment}`;
+          if (m === 'fillText') return `ctx.fillText(${JSON.stringify(a.text)}, ${a.x}, ${a.y}${a.maxWidth!=null?`, ${a.maxWidth}`:''});${callerComment}`;
+          if (m === 'strokeText') return `ctx.strokeText(${JSON.stringify(a.text)}, ${a.x}, ${a.y}${a.maxWidth!=null?`, ${a.maxWidth}`:''});${callerComment}`;
+          if (m === 'createLinearGradient') return `const g${a.gradient_id||'X'}=ctx.createLinearGradient(${a.x0},${a.y0},${a.x1},${a.y1});${callerComment}`;
+          if (m === 'createRadialGradient') return `const g${a.gradient_id||'X'}=ctx.createRadialGradient(${a.x0},${a.y0},${a.r0},${a.x1},${a.y1},${a.r1});${callerComment}`;
+          if (m === 'createConicGradient') return `const g${a.gradient_id||'X'}=ctx.createConicGradient(${a.startAngle},${a.centerX},${a.centerY});${callerComment}`;
+          if (m === 'gradient_addColorStop') return `g${a.gradient_id||'X'}.addColorStop(${a.offset}, ${JSON.stringify(a.color)});${callerComment}`;
+          if (m === 'createPattern') {
+            const imgInfo = a.image || {};
+            if (imgInfo.type === 'HTMLImageElement' && imgInfo.src) {
+              return [
+                '(() => {',
+                '  const image=new Image();',
+                `  image.onload = () => { try{ window.ptn = ctx.createPattern(image, ${JSON.stringify(a.repetition)}); }catch(e){} };`,
+                `  image.src=${JSON.stringify(imgInfo.src)};`,
+                `})();${callerComment}`
+              ].join('\n');
+            }
+            return `const image=document.createElement('canvas'); image.width=1; image.height=1;\nconst ptn=ctx.createPattern(image, ${JSON.stringify(a.repetition)});${callerComment}`;
+          }
+          if (m === 'drawImage') {
+            const imgInfo = a.image || {};
+            if ((imgInfo.type === 'HTMLImageElement' && imgInfo.src) || (imgInfo.src && imgInfo.src.startsWith('data:'))) {
+              const drawArgs = (a.sx!=null && a.sy!=null && a.sw!=null && a.sh!=null)
+                ? `_img, ${a.sx},${a.sy},${a.sw},${a.sh}, ${a.dx},${a.dy},${a.dw},${a.dh}`
+                : (a.dw!=null && a.dh!=null)
+                  ? `_img, ${a.dx??0}, ${a.dy??0}, ${a.dw}, ${a.dh}`
+                  : `_img, ${a.dx??0}, ${a.dy??0}`;
+              return `await (async () => { const _img = new Image(); _img.src = ${JSON.stringify(imgInfo.src)}; await _img.decode(); ctx.drawImage(${drawArgs}); })();${callerComment}`;
+            }
+            const drawLine = (a.sw!=null)
+              ? `ctx.drawImage(image, ${a.sx},${a.sy},${a.sw},${a.sh}, ${a.dx},${a.dy},${a.dw},${a.dh});`
+              : (a.dw!=null)
+                ? `ctx.drawImage(image, ${a.dx}, ${a.dy}, ${a.dw}, ${a.dh});`
+                : `ctx.drawImage(image, ${a.dx}, ${a.dy});`;
+            return [
+              '(() => {',
+              `  const image=document.createElement('canvas'); image.width=${a.dw||a.sw||1}; image.height=${a.dh||a.sh||1};`,
+              `  try { ${drawLine} } catch(e) {}`,
+              `})();${callerComment}`
+            ].join('\n');
+          }
+          if (m === 'putImageData') {
+            // Export policy: when fullRestoreExport is enabled, inline-decode pixels and call putImageData.
+            // Otherwise, keep the lightweight placeholder comment to minimize export size.
+            const id = a.imageData || a.image_data || a.image;
+            if (!fullRestoreExport) return `/* putImageData omitted in export */${callerComment}`;
+            if (id && id.pixels_b64 && id.w != null && id.h != null) {
+              const dx = (a.dx != null ? a.dx : 0);
+              const dy = (a.dy != null ? a.dy : 0);
+              const hasDirty = (a.dirtyWidth != null);
+              const dirtyArgs = hasDirty ? `, ${a.dirtyX}, ${a.dirtyY}, ${a.dirtyWidth}, ${a.dirtyHeight}` : '';
+              // Self-contained IIFE with inline base64 decode; avoids needing shared helpers in exported chunks.
+              return [
+                '(() => {',
+                `  const b64 = \`${escapeStr(id.pixels_b64)}\`;`,
+                `  const w = ${id.w}, h = ${id.h};`,
+                '  const bin = atob(b64);',
+                '  const u8 = new Uint8ClampedArray(bin.length);',
+                '  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);',
+                '  const img = new ImageData(u8, w, h);',
+                `  ctx.putImageData(img, ${dx}, ${dy}${dirtyArgs});`,
+                `})();${callerComment}`
+              ].join('\n');
+            }
+            return `/* putImageData: imageData missing in args */${callerComment}`;
+          }
+          return `// draw ${m} ${formatArgs(a)}${callerComment}`;
+        }
+        case 'read': {
+          if (e.gl_method) {
+            return glReadCodeLine(e.gl_method, e.args || {}, e.result, callerComment);
+          }
+          const m = e.method;
+          const a = e.args || {};
+          // Canvas-level methods (work on both 2D and WebGL canvases)
+          if (m === 'toDataURL') {
+            const tdArgs = [];
+            if (a && a.mime) tdArgs.push(JSON.stringify(a.mime));
+            if (a && a.quality != null) { if (!a.mime) tdArgs.push('undefined'); tdArgs.push(String(a.quality)); }
+            if (isWebGL) {
+              const cid = e.canvas_id ?? 'X';
+              return `const glDataURL = canvas.toDataURL(${tdArgs.join(', ')});\nwindow.__canvas${cid}_url1 = glDataURL;${callerComment}`;
+            }
+            return `canvas.toDataURL(${tdArgs.join(', ')});${callerComment}`;
+          }
+          if (m === 'toBlob' || m === 'convertToBlob') {
+            const mime = a && a.mime ? JSON.stringify(a.mime) : 'undefined';
+            const q = (a && a.quality != null) ? `, ${a.quality}` : '';
+            return `canvas.toBlob(()=>{}, ${mime}${q});${callerComment}`;
+          }
+          // WebGL reads use 'method' instead of 'gl_method' (e.g. getAttribLocation, getParameter)
+          if (isWebGL && m) {
+            return glReadCodeLine(m, a, e.result, callerComment);
+          }
+          if (m === 'font') return ``;
+          if (m === 'getImageData') return `ctx.getImageData(${a.sx}, ${a.sy}, ${a.sw}, ${a.sh});${callerComment}`;
+
+          if (m === 'getLineDash') return `ctx.getLineDash();${callerComment}`;
+          if (m === 'getTransform') return `ctx.getTransform();${callerComment}`;
+          if (m === 'isPointInPath') { const _ipw = a.fillRule || a.winding || a.fill_rule; return `ctx.isPointInPath(${a.x}, ${a.y}${_ipw && _ipw !== 'nonzero'?`, ${JSON.stringify(_ipw)}`:''});${callerComment}`; }
+          if (m === 'isPointInStroke') return `ctx.isPointInStroke(${a.x}, ${a.y});${callerComment}`;
+          if (m === 'measureText') return `ctx.measureText(${JSON.stringify((a && a.text) || '')});${callerComment}`;
+          return `// read ${e.method}${callerComment}`;
+        }
+      }
+      return `// unknown ${e.type}${callerComment}`;
+    }
+
+    function createPath2DFromCommands(cmds) {
+      const path = new Path2D();
+      if (!Array.isArray(cmds)) return path;
+      for (const c of cmds) {
+        const op = c[0];
+        const args = c.slice(1);
+        if (op === 'M') path.moveTo(args[0], args[1]);
+        else if (op === 'L') path.lineTo(args[0], args[1]);
+        else if (op === 'Q') path.quadraticCurveTo(args[0], args[1], args[2], args[3]);
+        else if (op === 'C') path.bezierCurveTo(args[0], args[1], args[2], args[3], args[4], args[5]);
+        else if (op === 'Z') path.closePath();
+      }
+      return path;
+    }
+
+    async function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+    async function replayCanvasEvents(events, host, opts) {
+      opts = opts || {}; // { animate: boolean, delayMs: number }
+      const autoScroll = !!opts.animate;
+      const token = opts.cancelToken || null;
+      // host: {canvasEl, ctx, logEl, outputsEl, gradientMap, patternMap}
+      const canvasesById = host.canvasesById;
+      const gradients = host.gradients;
+      const code = [];
+
+      for (const e of events) {
+        if (token && token.cancelled) break;
+        try {
+          if (e.type === 'canvas_init') {
+            code.push(codeLineForEvent(e));
+            host.logEl.textContent = code.join('\n');
+            if (autoScroll) host.logEl.scrollTop = host.logEl.scrollHeight;
+            let c = canvasesById.get(e.canvas_id);
+            if (!c) {
+              c = host.canvasEl;
+              canvasesById.set(e.canvas_id, c);
+            }
+            c.width = e.width || c.width;
+            c.height = e.height || c.height;
+            if (host._sawInit) {
+              code[code.length-1] = `// duplicate canvas_init width=${e.width}, height=${e.height}${e.exec_url?`, exec_url=${e.exec_url}`:''}`;
+              host.logEl.textContent = code.join('\n');
+            }
+            host._sawInit = true;
+            continue;
+          }
+
+          if (e.type === 'context_create') {
+            code.push(codeLineForEvent(e));
+            host.logEl.textContent = code.join('\n');
+            if (autoScroll) host.logEl.scrollTop = host.logEl.scrollHeight;
+            let c = canvasesById.get(e.canvas_id) || host.canvasEl;
+            canvasesById.set(e.canvas_id, c);
+            const ctxType = e.context_type || '2d';
+            const isGL = (ctxType === 'webgl' || ctxType === 'webgl2');
+            if (isGL) host._isWebGL = true;
+            const attrs = e.attributes || {};
+            if (!host._sawCtx) {
+              if (isGL) {
+                host.ctx = null;
+                const c2d = c.getContext('2d');
+                if (c2d) {
+                  c2d.fillStyle = '#1a1a2e';
+                  c2d.fillRect(0, 0, c.width, c.height);
+                  c2d.fillStyle = '#e0e0e0';
+                  c2d.font = '14px system-ui';
+                  c2d.textAlign = 'center';
+                  c2d.fillText(`${ctxType.toUpperCase()} Recording`, c.width / 2, c.height / 2 - 10);
+                  c2d.fillStyle = '#888';
+                  c2d.font = '12px system-ui';
+                  c2d.fillText('Code view only \u2014 visual replay N/A', c.width / 2, c.height / 2 + 14);
+                }
+              } else {
+                try { host.ctx = c.getContext('2d', attrs); }
+                catch { host.ctx = c.getContext('2d'); }
+              }
+              host._sawCtx = true;
+            } else {
+              const varName = isGL ? 'const gl' : 'const ctx';
+              code[code.length-1] = code[code.length-1].replace(new RegExp('^' + varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), '// duplicate context_create: ' + varName);
+              host.logEl.textContent = code.join('\n');
+            }
+            continue;
+          }
+
+          if (e.type === 'resize') {
+            code.push(codeLineForEvent(e));
+            host.logEl.textContent = code.join('\n');
+            if (autoScroll) host.logEl.scrollTop = host.logEl.scrollHeight;
+            let c = canvasesById.get(e.canvas_id) || host.canvasEl;
+            c.width = e.width; c.height = e.height; continue;
+          }
+
+          // --- WebGL: code + outputs only, no visual replay ---
+          if (host._isWebGL) {
+            code.push(codeLineForEvent(e, true));
+            host.logEl.textContent = code.join('\n');
+            if (autoScroll) host.logEl.scrollTop = host.logEl.scrollHeight;
+            if (opts.animate && opts.delayMs > 0) {
+              let ms = opts.delayMs;
+              while (ms > 0) {
+                if (token && token.cancelled) break;
+                await sleep(Math.min(30, ms));
+                ms -= Math.min(30, ms);
+              }
+              if (token && token.cancelled) break;
+            }
+            if (e.type === 'read') {
+              const out = document.createElement('div');
+              out.className = 'output-item';
+              const glm = e.gl_method || e.method || 'unknown';
+              const CANVAS_LEVEL = ['toDataURL', 'toBlob', 'convertToBlob'];
+              const labelPrefix = CANVAS_LEVEL.includes(glm) ? 'canvas' : 'gl';
+              out.appendChild(h('h4', {text: `${labelPrefix}.${glm}()`}));
+              if (e.result !== undefined && e.result !== null) {
+                if ((e.gl_method === 'readPixels' || e.method === 'readPixels') && e.result.pixels_b64) {
+                  out.appendChild(h('div', {class:'meta', text: `Pixels (base64): ${e.result.pixels_b64.slice(0, 60)}...`}));
+                } else if (e.method === 'toDataURL' && e.result && e.result.data_url) {
+                  const img = h('img', {class:'thumb'}); img.src = e.result.data_url; out.appendChild(img);
+                } else {
+                  const rs = JSON.stringify(e.result, null, 2);
+                  const pre = h('pre', {class:'meta'});
+                  pre.style.whiteSpace = 'pre-wrap';
+                  pre.style.maxHeight = '120px';
+                  pre.style.overflow = 'auto';
+                  pre.textContent = rs.length > 500 ? rs.slice(0, 500) + '...' : rs;
+                  out.appendChild(pre);
+                }
+              }
+              host.outputsEl.appendChild(out);
+            }
+            continue;
+          }
+
+          // For any other event types, ensure ctx exists BEFORE adding the code line
+          if (!host.ctx) {
+            let c = canvasesById.get(e.canvas_id) || host.canvasEl;
+            canvasesById.set(e.canvas_id, c);
+            try { host.ctx = c.getContext('2d'); } catch { host.ctx = null; }
+            if (!host._sawCtx) {
+              code.push(`const ctx = canvas.getContext('2d');`);
+              host.logEl.textContent = code.join('\n');
+              host._sawCtx = true;
+            }
+          }
+          const ctx = host.ctx;
+          if (!ctx) continue;
+
+          // Now add the code for this event after ensuring ctx
+          code.push(codeLineForEvent(e));
+          host.logEl.textContent = code.join('\n');
+          if (autoScroll) host.logEl.scrollTop = host.logEl.scrollHeight;
+
+          // Optional: animate step-by-step with a small delay
+          if (opts.animate && opts.delayMs > 0) {
+            // Early exit if cancelled while waiting
+            let ms = opts.delayMs;
+            // Sleep in small chunks to react faster to cancel
+            while (ms > 0) {
+              if (token && token.cancelled) break;
+              const d = Math.min(30, ms);
+              await sleep(d);
+              ms -= d;
+            }
+            if (token && token.cancelled) break;
+          }
+
+          if (e.type === 'state') {
+            const prop = e.property;
+            const v = e.value;
+            if (prop === 'lineDash') {
+              try {
+                const arr = typeof v === 'string' ? JSON.parse(v) : (Array.isArray(v) ? v : []);
+                ctx.setLineDash(arr);
+              } catch { /* ignore */ }
+              continue;
+            }
+            if (prop === 'imageSmoothingEnabled' && (v === 'true' || v === 'false')) {
+              ctx[prop] = (v === 'true');
+              continue;
+            }
+            if (v && typeof v === 'object' && v.type === 'CanvasGradient' && v.gradient_id) {
+              const g = gradients.get(v.gradient_id);
+              if (g) ctx[prop] = g;
+              else console.warn('Missing gradient for id', v.gradient_id);
+            } else if (v && typeof v === 'object' && v.type === 'CanvasPattern') {
+              // Not recorded in current JSONL spec as object; kept for completeness.
+              console.warn('Pattern state assignment not supported in viewer');
+            } else {
+              ctx[prop] = v;
+            }
+            continue;
+          }
+
+          if (e.type === 'draw') {
+            const a = e.args || {};
+            switch (e.method) {
+              case 'fillRect': ctx.fillRect(a.x, a.y, a.w, a.h); break;
+              case 'strokeRect': ctx.strokeRect(a.x, a.y, a.w, a.h); break;
+              case 'clearRect': ctx.clearRect(a.x, a.y, a.w, a.h); break;
+              case 'save': ctx.save(); break;
+              case 'restore': ctx.restore(); break;
+              case 'scale': ctx.scale(a.sx, a.sy); break;
+              case 'rotate': ctx.rotate(a.angle); break;
+              case 'translate': ctx.translate(a.x, a.y); break;
+              case 'transform': ctx.transform(a.a, a.b, a.c, a.d, a.e, a.f); break;
+              case 'setTransform':
+                if ('a' in a) ctx.setTransform(a.a, a.b, a.c, a.d, a.e, a.f);
+                break;
+              case 'resetTransform': ctx.resetTransform(); break;
+              case 'reset':
+                if (typeof ctx.reset === 'function') { ctx.reset(); }
+                break;
+              case 'beginPath': ctx.beginPath(); break;
+              case 'closePath': ctx.closePath(); break;
+              case 'moveTo': ctx.moveTo(a.x, a.y); break;
+              case 'lineTo': ctx.lineTo(a.x, a.y); break;
+              case 'quadraticCurveTo': ctx.quadraticCurveTo(a.cpx, a.cpy, a.x, a.y); break;
+              case 'bezierCurveTo': ctx.bezierCurveTo(a.cp1x, a.cp1y, a.cp2x, a.cp2y, a.x, a.y); break;
+              case 'arcTo': ctx.arcTo(a.x1, a.y1, a.x2, a.y2, a.radius); break;
+              case 'arc': ctx.arc(a.x, a.y, a.radius, a.startAngle, a.endAngle, a.anticlockwise); break;
+              case 'ellipse': ctx.ellipse(a.x, a.y, a.radiusX, a.radiusY, a.rotation, a.startAngle, a.endAngle, a.anticlockwise); break;
+              case 'rect': ctx.rect(a.x, a.y, (a.w ?? a.width), (a.h ?? a.height)); break;
+              case 'roundRect': ctx.roundRect(a.x, a.y, a.width, a.height, a.radius); break;
+              case 'fill':
+                { const _fw = a.fillRule || a.winding || a.fill_rule;
+                if (a.path) { const p = createPath2DFromCommands(a.path); ctx.fill(p, _fw || 'nonzero'); }
+                else ctx.fill(_fw || undefined); }
+                break;
+              case 'stroke':
+                if (a.path) { const p = createPath2DFromCommands(a.path); ctx.stroke(p); }
+                else ctx.stroke();
+                break;
+              case 'clip':
+                { const _cw = a.fillRule || a.winding || a.fill_rule;
+                if (a.path) { const p = createPath2DFromCommands(a.path); ctx.clip(p, _cw || 'nonzero'); }
+                else ctx.clip(_cw || undefined); }
+                break;
+              case 'fillText': ctx.fillText(a.text, a.x, a.y, a.maxWidth); break;
+              case 'strokeText': ctx.strokeText(a.text, a.x, a.y, a.maxWidth); break;
+              case 'createLinearGradient': {
+                const g = ctx.createLinearGradient(a.x0, a.y0, a.x1, a.y1);
+                if (a.gradient_id) gradients.set(a.gradient_id, g);
+                break; }
+              case 'createRadialGradient': {
+                const g = ctx.createRadialGradient(a.x0, a.y0, a.r0, a.x1, a.y1, a.r1);
+                if (a.gradient_id) gradients.set(a.gradient_id, g);
+                break; }
+              case 'createConicGradient': {
+                const g = ctx.createConicGradient(a.startAngle, a.centerX, a.centerY);
+                if (a.gradient_id) gradients.set(a.gradient_id, g);
+                break; }
+              case 'gradient_addColorStop': {
+                const g = gradients.get(a.gradient_id);
+                if (g) g.addColorStop(a.offset, a.color);
+                break; }
+              case 'createPattern':
+                // Not wired by id in current spec; pattern may be applied via state later as [Pattern].
+                break;
+              case 'putImageData': {
+                const id = a.imageData || a.image_data || a.image;
+                if (id && id.pixels_b64 && id.w && id.h) {
+                  const pixels = pixelsFromB64(id.pixels_b64);
+                  const imageData = new ImageData(pixels, id.w, id.h);
+                  if (a.dirtyWidth != null) ctx.putImageData(imageData, a.dx, a.dy, a.dirtyX, a.dirtyY, a.dirtyWidth, a.dirtyHeight);
+                  else ctx.putImageData(imageData, a.dx, a.dy);
+                }
+                break; }
+              case 'drawImage': {
+                const imgInfo = a.image || {};
+                const draw = () => {
+                  if (a.sw != null) ctx.drawImage(host._lastImage, a.sx, a.sy, a.sw, a.sh, a.dx, a.dy, a.dw, a.dh);
+                  else if (a.dw != null) ctx.drawImage(host._lastImage, a.dx, a.dy, a.dw, a.dh);
+                  else ctx.drawImage(host._lastImage, a.dx, a.dy);
+                };
+                if (imgInfo.type === 'HTMLImageElement' && imgInfo.src) {
+                  const img = new Image();
+                  host._lastImage = img;
+                  await new Promise((res)=>{ img.onload = res; img.onerror = res; img.src = imgInfo.src; });
+                  draw();
+                } else if (imgInfo.type === 'HTMLCanvasElement' && typeof imgInfo.canvas_id === 'number') {
+                  const srcCanvas = host.canvasesById.get(imgInfo.canvas_id);
+                  if (srcCanvas) { host._lastImage = srcCanvas; draw(); }
+                } else {
+                  console.warn('Unsupported drawImage source', imgInfo);
+                }
+                break; }
+            }
+            continue;
+          }
+
+          if (e.type === 'read') {
+            // Show outputs
+            const out = document.createElement('div');
+            out.className = 'output-item';
+            const title = h('h4', {text: `${e.method}`});
+            out.appendChild(title);
+            if (e.method === 'getImageData' && e.result && e.result.pixels_b64) {
+              const w = e.result.w, h = e.result.h;
+              const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.className = 'thumb';
+              const ictx = cv.getContext('2d');
+              const pixels = pixelsFromB64(e.result.pixels_b64);
+              const imageData = new ImageData(pixels, w, h);
+              ictx.putImageData(imageData, 0, 0);
+              out.appendChild(cv);
+            } else if (e.method === 'toDataURL' && e.result && e.result.data_url) {
+              const img = h('img', {class:'thumb'}); img.src = e.result.data_url; out.appendChild(img);
+            } else if ((e.method === 'toBlob' || e.method === 'convertToBlob') && e.result && e.result.bytes_b64) {
+              const mime = (e.args && e.args.mime) || 'application/octet-stream';
+              const bytes = base64ToBytes(e.result.bytes_b64);
+              const blob = new Blob([bytes], {type: mime});
+              const url = URL.createObjectURL(blob);
+              if (mime.startsWith('image/')) { const img = h('img', {class:'thumb'}); img.src = url; out.appendChild(img); }
+              const a = h('a', {href:url}); a.textContent = `Download Blob (${mime}, ${bytes.length} bytes)`; a.download = `${e.method}.${mime.split('/')[1]||'bin'}`; out.appendChild(a);
+            } else if (e.result && e.result.value !== undefined) {
+              out.appendChild(h('div', {class:'meta', text: `value: ${e.result.value}`}));
+            } else {
+              out.appendChild(h('div', {class:'meta', text: JSON.stringify(e.result || {}, null, 2)}));
+            }
+            host.outputsEl.appendChild(out);
+          }
+        } catch (err) {
+          console.warn('Replay error', err, e);
+          code.push(`// ERROR: ${err}`);
+          host.logEl.textContent = code.join('\n');
+        }
+      }
+    }
+
+    async function handleTextContent(text, sourceName) {
+      lastLoadedFileName = sourceName || null;
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      const events = [];
+      for (let i=0;i<lines.length;i++) {
+        try { events.push(JSON.parse(lines[i])); } catch(e) { console.warn('Invalid JSON at line', i+1, e); }
+      }
+      events.sort((a,b)=> (a.seq??0) - (b.seq??0));
+      const byCanvas = groupByCanvas(events);
+      lastEventsByCanvas = byCanvas;
+
+      const container = byId('container');
+      container.innerHTML = '';
+      for (const [canvasId, list] of byCanvas.entries()) {
+        const card = h('div', {class:'canvas-card'});
+        card.setAttribute('data-canvas-id', String(canvasId));
+        const header = h('div', {class:'card-header'});
+        const ctxCreate = list.find(e => e.type === 'context_create');
+        const ctxTypeLabel = ctxCreate && ctxCreate.context_type ? ctxCreate.context_type.toUpperCase() : '2D';
+        header.appendChild(h('div', {class:'card-title', text: `Canvas #${canvasId} (${ctxTypeLabel})`}));
+        const meta = h('div', {class:'pill', text: `${list.length} events`});
+        header.appendChild(meta);
+        card.appendChild(header);
+
+        const body = h('div', {class:'card-body'});
+        const previewCol = h('div', {class:'preview-col'});
+        const previewWrap = h('div', {class:'preview-wrap'});
+        const cv = h('canvas', {class:'replay'});
+        previewWrap.appendChild(cv);
+        // Preview controls: zoom + export PNG
+        const previewCtrls = h('div', {class:'code-toolbar'});
+        const zoomLabel = h('span', {class:'meta', text:'Zoom: 100%'});
+        const zoomRange = h('input', {type:'range', min:'50', max:'1000', step:'10', value:'100'});
+        const exportPngBtn = h('button', {class:'btn', type:'button', text:'Export PNG'});
+        // Per-canvas animate controls
+        const animateLbl = h('label', {class:'note'});
+        const animateChk = h('input', {type:'checkbox'});
+        animateLbl.appendChild(animateChk);
+        animateLbl.appendChild(document.createTextNode(' Animate'));
+        const delayLbl = h('span', {class:'meta', text:'100 ms'});
+        const delayRange = h('input', {type:'range', min:'0', max:'1000', step:'50', value:'100'});
+        // No persistence; default off. Update label on input.
+        delayLbl.textContent = `${delayRange.value} ms`;
+        delayRange.addEventListener('input', () => {
+          delayLbl.textContent = `${delayRange.value} ms`;
+        });
+        previewCtrls.appendChild(zoomLabel);
+        previewCtrls.appendChild(zoomRange);
+        previewCtrls.appendChild(exportPngBtn);
+        previewCtrls.appendChild(animateLbl);
+        previewCtrls.appendChild(delayRange);
+        previewCtrls.appendChild(delayLbl);
+        previewCol.appendChild(previewCtrls);
+        previewCol.appendChild(previewWrap);
+        const meta2 = h('div', {class:'meta', text: 'Live replay canvas'});
+        previewCol.appendChild(meta2);
+        body.appendChild(previewCol);
+
+        const rightCol = h('div');
+        // Tabs: Code / Outputs
+        const tabs = h('div', {class:'tabs'});
+        const tabBtns = h('div', {class:'tab-buttons'});
+        const codeTabBtn = h('button', {class:'tab-button active', type:'button', text:'Code'});
+        const outTabBtn = h('button', {class:'tab-button', type:'button', text:'Outputs'});
+        tabBtns.appendChild(codeTabBtn);
+        tabBtns.appendChild(outTabBtn);
+        tabs.appendChild(tabBtns);
+
+        const codePanel = h('div', {class:'tab-panel active'});
+        const codeWrap = h('div', {class:'code-wrap'});
+        const copyBtn = h('button', {class:'btn btn-copy', type:'button', text:'Copy'});
+        const wrapToggleBtn = h('button', {class:'btn btn-wrap', type:'button', text:'Wrap Lines'});
+        const codeEl = h('pre', {class:'code'});
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(codeEl.textContent || '');
+            copyBtn.classList.add('copied');
+            copyBtn.textContent = 'Copied';
+            setTimeout(()=> { copyBtn.classList.remove('copied'); copyBtn.textContent='Copy'; }, 1200);
+          } catch (e) {
+            const ta = document.createElement('textarea');
+            ta.value = codeEl.textContent || '';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch {}
+            document.body.removeChild(ta);
+          }
+        });
+        codeWrap.appendChild(copyBtn);
+        codeWrap.appendChild(wrapToggleBtn);
+        codeWrap.appendChild(codeEl);
+        codePanel.appendChild(codeWrap);
+
+        const outputs = h('div', {class:'outputs tab-panel'});
+        tabs.appendChild(codePanel);
+        tabs.appendChild(outputs);
+        rightCol.appendChild(tabs);
+        body.appendChild(rightCol);
+        card.appendChild(body);
+        container.appendChild(card);
+
+        const host = { canvasEl: cv, ctx: null, logEl: codeEl, outputsEl: outputs, canvasesById: new Map(), gradients: new Map(), _sawInit: false, _sawCtx: false, _isWebGL: false };
+        await replayCanvasEvents(list, host, { animate: !!animateChk.checked, delayMs: Math.max(0, parseInt(delayRange.value,10) || 0) });
+
+        // Tabs behavior
+        function setActiveTab(which) {
+          if (which === 'code') {
+            codeTabBtn.classList.add('active'); outTabBtn.classList.remove('active');
+            codePanel.classList.add('active'); outputs.classList.remove('active');
+          } else {
+            codeTabBtn.classList.remove('active'); outTabBtn.classList.add('active');
+            codePanel.classList.remove('active'); outputs.classList.add('active');
+          }
+        }
+        codeTabBtn.addEventListener('click', ()=> setActiveTab('code'));
+        outTabBtn.addEventListener('click', ()=> setActiveTab('outputs'));
+
+        // Code wrap toggle next to Copy
+        let wrapped = false;
+        wrapToggleBtn.addEventListener('click', () => {
+          wrapped = !wrapped;
+          codeEl.style.whiteSpace = wrapped ? 'pre-wrap' : 'pre';
+          wrapToggleBtn.textContent = wrapped ? 'No Wrap' : 'Wrap Lines';
+        });
+
+        // Preview controls behavior
+        function applyZoom() {
+          const z = parseInt(zoomRange.value, 10) || 100;
+          zoomLabel.textContent = `Zoom: ${z}%`;
+          try { cv.style.width = Math.max(1, Math.round((cv.width || 0) * z / 100)) + 'px'; } catch {}
+        }
+        zoomRange.addEventListener('input', applyZoom);
+        applyZoom();
+        exportPngBtn.addEventListener('click', () => {
+          try {
+            const url = cv.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url; a.download = `canvas-${canvasId}.png`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          } catch (e) {}
+        });
+
+        // Re-run replay for this canvas with current animation settings
+        const rerunBtn = h('button', {class:'btn', type:'button', text:'Re-run Replay'});
+        previewCtrls.appendChild(rerunBtn);
+        function updateAnimateVisibility() {
+          const on = !!animateChk.checked;
+          delayRange.style.display = on ? '' : 'none';
+          delayLbl.style.display = on ? '' : 'none';
+          rerunBtn.style.display = on ? '' : 'none';
+        }
+
+        let currentToken = null;
+        function cancelRun(){ if (currentToken) { currentToken.cancelled = true; } }
+        async function rerun() {
+          cancelRun();
+          codeEl.textContent = '';
+          outputs.innerHTML = '';
+          const isWebGL = list.some(e => e.type === 'context_create' && (e.context_type === 'webgl' || e.context_type === 'webgl2'));
+          if (!isWebGL) {
+            const ctx2 = cv.getContext('2d');
+            ctx2.setTransform(1,0,0,1,0,0);
+            ctx2.clearRect(0,0,cv.width, cv.height);
+          }
+          const newHost = { canvasEl: cv, ctx: null, logEl: codeEl, outputsEl: outputs, canvasesById: new Map(), gradients: new Map(), _sawInit: false, _sawCtx: false, _isWebGL: false };
+          const token = { cancelled: false };
+          currentToken = token;
+          await replayCanvasEvents(list, newHost, { animate: !!animateChk.checked, delayMs: Math.max(0, parseInt(delayRange.value,10) || 0), cancelToken: token });
+          if (currentToken === token) currentToken = null;
+        }
+        rerunBtn.addEventListener('click', rerun);
+        // Immediately animate when toggled on (and reflect changes to delay)
+        animateChk.addEventListener('change', () => {
+          updateAnimateVisibility();
+          if (animateChk.checked) {
+            rerun();
+          } else {
+            cancelRun();
+            // Immediately render the final state (no animation)
+            rerun();
+          }
+        });
+        delayRange.addEventListener('change', () => { if (animateChk.checked) rerun(); });
+        updateAnimateVisibility();
+      }
+    }
+
+    async function handleFile(file) {
+      const text = await readFileAsText(file);
+      const name = (file && file.name) || null;
+      await handleTextContent(text, name);
+    }
+
+    function regenerateExportCodeFromCurrentCards() {
+      if (!lastEventsByCanvas) return;
+      const cards = Array.from(document.querySelectorAll('.canvas-card'));
+      for (const card of cards) {
+        const idStr = card.getAttribute('data-canvas-id');
+        if (idStr == null) continue;
+        const canvasId = Number(idStr);
+        const list = lastEventsByCanvas.get(canvasId);
+        if (!list) continue;
+        const codeEl = card.querySelector('pre.code');
+        if (!codeEl) continue;
+        const code = [];
+        const isWebGL = list.some(ev => ev.type === 'context_create' && (ev.context_type === 'webgl' || ev.context_type === 'webgl2'));
+        for (const e of list) code.push(codeLineForEvent(e, isWebGL));
+        codeEl.textContent = code.join('\n');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const fileInput = byId('file');
+      const loading = byId('loading');
+      const exportBtn = byId('export');
+      const fullRestoreChk = byId('fullRestore');
+
+      // Initialize full restore toggle from localStorage
+      try {
+        const saved = localStorage.getItem('canvaslab.fullRestoreExport');
+        if (saved != null) fullRestoreExport = (saved === 'true');
+      } catch {}
+      if (fullRestoreChk) {
+        fullRestoreChk.checked = !!fullRestoreExport;
+        fullRestoreChk.addEventListener('change', () => {
+          fullRestoreExport = !!fullRestoreChk.checked;
+          try { localStorage.setItem('canvaslab.fullRestoreExport', String(fullRestoreExport)); } catch {}
+          // Regenerate code panes immediately to reflect the mode change
+          regenerateExportCodeFromCurrentCards();
+        });
+      }
+
+      // Animation controls are per-canvas in each card
+      byId('file').addEventListener('change', async (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        // Clear previous results and show loading
+        byId('container').innerHTML = '';
+        loading.classList.add('show');
+        try {
+          await handleFile(f);
+          if (exportBtn) exportBtn.disabled = false;
+        } finally {
+          loading.classList.remove('show');
+          // Reset the input so selecting the same file triggers change again
+          fileInput.value = '';
+        }
+      });
+
+      // Auto-load from ?jsonl=... query parameter
+      (async () => {
+        const params = new URLSearchParams(location.search);
+        const requested = params.get('jsonl');
+        if (!requested) return;
+        let text = '';
+        let sourceName = 'replay.jsonl';
+        try {
+          const fullUrl = new URL(requested, location.href).href;
+          loading.classList.add('show');
+          if (fullUrl.startsWith('data:')) {
+            const comma = fullUrl.indexOf(',');
+            const payload = comma >= 0 ? fullUrl.slice(comma + 1) : '';
+            text = atob(payload);
+            sourceName = 'inline.jsonl';
+          } else {
+            const resp = await fetch(fullUrl, { cache: 'no-store' });
+            if (!resp.ok) throw new Error(`Fetch failed (${resp.status} ${resp.statusText})`);
+            text = await resp.text();
+            try {
+              const u = new URL(fullUrl);
+              const leaf = u.pathname.split('/').pop();
+              if (leaf) sourceName = leaf;
+            } catch {}
+          }
+          await handleTextContent(text, sourceName);
+          if (exportBtn) exportBtn.disabled = false;
+        } catch (err) {
+          console.warn('Failed to auto-load jsonl from query parameter', err);
+          const warn = document.createElement('div');
+          warn.className = 'note warn';
+          warn.textContent = `Unable to load jsonl from query parameter: ${err}`;
+          byId('container').appendChild(warn);
+        } finally {
+          loading.classList.remove('show');
+        }
+      })();
+
+      // Export combined JS for all canvases
+      if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+          const cards = Array.from(byId('container').querySelectorAll('.canvas-card'));
+          const parts = [];
+          for (const card of cards) {
+            const titleEl = card.querySelector('.card-title');
+            const codeEl = card.querySelector('pre.code');
+            const title = titleEl ? titleEl.textContent.trim() : '';
+            const code = codeEl ? codeEl.textContent : '';
+            const idStr = card.getAttribute('data-canvas-id');
+            let prelude = '';
+            if (lastEventsByCanvas && idStr != null) {
+              const events = lastEventsByCanvas.get(Number(idStr)) || [];
+              const init = events.find(ev => ev.type === 'canvas_init');
+              const w = init && init.width || 300;
+              const h = init && init.height || 150;
+              prelude = [
+                '(function(){',
+                '  const canvas = document.createElement("canvas");',
+                `  canvas.width=${w}; canvas.height=${h};`,
+                '  document.body.appendChild(canvas);'
+              ].join('\n');
+            } else {
+              prelude = [
+                '(function(){',
+                '  const canvas = document.createElement("canvas");',
+                '  document.body.appendChild(canvas);'
+              ].join('\n');
+            }
+            const postlude = '\n})();';
+            parts.push(`// ===== ${title} =====\n${prelude}\n${code}${postlude}`);
+          }
+          const content = parts.join('\n\n');
+          const blob = new Blob([content], {type: 'application/javascript'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const base = (lastLoadedFileName || 'replay').replace(/\.[^.]+$/, '');
+          a.download = base + '-replay.js';
+          a.href = url;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(()=> URL.revokeObjectURL(url), 1000);
+        });
+      }
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>BotBrowser CanvasLab JSONL Replay Viewer</h1>
+    <div class="row">
+      <input id="file" type="file" accept=".jsonl,.log,.txt,application/json" />
+      <label class="note" style="display:flex;align-items:center;gap:6px;">
+        <input id="fullRestore" type="checkbox" /> Include pixel data (Full Restore Export)
+      </label>
+      <button id="export" class="btn" type="button" disabled>Export JS</button>
+      <span class="note">Select a JSONL recording file generated with <code>--bot-canvas-record-file</code>. The viewer groups events by <code>canvas_id</code>, replays Canvas 2D to a live canvas, shows WebGL/WebGL2 calls as readable code, and previews read outputs.</span>
+    </div>
+    <!-- Per-canvas animation controls are placed on each card's preview toolbar -->
+  </header>
+
+  <div id="loading" class="loading"><div class="spinner" aria-label="Loading"></div></div>
+  <div id="container" class="container"></div>
+</body>
+</html>

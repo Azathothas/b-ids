@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Canvas 2D Simple Test</title></head>
+<body>
+<h1>Canvas 2D Complete API Test</h1>
+<canvas id="canvas1" width="800" height="600" style="border:1px solid black"></canvas>
+<canvas id="canvas2" width="400" height="300" style="border:1px solid black"></canvas>
+
+<script>
+console.log('=== Canvas 2D Test Start ===');
+
+// ============================================
+// Canvas 1: comprehensive API test
+// ============================================
+const canvas1 = document.getElementById('canvas1');
+const ctx1 = canvas1.getContext('2d');
+
+console.log('Canvas 1: Testing all state properties');
+
+// Line styles
+ctx1.lineWidth = 5;
+ctx1.lineCap = 'round';
+ctx1.lineJoin = 'bevel';
+ctx1.miterLimit = 20;  // Changed from 10 to avoid default value early return
+ctx1.setLineDash([5, 10, 15]);
+ctx1.lineDashOffset = 5;
+
+// Colors
+ctx1.fillStyle = '#ff0000';
+ctx1.strokeStyle = '#00ff00';
+
+// Shadow
+ctx1.shadowBlur = 10;
+ctx1.shadowColor = 'rgba(0,0,0,0.5)';
+ctx1.shadowOffsetX = 5;
+ctx1.shadowOffsetY = 5;
+
+// Composition
+ctx1.globalAlpha = 0.8;
+ctx1.globalCompositeOperation = 'multiply';  // Changed from 'source-over' to avoid default value
+
+// Image smoothing
+ctx1.imageSmoothingEnabled = false;  // Changed from true to avoid default value early return
+ctx1.imageSmoothingQuality = 'high';
+
+// Text properties
+ctx1.font = '24px Arial';
+ctx1.textAlign = 'center';
+ctx1.textBaseline = 'middle';
+ctx1.direction = 'ltr';
+
+// Advanced text properties (may not be supported)
+try { ctx1.letterSpacing = '2px'; } catch(e) {}
+try { ctx1.wordSpacing = '5px'; } catch(e) {}
+try { ctx1.fontKerning = 'normal'; } catch(e) {}
+try { ctx1.fontStretch = 'expanded'; } catch(e) {}  // Use non-default value
+try { ctx1.fontVariantCaps = 'normal'; } catch(e) {}
+try { ctx1.textRendering = 'optimizeLegibility'; } catch(e) {}  // Use non-default value
+
+// Additional properties
+ctx1.filter = 'blur(2px)';
+ctx1.lang = 'en-US';
+
+console.log('Canvas 1: Testing transforms');
+
+// Transforms
+ctx1.save();
+ctx1.translate(100, 100);
+ctx1.rotate(Math.PI / 6);
+ctx1.scale(1.2, 1.2);
+ctx1.transform(1, 0.5, -0.5, 1, 10, 10);
+ctx1.setTransform(1, 0, 0, 1, 0, 0);
+ctx1.resetTransform();
+ctx1.restore();
+
+console.log('Canvas 1: Testing rectangle drawing');
+
+// Rectangle drawing
+ctx1.fillStyle = '#ff6b6b';
+ctx1.fillRect(50, 50, 100, 80);
+
+ctx1.strokeStyle = '#4ecdc4';
+ctx1.lineWidth = 3;
+ctx1.strokeRect(200, 50, 100, 80);
+
+ctx1.clearRect(60, 60, 30, 30);
+
+console.log('Canvas 1: Testing path drawing');
+
+// Path - triangle
+ctx1.beginPath();
+ctx1.moveTo(350, 50);
+ctx1.lineTo(400, 130);
+ctx1.lineTo(300, 130);
+ctx1.closePath();
+ctx1.fillStyle = '#95e1d3';
+ctx1.fill();
+ctx1.strokeStyle = '#38ada9';
+ctx1.stroke();
+
+// Path - circle
+ctx1.beginPath();
+ctx1.arc(500, 90, 40, 0, Math.PI * 2);
+ctx1.fillStyle = '#feca57';
+ctx1.fill();
+
+// Path - arc to
+ctx1.beginPath();
+ctx1.moveTo(600, 50);
+ctx1.arcTo(650, 50, 650, 100, 20);
+ctx1.lineTo(650, 100);
+ctx1.strokeStyle = '#48dbfb';
+ctx1.stroke();
+
+// Path - curves
+ctx1.beginPath();
+ctx1.moveTo(50, 200);
+ctx1.quadraticCurveTo(100, 150, 150, 200);
+ctx1.strokeStyle = '#ff6348';
+ctx1.lineWidth = 3;
+ctx1.stroke();
+
+ctx1.beginPath();
+ctx1.moveTo(200, 200);
+ctx1.bezierCurveTo(220, 150, 280, 150, 300, 200);
+ctx1.strokeStyle = '#2e86de';
+ctx1.stroke();
+
+// Path - rect
+ctx1.beginPath();
+ctx1.rect(350, 170, 80, 60);
+ctx1.fillStyle = '#ff6b81';
+ctx1.fill();
+
+// Path - ellipse
+ctx1.beginPath();
+ctx1.ellipse(500, 200, 50, 30, Math.PI / 4, 0, Math.PI * 2);
+ctx1.fillStyle = '#fd79a8';
+ctx1.fill();
+
+// Path - roundRect
+ctx1.beginPath();
+ctx1.roundRect(600, 170, 100, 60, 10);
+ctx1.fillStyle = '#a29bfe';
+ctx1.fill();
+
+console.log('Canvas 1: Testing clipping');
+
+// Clipping
+ctx1.save();
+ctx1.beginPath();
+ctx1.arc(100, 350, 40, 0, Math.PI * 2);
+ctx1.clip();
+ctx1.fillStyle = '#6c5ce7';
+ctx1.fillRect(60, 310, 80, 80);
+ctx1.restore();
+
+console.log('Canvas 1: Testing text drawing');
+
+// Text
+ctx1.font = 'bold 20px Arial';
+ctx1.fillStyle = '#2d3436';
+ctx1.textAlign = 'left';
+ctx1.textBaseline = 'top';
+ctx1.fillText('Canvas Test', 200, 280);
+ctx1.fillText('Long text with max width', 200, 310, 150);
+
+ctx1.strokeStyle = '#e17055';
+ctx1.lineWidth = 1;
+ctx1.strokeText('Stroked Text', 200, 340);
+ctx1.strokeText('Stroked with maxWidth', 200, 370, 150);
+
+console.log('Canvas 1: Testing measureText');
+
+// measureText tests
+const metrics1 = ctx1.measureText('Canvas Test');
+console.log('measureText("Canvas Test") width:', metrics1.width);
+
+const metrics2 = ctx1.measureText('Hello World 123');
+console.log('measureText("Hello World 123") width:', metrics2.width);
+
+const metrics3 = ctx1.measureText('😀😃🎨');
+console.log('measureText("😀😃🎨") width:', metrics3.width);
+
+console.log('Canvas 1: Testing special characters and emoji');
+
+// Special characters - Latin Extended
+ctx1.font = '18px Arial';
+ctx1.fillStyle = '#000';
+ctx1.fillText('Àçčéñt chars: ÄÖÜ äöü ß', 400, 280);
+
+// Chinese/Japanese/Korean
+ctx1.font = '18px "Arial Unicode MS", Arial';
+ctx1.fillText('UTF-8 test: Chinese Japanese Hangul', 400, 305);
+
+// Arabic (RTL)
+ctx1.direction = 'rtl';
+ctx1.font = '18px Arial';
+ctx1.fillText('العربية مرحبا', 750, 330);
+ctx1.direction = 'ltr';
+
+// Emoji
+ctx1.font = '24px Arial';
+ctx1.fillText('😀 😃 😄 😁 🎨 🖌️', 400, 355);
+ctx1.fillText('🚀 ⭐ 🌈 🔥 💯', 400, 385);
+
+// Math symbols
+ctx1.font = '18px Arial';
+ctx1.fillText('Math: ∑ ∫ ∂ √ ∞ ≠ ≤ ≥', 400, 410);
+
+// Currency symbols
+ctx1.fillText('Currency: $ € £ ¥ ₹ ₽ ₿', 400, 435);
+
+// Font fallback test - try fonts that may not exist
+ctx1.font = '16px "NonExistentFont", "AnotherFake", Arial';
+ctx1.fillText('Font fallback test', 400, 460);
+
+// Multiple font families
+ctx1.font = '16px Georgia, "Times New Roman", serif';
+ctx1.fillText('Serif font stack', 400, 485);
+
+ctx1.font = '16px "Courier New", Courier, monospace';
+ctx1.fillText('Monospace stack', 400, 510);
+
+console.log('Canvas 1: Testing drawImage');
+
+// Create test image
+const testImg = new Image();
+testImg.onload = function() {
+    // drawImage - 3 arguments (image, dx, dy)
+    ctx1.drawImage(testImg, 350, 520);
+
+    // drawImage - 5 arguments (image, dx, dy, dw, dh)
+    ctx1.drawImage(testImg, 420, 520, 40, 40);
+
+    // drawImage - 9 arguments (image, sx, sy, sw, sh, dx, dy, dw, dh)
+    ctx1.drawImage(testImg, 0, 0, 20, 20, 480, 520, 60, 60);
+
+    console.log('drawImage tests completed');
+};
+testImg.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZmY2YjZiIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1nPC90ZXh0Pjwvc3ZnPg==';
+
+console.log('Canvas 1: Testing gradients');
+
+// Gradient
+const gradient1 = ctx1.createLinearGradient(400, 280, 600, 280);
+gradient1.addColorStop(0, 'red');
+gradient1.addColorStop(0.5, 'yellow');
+gradient1.addColorStop(1, 'blue');
+ctx1.fillStyle = gradient1;
+ctx1.fillRect(400, 280, 200, 80);
+
+const gradient2 = ctx1.createRadialGradient(500, 450, 10, 500, 450, 50);
+gradient2.addColorStop(0, 'white');
+gradient2.addColorStop(1, 'black');
+ctx1.fillStyle = gradient2;
+ctx1.fillRect(450, 400, 100, 100);
+
+// Conic gradient
+const gradient3 = ctx1.createConicGradient(0, 650, 450);
+gradient3.addColorStop(0, 'red');
+gradient3.addColorStop(0.33, 'yellow');
+gradient3.addColorStop(0.66, 'blue');
+gradient3.addColorStop(1, 'red');
+ctx1.fillStyle = gradient3;
+ctx1.fillRect(600, 400, 100, 100);
+
+console.log('Canvas 1: Testing patterns');
+
+// Create pattern from test image (using same image from drawImage test)
+const patternImg = new Image();
+patternImg.onload = function() {
+    const pattern1 = ctx1.createPattern(patternImg, 'repeat');
+    if (pattern1) {
+        ctx1.fillStyle = pattern1;
+        ctx1.fillRect(620, 520, 60, 60);
+    }
+    console.log('Pattern test completed');
+};
+patternImg.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjY2NjIi8+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjMzMzIi8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiMzMzMiLz48L3N2Zz4=';
+
+console.log('Canvas 1: Testing image data');
+
+// Image data
+const imgData1 = ctx1.createImageData(50, 50);
+for (let i = 0; i < imgData1.data.length; i += 4) {
+    imgData1.data[i] = 255;
+    imgData1.data[i + 1] = 0;
+    imgData1.data[i + 2] = 0;
+    imgData1.data[i + 3] = 255;
+}
+ctx1.putImageData(imgData1, 50, 450);
+
+const imgData2 = ctx1.createImageData(imgData1);
+for (let i = 0; i < imgData2.data.length; i += 4) {
+    imgData2.data[i] = 0;
+    imgData2.data[i + 1] = 255;
+    imgData2.data[i + 2] = 0;
+    imgData2.data[i + 3] = 255;
+}
+ctx1.putImageData(imgData2, 120, 450, 10, 10, 30, 30);
+
+console.log('Canvas 1: Testing Path2D');
+
+// Path2D
+const path2d = new Path2D();
+path2d.rect(200, 450, 60, 60);
+path2d.arc(230, 480, 20, 0, Math.PI * 2);
+ctx1.fillStyle = '#74b9ff';
+ctx1.fill(path2d, 'evenodd');
+ctx1.strokeStyle = '#0984e3';
+ctx1.stroke(path2d);
+
+console.log('Canvas 1: Testing read operations');
+
+// Read operations
+const readData1 = ctx1.getImageData(50, 50, 100, 80);
+console.log('getImageData result:', readData1.width, 'x', readData1.height);
+
+const dataUrl1 = canvas1.toDataURL();
+console.log('toDataURL (png) length:', dataUrl1.length);
+
+const dataUrl2 = canvas1.toDataURL('image/jpeg', 0.8);
+console.log('toDataURL (jpeg) length:', dataUrl2.length);
+
+// Additional read methods
+const lineDash = ctx1.getLineDash();
+console.log('getLineDash:', lineDash);
+
+const transform = ctx1.getTransform();
+console.log('getTransform:', transform);
+
+const contextAttrs = ctx1.getContextAttributes();
+console.log('getContextAttributes:', contextAttrs);
+
+// isPointInPath test
+ctx1.beginPath();
+ctx1.rect(100, 100, 50, 50);
+const inPath1 = ctx1.isPointInPath(125, 125);
+const inPath2 = ctx1.isPointInPath(200, 200);
+console.log('isPointInPath(125,125):', inPath1, 'isPointInPath(200,200):', inPath2);
+
+// isPointInStroke test
+ctx1.lineWidth = 10;
+const inStroke1 = ctx1.isPointInStroke(100, 100);
+const inStroke2 = ctx1.isPointInStroke(50, 50);
+console.log('isPointInStroke(100,100):', inStroke1, 'isPointInStroke(50,50):', inStroke2);
+
+// ============================================
+// Canvas 2: additional exercises
+// ============================================
+const canvas2 = document.getElementById('canvas2');
+const ctx2 = canvas2.getContext('2d', {
+    alpha: true,
+    colorSpace: 'srgb',
+    desynchronized: false,
+    willReadFrequently: false
+});
+
+console.log('Canvas 2: Additional tests');
+
+ctx2.fillStyle = '#e056fd';
+ctx2.fillRect(20, 20, 60, 60);
+
+ctx2.globalAlpha = 0.5;
+ctx2.fillStyle = '#686de0';
+ctx2.fillRect(40, 40, 60, 60);
+
+ctx2.globalAlpha = 1.0;
+ctx2.beginPath();
+ctx2.arc(200, 50, 40, 0, Math.PI * 2);
+ctx2.fillStyle = '#4bcffa';
+ctx2.fill();
+
+// Nested save/restore
+ctx2.save();
+ctx2.fillStyle = '#fdcb6e';
+ctx2.save();
+ctx2.fillStyle = '#e17055';
+ctx2.save();
+ctx2.fillStyle = '#00b894';
+ctx2.fillRect(50, 150, 40, 40);
+ctx2.restore();
+ctx2.fillRect(100, 150, 40, 40);
+ctx2.restore();
+ctx2.fillRect(150, 150, 40, 40);
+ctx2.restore();
+
+// Multiple transforms
+ctx2.save();
+ctx2.translate(250, 100);
+ctx2.rotate(Math.PI / 4);
+ctx2.fillStyle = '#a29bfe';
+ctx2.fillRect(-30, -30, 60, 60);
+ctx2.restore();
+
+// Shadow test
+ctx2.shadowBlur = 15;
+ctx2.shadowColor = 'blue';
+ctx2.shadowOffsetX = 10;
+ctx2.shadowOffsetY = 10;
+ctx2.fillStyle = 'red';
+ctx2.fillRect(50, 250, 80, 50);
+
+// Reset shadow
+ctx2.shadowBlur = 0;
+ctx2.shadowColor = 'transparent';
+ctx2.shadowOffsetX = 0;
+ctx2.shadowOffsetY = 0;
+
+// Text variations
+ctx2.font = '16px Arial';
+ctx2.textAlign = 'left';
+ctx2.fillStyle = '#000';
+ctx2.fillText('Left align', 200, 200);
+
+ctx2.textAlign = 'center';
+ctx2.fillText('Center align', 250, 220);
+
+ctx2.textAlign = 'right';
+ctx2.fillText('Right align', 300, 240);
+
+ctx2.textBaseline = 'top';
+ctx2.fillText('Top baseline', 200, 260);
+
+ctx2.textBaseline = 'bottom';
+ctx2.fillText('Bottom baseline', 200, 280);
+
+console.log('Canvas 2: Testing emoji with different fonts');
+
+// Emoji with stroke
+ctx2.font = '32px Arial';
+ctx2.strokeStyle = '#ff0000';
+ctx2.lineWidth = 2;
+ctx2.strokeText('😎🎉🎈', 20, 50);
+
+ctx2.fillStyle = '#0000ff';
+ctx2.fillText('🌟💖✨', 120, 50);
+
+// Combined text and emoji
+ctx2.font = '20px Arial';
+ctx2.fillStyle = '#000';
+ctx2.fillText('Hello 👋 World 🌍', 20, 90);
+
+// Different emoji categories
+ctx2.font = '18px Arial';
+ctx2.fillText('Animals: 🐶🐱🐭🐹🐰', 20, 120);
+ctx2.fillText('Food: 🍕🍔🍟🍿🥤', 20, 145);
+ctx2.fillText('Symbols: ✅❌⭕🔴🟢', 20, 170);
+ctx2.fillText('Flags: 🇺🇸🇨🇳🇯🇵🇬🇧🇫🇷', 20, 195);
+
+// Unicode special chars
+ctx2.font = '16px Arial';
+ctx2.fillText('Special: © ® ™ § ¶ † ‡', 20, 220);
+ctx2.fillText('Arrows: ← → ↑ ↓ ↔ ↕', 20, 240);
+
+// Zero-width characters and combining marks
+ctx2.fillText('Combining: e\u0301 n\u0303 a\u0308', 200, 120);
+
+// Read from canvas2
+const readData2 = ctx2.getImageData(0, 0, 100, 100);
+console.log('Canvas 2 getImageData:', readData2.width, 'x', readData2.height);
+
+console.log('Canvas 1: Testing beginLayer/endLayer');
+
+// Layer API (if supported)
+try {
+    ctx1.fillStyle = '#ff0000';
+    ctx1.fillRect(700, 50, 50, 50);
+
+    ctx1.beginLayer();
+    ctx1.fillStyle = '#00ff00';
+    ctx1.globalAlpha = 0.5;
+    ctx1.fillRect(720, 70, 50, 50);
+    ctx1.endLayer();
+
+    console.log('beginLayer/endLayer supported');
+} catch(e) {
+    console.log('beginLayer/endLayer not supported:', e.message);
+}
+
+// Layer with options (if supported)
+try {
+    ctx1.beginLayer({filter: 'blur(4px)'});
+    ctx1.fillStyle = '#0000ff';
+    ctx1.fillRect(740, 90, 50, 50);
+    ctx1.endLayer();
+    console.log('beginLayer with options supported');
+} catch(e) {
+    console.log('beginLayer with options not supported:', e.message);
+}
+
+console.log('Testing OffscreenCanvas');
+
+// OffscreenCanvas tests
+try {
+    const offscreen = new OffscreenCanvas(200, 200);
+    const offCtx = offscreen.getContext('2d', {
+        alpha: false,
+        colorSpace: 'display-p3',
+        desynchronized: true,
+        willReadFrequently: true
+    });
+
+    console.log('OffscreenCanvas created');
+
+    // Draw on offscreen canvas
+    offCtx.fillStyle = '#e74c3c';
+    offCtx.fillRect(10, 10, 80, 80);
+
+    offCtx.strokeStyle = '#3498db';
+    offCtx.lineWidth = 5;
+    offCtx.strokeRect(50, 50, 100, 100);
+
+    offCtx.fillStyle = '#2ecc71';
+    offCtx.beginPath();
+    offCtx.arc(100, 100, 40, 0, Math.PI * 2);
+    offCtx.fill();
+
+    // Text on offscreen
+    offCtx.font = '20px Arial';
+    offCtx.fillStyle = '#000';
+    offCtx.fillText('Offscreen', 60, 180);
+
+    // measureText on offscreen
+    const offMetrics = offCtx.measureText('Offscreen Test');
+    console.log('OffscreenCanvas measureText width:', offMetrics.width);
+
+    // getImageData on offscreen
+    const offImageData = offCtx.getImageData(0, 0, 100, 100);
+    console.log('OffscreenCanvas getImageData:', offImageData.width, 'x', offImageData.height);
+
+    // convertToBlob (async)
+    offscreen.convertToBlob({type: 'image/png'}).then(blob => {
+        console.log('OffscreenCanvas convertToBlob (png):', blob.size, 'bytes');
+    });
+
+    offscreen.convertToBlob({type: 'image/jpeg', quality: 0.85}).then(blob => {
+        console.log('OffscreenCanvas convertToBlob (jpeg):', blob.size, 'bytes');
+    });
+
+    // transferToImageBitmap
+    const bitmap = offscreen.transferToImageBitmap();
+    console.log('OffscreenCanvas transferToImageBitmap:', bitmap.width, 'x', bitmap.height);
+
+    // Draw the bitmap to main canvas
+    ctx1.drawImage(bitmap, 600, 520);
+
+} catch(e) {
+    console.log('OffscreenCanvas not supported or error:', e.message);
+}
+
+// Async operations
+canvas1.toBlob(function(blob1) {
+    console.log('Canvas 1 toBlob (png):', blob1.size, 'bytes');
+}, 'image/png', 0.95);
+
+canvas2.toBlob(function(blob2) {
+    console.log('Canvas 2 toBlob (jpeg):', blob2.size, 'bytes');
+}, 'image/jpeg', 0.9);
+
+// Additional toBlob tests with different formats
+canvas1.toBlob(function(blob3) {
+    console.log('Canvas 1 toBlob (webp):', blob3.size, 'bytes');
+}, 'image/webp', 0.8);
+
+// Test reset() if available
+try {
+    const testCanvas = document.createElement('canvas');
+    testCanvas.width = 100;
+    testCanvas.height = 100;
+    const testCtx = testCanvas.getContext('2d');
+    testCtx.fillStyle = '#ff0000';
+    testCtx.fillRect(0, 0, 50, 50);
+    if (typeof testCtx.reset === 'function') {
+        testCtx.reset();
+        console.log('reset() method supported and called');
+    }
+} catch(e) {
+    console.log('reset() not supported or error:', e.message);
+}
+
+setTimeout(() => {
+    console.log('=== Canvas 2D Test Complete ===');
+    console.log('Please check /tmp/canvas_test.jsonl');
+}, 1000);
+
+</script>
+</body>
+</html>
