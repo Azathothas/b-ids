@@ -1,4 +1,4 @@
-# HISTORY
+# Pre-release incidents and withdrawn claims
 
 Why things in this repository are the way they are.
 
@@ -8,7 +8,7 @@ material: a reader who wants to *use* this project should not have to read about
 a mistake somebody made to reach the instructions.
 
 ⛔ **Nothing here is read to do work.** A session that opens this directory is
-reading what was true once. [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md)
+reading what was true once. [`../../docs/history/todo/PROGRESS.md`](../../docs/history/todo/PROGRESS.md)
 is the record and the only file carrying a work order.
 
 ---
@@ -32,7 +32,7 @@ things the live pages now state differently, which is the point of it.
 | file | what it holds |
 | --- | --- |
 | this file | the rules, and the withdrawn-claims list below |
-| ⭐ [`RESUME.md`](RESUME.md) | ⚠ **the one file here that IS read to do work.** It lives in this directory rather than at the repository root because it is a record of a session rather than a document about the project, and the root is for what a person opens first. [`../../TODO/RULES.md`](../../TODO/RULES.md) section 6 is the rule. |
+| ⭐ [`RESUME.md`](RESUME.md) | ⚠ **the one file here that IS read to do work.** It lives in this directory rather than at the repository root because it is a record of a session rather than a document about the project, and the root is for what a person opens first. [`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 6 is the rule. |
 | [`stale-documents.md`](stale-documents.md) | what nine documents and three script headers said before 2026-09-03, when they were read against the tree and found to describe a smaller project than the one on disk |
 
 ⚠ **Pages arrive when something is superseded, reversed, or found to be a dead
@@ -194,7 +194,7 @@ What is not established is that it is a good way to take a capture.
 ⭐ **The route the project actually uses is unchanged**, and this run is what
 says the choice costs nothing: 19 TLS fields compared between the per-launch pin
 and the installed root, 0 differing, 2 not comparable because they carry a
-per-connection draw. [`../../TODO/harness.md`](../../TODO/harness.md),
+per-connection draw. [`../../docs/history/todo/harness.md`](../../docs/history/todo/harness.md),
 `HARNESS-14`.
 
 ---

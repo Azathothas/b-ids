@@ -1,11 +1,11 @@
 ﻿# check-support-matrix.ps1 - is every cell in the support matrix produced by a
 # run, and does every hole still point at something?
 #
-# ⭐ THE TWIN OF check-support-matrix.sh. TODO/driver.md, DRIVER-09, is why a
+# ⭐ THE TWIN OF check-support-matrix.sh. docs/history/todo/driver.md, DRIVER-09, is why a
 # script in this directory does not land without one.
 #
 # ⛔ A CLIENT AUTHOR CURRENTLY FINDS OUT WHICH STACK CAN EMIT WHICH PROFILE BY
-# BUILDING IT. TODO/emitters.md, EMIT-01.
+# BUILDING IT. docs/history/todo/emitters.md, EMIT-01.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -58,7 +58,7 @@ Set-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-support-matrix: no corpus is reachable, so nothing was checked')
@@ -85,9 +85,10 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-support-matrix: the client did not build')
     exit 2
 }
-$bin = Join-Path $root 'target/debug/b-ids-cli.exe'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug/b-ids-cli.exe'
 if (-not (Test-Path -LiteralPath $bin -PathType Leaf)) {
-    $bin = Join-Path $root 'target/debug/b-ids-cli'
+    $bin = Join-Path $targetDir 'debug/b-ids-cli'
 }
 if (-not (Test-Path -LiteralPath $bin -PathType Leaf)) {
     [Console]::Error.WriteLine("check-support-matrix: $bin is not executable")
@@ -179,5 +180,5 @@ if ($count -eq 0) {
 $problems | ForEach-Object { [Console]::Error.WriteLine($_) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A cell that says "approximately" is worse than one that says "cannot".')
-[Console]::Error.WriteLine('TODO/emitters.md, EMIT-01.')
+[Console]::Error.WriteLine('docs/history/todo/emitters.md, EMIT-01.')
 exit 1

@@ -1,4 +1,4 @@
-# RULES.md
+# Archived working rules
 
 The part of the record that does not change between sessions.
 [`PROGRESS.md`](PROGRESS.md) is what changed since last time and carries the work
@@ -6,8 +6,8 @@ order; [`INDEX.md`](INDEX.md) is the list of entries; this is the standing state
 and the rules that are this repository's own.
 
 ⛔ **A rule is here only if it cost something here.** Everything general lives in
-[`../docs/conventions/`](../docs/conventions/) and
-[`../docs/methodology/`](../docs/methodology/), and this file links rather than
+[`../docs/conventions/`](../../conventions/) and
+[`../docs/methodology/`](../../methodology/), and this file links rather than
 repeats, so the two cannot fork.
 
 ---
@@ -19,16 +19,16 @@ where it is checked.
 
 | fact | value | where it is read from |
 | --- | --- | --- |
-| visibility and licence | public, 0BSD | [`../LICENSE`](../LICENSE) |
+| visibility and licence | public, 0BSD | [`../LICENSE`](../../../LICENSE) |
 | what it publishes | fourteen profiles under `corpus/v1/` with their bytes under `raw/v1/`, ⛔ **on the `source` branch since 2026-09-04 and not on the default one**, and ⭐ **496 files the assembler derives**, pushed to the `data` branch by `publish.yml` and verified tree-for-tree against the source branch. ⚠ No release has been cut: a tag is the only thing that produces one. | `b-ids-corpus verify` and `scripts/common/check-data-branch.sh`, each of whose last line is a fixed count |
 | what a consumer can install | ⭐ a package per ecosystem, generated from the corpus and embedding it: the Rust crate and the JavaScript one under `packages/js/`. ⛔ Neither fetches at runtime, and both report the corpus release they embed | `scripts/common/check-packages.sh` and `check-bindings.sh` |
-| ⭐ the three branches | the default branch is the code, `source` is the canonical corpus, `data` is what the assembler derives from it. ⛔ A reader resolves the root rather than assuming it. | [`../docs/architecture.md`](../docs/architecture.md) section 4, and `scripts/common/corpus-root.sh --source` |
-| work model | todo | [`../docs/methodology/work-todo.md`](../docs/methodology/work-todo.md) |
-| push policy | commit and push, to this repository's own remote only, on the working branch | [`../docs/conventions/git.md`](../docs/conventions/git.md) section 2 |
-| the local gate | `sh scripts/common/check-gate.sh --fast`, or its `.ps1` twin | [`../scripts/README.md`](../scripts/README.md) |
-| the identity a commit carries | the machine's git configuration, per invocation | [`../docs/conventions/git.md`](../docs/conventions/git.md) section 1 |
-| the router | [`../docs/AGENTS.md`](../docs/AGENTS.md), and there is no second one | |
-| the resume file | [`../docs/HISTORY/RESUME.md`](../docs/HISTORY/RESUME.md), written at the start of a session and **committed** | rule 6 below |
+| ⭐ the three branches | the default branch is the code, `source` is the canonical corpus, `data` is what the assembler derives from it. ⛔ A reader resolves the root rather than assuming it. | [`../docs/architecture.md`](../../architecture.md) section 4, and `scripts/common/corpus-root.sh --source` |
+| work model | todo | [`../docs/methodology/work-todo.md`](../../methodology/work-todo.md) |
+| push policy | commit and push, to this repository's own remote only, on the working branch | [`../docs/conventions/git.md`](../../conventions/git.md) section 2 |
+| the local gate | `sh scripts/common/check-gate.sh --fast`, or its `.ps1` twin | [`../scripts/README.md`](../../../scripts/README.md) |
+| the identity a commit carries | the machine's git configuration, per invocation | [`../docs/conventions/git.md`](../../conventions/git.md) section 1 |
+| the router | [`../AGENTS.md`](../../../AGENTS.md), and there is no second one | |
+| the resume file | [`../docs/history/RESUME.md`](../RESUME.md), written at the start of a session and **committed** | rule 6 below |
 
 ⛔ **The gate's measured cost belongs in [`PROGRESS.md`](PROGRESS.md), not
 here.** It is re-timed on the machine that ran it and it moves, which is the
@@ -48,7 +48,7 @@ project's corpus from those tables would produce something that looks finished
 in an afternoon and is worth nothing, because the whole contribution is that a
 consumer can ask where a value came from and get an answer.
 
-So: [`../docs/inherited-claims.md`](../docs/inherited-claims.md) is where every
+So: [`../docs/inherited-claims.md`](../../inherited-claims.md) is where every
 value this project did not measure lives, ⛔ **and nothing in it may be
 published as data.** A row leaves that file only when this project measures the
 same thing itself.
@@ -61,7 +61,7 @@ corpus.
 ## 2. A claim in this tree names its provenance or it is a defect
 
 ⛔ **Five inherited claims have been refuted**, and the fifth is the first one
-an experiment took down. [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md)
+an experiment took down. [`../docs/history/README.md`](../README.md)
 lists them, each in its original wording with what refuted it underneath.
 
 That is the ratio to expect from a document nobody has checked, and it is why
@@ -94,18 +94,18 @@ called unavailable across four entries and both halves of the sweep while it sat
 committed in a file one command away.
 
 **What it cost.** One fetch, taken later, and a whole document set rewritten.
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md)
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md)
 lists what changed.
 
 ⛔ **So: a claim about a repository is not written until that repository is in
-[`../references/`](../references/) at a named commit.**
-[`../docs/methodology/references.md`](../docs/methodology/references.md) is the
+[`../references/`](../../../references/) at a named commit.**
+[`../docs/methodology/references.md`](../../methodology/references.md) is the
 procedure and `scripts/common/mine-repo.sh` is the one tool for it.
 
 ## 4. Every check has two halves, and one machine runs both
 
 ⛔ **A POSIX shell check cannot be assumed to run on Windows**, and the reverse
-is equally true. [`../scripts/README.md`](../scripts/README.md) carries the
+is equally true. [`../scripts/README.md`](../../../scripts/README.md) carries the
 measurement and the exceptions.
 
 ⚠ **A twin that is written and not compared is two behaviours.** `check-twins`
@@ -120,20 +120,20 @@ reason nobody can read. ⛔ An exemption or a row is deleted, never emptied.
 
 ## 5. The reference corpus is tracked, and it is not this project's code
 
-⭐ [`../references/`](../references/) holds twenty repositories' trees at
+⭐ [`../references/`](../../../references/) holds twenty repositories' trees at
 named commits, one of which is the origin every inherited value came from. It is the evidence behind
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md),
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md),
 and a conclusion nobody can re-check is an opinion.
 
 ⚠ **Eighteen were swept and two were not, and the three are different
 things.** A swept reference was read in passes and carries a verdict.
 
-- [`../references/http2jp__hpack-test-case/`](../references/http2jp__hpack-test-case/)
+- [`../references/http2jp__hpack-test-case/`](../../../references/http2jp__hpack-test-case/)
   is a corpus of test VECTORS that a check in this tree runs against, fetched by
   `HARNESS-04` because a decoder written without them is a decoder checked
   against its own misreading. It has no verdict because nothing was concluded
   from reading it.
-- ⭐ [`../references/mozilla__nss/`](../references/mozilla__nss/) was fetched by
+- ⭐ [`../references/mozilla__nss/`](../../../references/mozilla__nss/) was fetched by
   `DRIVER-11` on 2026-09-04 as the AUTHORITY for a format rather than as prior
   art: every constant in this tree's certificate-database writer is cited
   against it at file and line. ⚠ It is trimmed harder than any other tree here,
@@ -151,7 +151,7 @@ Three rules on it:
 
 ## 6. The resume file is committed here
 
-[`../docs/methodology/sessions.md`](../docs/methodology/sessions.md) says the
+[`../docs/methodology/sessions.md`](../../methodology/sessions.md) says the
 project decides whether to commit it. This project commits it.
 
 **Why.** Sessions here run in containers that are reclaimed when they end, so an
@@ -162,7 +162,7 @@ every commit, and that is accepted.
 ## 7. The record moves in the same change as the work
 
 Specified in
-[`../docs/methodology/work-todo.md`](../docs/methodology/work-todo.md), which
+[`../docs/methodology/work-todo.md`](../../methodology/work-todo.md), which
 also carries the incident behind it and the arithmetic hazard. The mechanics
 here:
 
@@ -189,7 +189,7 @@ blocked entry stays open with the blocker named and what would unblock it.
 it names the entry that takes the measurement.
 
 ⚠ **Where the blocker is code this project vendors, the answer is to patch it**
-here. [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md)
+here. [`../docs/methodology/vendoring.md`](../../methodology/vendoring.md)
 also settles that upstreaming is not a topic, and `TOOL-04` is the first entry
 this applies to.
 
@@ -206,7 +206,7 @@ repository's own probe, run in a tree pinning a toolchain the runner does not
 have, STARTED installing it and then killed the install at its six-second
 limit. The conflict the job reported was a fragment of that. The superseded
 wording is in
-[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
+[`../docs/history/stale-documents.md`](../stale-documents.md).
 
 ⭐ **The rule that came out of it, and it is general.** A probe measures a
 machine. It does not change one. A version flag looks read-only and is not:
@@ -216,9 +216,9 @@ found it.
 
 Two things hold it, from two sources, because one of them can be absent:
 
-- both halves of [`../scripts/doctor/`](../scripts/doctor/) export
+- both halves of [`../scripts/doctor/`](../../../scripts/doctor/) export
   `RUSTUP_AUTO_INSTALL=0`, which rustup reads from 1.28;
-- [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml) installs the
+- [`../.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) installs the
   pinned toolchain BEFORE it runs the probe, in both jobs, so an older rustup
   that ignores the variable still has nothing left to interrupt.
 
@@ -249,7 +249,7 @@ rather than here because the two halves of one rule are "do not stop" and "what
 to do when you do", and splitting them across two sections is how one of them
 gets followed.
 
-[`../docs/methodology/sessions.md`](../docs/methodology/sessions.md) is the
+[`../docs/methodology/sessions.md`](../../methodology/sessions.md) is the
 general specification; section 10 is what is this repository's own.
 
 ## 10. ⛔ A session does not stop early, and it does not defer
@@ -285,7 +285,7 @@ Each has been used, and each is refused here.
 | the sentence | what it actually means |
 | --- | --- |
 | "this is a good stopping point" | nothing measured says so. Keep going. |
-| "budget is running low" | ⚠ a prediction about a number this session cannot read. [`../docs/methodology/sessions.md`](../docs/methodology/sessions.md) says a wall closes a route and not a question. |
+| "budget is running low" | ⚠ a prediction about a number this session cannot read. [`../docs/methodology/sessions.md`](../../methodology/sessions.md) says a wall closes a route and not a question. |
 | "this needs a decision from the operator" | ⛔ then do everything that does not depend on it, write the question into [`PROGRESS.md`](PROGRESS.md) **with a recommendation attached**, and work a different entry. A question is not a blocker until proceeding under any assumption would be unsafe. |
 | "I will pick this up next session" | there is no next session until this one ends, and ending it is what this rule governs. |
 
@@ -310,28 +310,28 @@ session having gone well.**
    name, and fix what went stale. ⚠ A document is checked against the tree it
    describes, never the reverse.
 5. **Run the gate, all three parts, and get it green.**
-   [`../docs/methodology/gate.md`](../docs/methodology/gate.md). ⛔ A skipped
+   [`../docs/methodology/gate.md`](../../methodology/gate.md). ⛔ A skipped
    check is reported as a skip and never as a pass.
 6. **Do the deep reviews the gate requires**, each naming what it swept and what
    the other passes did not look at.
-   [`../docs/methodology/reviews.md`](../docs/methodology/reviews.md). ⭐ A pass
+   [`../docs/methodology/reviews.md`](../../methodology/reviews.md). ⭐ A pass
    that reports nothing says what would have had to be true for it to fire.
 7. **Overwrite [`SUMMARY.md`](SUMMARY.md)** with this session's table and print
    it in chat. ⛔ Every cell grounded in something you can point at, including
    the cells that say nothing moved.
-8. **Rewrite [`../docs/HISTORY/RESUME.md`](../docs/HISTORY/RESUME.md)** to the state the tree is actually
+8. **Rewrite [`../docs/history/RESUME.md`](../RESUME.md)** to the state the tree is actually
    left in.
 9. **Leave the tree clean**: no throwaway branch, no scratch file outside
    `.tmp/`, nothing untracked that should be tracked.
 10. **Commit and push** with `git-sync`, which enforces
-    [`../docs/conventions/git.md`](../docs/conventions/git.md) rather than
+    [`../docs/conventions/git.md`](../../conventions/git.md) rather than
     trusting you to remember it. ⛔ No tool is credited in the message.
 11. **Confirm the remote's checks are green**, and fix and amend rather than
     leaving a red build behind.
 12. **Remove anything this session created on another system.**
 
 ⛔ **There is no thirteenth step printing a prompt for whoever comes next.** The
-next session is started with `Read ./docs/AGENTS.md in full`, and everything it
+next session is started with `Read ./AGENTS.md in full`, and everything it
 needs is reached from there. A prompt that restates the work order is a second
 copy of it going stale.
 
@@ -342,13 +342,13 @@ copy of it going stale.
 ## Settled, and not to be raised again
 
 - **The licence is 0BSD**, for the code and for the generated data. Ruled
-  2026-08-30. The reasoning is in [`../README.md`](../README.md); an
+  2026-08-30. The reasoning is in [`../README.md`](../../../README.md); an
   attribution-carrying licence makes people copy values by hand, which defeats
   the project.
 - **The work model is todo**, not stages. Ruled 2026-08-30. The work is a large
   set of independent items with few hard orderings, which is what that model is
   for.
-- **There is one router and it is [`../docs/AGENTS.md`](../docs/AGENTS.md).**
+- **There is one router and it is [`../AGENTS.md`](../../../AGENTS.md).**
   Ruled 2026-08-30. A second one at the repository root would restate the
   absolutes, and two files stating one rule is two places for it to be wrong.
 - **The reference corpus stays in the tree** rather than on a side branch.
@@ -366,7 +366,7 @@ copy of it going stale.
   inherited value was measured, so a tree without it is a tree in which none of
   them can be checked.
 - ⛔ **Upstreaming a patch is not a topic.** Ruled by
-  [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md), which
+  [`../docs/methodology/vendoring.md`](../../methodology/vendoring.md), which
   carries the incident.
 - ⭐ **A measured profile goes into the committed corpus, with its conditions
   recorded.** Ruled by the operator 2026-09-01, at the start of the session that

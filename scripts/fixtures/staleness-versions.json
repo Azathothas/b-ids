@@ -1,6 +1,6 @@
 {
   "comment": [
-    "A FIXTURE, not a measurement. TODO/ci.md, CI-02.",
+    "A FIXTURE, not a measurement. docs/history/todo/ci.md, CI-02.",
     "",
     "It is the shape `b-ids-driver versions --json` prints, with values chosen to",
     "exercise the comparison rather than read from any vendor: one source that",

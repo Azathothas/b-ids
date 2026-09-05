@@ -4,7 +4,7 @@
 //! who trusts the wrong one is the one who was doing something careful.** So
 //! they cannot disagree by construction rather than by discipline: [`model`]
 //! computes what changed, and the two renderers below are the only things that
-//! turn it into text. `TODO/publish.md`, `PUB-08`.
+//! turn it into text. `docs/history/todo/publish.md`, `PUB-08`.
 //!
 //! ⭐ **`CI-04`'s pull-request body is the third renderer of the same model**,
 //! for the same reason.
@@ -175,7 +175,7 @@ pub fn release_body(change: &Change) -> String {
     ));
     // ⛔ EVERY RELEASE BODY STATES THE LICENCE, read from the one home rather
     // than typed. A release asset that travels alone still has to say what it
-    // is. `TODO/publish.md`, `PUB-07`.
+    // is. `docs/history/todo/publish.md`, `PUB-07`.
     out.push_str(&format!(
         "\nPublished under {}. Every profile and the index carry the same identifier.\n",
         b_ids_schema::LICENSE

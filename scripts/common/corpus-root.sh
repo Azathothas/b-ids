@@ -5,7 +5,7 @@
 # TREE. `corpus/` and `raw/` have LEFT the default branch, and on the day they
 # did, twelve green checks would have verified nothing or refused to run, with
 # the tempting fix for each being to widen it until it passes.
-# TODO/publish.md, PUB-11 and PUB-13.
+# docs/history/todo/publish.md, PUB-11 and PUB-13.
 #
 # ⭐ ONE RESOLVER, NOT TWELVE. Every check asks this, and this is the only place
 # the question is answered. `Store::at` is the equivalent inside the crate.
@@ -247,7 +247,7 @@ resolve "$REPO_ROOT" || exit 2
 # ⭐ THE REF THE ANSWER CAME FROM, empty for the working tree and for an
 # explicit root. check-corpus asks for it because its own question is about a
 # HISTORY: now that the corpus is only on a branch, the history to read is that
-# branch's and not this repository's HEAD. TODO/publish.md, PUB-11 and PUB-13.
+# branch's and not this repository's HEAD. docs/history/todo/publish.md, PUB-11 and PUB-13.
 if [ "$REF_ONLY" = 1 ]; then
   printf '%s\n' "$FROM_REF"
   exit 0
@@ -259,7 +259,7 @@ fi
 # working tree is canonical" is therefore wrong whenever B_IDS_CORPUS_ROOT is
 # set, and check-data-branch exported that variable on the line ABOVE its own
 # guard, which disarmed it. ⚠ It reported `data branch ok` while comparing the
-# branch against itself. TODO/publish.md, PUB-11.
+# branch against itself. docs/history/todo/publish.md, PUB-11.
 if [ "$SOURCE_ONLY" = 1 ]; then
   printf '%s\n' "$SOURCE"
   exit 0

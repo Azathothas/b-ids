@@ -1,61 +1,10 @@
-﻿# check-one-home.ps1 - does any sentence appear in two documents?
+﻿# check-one-home.ps1 - reject duplicated long prose sentences outside history and imported sources.
 #
-# ⭐ THE TWIN OF check-one-home.sh. Same schema, same exit codes, same
-# threshold, same exemptions.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# ⛔ THE DEFECT: one fact with two homes. docs/conventions/prose.md has always
-# said every fact lives in exactly one document, and nothing checked it, so it
-# drifted the way an unchecked rule always drifts. The copy a reader trusts is
-# whichever they saw first, and the wrong one is invisible until somebody
-# notices the two disagree.
-#
-# ⭐ WHAT IT COST, MEASURED. A project built from `Azathothas/TEMPLATE`
-# accumulated 8 sentences appearing verbatim in two documents and 3 whole
-# sections that were near-copies of a convention, in a file that opened by
-# saying it restated nothing. That template's own tree, checked for the first
-# time on 2026-08-28, held 42 duplicated sentences of 8 words or more.
-#
-# ⭐ THIS TREE WAS BOOTSTRAPPED FROM IT AND INHERITED THE SHAPE. First run
-# here, 2026-08-29, before anything was cleaned: 17 sentences of 12 words or
-# more with two homes, 7 of them involving a skeleton copied across and never
-# filled in.
-#
-# -- ⚠ THE FIRST RUN OF THE INSTRUMENT REPORTED ZERO, AND WAS WRONG ----------
-#
-# ⛔ It reported no duplicates at any threshold over a 60-file document set,
-# because its file collector matched NOTHING: a quoted pathspec reached git
-# through a shell that treats a quote as an ordinary character. Zero duplicates
-# over zero files reads exactly like a clean tree.
-#
-# ⭐ That is why this refuses to report success over an empty scope.
-#
-# -- THE EXEMPTIONS ----------------------------------------------------------
-#
-# ⛔ THERE IS NO ROUTER EXEMPTION ANY MORE, AND ITS REMOVAL IS THE POINT.
-# AGENTS.md and docs/AGENTS.md each stated the absolutes in full, and this check
-# exempted the pair from each other by name. DOC-07 deleted the root file on
-# 2026-08-30, so there is one router and nothing is duplicated. ⭐ An exemption
-# for a file that no longer exists grants itself to whatever lands at that path
-# next, so it is deleted rather than emptied.
-#
-# ⛔ docs/HISTORY/ IS EXEMPT ENTIRELY: a retired page states things the live
-# pages now state differently, or no longer state at all, which is the point of
-# it. docs/conventions/prose.md is the rule that sends wording there.
-#
-# ⚠ WHAT IT CANNOT SEE: a fact restated in different words. That is a reading.
-# Verbatim duplication is what copy-and-paste actually produces, and that is
-# what this holds.
-#
-# Usage:
-#   pwsh -NoProfile -File scripts/common/check-one-home.ps1
-#   pwsh -NoProfile -File scripts/common/check-one-home.ps1 -Json
-#
-# Exit codes: 0 clean, 1 a sentence has two homes, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
-# ⛔ PositionalBinding IS OFF. A stray expanded argument must fail to bind
-# rather than land on the next free parameter.
+# Usage: scripts/common/check-one-home.ps1 [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 [CmdletBinding(PositionalBinding = $false)]
 param(
     [switch]$Json,
@@ -63,7 +12,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -116,7 +65,9 @@ finally { Pop-Location }
 # ⛔ Keep this identical to the sh twin.
 $files = @($tracked + $untracked |
     ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -cmatch '\.md$' -and $_ -cnotmatch '^docs/HISTORY/' -and $_ -cnotmatch '^(references|vendor/[^/]+)/' } |
+    Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) -and
+        $_ -cmatch '\.md$' -and $_ -notmatch '^docs/history/' -and
+        $_ -cnotmatch '^(references|vendor/[^/]+)/' } |
     Sort-Object -Unique)
 
 if ($files.Count -lt 2) {
@@ -124,7 +75,7 @@ if ($files.Count -lt 2) {
     exit 2
 }
 
-$routers = @{ 'docs/AGENTS.md' = $true }
+$routers = @{ 'AGENTS.md' = $true }
 
 function Get-SentenceList([string]$Text) {
     $sb = New-Object System.Text.StringBuilder

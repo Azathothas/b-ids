@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -36,6 +36,6 @@ b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }
 # which drives an unbranded acquisition and hands the resulting claim to that
 # rule. ⚠ The validator already takes this crate as a dev dependency for
 # VALID-03, so the two test graphs point at each other and neither build graph
-# does. TODO/driver.md, DRIVER-06.
+# does. docs/history/todo/driver.md, DRIVER-06.
 b-ids-validator = { path = "../b-ids-validator" }
 serde_json.workspace = true

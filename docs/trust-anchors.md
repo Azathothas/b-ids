@@ -1,111 +1,72 @@
-# trust-anchors.md
+# Trust-anchor extension
 
-One extension in a modern Chrome `ClientHello` carries a snapshot of the
-browser's own root store. A client that copies one build's list is advertising
-which build it copied.
+Several Chromium-family profiles carry TLS extension codepoint `0xca34`. The
+wire data establishes the codepoint, length, body bytes, and capture conditions.
+The name `draft-ietf-tls-trust-anchor-ids` remains an inference until the draft
+encoding is checked against these bytes.
 
-⚠ **This page states a trade with three answers and asserts no preference.**
-[`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-04`, says so in as many words,
-and a page that recommended one option would be answering a question that
-depends on what the caller is doing.
+## Encoding
 
----
+The measured body begins with a two-byte big-endian payload length. The payload
+is a sequence of one-byte-length-prefixed identifiers. Identifiers are
+published as lowercase hexadecimal in browser order.
 
-## What is measured, and what is not
+Malformed lengths or identifiers are publication errors. A profile that lacks
+the extension is distinct from a profile that carries a two-byte empty list.
 
-| | |
-| --- | --- |
-| ⭐ **the codepoint** | `0xca34`. Measured here on 2026-09-02, in Chrome `152.0.7977.75` on `linux64`, captured on a hosted runner. |
-| ⭐ **the length** | 206 bytes in that build, which is what [`inherited-claims.md`](inherited-claims.md) section 3 also records from another capture. |
-| ⭐ **the body's shape** | a two-byte big-endian length, then that many bytes of one-byte-length-prefixed identifiers. |
-| ⛔ **the NAME is inferred and stays inferred** | `draft-ietf-tls-trust-anchor-ids` is the draft the name comes from, and no specification has been read against these bytes in this project. [`inherited-claims.md`](inherited-claims.md) section 3 carries that split and this page does not resolve it. |
+## Initial-release measurements
 
-⛔ **The identifier count is not a constant, and that is the point of publishing
-per build.** The build measured here carries **32** identifiers of 4, 5 and 8
-bytes. The inherited claim records **24**, from a different build's capture.
-⚠ Both can be right: a root store changes, and this extension is a snapshot of
-one.
+| browser | version | platform | extension bytes | identifiers |
+| --- | --- | --- | ---: | ---: |
+| Chrome | `151.0.7922.76` | `linux64` | 2 | 0 |
+| Chrome | `151.0.7922.76` | `win64` | 2 | 0 |
+| Chrome | `152.0.7977.75` | `linux64` | 206 | 32 |
+| Chrome | `152.0.7977.76` | `win64` | 206 | 32 |
+| Chrome | `152.0.7977.82` | `linux64` | 206 | 32 |
+| Chrome | `152.0.7977.83` | `win64` | 206 | 32 |
+| Chromium | `152.0.7977.75` | `linux64` | 206 | 32 |
 
----
+The generated artifacts are published under
+[`anchors/`](https://github.com/Azathothas/b-ids/tree/data/anchors). Each file
+records its profile, browser, version, platform, capture instant, declared
+extension length, and ordered identifiers.
 
-## Where the lists are
+These measurements establish a difference between the captured 151 and 152
+builds. They do not isolate branding: the empty and non-empty observations are
+not a controlled same-version branded/unbranded comparison.
 
-⭐ **Beside the corpus rather than inside a profile**, because the list changes
-on a different schedule from everything else a profile carries.
+## Consumer guidance
 
-```bash
-cargo run -q -p b-ids-corpus -- anchors --root . --out dist/anchors
-```
+To reproduce a measured build exactly, use the extension body from that build's
+profile. Reusing a list from another build advertises the other build's root
+store snapshot. Omitting an extension that the target build sent changes its
+ordered extension list. Sending an empty list is correct only for a build whose
+measurement contains that empty body.
 
-One file per build that carries the extension, named
-`BROWSER-VERSION-PLATFORM.json`, holding the profile it came from, the capture
-instant, the declared extension length and every identifier **in the browser's
-own order**. ⛔ The order is part of what was measured; sorting it would publish
-a list no browser sent.
+This page asserts no preference among the three implementation options:
 
-⚠ **Most profiles do not carry the extension at all.** Re-measured 2026-09-03
-with `b-ids-corpus anchors`, whose last line is a fixed count: two of the six
-profiles in this corpus carry it, both of them Chrome `152`, and every Chrome
-`151` captured here does not. That is a fact about those builds rather than a gap here.
+### Omit the extension
 
----
+This changes the extension set for a build measured with `0xca34`, but may be
+appropriate when exact reproduction is not required.
 
-## ⭐ The three options, and what each one costs
+### Carry a captured list
 
-⛔ **None is obviously right.** What follows is the cost of each, stated so a
-caller can choose.
+This reproduces one build's measured body. It must be refreshed with the target
+build because a root-store snapshot ages independently of other fields.
 
-### 1. Omit the extension
+### Send it empty
 
-**What it costs.** The `ClientHello` is one extension short of the build it
-claims to be, and the extension is one a modern Chrome sends. Anything counting
-extensions or hashing the ordered list sees a different value.
+This reproduces the measured Chrome 151 profiles listed above. It is not a
+substitute for captured 152 profiles, which carry 32 identifiers.
 
-**When it is the right answer.** When the consumer is not trying to be
-indistinguishable, or when the peer does not read the extension.
+⚠ Identifier order may vary by connection. A single capture per build cannot
+distinguish a stable build order from a per-connection shuffle, so fixed-order
+claims require a controlled repeated-connection measurement.
 
-### 2. Carry a captured list
+## Inference boundary
 
-**What it costs.** ⚠ It is honest on the day it was captured and a fingerprint
-of that day afterwards. A client shipping a list from a build three months old
-is advertising a root store nobody currently has, which is a narrower signal
-than sending nothing.
-
-⛔ **And there is a second decision inside this one: whether to copy the
-ORDER.** Measured 2026-09-02 across the two Chrome `152` profiles here: the SET
-of 32 identifiers is identical on `linux64` and `win64`, and **all 32 positions
-differ**. The two bodies are not the same bytes.
-
-⚠ **This project cannot yet say whether that order is per platform or per
-connection**, and one capture per platform distinguishes the two not at all.
-⭐ What would settle it is two connections of ONE navigation on ONE platform,
-compared. Until then, a client copying a fixed order is copying something that
-may be a constant it invented.
-
-⭐ **This is the option the published lists serve**, and the capture date is
-published with each one so a consumer can decide how stale is too stale.
-
-**When it is the right answer.** When the list can be refreshed on the same
-cadence as the build being impersonated.
-
-### 3. Send it empty
-
-**What it costs.** ⛔ A shape no browser sends. An empty list is not what any
-measured build carries, so it is more distinguishing than either of the other
-two, not less.
-
-**When it is the right answer.** ⚠ This project has not measured a case where it
-is, and says so rather than leaving the option out.
-
----
-
-## What would settle the inferred name
-
-⭐ **Read `draft-ietf-tls-trust-anchor-ids` against these bytes**, and record
-whether the identifier encoding it specifies is the one measured above. That is
-one reading and it removes an inherited claim from this tree.
-
-⛔ **Until then the name stays inferred**, and
-[`inherited-claims.md`](inherited-claims.md) section 3 is where its status
-lives. A page that used the name as though it were measured would be publishing
-an inference as a measurement, which is the one thing this project must not do.
+[`inherited-claims.md`](inherited-claims.md) records the proposed extension name
+and its evidence status. Until the relevant specification is read against the
+measured encoding, code and documentation must describe the name as inferred.
+Raw bytes remain authoritative.

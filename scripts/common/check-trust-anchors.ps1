@@ -2,8 +2,8 @@
 # extension have a published list with a capture date, and does the
 # recommendation state all three options?
 #
-# ⭐ THE TWIN OF check-trust-anchors.sh. TODO/corpus.md, CORPUS-04, and
-# TODO/driver.md, DRIVER-09, is why a script in this directory does not land
+# ⭐ THE TWIN OF check-trust-anchors.sh. docs/history/todo/corpus.md, CORPUS-04, and
+# docs/history/todo/driver.md, DRIVER-09, is why a script in this directory does not land
 # without one.
 #
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, so a
@@ -62,7 +62,7 @@ Set-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-trust-anchors: no corpus is reachable, so nothing was checked')
@@ -98,7 +98,8 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-trust-anchors: the corpus crate did not build')
     exit 2
 }
-$bin = Join-Path $root 'target' | Join-Path -ChildPath 'debug' | Join-Path -ChildPath 'b-ids-corpus'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug' | Join-Path -ChildPath 'b-ids-corpus'
 if (-not (Test-Path -LiteralPath $bin)) { $bin = $bin + '.exe' }
 if (-not (Test-Path -LiteralPath $bin)) {
     [Console]::Error.WriteLine('check-trust-anchors: ' + $bin + ' is not there')
@@ -136,7 +137,7 @@ $problems = @()
 if ($carriers -eq 0) {
     [Console]::Error.WriteLine('check-trust-anchors: no profile in this corpus carries codepoint 0xca34, so')
     [Console]::Error.WriteLine('  there is nothing to publish and nothing this check can verify. That is a')
-    [Console]::Error.WriteLine('  fact about the builds captured, not a pass. TODO/corpus.md, CORPUS-04.')
+    [Console]::Error.WriteLine('  fact about the builds captured, not a pass. docs/history/todo/corpus.md, CORPUS-04.')
     exit 2
 }
 
@@ -203,5 +204,5 @@ if ($count -eq 0) {
 foreach ($problem in $problems) { [Console]::Error.WriteLine($problem) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('The list is a snapshot of a root store and it changes per build.')
-[Console]::Error.WriteLine('docs/trust-anchors.md is the recommendation. TODO/corpus.md, CORPUS-04.')
+[Console]::Error.WriteLine('docs/trust-anchors.md is the recommendation. docs/history/todo/corpus.md, CORPUS-04.')
 exit 1

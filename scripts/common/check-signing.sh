@@ -4,11 +4,11 @@
 #
 # ⛔ A CHECKSUMS FILE PUBLISHED IN THE SAME RELEASE AS THE ARTEFACT PROVES
 # TRANSPORT, NOT AUTHORSHIP, because whoever could replace one could replace the
-# other. TODO/publish.md, PUB-09.
+# other. docs/history/todo/publish.md, PUB-09.
 #
 # ⭐ THE ANSWER IS KEYLESS, RULED BY THE OPERATOR 2026-09-04. The runner's own
 # OIDC identity signs, so no long-lived key exists, nothing is rotated, and no
-# workflow names a secret. That preserves the property TODO/RULES.md states
+# workflow names a secret. That preserves the property docs/history/todo/RULES.md states
 # about this tree: nothing in it needs a credential.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
@@ -145,7 +145,7 @@ printf '%s\n' "$SUBJECTS" | grep -q 'SHA256SUMS' ||
 # ⭐ A CONSUMER RUNS WHAT THE DOCUMENTS SAY, so what the documents say is what
 # this check asserts about. A command published nowhere is an instruction nobody
 # can follow; one published in two spellings is two instructions.
-PUBLISHED=$(grep -rl "$VERIFY_COMMAND" README.md docs/ TODO/ 2>/dev/null || true)
+PUBLISHED=$(grep -rl "$VERIFY_COMMAND" README.md docs/ docs/history/todo/ 2>/dev/null || true)
 [ -n "$PUBLISHED" ] ||
   note "no document publishes '$VERIFY_COMMAND', so a consumer is not told how to verify"
 
@@ -180,5 +180,5 @@ fi
 printf 'signing check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A checksums file published beside the artefact proves transport rather\n' >&2
-printf 'than authorship. TODO/publish.md, PUB-09.\n' >&2
+printf 'than authorship. docs/history/todo/publish.md, PUB-09.\n' >&2
 exit 1

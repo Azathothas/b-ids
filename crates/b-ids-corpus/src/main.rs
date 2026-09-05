@@ -10,14 +10,14 @@
 //! a command line is a number nobody measured, in the field that decides which
 //! build a profile describes.
 //!
-//! `TODO/corpus.md`, `CORPUS-01`.
+//! `docs/history/todo/corpus.md`, `CORPUS-01`.
 
 use std::process::ExitCode;
 
 use b_ids_corpus::{
-    Built, Format, Identity, Run, SUPPORT_MATRIX_FILE, Store, batch, build, indexes, manifest,
-    model, parse_tag, plan_release, profile_from, release_body, render, requests, routes,
-    support_matrix, verify as verify_format, would_rewrite,
+    Built, Format, INITIAL_RELEASE_TAG, Identity, Run, SUPPORT_MATRIX_FILE, Store, batch, build,
+    indexes, manifest, model, parse_tag, plan_initial_release, plan_release, profile_from,
+    release_body, render, requests, routes, support_matrix, verify as verify_format, would_rewrite,
 };
 use b_ids_harness::Capture;
 use b_ids_schema::Profile;
@@ -132,7 +132,7 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
   --head COMMIT    what the data branch holds on the remote, or none.
   --parent COMMIT  what the commit being pushed was built on, or none.
   --tree DIR       a tree `publish` assembled, read through its MANIFEST.json.
-  --tag TAG        the release tag, shaped LAYOUT.YYYY.MM.DD.COUNTER.
+  --tag TAG        v0.0.1 for the initial release, then LAYOUT.YYYY.MM.DD.COUNTER.
   --existing FILE  the tags that already carry a release, one per line.
   --notes FILE     where the release body is written. ⚠ Empty is the correct
                    body for a release nothing moved in.
@@ -210,7 +210,7 @@ fn add(root: &str, captures_path: &str, identity_path: &str) -> ExitCode {
 
     // ⛔ TWO ABSENCES, NAMED SEPARATELY. "No connection sent a cold hello" and
     // "no connection reached HTTP/2" send a reader to two different places, and
-    // a message covering both would send them to neither. TODO/harness.md,
+    // a message covering both would send them to neither. docs/history/todo/harness.md,
     // HARNESS-15.
     let Some(tls_from) = selection.tls_from else {
         eprintln!(
@@ -342,7 +342,7 @@ fn latest(root: &str) -> ExitCode {
 /// own command takes paths a caller names, so it answers about whatever
 /// somebody remembered to list. This answers about what is PUBLISHED, which is
 /// the question a push has to settle, and it is answerable here because this
-/// crate owns the layout. `TODO/ci.md`, `CI-01`.
+/// crate owns the layout. `docs/history/todo/ci.md`, `CI-01`.
 ///
 /// ⛔ **`publishing` is on, and it is not a caller's choice.** Every profile
 /// this reads is already published, so a `vendor`-provenance field in one of
@@ -457,7 +457,7 @@ fn index(root: &str) -> ExitCode {
 ///
 /// ⛔ **ONE GENERATOR AND ONE READ OF THE TREE.** Every format comes out of the
 /// same `Vec<Profile>`, in the same route order the index uses, so two formats
-/// cannot disagree about what the corpus holds. `TODO/schema.md`, `SCHEMA-08`.
+/// cannot disagree about what the corpus holds. `docs/history/todo/schema.md`, `SCHEMA-08`.
 ///
 /// ⛔ **The last line is a fixed `corpus=formats files:N profiles:N`**, which is
 /// what `scripts/common/check-formats` reads. Parse that, never the prose above
@@ -495,7 +495,7 @@ fn formats(root: &str, out_dir: &str) -> ExitCode {
         // ⛔ READ BACK BEFORE IT IS WRITTEN. The round-trip suite renders its
         // own fixture, so a format could be correct over two invented profiles
         // and wrong over the published corpus, and the file would still be on
-        // disk. `TODO/schema.md`, `SCHEMA-12`.
+        // disk. `docs/history/todo/schema.md`, `SCHEMA-12`.
         if let Err(why) = verify_format(format, &profiles, &text) {
             eprintln!("b-ids-corpus: {why}");
             return ExitCode::from(1);
@@ -511,7 +511,7 @@ fn formats(root: &str, out_dir: &str) -> ExitCode {
 
     // ⛔ GENERATED BESIDE THE FORMATS IT DESCRIBES. A support matrix kept by
     // hand states what somebody believed on the day they wrote it, and a
-    // consumer reading it has no way to tell. `TODO/schema.md`, `SCHEMA-12`.
+    // consumer reading it has no way to tell. `docs/history/todo/schema.md`, `SCHEMA-12`.
     let matrix = support_matrix();
     let path = std::path::Path::new(out_dir).join(SUPPORT_MATRIX_FILE);
     if let Err(why) = std::fs::write(&path, matrix.as_bytes()) {
@@ -531,7 +531,7 @@ fn formats(root: &str, out_dir: &str) -> ExitCode {
 /// which is what `scripts/common/check-routes` reads.
 ///
 /// ⛔ **A single-value file is written with NO trailing newline**, which is the
-/// whole of this entry. `TODO/publish.md`, `PUB-03`.
+/// whole of this entry. `docs/history/todo/publish.md`, `PUB-03`.
 fn routes_command(root: &str, out_dir: &str) -> ExitCode {
     let store = Store::at(root);
     if !store.exists() {
@@ -636,7 +636,7 @@ fn routes_command(root: &str, out_dir: &str) -> ExitCode {
 ///
 /// ⛔ **It writes a directory and pushes nothing.** A release workflow archives
 /// what this produced and a data-branch workflow commits it; a command that did
-/// either would be one thing with two jobs. `TODO/publish.md`, `PUB-01` and
+/// either would be one thing with two jobs. `docs/history/todo/publish.md`, `PUB-01` and
 /// `PUB-02`.
 fn publish_command(root: &str, out_dir: &str) -> ExitCode {
     let out = std::path::Path::new(out_dir);
@@ -674,7 +674,7 @@ fn publish_command(root: &str, out_dir: &str) -> ExitCode {
 /// workflow that decided this in shell would be a second statement of the rule,
 /// and the day the two disagreed the branch would be the thing that lost.
 /// `b_ids_corpus::publish::would_rewrite` is the rule and its four cases are in
-/// the suite. `TODO/publish.md`, `PUB-02` and `PUB-10`.
+/// the suite. `docs/history/todo/publish.md`, `PUB-02` and `PUB-10`.
 ///
 /// ⚠ **`none` is how absence is spelled on a command line.** An empty argument
 /// is what a shell produces from an unset variable, so both mean absent and
@@ -718,12 +718,12 @@ fn data_branch_command(head: &str, parent: &str) -> ExitCode {
 /// ⛔ **It publishes nothing.** No tag is created, no asset uploaded and no
 /// remote written to: this reads an assembled tree, plans the release against
 /// the tags that already carry one, and writes the body. The workflow holds the
-/// token. `TODO/publish.md`, `PUB-01` and `PUB-10`.
+/// token. `docs/history/todo/publish.md`, `PUB-01` and `PUB-10`.
 ///
 /// ⚠ **The tag is the CALLER'S**, because a release job is handed one somebody
-/// pushed rather than asked to invent one. It is parsed, planned, and then
-/// rebuilt from its own parts: a tag the rule would not have produced does not
-/// survive that round trip.
+/// pushed rather than asked to invent one. The explicit `v0.0.1` bootstrap tag
+/// is planned once; a later tag is parsed, planned, and rebuilt from its own
+/// parts, so a tag the dated rule would not have produced fails the round trip.
 fn release_command(
     root: &str,
     tree: &str,
@@ -749,21 +749,6 @@ fn release_command(
         }
     };
 
-    let Some((layout, date, counter)) = parse_tag(wanted) else {
-        eprintln!(
-            "b-ids-corpus: {wanted} is not a release tag. The shape is \
-             LAYOUT.YYYY.MM.DD.COUNTER, for example v1.2026.09.03.1"
-        );
-        return ExitCode::from(1);
-    };
-    if layout != built.layout {
-        eprintln!(
-            "b-ids-corpus: {wanted} names layout {layout} and this build is {}",
-            built.layout
-        );
-        return ExitCode::from(1);
-    }
-
     // ⛔ THE TAGS THAT ALREADY CARRY A RELEASE, read by the caller from the
     // repository. A published release is immutable, so the question is whether
     // this one would overwrite an asset somebody has pinned.
@@ -780,20 +765,46 @@ fn release_command(
         },
     };
 
-    let planned = match plan_release(&built, &date, counter, &existing) {
-        Ok(planned) => planned,
-        Err(why) => {
-            eprintln!("b-ids-corpus: {why}");
+    let planned = if wanted == INITIAL_RELEASE_TAG {
+        match plan_initial_release(&built, &existing) {
+            Ok(planned) => planned,
+            Err(why) => {
+                eprintln!("b-ids-corpus: {why}");
+                return ExitCode::from(1);
+            }
+        }
+    } else {
+        let Some((layout, date, counter)) = parse_tag(wanted) else {
+            eprintln!(
+                "b-ids-corpus: {wanted} is not a release tag. Use {INITIAL_RELEASE_TAG} for the \
+                 initial release or LAYOUT.YYYY.MM.DD.COUNTER, for example v1.2026.09.03.1"
+            );
+            return ExitCode::from(1);
+        };
+        if layout != built.layout {
+            eprintln!(
+                "b-ids-corpus: {wanted} names layout {layout} and this build is {}",
+                built.layout
+            );
             return ExitCode::from(1);
         }
+        let planned = match plan_release(&built, &date, counter, &existing) {
+            Ok(planned) => planned,
+            Err(why) => {
+                eprintln!("b-ids-corpus: {why}");
+                return ExitCode::from(1);
+            }
+        };
+        if planned != wanted {
+            // ⚠ THE ROUND TRIP IS THE CHECK. `v1.2026.09.03.01` parses, plans,
+            // and rebuilds as `v1.2026.09.03.1`, which is a different tag.
+            eprintln!(
+                "b-ids-corpus: {wanted} is not the tag this rule produces, which is {planned}"
+            );
+            return ExitCode::from(1);
+        }
+        planned
     };
-    if planned != wanted {
-        // ⚠ THE ROUND TRIP IS THE CHECK. `v1.2026.09.03.01` parses, plans, and
-        // rebuilds as `v1.2026.09.03.1`, which is a different tag; publishing
-        // under the pushed spelling would put two names on one release.
-        eprintln!("b-ids-corpus: {wanted} is not the tag this rule produces, which is {planned}");
-        return ExitCode::from(1);
-    }
 
     let load = |root: &str| -> Result<Vec<Profile>, String> {
         let store = Store::at(root);
@@ -845,7 +856,7 @@ fn release_command(
 ///
 /// ⛔ **It opens nothing.** The workflow holds the token and this holds the
 /// text, so a generator that could not reach a network is testable and a step
-/// that calls an API is one thing with one job. `TODO/ci.md`, `CI-04`.
+/// that calls an API is one thing with one job. `docs/history/todo/ci.md`, `CI-04`.
 ///
 /// ⛔ **The last line is a fixed `corpus=pull-request requests:N auto:N routes:N`**,
 /// which is what `scripts/common/check-pr-body` and the workflow both read.
@@ -944,7 +955,7 @@ fn pull_request_command(before: &str, after: &str, run_file: &str, out_dir: &str
 /// of the browser's own root store and it changes on a different schedule from
 /// everything else a profile carries, so a consumer that wants it should not
 /// have to fetch a whole profile, and a consumer that does not want it should
-/// not be handed it. `TODO/corpus.md`, `CORPUS-04`.
+/// not be handed it. `docs/history/todo/corpus.md`, `CORPUS-04`.
 ///
 /// ⛔ **The last line is a fixed `corpus=anchors lists:N profiles:N`**, which is
 /// what `scripts/common/check-trust-anchors` reads.

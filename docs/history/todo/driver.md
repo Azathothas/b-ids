@@ -1,4 +1,4 @@
-# driver
+# Archived driver record
 
 Getting a browser onto a machine, working out which build it is, and pointing it
 at the harness. Two jobs kept separate: **resolve** a browser, and **drive** it.
@@ -9,7 +9,7 @@ at the harness. Two jobs kept separate: **resolve** a browser, and **drive** it.
 
 ## DRIVER-01. Resolve a browser, and drive it at a URL
 
-**Source** the founding brief; the driver shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 15
+**Source** the founding brief; the driver shape is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 15
 **Category** driver, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
@@ -158,7 +158,7 @@ with nobody at it, which is a different environment rather than a broken one.
 ⛔ **So the capture half is gate part (b) and it is opt-in**, behind
 `B_IDS_DRIVE=1`, with a printed skip that says why. The resolve half stays in
 part (a) and passed on both runners.
-[`../docs/methodology/gate.md`](../docs/methodology/gate.md) already put the
+[`../docs/methodology/gate.md`](../../methodology/gate.md) already put the
 driven pass in the agent's hands rather than in the suite; this entry had it in
 the wrong part of the gate, and the output above is the run that did it.
 
@@ -183,7 +183,7 @@ test`, and on the Linux runner it was 97s.
 
 ## DRIVER-02. Read the version that is serving, not the one that is published
 
-**Source** the founding brief; the measurement is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7
+**Source** the founding brief; the measurement is [`../docs/inherited-claims.md`](../../inherited-claims.md) section 7
 **Category** driver, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
@@ -196,7 +196,7 @@ does not exist.
 ### Premise
 
 Measured elsewhere and inherited. The table is in
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7: the
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 7: the
 highest known build had a rollout fraction of 0.005, the build at fraction 1 was
 two majors behind it, and the automation-build index disagreed with that by one
 patch component.
@@ -265,7 +265,7 @@ test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fin
 ⛔ **A run that took the naive answer would be capturing `153.0.8010.12`, a
 build being served to one user in two hundred.** That is the entry's whole
 premise and it is now a measurement rather than an inherited claim.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7 carries
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 7 carries
 the confirmation beside the reading it inherited.
 
 #### ⭐ The control, and it is what makes the disagreement mean something
@@ -305,7 +305,7 @@ gap. This entry's contribution is that the gap is now visible.
 
 | route | why it lost |
 | --- | --- |
-| an HTTP client crate | It brings its own TLS stack into a workspace that vendors one. [`../Cargo.toml`](../Cargo.toml) already names two builds of the same primitives as a cost to refuse, and version discovery is not worth paying it. |
+| an HTTP client crate | It brings its own TLS stack into a workspace that vendors one. [`../Cargo.toml`](../../../Cargo.toml) already names two builds of the same primitives as a cost to refuse, and version discovery is not worth paying it. |
 | a client on the vendored rustls | It needs a root store, so a dependency arrives anyway, and an HTTP/1.1 client this project would then own. ⛔ This project has enough parsers to keep correct. |
 | ⭐ a fetcher the host already has | No new dependency, no second TLS stack, and trapping each fetch separately falls out of one process per request. |
 
@@ -331,14 +331,14 @@ which is what proves the fetching and the parsing that the fixtures cannot.
 | | |
 | --- | --- |
 | the platform | The releases endpoint is asked about `win`, because a rollout fraction is per platform and reading one platform's while capturing on another compares two questions. `CORPUS-02` is where more arrive. |
-| Firefox and Edge | Their endpoints are in [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7 and neither is called. This entry is the Chrome family, which is what the corpus holds. |
+| Firefox and Edge | Their endpoints are in [`../docs/inherited-claims.md`](../../inherited-claims.md) section 7 and neither is called. This entry is the Chrome family, which is what the corpus holds. |
 | a staleness schedule | `CI-02` is the entry that runs this on a cron and turns a moved answer into a red check. |
 
 ---
 
 ## DRIVER-03. Headless changes the User-Agent, and normalising it is reported
 
-**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
+**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../../inherited-claims.md) section 8
 **Category** driver, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
@@ -441,7 +441,7 @@ of silently wrong.
 
 ## DRIVER-04. The root store a browser actually reads
 
-**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
+**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../../inherited-claims.md) section 8
 **Category** driver, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
@@ -453,7 +453,7 @@ the browser uses its own root store for server authentication on that platform.
 ### Premise
 
 Measured elsewhere and inherited.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 carries
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 8 carries
 it.
 
 ### Approach
@@ -483,11 +483,11 @@ each capture.
 ### ⚠ The acceptance names `40-` rather than `10-`, and the reason is a rule
 
 ⛔ **A number is never reused and `10-` was taken** by
-[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh),
+[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh),
 which was written after this entry was authored.
-[`../docs/methodology/experiments.md`](../docs/methodology/experiments.md) says
+[`../docs/methodology/experiments.md`](../../methodology/experiments.md) says
 a citation of `10-` has to keep meaning what it meant, so this entry's script is
-[`../experiments/40-trust-paths.sh`](../experiments/40-trust-paths.sh) and the
+[`../experiments/40-trust-paths.sh`](../../../experiments/40-trust-paths.sh) and the
 Prove block above is corrected rather than the file being misnumbered to match
 it.
 
@@ -551,7 +551,7 @@ completed while publishing one.
 #### ⛔ What is NOT concluded, and this is the entry's own rule
 
 ⚠ **This is one machine on one day.** The inherited claim in
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 is about
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 8 is about
 **Chrome on Linux** not reading the user's NSS database for server
 authentication. ⛔ Nothing here measures that: the script ran on Windows, and it
 reports the Linux command it would use rather than claiming a result for it.
@@ -637,7 +637,7 @@ exit=0
 
 ⛔ **The published schema constrained it and this side did not.** Its route is an
 enum and its object has four required fields in
-[`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json),
+[`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../../../crates/b-ids-schema/schema/browser-profile-1.schema.json),
 so a consumer validating a profile would refuse a bad one. `Profile::check`
 would not: a profile could claim a route no driver can produce and a digest that
 is not one, and every check in this tree would have passed it.
@@ -660,7 +660,7 @@ machine was not obtained by this project and has no route.
 
 The module was written to hash the bytes itself with the harness's `sha256`. It
 does not, and cannot:
-[`../crates/b-ids-driver/Cargo.toml`](../crates/b-ids-driver/Cargo.toml) keeps
+[`../crates/b-ids-driver/Cargo.toml`](../../../crates/b-ids-driver/Cargo.toml) keeps
 `b-ids-harness` as a DEV dependency on purpose, because a driver that imported
 the harness would be one component with two jobs. The compiler said so on the
 first build.
@@ -671,14 +671,14 @@ supplies the harness's own digest because a test may.
 
 ⚠ **That is a larger change than the entry described** and the gate was
 re-passed against it, per
-[`../docs/methodology/gate.md`](../docs/methodology/gate.md).
+[`../docs/methodology/gate.md`](../../methodology/gate.md).
 
 ### ⭐ The fetcher is a parameter, and that is what makes this testable at all
 
 ⛔ **The failure case is the whole point of the entry**, and it cannot be
 arranged against a live network: a pipeline with one route works right up until
 the day the URL 404s, so what has to be tested is the day it does.
-[`acquire_with`](../crates/b-ids-driver/src/acquire.rs) takes the fetch as a
+[`acquire_with`](../../../crates/b-ids-driver/src/acquire.rs) takes the fetch as a
 closure, and the suite hands it one that refuses.
 
 ⚠ **A function that reached the network itself could only be tested on a day the
@@ -733,7 +733,7 @@ installed.
 
 ## DRIVER-06. Branded and unbranded builds are different products
 
-**Source** the founding brief; the header sets are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 6
+**Source** the founding brief; the header sets are [`../docs/inherited-claims.md`](../../inherited-claims.md) section 6
 **Category** driver, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
@@ -745,7 +745,7 @@ say which it came from is a profile whose brand list cannot be trusted.
 ### Premise
 
 Measured elsewhere and inherited.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 6 carries
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 6 carries
 the brand string and the table.
 
 ### Approach
@@ -806,7 +806,7 @@ contained the filter word, and it is counted here rather than hidden.
 
 ⚠ **This command selected NOTHING until now**, and exiting 0 having run nothing
 is the "step that exits 0 having done nothing it was asked to do" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md)
 wearing an acceptance's name. `crates/b-ids-driver/tests/branded.rs` is the file
 that makes it select something, and every case in it is named for the filter.
 
@@ -853,7 +853,7 @@ it.
 
 ⛔ **Ruled by the operator 2026-09-03.** The vocabulary no longer blocks them, so
 `chrome/for-testing/linux64` and `chrome/for-testing/win64` are `enabled: true`
-in [`../.github/capture-matrix.json`](../.github/capture-matrix.json) and the
+in [`../.github/capture-matrix.json`](../../../.github/capture-matrix.json) and the
 coverage report moves them from `not-attempted` to `absent`, which is the
 difference between planned and tried:
 
@@ -1007,7 +1007,7 @@ A provisioning step, before the resolve step, in every capture lane:
 2. ⛔ **Confirm the purge**, by running `resolve` and requiring it to exit **2**.
    A purge that reported success while a browser remained is the "reporting a
    result the code never read" row of
-   [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+   [`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md).
 3. **Install the build the matrix cell names**, from the route that cell names,
    with the archive's digest recorded.
 4. ⛔ **Confirm the install**, by running `resolve` and requiring the version it
@@ -1074,8 +1074,8 @@ runner then proved about it.
 
 | what exists now | |
 | --- | --- |
-| ⭐ [`../scripts/common/provision-browser.sh`](../scripts/common/provision-browser.sh) | purge, confirm the purge by requiring `resolve` to exit 2, install, confirm the version. The vendor route is implemented for Linux and Windows. |
-| ⭐ [`../scripts/common/check-provisioning.sh`](../scripts/common/check-provisioning.sh) | the acceptance: eight checks on any host, seven of them refusals, and the provisioning itself only where the machine is disposable |
+| ⭐ [`../scripts/common/provision-browser.sh`](../../../scripts/common/provision-browser.sh) | purge, confirm the purge by requiring `resolve` to exit 2, install, confirm the version. The vendor route is implemented for Linux and Windows. |
+| ⭐ [`../scripts/common/check-provisioning.sh`](../../../scripts/common/check-provisioning.sh) | the acceptance: eight checks on any host, seven of them refusals, and the provisioning itself only where the machine is disposable |
 | the `--plan` mode | prints what the tool would do, per platform and route, and runs nothing. It is what a person reads before letting this near a machine. |
 
 ```text
@@ -1112,8 +1112,8 @@ B_IDS_DISPOSABLE=1     and CI=unset, and BOTH are required.      exit=2
 ⛔ **And the rule that was missing is written down**: a test that has to bypass a
 guard runs against a copy under the ignored scratch directory, never against the
 file on a machine the guard protects.
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
-carries the row and [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) the
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md)
+carries the row and [`../docs/history/README.md`](../README.md) the
 incident.
 
 ### ⭐ Closed 2026-09-02. The purge and the install ran on hosted runners
@@ -1231,7 +1231,7 @@ two tests now assert that all three agree.
 | --- | --- |
 | 1. the `for-testing` route | `b-ids-driver acquire` reads the index, `provision-browser` fetches, unpacks and installs. Both platforms, proved on runners. |
 | 2. the matrix carries the routes | every cell names a `route`, a `branded` and a `build`. ⚠ The two unbranded cells stay `enabled: false` on a question that is not this entry's: the corpus route carries no `branded` and `Channel` has no automation channel, so a branded and an unbranded build of one version publish at one path. [`PROGRESS.md`](PROGRESS.md) carries it with a recommendation. |
-| 3. a provisioning workflow | [`../.github/workflows/provision.yml`](../.github/workflows/provision.yml), dispatch only, each platform running the acceptance in its own language |
+| 3. a provisioning workflow | [`../.github/workflows/provision.yml`](../../../.github/workflows/provision.yml), dispatch only, each platform running the acceptance in its own language |
 | 4. a run on a disposable runner | run `33628209454`, both platforms, both routes, green |
 | 5. `captured.acquisition` populated | from the record the tool writes, never retyped |
 | 6. `check-provisioning` into the gate | it is a gate check now, in both halves, and `check-twins` compares the pair as before |
@@ -1314,7 +1314,7 @@ measure.
 
 ⚠ **And the shape is the one this project rejects everywhere else.** The tool
 was a single script with per-platform branches, which is the arrangement
-[`../scripts/README.md`](../scripts/README.md) argues against at length in the
+[`../scripts/README.md`](../../../scripts/README.md) argues against at length in the
 section listing what does not have a twin and why. It was entered there as a
 debt, which was honest and was not a fix.
 
@@ -1348,7 +1348,7 @@ browser. `check-provisioning` asserts all three refusal paths in each half.
 
 Must not: have the PowerShell half shell out to `sh`. That reports a green half
 of a pair as the whole pair on the hosts that most need the other half, which is
-the check contract in [`../scripts/README.md`](../scripts/README.md).
+the check contract in [`../scripts/README.md`](../../../scripts/README.md).
 
 ⛔ **This entry was written saying the twin should wait for `DRIVER-08`'s
 success path, and the gate disproved that within the hour.** The sh half cannot
@@ -1384,8 +1384,8 @@ script with no twin had been cancelling each other out.
 
 | what landed | |
 | --- | --- |
-| [`../scripts/common/provision-browser.ps1`](../scripts/common/provision-browser.ps1) | the same four steps, the same two-condition guard, the same argument refusals, and the Windows purge as native PowerShell rather than as a payload handed to `powershell -Command` from sh |
-| [`../scripts/common/check-provisioning.ps1`](../scripts/common/check-provisioning.ps1) | ⚠ it drives the PowerShell tool and nothing else, which is the check contract: a half that shelled out to `sh` would report a green half of a pair as the whole pair on the host that most needs this one |
+| [`../scripts/common/provision-browser.ps1`](../../../scripts/common/provision-browser.ps1) | the same four steps, the same two-condition guard, the same argument refusals, and the Windows purge as native PowerShell rather than as a payload handed to `powershell -Command` from sh |
+| [`../scripts/common/check-provisioning.ps1`](../../../scripts/common/check-provisioning.ps1) | ⚠ it drives the PowerShell tool and nothing else, which is the check contract: a half that shelled out to `sh` would report a green half of a pair as the whole pair on the host that most needs this one |
 | the pair in `check-twins.sh` | with the reason it exists written above the row |
 
 ```text
@@ -1422,7 +1422,7 @@ want, headless and unattended, on any runner
 ### Problem
 
 ⛔ **`provision-browser.sh` knows Chrome.**
-[`../.github/capture-matrix.json`](../.github/capture-matrix.json) names four
+[`../.github/capture-matrix.json`](../../../.github/capture-matrix.json) names four
 families, `check-coverage --require-rows` can be asked to fail on all four, and
 `CORPUS-02` cannot close until `edge`, `chromium` and `firefox` have profiles. A
 provisioning step serving one family leaves the other three where they are
@@ -1698,7 +1698,7 @@ and is what the current refusal reads.
   measurement that says which mechanism was used. ⛔ `captured.trust` records
   the configuration a profile was taken under, so a Gecko capture whose trust
   nobody can name is a profile this corpus must not publish.
-  `TODO/harness.md`, `HARNESS-10`.
+  `docs/history/todo/harness.md`, `HARNESS-10`.
 - ⚠ **A Gecko capture is compared against a Chromium one before it is
   believed.** The point of the lane is that the stack is different, so a run
   producing a hello that looks like Chromium's is a finding about the harness
@@ -1760,7 +1760,7 @@ operator then ruled again during the work: **do not vendor a niche third-party
 tree, write it in Rust here, and mine `mozilla/nss` as the reference.** That is
 what was done, and the vendoring was backed out before anything was committed.
 
-⭐ **`mozilla/nss` is in [`../references/mozilla__nss/`](../references/mozilla__nss/)
+⭐ **`mozilla/nss` is in [`../references/mozilla__nss/`](../../../references/mozilla__nss/)
 at commit `7db8de42431841b214b49fd2cb7122a07aa631b8`**, trimmed by deletion, and
 every constant below is cited against it at file and line.
 

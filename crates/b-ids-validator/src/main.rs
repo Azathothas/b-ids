@@ -73,7 +73,7 @@ fn main() -> ExitCode {
         match arg.as_str() {
             // ⭐ "What changed between these two versions" is the most useful
             // artefact for anybody maintaining a client, and it is free once two
-            // profiles exist. TODO/validator.md, VALID-06.
+            // profiles exist. docs/history/todo/validator.md, VALID-06.
             "diff" => diffing = true,
             "import" => {
                 let Some(dir) = args.next() else {

@@ -493,7 +493,7 @@ say "control: $CONTROL_OK"
 # when it recovered: with the proxy returning a connection failure this script
 # reported the control unreachable and stopped before the clone, while
 # `git clone` of the same repository succeeded in the same shell.
-# TODO/tooling.md, TOOL-04.
+# docs/history/todo/tooling.md, TOOL-04.
 #
 # ⛔ IT IS STILL RECORDED. The provenance file's whole job is naming what a
 # fetch could not get, and a run that silently proceeded without the metadata

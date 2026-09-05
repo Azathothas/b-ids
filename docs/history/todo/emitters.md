@@ -1,4 +1,4 @@
-# emitters
+# Archived emitter record
 
 Turning a profile back into bytes, and publishing an honest account of what each
 stack cannot do.
@@ -12,7 +12,7 @@ produces here, because they tell a client author what they cannot claim.
 
 ## EMIT-01. The support matrix, with the holes left in
 
-**Source** the founding brief; the limits are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 9
+**Source** the founding brief; the limits are [`../docs/inherited-claims.md`](../../inherited-claims.md) section 9
 **Category** emitters, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
@@ -24,7 +24,7 @@ building it.
 ### Premise
 
 Measured by reading, at named commits, in
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md).
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md).
 The known holes so far:
 
 | stack | cannot emit | how it is known |
@@ -46,7 +46,7 @@ that says "approximately", and an emitter that approximates silently is the
 defect the whole project is about.
 
 Each hole carries: what cannot be emitted, at file and line in
-[`../references/`](../references/) at its captured commit, and whether it is
+[`../references/`](../../../references/) at its captured commit, and whether it is
 patchable in this tree.
 
 Must not: fill a cell from a project's documentation. Fill it from a
@@ -92,7 +92,7 @@ the matrix has two kinds rather than one kind with two colours:
 | kind | how many | where it comes from |
 | --- | --- | --- |
 | ⭐ `cell`, evidence `run` | 6, one per published profile | `b_ids_emit::client_hello` was actually called on each, and each cell carries the command that reproduces it |
-| ⛔ `hole`, evidence `read` | 5 | a file and a line in [`../references/`](../references/) at the commit its `PROVENANCE.md` names |
+| ⛔ `hole`, evidence `read` | 5 | a file and a line in [`../references/`](../../../references/) at the commit its `PROVENANCE.md` names |
 
 ⛔ **A stack this tree cannot run gets a hole and NO CELL.** Writing a cell for
 it would be filling the matrix from somebody else's documentation, which the
@@ -152,7 +152,7 @@ and the live file was compared byte for byte with that copy afterwards.**
 
 ## EMIT-02. The escape hatch, and where it has to live
 
-**Source** the founding brief; the escape hatch is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 1
+**Source** the founding brief; the escape hatch is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 1
 **Category** emitters, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
@@ -171,7 +171,7 @@ do not.
 
 Design for the ordered list from the start rather than adding it later. Where
 the chosen stack lacks it, the route is to vendor and patch **here**, per
-[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md), with the
+[`../docs/methodology/vendoring.md`](../../methodology/vendoring.md), with the
 reproduction command recorded beside the patch so a future release can be tested
 against it and the patch deleted when it is no longer needed.
 
@@ -280,7 +280,7 @@ proved only that the bytes were present somewhere.
 
 ## EMIT-03. The priority block patch, if the measurement says it is needed
 
-**Source** the founding brief; the seam and the patch are [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 4
+**Source** the founding brief; the seam and the patch are [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 4
 **Category** emitters, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
@@ -292,12 +292,12 @@ still tell apart.
 ### Premise
 
 ⛔ **Blocked on a measurement taken here, and it is honest to say so rather
-than to build first.** [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 records the block measured off
+than to build first.** [`../docs/inherited-claims.md`](../../inherited-claims.md) section 5 records the block measured off
 frame bytes on two Chrome versions, in another repository, which is `vendor`
 provenance. `HARNESS-05` reads it here, and it is expected to agree.
 
 ⭐ **The seam is confirmed by reading and the patch already exists**, at a named
-commit in the corpus: [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 4 has both. The encode function
+commit in the corpus: [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 4 has both. The encode function
 takes a closure that runs after the frame head and before the header block, the
 payload length is computed after it runs, and the push-promise path already uses
 it to write a stream identifier. So the change is five bytes written into a
@@ -305,7 +305,7 @@ closure that exists, and the frame length and any continuation split follow for
 free.
 
 ⚠ **Read that patch, do not copy it.** Its tree is MIT and this one's output is
-0BSD. [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) is
+0BSD. [`../docs/methodology/vendoring.md`](../../methodology/vendoring.md) is
 the rule when a patched upstream lands here.
 
 ⛔ **Upstream will not take it, for a stated reason rather than by neglect.** RFC
@@ -379,13 +379,13 @@ terminator and the certificate authority beside it. It is synchronous
 throughout.
 
 ⛔ **And nothing in this workspace uses `h2` at all.** The `h2` module in
-[`../crates/b-ids-harness/src/h2.rs`](../crates/b-ids-harness/src/h2.rs) is this
+[`../crates/b-ids-harness/src/h2.rs`](../../../crates/b-ids-harness/src/h2.rs) is this
 project's own frame READER, written here; the hole in the support matrix is
 about somebody else's send path. So the patch would compile a tree nothing here
 calls, for a consumer this repository does not have.
 
 ⚠ **`b-ids-cli` is not that consumer and must not become it.**
-[`../docs/architecture.md`](../docs/architecture.md) says it puts one profile's
+[`../docs/architecture.md`](../../architecture.md) says it puts one profile's
 hello on a socket and stops, and that it must never grow into a general-purpose
 HTTP client.
 
@@ -393,7 +393,7 @@ HTTP client.
 
 ⛔ **This entry now needs a ruling rather than a measurement**, and it is
 recorded in [`PROGRESS.md`](PROGRESS.md).
-[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) says
+[`../docs/methodology/vendoring.md`](../../methodology/vendoring.md) says
 vendoring is chosen rather than drifted into, and lists what it costs: the build
 compiles the vendored code, the tree grows, upstream stops being visible, and
 its warnings become this project's.
@@ -441,7 +441,7 @@ agree exactly:
 | Edge `151.0.4129.101` `linux64` | the same |
 
 ⭐ **Six profiles, two browsers, two majors, two platforms, one value.** The
-inherited reading in [`../docs/inherited-claims.md`](../docs/inherited-claims.md)
+inherited reading in [`../docs/inherited-claims.md`](../../inherited-claims.md)
 section 5 was taken off frame bytes on two Chrome versions in another
 repository; this agrees with it and is measured here.
 
@@ -453,12 +453,12 @@ five bytes:
 | | |
 | --- | --- |
 | ⛔ **the HTTP/2 library has to be vendored first** | this tree vendors one library today, the TLS terminator, and `VENDOR-01` is what it cost. A second vendored tree is a second reconciliation, a second provenance file and a second `check-vendor` subject. |
-| ⚠ **and the patch is read rather than copied** | its tree is MIT and this one's output is 0BSD. [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) is the rule. |
-| ⭐ **the seam is confirmed** | [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 4, at a named commit: the encode function takes a closure that runs after the frame head and before the header block, and the push-promise path already writes a stream identifier through it. |
+| ⚠ **and the patch is read rather than copied** | its tree is MIT and this one's output is 0BSD. [`../docs/methodology/vendoring.md`](../../methodology/vendoring.md) is the rule. |
+| ⭐ **the seam is confirmed** | [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 4, at a named commit: the encode function takes a closure that runs after the frame head and before the header block, and the push-promise path already writes a stream identifier through it. |
 
 ⚠ **The effort estimate stands at `S` and it was estimated for the branch that
 did not happen.** ⛔ Left as it is rather than edited, per
-[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md): the
+[`../docs/methodology/authoring.md`](../../methodology/authoring.md): the
 estimate is what was believed, and this paragraph is what is true.
 
 ---
@@ -478,7 +478,7 @@ by `cargo test -p b-ids-emit priority_block`, and the support matrix hole's
 
 ⛔ **The rules that bind the work.** Re-derive the five bytes, never copy them:
 that tree is MIT and this one's output is 0BSD.
-[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) governs
+[`../docs/methodology/vendoring.md`](../../methodology/vendoring.md) governs
 the manifest, the change record and the reproduction command, and ⛔ upstreaming
 is not a topic.
 

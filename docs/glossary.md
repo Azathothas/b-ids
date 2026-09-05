@@ -71,7 +71,7 @@ never derived from a digest, and nothing round-trips through one.
 | **emitter** | Code that turns a profile back into bytes on a wire, for some stack. |
 | **support matrix** | Which stack can emit which profile, ⭐ with the holes left in. A hole is the most useful cell: it tells a client author what they cannot claim. |
 | **negative control** | A capture of automation as it actually looks. A corpus that only says what a real browser sends cannot tell anybody the difference. |
-| **the record** | [`../TODO/PROGRESS.md`](../TODO/PROGRESS.md). The one file a session reads first, and the only one carrying a work order. |
+| **the record** | [`../docs/history/todo/PROGRESS.md`](../docs/history/todo/PROGRESS.md). The one file a session reads first, and the only one carrying a work order. |
 | **the gate** | The three parts a unit of work passes. [`methodology/gate.md`](methodology/gate.md). |
 | **MSRV** | Minimum supported Rust version. Measured from what the dependency graph requires, never chosen. |
 | **the founding brief** | The design document this repository was created from, written in `Azathothas/bit-cli` and retired once its content was in this tree. ⛔ Provenance, not a file: it is not tracked and nothing here depends on it. [`inherited-claims.md`](inherited-claims.md) is where its measurements live and where the term is defined. |

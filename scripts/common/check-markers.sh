@@ -105,7 +105,7 @@ set -u
 # `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
 # '\t')" read ...` forks once per line. Measured 2026-09-02: a command
 # substitution costs 35 ms on this host, and check-docs.sh reads about 1100
-# lines that way. TODO/tooling.md, TOOL-18.
+# lines that way. docs/history/todo/tooling.md, TOOL-18.
 TAB=$(printf '\t')
 
 JSON=0

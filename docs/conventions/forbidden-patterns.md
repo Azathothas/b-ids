@@ -39,8 +39,8 @@ will add.
 | Comparing a secret, token or signature with an equality operator | a timing attack |
 | A general-purpose hash used as a password hash | brute-forceable credentials |
 | A guard whose test has never been seen to fail | theatre. Plant the defect and read the exit code. |
-| ⛔ Planting that defect in the LIVE subject, on a machine the guard protects | the guard is gone for the length of the test, on the one machine it exists for. A session disabling a browser-purge guard ran the purge on the operator's own laptop; nothing was removed only because a registry match did not fire. ⭐ Mutate a COPY under the ignored scratch directory, or mutate on a machine that is thrown away. [`../HISTORY/README.md`](../HISTORY/README.md) |
-| ⛔ One condition standing between a command and something irreversible | a single edit, a stray variable or a typo lifts it. ⭐ Two conditions from two sources: one this project sets, one the environment sets, and assert all three refusal paths rather than only the both-unset one. `TODO/driver.md`, `DRIVER-08`. |
+| ⛔ Planting that defect in the LIVE subject, on a machine the guard protects | the guard is gone for the length of the test, on the one machine it exists for. A session disabling a browser-purge guard ran the purge on the operator's own laptop; nothing was removed only because a registry match did not fire. ⭐ Mutate a COPY under the ignored scratch directory, or mutate on a machine that is thrown away. [`../history/README.md`](../history/README.md) |
+| ⛔ One condition standing between a command and something irreversible | a single edit, a stray variable or a typo lifts it. ⭐ Two conditions from two sources: one this project sets, one the environment sets, and assert all three refusal paths rather than only the both-unset one. `docs/history/todo/driver.md`, `DRIVER-08`. |
 | A test whose name claims more than it checks | a green suite over a defect it was written to catch |
 
 ## Fake anything
@@ -56,7 +56,7 @@ will add.
 | A step that exits 0 having done nothing it was asked to do | every green result downstream of it means nothing. `systemd-binfmt.service` reported `status=0/SUCCESS` with zero handlers registered, because the path it writes to was unusable. The unit was green, the config was complete, the emulators were installed, and cross-architecture execution had never once worked. ⭐ A step that can only pass verifies its own effect and fails loudly when the effect is absent. |
 | Reporting a result the code never read: a success message printed beside the call rather than after checking it | a delete that failed reads as a delete that worked. `Remove-Item -ErrorAction SilentlyContinue` followed by an unconditional "deleted" left multi-gigabyte disks behind while reporting them gone. |
 | ⛔ A block of terminal output nobody produced by running the command | the record stops being evidence and nothing downstream can tell. An entry here closed on a timing block reading `gate ok: all 15 checks passed`, for a tree on which two checks were failing, and its figures were then copied into two scripts as a flag's justification. [`prose.md`](prose.md) |
-| An acceptance command that cannot fail: one whose own text satisfies it | green by construction. A `grep` for a filename, written inside a file carrying that filename, matches itself forever. `TODO/docs.md`, `DOC-04`. |
+| An acceptance command that cannot fail: one whose own text satisfies it | green by construction. A `grep` for a filename, written inside a file carrying that filename, matches itself forever. `docs/history/todo/docs.md`, `DOC-04`. |
 
 ## Structure and reuse
 
@@ -105,7 +105,7 @@ will add.
 | A page nothing links to | not read, so not corrected. The state every stale document passes through. |
 | ⛔ A document naming a file, tool or directory the tree does not have | a session routed to it finds nothing and does the job by hand. Five places here described a licence filler, its twin and a directory of texts, and none existed; every markdown link resolved, because the names were in code spans. `TOOL-09`, and `TOOL-10` is the check. |
 | ⛔ A provenance tag that names no reachable source | the values behind it cannot be checked by anybody, ever. About sixty measurements here were sourced to "a design brief whose measurements were taken in another repository", unnamed and unfetched, in a project whose product is provenance. [`../reference-sweeps/findings.md`](../reference-sweeps/findings.md) |
-| A claim about a repository written without opening that repository | the most expensive defect this tree has had. [`../../TODO/RULES.md`](../../TODO/RULES.md) section 3. |
+| A claim about a repository written without opening that repository | the most expensive defect this tree has had. [`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 3. |
 
 ---
 

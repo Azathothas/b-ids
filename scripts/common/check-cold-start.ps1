@@ -1,13 +1,13 @@
 ﻿# check-cold-start.ps1 - is the cold-start job still cold, and does everything a
 # cold pipeline names still resolve on this host?
 #
-# ⭐ THE TWIN OF check-cold-start.sh. TODO/driver.md, DRIVER-09, is why a script
+# ⭐ THE TWIN OF check-cold-start.sh. docs/history/todo/driver.md, DRIVER-09, is why a script
 # in this directory does not land without one, and this pair earns it for a
 # second reason: the Windows half of the cold-start workflow RUNS this half, so
 # a twin that drifted would be probing a different list from the one the job
 # depends on.
 #
-# ⛔ EVERY WARM RUN PASSES OVER A BROKEN COLD PATH. TODO/ci.md, CI-05.
+# ⛔ EVERY WARM RUN PASSES OVER A BROKEN COLD PATH. docs/history/todo/ci.md, CI-05.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -108,7 +108,7 @@ if ($Resolve) {
     }
     if ($RequireTools) {
         [Console]::Error.WriteLine("`u{26D4} the cold path breaks at the first absent program: $firstMissing")
-        [Console]::Error.WriteLine('Every warm run passes over a broken cold path. TODO/ci.md, CI-05.')
+        [Console]::Error.WriteLine('Every warm run passes over a broken cold path. docs/history/todo/ci.md, CI-05.')
         exit 1
     }
     Write-Output "`u{26A0} $missing absent, first $firstMissing. On this host that is a fact about the host;"
@@ -121,7 +121,7 @@ function Show-Failure {
     [Console]::Error.WriteLine('')
     $problems | ForEach-Object { [Console]::Error.WriteLine($_) }
     [Console]::Error.WriteLine('')
-    [Console]::Error.WriteLine('Every warm run passes over a broken cold path. TODO/ci.md, CI-05.')
+    [Console]::Error.WriteLine('Every warm run passes over a broken cold path. docs/history/todo/ci.md, CI-05.')
 }
 
 if (-not (Test-Path -LiteralPath $workflow -PathType Leaf)) {

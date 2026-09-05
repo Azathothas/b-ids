@@ -5,7 +5,7 @@
 # ⛔ A REIMPLEMENTATION IN EACH LANGUAGE IS THE FAILURE TO AVOID. Four
 # implementations of one selection rule is four places for it to be wrong, and
 # the one that is wrong is the one nobody uses often enough to notice.
-# TODO/library.md, LIB-03.
+# docs/history/todo/library.md, LIB-03.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -159,5 +159,5 @@ fi
 printf 'bindings check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'Four implementations of one selection rule is four places for it to be\n' >&2
-printf 'wrong. TODO/library.md, LIB-03.\n' >&2
+printf 'wrong. docs/history/todo/library.md, LIB-03.\n' >&2
 exit 1

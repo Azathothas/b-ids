@@ -119,7 +119,7 @@ COUNT=0
 NFILES=0
 REPORT=""
 
-# ⭐ ONE PASS OVER THE WHOLE LIST, NOT ONE PASS PER FILE. TODO/tooling.md,
+# ⭐ ONE PASS OVER THE WHOLE LIST, NOT ONE PASS PER FILE. docs/history/todo/tooling.md,
 # TOOL-18. The loop this replaced spawned about six subprocesses per file, and a
 # subprocess costs 54.5 ms on the host that measured it, so 384 files cost 126
 # seconds. ⛔ NOTHING ABOUT WHAT IS CHECKED CHANGED: the same file list, the same

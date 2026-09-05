@@ -158,7 +158,7 @@ pub struct Options {
     /// it could not run. A profile cannot carry this: whether a FAMILY shuffles
     /// is a fact about a browser rather than about one connection, and a check
     /// that assumed it would report every non-shuffling browser as broken.
-    /// `TODO/schema.md`, `SCHEMA-10`.
+    /// `docs/history/todo/schema.md`, `SCHEMA-10`.
     pub expects_shuffle: Option<bool>,
 }
 
@@ -286,7 +286,7 @@ fn navigate_header<'a>(profile: &'a Profile, name: &str) -> Option<&'a str> {
 /// set recorded nothing about HTTP.
 ///
 /// ⚠ Found by the door sweep on 2026-09-04, when `b_ids_driver::Family` learned
-/// `firefox` and made the second case reachable. `TODO/corpus.md`, `CORPUS-02`.
+/// `firefox` and made the second case reachable. `docs/history/todo/corpus.md`, `CORPUS-02`.
 fn why_no_value(profile: &Profile, name: &str) -> String {
     let Some(set) = profile.http.variant(Variant::Navigate) else {
         return "no navigation header set was recorded, so nothing about HTTP was".to_owned();
@@ -622,7 +622,7 @@ pub fn check_grease(profile: &Profile, options: &Options) -> Outcome {
     // than about one connection, so the caller states it and a check that
     // assumed it would report every non-shuffling browser as broken.
     // ⚠ `Unknown` and one draw are handled above; this is the case where the
-    // sample WAS big enough and the order never moved. `TODO/schema.md`,
+    // sample WAS big enough and the order never moved. `docs/history/todo/schema.md`,
     // `SCHEMA-10`, and `docs/inherited-claims.md` section 2 is why: reproducing
     // a recorded order exactly is a reason to doubt the capture.
     if options.expects_shuffle == Some(true)

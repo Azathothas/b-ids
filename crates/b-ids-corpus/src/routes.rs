@@ -3,7 +3,7 @@
 //! ⛔ **A single-value file contains the value and nothing else.** No trailing
 //! newline, no leading whitespace, no quotes. A consumer must never need to
 //! strip anything, and `scripts/common/check-routes.sh` is what says so.
-//! `TODO/publish.md`, `PUB-03`.
+//! `docs/history/todo/publish.md`, `PUB-03`.
 //!
 //! ⭐ **Measured on the reference the requirement came from**, which publishes
 //! single-value files that DO end with a newline. That defect is what this
@@ -301,7 +301,7 @@ pub fn routes(published: &[(String, Profile)]) -> Vec<Route> {
             continue;
         };
         // ⛔ STABLE ONLY. A consumer following `latest` must never be handed a
-        // pre-release build. `TODO/corpus.md`, `CORPUS-03`.
+        // pre-release build. `docs/history/todo/corpus.md`, `CORPUS-03`.
         if profile.browser.channel != Channel::Stable {
             continue;
         }

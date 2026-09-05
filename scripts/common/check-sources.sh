@@ -3,7 +3,7 @@
 # and is a disagreement reported rather than resolved?
 #
 # ⛔ EVERY EXTERNAL DEPENDENCY WILL ONE DAY ANSWER DIFFERENTLY, and a corpus
-# that stopped updating in year two was not worth building. TODO/ci.md, CI-06.
+# that stopped updating in year two was not worth building. docs/history/todo/ci.md, CI-06.
 #
 # -- ⭐ TWO SOURCES THAT DISAGREE ARE THE MOST VALUABLE SIGNAL HERE ----------
 #
@@ -172,7 +172,7 @@ if (jsonOut === "1") {
   for (const problem of real.problems) { process.stderr.write("  " + problem + "\n"); }
   process.stderr.write("\n  Two sources that disagree are the most valuable signal this\n");
   process.stderr.write("  project produces. Record both, publish both, never pick.\n");
-  process.stderr.write("  TODO/ci.md, CI-06.\n");
+  process.stderr.write("  docs/history/todo/ci.md, CI-06.\n");
 }
 if (real.problems.length > 0) { process.exit(1); }
 ' "$REPORT" "$JSON" "$FIXTURES"

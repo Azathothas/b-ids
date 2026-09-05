@@ -8,7 +8,7 @@
 # declares LF. The rule used to live inline in check-gate and it read git's
 # INDEX column ALONE, so a tracked file that is CRLF in the working tree and LF
 # in the index passed it. Eight files became CRLF that way in one session and
-# the gate stayed green throughout. TODO/tooling.md, TOOL-17.
+# the gate stayed green throughout. docs/history/todo/tooling.md, TOOL-17.
 #
 # ⛔ TWO COLUMNS, AND THEY ARE DIFFERENT FACTS. The index column says what a
 # commit will contain; the working-tree column says what is on disk right now,
@@ -37,7 +37,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )

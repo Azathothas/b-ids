@@ -29,7 +29,7 @@
 //! [`references/mozilla__nss/`](../../../../references/mozilla__nss/), and
 //! every line cited here is cited against it.
 //!
-//! `TODO/driver.md`, `DRIVER-11`.
+//! `docs/history/todo/driver.md`, `DRIVER-11`.
 
 pub mod der;
 pub mod sha1;

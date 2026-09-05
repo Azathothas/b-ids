@@ -159,7 +159,7 @@ $RECYCLE.BIN/
 # minutes. ⭐ THE SEEDS ARE COMMITTED and they are the harness's own captures at
 # crates/b-ids-harness/fixtures/, which fuzz/README.md says how to seed from.
 # `fuzz/artifacts/` is where a crash input lands, and a crash is a REGRESSION
-# TEST rather than a file to keep here: TODO/harness.md HARNESS-09 says a crash
+# TEST rather than a file to keep here: docs/history/todo/harness.md HARNESS-09 says a crash
 # input is a test case and never a capture.
 /fuzz/target/
 /fuzz/corpus/
@@ -169,7 +169,7 @@ $RECYCLE.BIN/
 # SQLite database rebuilt from the tree, it is machine-specific, and it goes
 # stale the moment a symbol moves; a tracked copy would be a second answer to
 # what the code says, and the tree is the first. ⚠ Whether this repository is
-# indexed at all is the operator's decision, and docs/AGENTS.md section 5 says
+# indexed at all is the operator's decision, and AGENTS.md section 5 says
 # to reach for it before grep wherever it is.
 /.codegraph/
 **/*.rs.bk

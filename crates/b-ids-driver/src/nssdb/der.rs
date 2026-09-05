@@ -16,7 +16,7 @@
 //! capture that must not be attempted rather than one taken with a profile
 //! that trusts nothing.
 //!
-//! `TODO/driver.md`, `DRIVER-11`.
+//! `docs/history/todo/driver.md`, `DRIVER-11`.
 
 /// The `rsaEncryption` algorithm identifier, `1.2.840.113549.1.1.1`.
 const OID_RSA_ENCRYPTION: &[u8] = &[0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01];

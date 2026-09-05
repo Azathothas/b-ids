@@ -15,7 +15,7 @@
 //! ⭐ The two meet at [`crate::acquire::Route::Installed`], which is this
 //! module's answer offered as an acquisition route.
 //!
-//! `TODO/driver.md`, `DRIVER-01`.
+//! `docs/history/todo/driver.md`, `DRIVER-01`.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -34,7 +34,7 @@ pub enum Family {
     ///
     /// ⚠ **The control that separates branding from engine.** Whatever differs
     /// between this and [`Self::Chrome`] on one host is branding, and whatever
-    /// does not is the engine. `TODO/corpus.md`, `CORPUS-02`.
+    /// does not is the engine. `docs/history/todo/corpus.md`, `CORPUS-02`.
     Chromium,
     /// Mozilla Firefox.
     ///
@@ -69,7 +69,7 @@ impl Family {
     /// none of them: it spells headless `-headless` and has no equivalent for
     /// most of the rest. A caller that treated all four alike would launch
     /// Firefox with arguments it reads as file names.
-    /// `TODO/corpus.md`, `CORPUS-02`.
+    /// `docs/history/todo/corpus.md`, `CORPUS-02`.
     #[must_use]
     pub fn is_chromium(self) -> bool {
         match self {
@@ -83,7 +83,7 @@ impl Family {
     /// ⛔ **Derived here rather than typed where a profile is built.** The
     /// corpus derives a route from `browser.name` by lower-casing it, so a name
     /// somebody typed is a second copy of this value with nothing checking that
-    /// the two agree. `TODO/corpus.md`, `CORPUS-02`.
+    /// the two agree. `docs/history/todo/corpus.md`, `CORPUS-02`.
     #[must_use]
     pub fn vendor_name(self) -> &'static str {
         match self {
@@ -99,7 +99,7 @@ impl Family {
     /// ⛔ **An unknown name is `None` rather than a default.** A caller naming a
     /// family this resolver has no branch for is asking for something that
     /// cannot be produced, and answering with Chrome would capture one browser
-    /// and label it another. `TODO/validator.md`, `VALID-03`, is the check that
+    /// and label it another. `docs/history/todo/validator.md`, `VALID-03`, is the check that
     /// says the same thing from the corpus side.
     #[must_use]
     pub fn parse(name: &str) -> Option<Self> {
@@ -140,7 +140,7 @@ pub enum Source {
     /// therefore answers nothing for that layout, and
     /// [`Source::VersionFlag`] is not asked on Windows, so without this an
     /// automation build would resolve as an executable nobody could version
-    /// and be skipped. `TODO/driver.md`, `DRIVER-08`.
+    /// and be skipped. `docs/history/todo/driver.md`, `DRIVER-08`.
     ManifestFile,
     /// The executable's own `--version` output.
     ///
@@ -168,7 +168,7 @@ pub enum Source {
     /// ⚠ A resolver without this source finds the executable, versions it from
     /// nothing, and drops it, which is the "an executable no source could
     /// version is reported as nothing" branch in [`resolve`]. Firefox would
-    /// have been invisible while being installed. `TODO/corpus.md`,
+    /// have been invisible while being installed. `docs/history/todo/corpus.md`,
     /// `CORPUS-02`.
     ApplicationIni,
 }
@@ -277,7 +277,7 @@ fn candidates(family: Family) -> Vec<PathBuf> {
             // different install mechanism and a different sandbox. The path is
             // listed so the resolver can REPORT one that is there; whether a
             // snap can be driven is a separate measurement and DRIVER-10 says
-            // so. TODO/driver.md, DRIVER-10.
+            // so. docs/history/todo/driver.md, DRIVER-10.
             "/snap/bin/chromium",
             "/Applications/Chromium.app/Contents/MacOS/Chromium",
         ],

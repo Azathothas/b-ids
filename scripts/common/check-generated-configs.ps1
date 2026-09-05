@@ -3,7 +3,7 @@
 # ⛔ MOST OF THE DAY-TO-DAY VALUE OF A CORPUS IS THE ARTEFACT SOMEBODY PASTES
 # INTO THEIR OWN TOOL, and a snippet that silently approximates is worse than no
 # snippet: it produces a client that is almost right, which is more
-# distinguishing than an honestly old one. TODO/publish.md, PUB-04.
+# distinguishing than an honestly old one. docs/history/todo/publish.md, PUB-04.
 #
 # ⛔ THE SH HALF CARRIES THE FULL CONTRACT AND THIS ONE FOLLOWS IT. What each
 # assertion is and why is written there; check-twins runs both halves over one
@@ -41,7 +41,7 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 $root = "$root".Trim()
 Set-Location $root
 
-# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. TODO/publish.md, PUB-11.
+# ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-generated-configs: no corpus is reachable, so nothing was checked')
@@ -88,7 +88,8 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-generated-configs: the client did not build')
     exit 2
 }
-$bin = Join-Path $root 'target/debug/b-ids-cli'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug/b-ids-cli'
 if (-not (Test-Path -LiteralPath $bin)) { $bin = "$bin.exe" }
 if (-not (Test-Path -LiteralPath $bin)) {
     [Console]::Error.WriteLine("check-generated-configs: $bin is not executable")

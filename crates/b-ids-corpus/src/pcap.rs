@@ -1,7 +1,7 @@
 //! A packet capture per profile, synthesised from the bytes it already carries.
 //!
 //! ⛔ **Every network engineer already has a tool for one format and this
-//! project did not produce it.** `TODO/publish.md`, `PUB-06`.
+//! project did not produce it.** `docs/history/todo/publish.md`, `PUB-06`.
 //!
 //! ⭐ **SYNTHESISED FROM THE PROFILE, never captured a second time.** The
 //! `ClientHello` is already stored byte for byte under `raw/v1/`, so this is a
@@ -28,7 +28,7 @@
 //! - ⛔ the time to live, the window size and the source port are **zero**,
 //!   and each is a field `HARNESS-11` measured that this project cannot read.
 //!   Writing a plausible value into any of them would be publishing a
-//!   measurement nobody took, which is `TODO/RULES.md` rule 1;
+//!   measurement nobody took, which is `docs/history/todo/RULES.md` rule 1;
 //! - the destination port is 443, which is the protocol's own well-known port
 //!   and the one thing here chosen so the file dissects at all.
 //!

@@ -221,7 +221,7 @@ fn profile_a_freshly_written_one_carries_the_licence_and_an_old_one_reads_it_bac
     // 2026-09-03 predates the field and the corpus is append-only, so a check
     // over the published set finds nobody carrying it. This is where the rule
     // is held instead: what the writer produces, and what a reader does with a
-    // profile written before the field existed. TODO/publish.md, PUB-07.
+    // profile written before the field existed. docs/history/todo/publish.md, PUB-07.
     let profile = b_ids_schema::fixture::profile();
     let text = serde_json::to_string(&profile).expect("it serialises");
     assert!(

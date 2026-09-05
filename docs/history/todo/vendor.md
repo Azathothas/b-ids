@@ -1,8 +1,8 @@
-# vendor
+# Archived vendor record
 
 Third-party source that lives in this tree and is compiled by it.
 
-[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) is the
+[`../docs/methodology/vendoring.md`](../../methodology/vendoring.md) is the
 rule. This is the work.
 
 [`INDEX.md`](INDEX.md) is the list. [`ENTRY.md`](ENTRY.md) is the form.
@@ -44,7 +44,7 @@ That is `HARNESS-13`, and it is a separate entry for that reason.
 
 Follow the practice the operator named, which is `Azathothas/bit-cli`'s and is
 in the reference corpus at
-[`../references/Azathothas__bit-cli/`](../references/Azathothas__bit-cli/). Its
+[`../references/Azathothas__bit-cli/`](../../../references/Azathothas__bit-cli/). Its
 shape is a manifest, a record of every local change, a derived patch series,
 and a scan. Four deliverables, in that order.
 
@@ -53,7 +53,7 @@ versioned, one object per vendored upstream carrying its name, its repository,
 its directory, the ref it was taken at, the commit that ref resolved to, the
 instant it was vendored, and an exclude list where every exclusion carries its
 own reason. bit-cli's file is the model and it is readable at
-[`../references/Azathothas__bit-cli/tree/vendor/upstream.json`](../references/Azathothas__bit-cli/tree/vendor/upstream.json).
+[`../references/Azathothas__bit-cli/tree/vendor/upstream.json`](../../../references/Azathothas__bit-cli/tree/vendor/upstream.json).
 
 **2. The tree.** Upstream `rustls/rustls` at tag `v/0.23.43`, which resolves to
 commit `fcf61cdbba30913cfd5b40aefa83989c6233812d`, read from the GitHub refs
@@ -210,7 +210,7 @@ unpatched manifest names directories that are not present and nothing in the
 workspace resolves at all.
 
 ⭐ **So the machinery was proved by a patch that had to exist rather than by one
-written to exercise it.** [`../patches/README.md`](../patches/README.md) carries
+written to exercise it.** [`../patches/README.md`](../../../patches/README.md) carries
 the change, the reason, and the command that reproduces the defect with its two
 exit codes.
 
@@ -230,8 +230,8 @@ and `check-no-secrets`. Two did not: `check-control-bytes` and the line-endings
 check both passed over all 210 files, so both keep the vendored tree in scope.
 
 ⭐ **The exemption is per vendored tree and per derived series, never the whole
-directory.** [`../vendor/upstream.json`](../vendor/upstream.json) and
-[`../patches/README.md`](../patches/README.md) are this project's own writing and
+directory.** [`../vendor/upstream.json`](../../../vendor/upstream.json) and
+[`../patches/README.md`](../../../patches/README.md) are this project's own writing and
 stay in scope, and that boundary fired the same session: the secret scan refused
 the patch record because a pasted cargo failure carried an absolute home path
 into a public repository. The record now describes the failure and gives its exit
@@ -247,7 +247,7 @@ payloads. Not one is a live credential. The reading is in the check's own header
 ⚠ **Those three numbers were wrong when this closing was first written**, taken
 from a read of the output rather than from a count of it, and the claim audit
 caught them before the push. ⛔ A number nobody counted is the defect
-[`../docs/conventions/prose.md`](../docs/conventions/prose.md) names in as many
+[`../docs/conventions/prose.md`](../../conventions/prose.md) names in as many
 words, and this project put one in a security check's own header.
 
 ### Mutation-proved

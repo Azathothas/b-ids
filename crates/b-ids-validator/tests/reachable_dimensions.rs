@@ -101,7 +101,7 @@ fn reachable_dimensions_a_family_the_resolver_cannot_produce_is_reported() {
     // ⚠ THE STAND-IN WAS `firefox` UNTIL 2026-09-04, when the resolver learned
     // that family. An example chosen because it was impossible stops testing
     // anything on the day it becomes possible, and this one went red on exactly
-    // the change that fixed the gap. TODO/corpus.md, CORPUS-02.
+    // the change that fixed the gap. docs/history/todo/corpus.md, CORPUS-02.
     let mut profile = b_ids_schema::fixture::profile();
     profile.browser.name = "Safari".to_owned();
     profile.id = profile.derived_id();

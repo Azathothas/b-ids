@@ -4,7 +4,7 @@
 //! client carrying one build's list is advertising which build it copied. It
 //! changes on a different schedule from everything else in a profile, which is
 //! why it is published beside the corpus rather than left buried in one.
-//! `TODO/corpus.md`, `CORPUS-04`.
+//! `docs/history/todo/corpus.md`, `CORPUS-04`.
 //!
 //! ⚠ **The codepoint's body is measured and its NAME is inferred.**
 //! `docs/inherited-claims.md` section 3 carries that split, and nothing here
@@ -51,9 +51,8 @@ pub struct AnchorList {
 pub enum NotAList {
     /// The profile does not carry the extension at all.
     ///
-    /// ⚠ **The ordinary case, and not an error.** Measured 2026-09-02: four of
-    /// the five profiles in this corpus do not carry it, and every Chrome `151`
-    /// captured here is one of them.
+    /// The ordinary case, and not an error. Extension absence is distinct from
+    /// a present two-byte body that encodes an empty list.
     Absent,
     /// The body is present and does not have the shape this reads.
     Malformed {
@@ -146,15 +145,22 @@ pub fn anchor_list(profile: &Profile) -> Result<AnchorList, NotAList> {
 
 /// Every list a set of profiles carries, in the order the profiles were given.
 ///
-/// ⚠ **A profile without the extension is skipped rather than reported**, which
-/// is what makes this usable over a whole corpus: most profiles do not carry it
-/// and that is a fact about the builds rather than about the corpus.
-#[must_use]
-pub fn anchor_lists(profiles: &[Profile]) -> Vec<AnchorList> {
-    profiles
-        .iter()
-        .filter_map(|profile| anchor_list(profile).ok())
-        .collect()
+/// Profiles without the extension are skipped. A malformed extension stops the
+/// batch so corruption cannot be reported as absence.
+///
+/// # Errors
+///
+/// Returns [`NotAList::Malformed`] for the first malformed extension.
+pub fn anchor_lists(profiles: &[Profile]) -> Result<Vec<AnchorList>, NotAList> {
+    let mut lists = Vec::new();
+    for profile in profiles {
+        match anchor_list(profile) {
+            Ok(list) => lists.push(list),
+            Err(NotAList::Absent) => {}
+            Err(error @ NotAList::Malformed { .. }) => return Err(error),
+        }
+    }
+    Ok(lists)
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -178,4 +184,42 @@ fn decode_hex(text: &str) -> Result<Vec<u8>, String> {
         at += 2;
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{NotAList, TRUST_ANCHORS, anchor_lists};
+
+    #[test]
+    fn batches_skip_absence_keep_empty_lists_and_refuse_malformed_bodies() {
+        let mut absent = b_ids_schema::fixture::profile();
+        absent
+            .tls
+            .extensions
+            .retain(|extension| extension.codepoint != TRUST_ANCHORS);
+        assert!(
+            anchor_lists(&[absent])
+                .expect("absence is not an error")
+                .is_empty()
+        );
+
+        let mut empty = b_ids_schema::fixture::profile();
+        let extension = empty
+            .tls
+            .extensions
+            .iter_mut()
+            .find(|extension| extension.codepoint == TRUST_ANCHORS)
+            .expect("the fixture carries the extension");
+        extension.length = 2;
+        extension.body_hex = "0000".to_owned();
+        let lists = anchor_lists(&[empty]).expect("an encoded empty list is valid");
+        assert_eq!(lists.len(), 1);
+        assert!(lists[0].identifiers.is_empty());
+
+        let malformed = b_ids_schema::fixture::profile();
+        assert!(matches!(
+            anchor_lists(&[malformed]),
+            Err(NotAList::Malformed { .. })
+        ));
+    }
 }

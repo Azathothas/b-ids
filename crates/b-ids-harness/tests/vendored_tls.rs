@@ -11,7 +11,7 @@
 //! records the negotiated version and suite on the capture for that reason, and
 //! `HARNESS-10` is where measuring-changed-the-measurement is checked.
 //!
-//! `TODO/vendor.md`, `VENDOR-01`.
+//! `docs/history/todo/vendor.md`, `VENDOR-01`.
 
 use rustls::ProtocolVersion;
 use rustls::crypto::CryptoProvider;

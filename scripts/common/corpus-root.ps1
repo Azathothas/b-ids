@@ -4,7 +4,7 @@
 # check-twins.sh is what stops the two drifting.
 #
 # ⛔ TWELVE CHECKS READ THE CORPUS AND EVERY ONE OF THEM ASSUMED THE WORKING
-# TREE, which has now LEFT the default branch. TODO/publish.md, PUB-11 and
+# TREE, which has now LEFT the default branch. docs/history/todo/publish.md, PUB-11 and
 # PUB-13.
 #
 # ⛔ THE ORDER: $env:B_IDS_CORPUS_ROOT if set, then the working tree if it holds
@@ -256,7 +256,7 @@ if (-not $resolved) { exit 2 }
 # ⭐ THE REF THE ANSWER CAME FROM, empty for the working tree and for an explicit
 # root. check-corpus asks for it because its own question is about a HISTORY:
 # now that the corpus is only on a branch, the history to read is that branch's
-# and not this repository's HEAD. TODO/publish.md, PUB-11 and PUB-13.
+# and not this repository's HEAD. docs/history/todo/publish.md, PUB-11 and PUB-13.
 if ($Ref) {
     Write-Output $resolved.Ref
     exit 0
@@ -268,7 +268,7 @@ if ($Ref) {
 # working tree is canonical" is therefore wrong whenever B_IDS_CORPUS_ROOT is
 # set, and check-data-branch exported that variable on the line ABOVE its own
 # guard, which disarmed it. ⚠ It reported `data branch ok` while comparing the
-# branch against itself. TODO/publish.md, PUB-11.
+# branch against itself. docs/history/todo/publish.md, PUB-11.
 if ($Source) {
     Write-Output $resolved.Source
     exit 0

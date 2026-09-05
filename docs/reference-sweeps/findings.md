@@ -277,7 +277,9 @@ it, and that is a finding rather than an excuse.** The fetch got six items, all
 of them dependency-bump pull requests, zero review comments, zero releases, zero
 tags, and an empty discussions list.
 
-⭐ **The decisions are in `TODO/cli-surface.md`, 6861 lines of them**, one entry
+⭐ **The decisions are in the origin repository's
+[`TODO/cli-surface.md`](../../references/Azathothas__bit-cli/tree/TODO/cli-surface.md),
+6861 lines of them**, one entry
 per unit of work with its measurement, its acceptance command and the command's
 real output. Three entries carry everything this project inherited:
 
@@ -421,10 +423,11 @@ honestly old one", reached by paying for it.
 
 ⭐ **And the unanswerable half is a service nobody provides.** A client with no
 root store of its own has three options for `0xca34` and none is obviously
-right: omit it, carry a captured list that ages, or send it empty, which is a
-shape no browser sends. `CORPUS-04` is this project's entry for publishing
-per-build trust-anchor lists with their capture dates and a documented
-recommendation.
+right: omit it, carry a captured list that ages, or send it empty. Captured
+Chrome 151 builds in this corpus send an empty list; captured Chrome and
+Chromium 152 builds carry 32 identifiers. That is a build difference, not a
+branding conclusion. This project publishes per-build lists with capture dates
+and states the trade-offs in [`../trust-anchors.md`](../trust-anchors.md).
 
 ---
 

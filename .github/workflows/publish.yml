@@ -1,4 +1,4 @@
-# The two publishing surfaces, triggered. TODO/publish.md, PUB-10.
+# The two publishing surfaces, triggered. docs/history/todo/publish.md, PUB-10.
 #
 # ⭐ WHAT THIS ADDS THAT NOTHING ELSE DID. PUB-01 built the assembler and the
 # release rules, PUB-02 built the data-branch rules, and both closed with
@@ -65,7 +65,8 @@ on:
     # an `on:` filter, so these two literals are the one place in this tree's
     # workflows that name a branch.
     branches: [main, source]
-    tags: ['v1.*']
+    # One conventional bootstrap release, followed by dated v1 corpus releases.
+    tags: ['v0.0.1', 'v1.*']
 
 # Least privilege at the top. The two jobs that write say so themselves.
 permissions:
@@ -333,7 +334,7 @@ jobs:
     # ⚠ A CHECKSUMS FILE PUBLISHED BESIDE THE ARTEFACT PROVES TRANSPORT, NOT
     # AUTHORSHIP, because whoever could replace one could replace the other.
     # The attestation is the part that proves authorship, and it applies on top
-    # rather than instead. TODO/publish.md, PUB-09.
+    # rather than instead. docs/history/todo/publish.md, PUB-09.
     permissions:
       contents: write
       id-token: write

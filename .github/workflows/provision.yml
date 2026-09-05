@@ -1,4 +1,4 @@
-# The provisioning leg, on a machine that is thrown away. TODO/driver.md,
+# The provisioning leg, on a machine that is thrown away. docs/history/todo/driver.md,
 # DRIVER-08.
 #
 # ⛔ THIS WORKFLOW PURGES EVERY BROWSER FROM THE RUNNER IT RUNS ON. That is what
@@ -20,7 +20,7 @@
 # ⛔ B_IDS_DISPOSABLE IS SET HERE AND IN trust-anchor.yml AND NOWHERE ELSE. The
 # tool needs it AND the platform's own CI marker, from two sources, because one
 # edit lifting one condition is how the purge path reached a developer laptop on
-# 2026-09-02. docs/HISTORY/README.md carries that incident.
+# 2026-09-02. docs/history/README.md carries that incident.
 #
 # ⛔ NOTHING HERE WRITES TO THE REPOSITORY. It publishes what the tool printed as
 # an artefact and the session that reads it writes the entry.

@@ -27,7 +27,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -51,14 +51,14 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 }
 $root = ($root | Select-Object -First 1).Trim()
 
-# ⚠ THE ONE FILL-IN FORM IS EXEMPT AND MUST BE. TODO/ENTRY.md is the shape an
+# ⚠ THE ONE FILL-IN FORM IS EXEMPT AND MUST BE. docs/history/todo/ENTRY.md is the shape an
 # entry is written from, so holding placeholders is its whole job, and a check
 # that failed on it would fail on a correct tree.
 # ⛔ IT NAMES ONE FILE, NOT A DIRECTORY. It used to exempt three directories
 # inherited from a template repository, none of which exist here now.
 # ⛔ BOTH implementations of this check are exempt, because each one contains
 # the patterns it looks for. Exempting only one is how the twins disagree.
-$exempt = '^(TODO/ENTRY\.md$|scripts/common/check-placeholders\.(sh|ps1))'
+$exempt = '^(docs/history/todo/ENTRY\.md$|scripts/common/check-placeholders\.(sh|ps1))'
 
 Push-Location $root
 try {
@@ -155,7 +155,7 @@ foreach ($rel in $files) {
 
         # 2. A template guidance comment, addressed to whoever was filling it in.
         # ⛔ CASE-SENSITIVE, because the twin's `grep -E` is and these are
-        # LITERALS from TODO/ENTRY.md rather than ideas. PowerShell's `-match`
+        # LITERALS from docs/history/todo/ENTRY.md rather than ideas. PowerShell's `-match`
         # is case-INSENSITIVE by default, so this half fired on an ordinary
         # sentence containing "fill every cell" while the POSIX half did not,
         # and check-twins reported the drift. `-cmatch` is the operator that
@@ -207,5 +207,5 @@ if ($categories -gt 0) {
     exit 1
 }
 
-Write-Output ("no placeholders survived in {0} files (TODO/ENTRY.md is exempt)" -f $files.Count)
+Write-Output ("no placeholders survived in {0} files (docs/history/todo/ENTRY.md is exempt)" -f $files.Count)
 exit 0

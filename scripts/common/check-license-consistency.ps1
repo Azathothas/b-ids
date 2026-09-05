@@ -1,8 +1,8 @@
 ﻿# check-license-consistency.ps1 - do the places that state this project's
 # licence all state the same one?
 #
-# ⭐ THE TWIN OF check-license-consistency.sh. TODO/publish.md, PUB-07, and
-# TODO/driver.md, DRIVER-09, is why a script in this directory does not land
+# ⭐ THE TWIN OF check-license-consistency.sh. docs/history/todo/publish.md, PUB-07, and
+# docs/history/todo/driver.md, DRIVER-09, is why a script in this directory does not land
 # without one.
 #
 # ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. A consumer who
@@ -23,7 +23,7 @@
 #
 # ⭐ AND THE DATA BRANCH, from a LOCAL ref rather than a fetch: its manifest
 # identifier and the bytes of its LICENSE. ⚠ NO LOCAL REF IS A SKIP naming the
-# branch, never a pass. TODO/publish.md, PUB-12.
+# branch, never a pass. docs/history/todo/publish.md, PUB-12.
 #
 # ⚠ THE READING IS THIS HALF'S OWN: ConvertFrom-Json where the twin uses jq, so
 # the pair compares two readings rather than two wrappers over one.
@@ -69,7 +69,7 @@ Set-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-license-consistency: no corpus is reachable, so nothing was checked')
@@ -158,14 +158,14 @@ $carrying = 0
 $predating = 0
 # ⚠ A FILESYSTEM WALK RATHER THAN `git ls-files`, because once the corpus
 # leaves the default branch the root is a materialised copy of the data branch,
-# which git knows nothing about as a working tree. TODO/publish.md, PUB-11.
+# which git knows nothing about as a working tree. docs/history/todo/publish.md, PUB-11.
 foreach ($file in @(Get-ChildItem -LiteralPath (Join-Path $corpusRoot 'corpus/v1') -Recurse -File -Filter '*.json' -ErrorAction SilentlyContinue |
             ForEach-Object { $_.FullName } | Sort-Object)) {
     if (-not $file) { continue }
     # ⚠ ON THE LEAF NAME, never on the path. $_.FullName is BACKSLASH-separated
     # on Windows, so a '*/index.json' pattern matches nothing there and the two
     # derived files were counted as profiles: the twin said 8 where the POSIX
-    # half said 6. Found by comparing the two answers. TODO/publish.md, PUB-11.
+    # half said 6. Found by comparing the two answers. docs/history/todo/publish.md, PUB-11.
     $leaf = [System.IO.Path]::GetFileName($file)
     if ($leaf -eq 'index.json' -or $leaf -eq 'latest.json') { continue }
     $profiles++
@@ -182,7 +182,7 @@ if ($profiles -eq 0) {
 # -- ⭐ the branch a consumer actually fetches --------------------------------
 #
 # ⛔ A LOCAL REF, NEVER A FETCH. ⚠ NO LOCAL REF AT ALL IS A SKIP naming the
-# branch, never a pass. TODO/publish.md, PUB-12.
+# branch, never a pass. docs/history/todo/publish.md, PUB-12.
 $dataBranch = 'data'
 $dataRef = ''
 & git rev-parse -q --verify "refs/heads/$dataBranch" 2>$null | Out-Null
@@ -301,5 +301,5 @@ $problems | ForEach-Object { [Console]::Error.WriteLine($_) }
 $seen | ForEach-Object { [Console]::Error.WriteLine($_) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A file that travels alone still has to say what it is.')
-[Console]::Error.WriteLine('TODO/publish.md, PUB-07.')
+[Console]::Error.WriteLine('docs/history/todo/publish.md, PUB-07.')
 exit 1

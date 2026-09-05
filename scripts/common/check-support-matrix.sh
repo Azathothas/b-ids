@@ -5,7 +5,7 @@
 # ⛔ A CLIENT AUTHOR CURRENTLY FINDS OUT WHICH STACK CAN EMIT WHICH PROFILE BY
 # BUILDING IT. A published table would answer that, and a published table
 # somebody maintains by hand goes stale the day a hole closes and nobody
-# notices. TODO/emitters.md, EMIT-01.
+# notices. docs/history/todo/emitters.md, EMIT-01.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -61,7 +61,7 @@ cd "$REPO_ROOT" || { printf 'check-support-matrix: cannot enter %s\n' "$REPO_ROO
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-support-matrix: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -90,7 +90,8 @@ cargo build -q -p b-ids-cli || {
   printf 'check-support-matrix: the client did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-cli"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-cli"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-support-matrix: %s is not executable\n' "$BIN" >&2; exit 2; }
 
@@ -172,5 +173,5 @@ fi
 printf 'support matrix check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A cell that says "approximately" is worse than one that says "cannot".\n' >&2
-printf 'TODO/emitters.md, EMIT-01.\n' >&2
+printf 'docs/history/todo/emitters.md, EMIT-01.\n' >&2
 exit 1

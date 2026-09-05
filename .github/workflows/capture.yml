@@ -1,5 +1,5 @@
 # The capture matrix. One job per browser, channel and host, every lane allowed
-# to fail alone. TODO/ci.md, CI-03.
+# to fail alone. docs/history/todo/ci.md, CI-03.
 #
 # ⛔ FAIL-FAST OFF, ALWAYS, AND IT IS THE ENTRY RATHER THAN A SETTING. The DEFAULT
 # behaviour of a matrix is to cancel every sibling when one lane fails, so a
@@ -132,7 +132,7 @@ jobs:
       # somewhere of its own for the derivation to stay checkable.
       # ⚠ `b-ids-corpus add --root .` writes into corpus/ and raw/, so this lane
       # needs them in the WORKING TREE rather than materialised under .tmp, which
-      # is what every read-only check uses. TODO/publish.md, PUB-13.
+      # is what every read-only check uses. docs/history/todo/publish.md, PUB-13.
       # ⛔ AND IT ASSERTS THE BRANCH CARRIED SOMETHING. A checkout of an empty or
       # missing ref would leave this lane adding a profile to nothing and
       # uploading it as though it had merged.
@@ -179,7 +179,7 @@ jobs:
       # ⛔ THE LANE NAMES ITS FAMILY, and it is the plan's value rather than a
       # constant here. Before 2026-09-02 the driver took whichever family
       # resolved first, so an `edge` lane would have driven Chrome and labelled
-      # it Chrome: a matrix column that reached nothing. TODO/corpus.md,
+      # it Chrome: a matrix column that reached nothing. docs/history/todo/corpus.md,
       # CORPUS-02.
       - name: what browser this runner has
         id: resolve
@@ -211,7 +211,7 @@ jobs:
       # nothing, and the run reported `corpus=pull-request requests:0 auto:0`
       # and success. Measured on run 33849934489: six lanes green, six captures
       # actually taken, zero profiles added, and it had been that way since the
-      # workflow was written. TODO/corpus.md, CORPUS-02.
+      # workflow was written. docs/history/todo/corpus.md, CORPUS-02.
       #
       # ⭐ THE IDENTITY TAKES THE CELL'S OWN VALUES, not the script's defaults.
       # The script writes `stable` and `branded: true` because a laptop capture
@@ -324,7 +324,7 @@ jobs:
     # operator 2026-09-02: `contents: write` and `pull-requests: write` on this
     # job alone, never at the top of the file and never a personal access token.
     # Every lane above keeps `contents: read`, because a lane runs a browser it
-    # downloaded. TODO/ci.md, CI-04.
+    # downloaded. docs/history/todo/ci.md, CI-04.
     #
     # ⚠ IT ALSO NEEDS A REPOSITORY SETTING THIS FILE CANNOT GRANT: Actions must
     # be allowed to create pull requests. That is the operator's to enable, and

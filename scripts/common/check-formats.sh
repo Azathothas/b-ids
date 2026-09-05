@@ -4,7 +4,7 @@
 #
 # ⛔ JSON IS ONE CONSUMER, NOT THE CONSUMER. A corpus reachable only by writing a
 # JSON walker is a corpus most people copy values out of by hand, and a value
-# copied by hand stops matching the day the build moves. TODO/schema.md,
+# copied by hand stops matching the day the build moves. docs/history/todo/schema.md,
 # SCHEMA-08 and SCHEMA-12.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
@@ -29,7 +29,7 @@
 # ⚠ IT GENERATES INTO A THROWAWAY DIRECTORY under .tmp and never into the tree.
 # The published copies are assembled by the publish path from this same
 # generator, which is what makes them checkable here before anything fetches
-# them. TODO/publish.md, PUB-02 and PUB-03, are the surfaces that carry them.
+# them. docs/history/todo/publish.md, PUB-02 and PUB-03, are the surfaces that carry them.
 #
 # Usage:
 #   sh scripts/common/check-formats.sh
@@ -69,7 +69,7 @@ cd "$REPO_ROOT" || { printf 'check-formats: cannot enter %s\n' "$REPO_ROOT" >&2;
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-formats: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -97,7 +97,8 @@ cargo build -q -p b-ids-corpus || {
   printf 'check-formats: the corpus crate did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-corpus"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-corpus"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-formats: %s is not executable\n' "$BIN" >&2; exit 2; }
 
@@ -294,5 +295,5 @@ fi
 printf 'formats check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'One generator, canonical JSON in, every format out. Never hand-edit a\n' >&2
-printf 'generated file. TODO/schema.md, SCHEMA-08 and SCHEMA-12.\n' >&2
+printf 'generated file. docs/history/todo/schema.md, SCHEMA-08 and SCHEMA-12.\n' >&2
 exit 1

@@ -1,4 +1,4 @@
-# harness
+# Archived harness record
 
 The capture oracle. A listener a browser is pointed at, the parsers that read
 what arrives, and the traps that cost somebody a day each.
@@ -9,7 +9,7 @@ what arrives, and the traps that cost somebody a day each.
 
 ## HARNESS-01. The oracle is a server, not a client
 
-**Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 14
+**Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 14
 **Category** harness, **Priority** P0, **Effort** L, **Status** done
 
 ### Problem
@@ -152,7 +152,7 @@ reassembly rather than the harness.
 
 ## HARNESS-02. The switches, each of which exists because something went wrong without it
 
-**Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 14
+**Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 14
 **Category** harness, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
@@ -222,7 +222,7 @@ exit=0
 and the command refused it by name. That shape is worth keeping in the record
 because it is the one that cost nothing to be wrong about: a flag that parsed
 and did nothing would be the "setting or flag that no code reads" row in
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 and a session reading the usage would have believed the capability existed.
 
 ⚠ **The refusal is what turned into a hang when it stopped refusing.** Its test
@@ -295,7 +295,7 @@ is the argument for taking the cheap route first and finding out.
 
 ## HARNESS-03. Read HTTP/2 settings, the window update and the priority block
 
-**Source** the founding brief; the block is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5
+**Source** the founding brief; the block is [`../docs/inherited-claims.md`](../../inherited-claims.md) section 5
 **Category** harness, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
@@ -306,7 +306,7 @@ order, no window increment, no pseudo-header order and no priority block.
 ### Premise
 
 Read rather than measured here. Values and their sources are in
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 4.
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 4.
 
 ### Approach
 
@@ -482,7 +482,7 @@ socket's.
 
 ## HARNESS-04. Decode HPACK Huffman, because header order is behind it
 
-**Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 14
+**Source** the founding brief; the harness shape is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 14
 **Category** harness, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
@@ -504,7 +504,7 @@ choice the encoder made and it is part of the fingerprint.
 
 ⚠ **Test vectors exist and are not in this tree.** The reference corpus of HPACK
 test cases is a separate upstream project, and it was deliberately deleted from
-[`../references/hyperium__h2/`](../references/hyperium__h2/) during the sweep;
+[`../references/hyperium__h2/`](../../../references/hyperium__h2/) during the sweep;
 that project's `PROVENANCE.md` records where it came from. Fetching it is part
 of this entry.
 
@@ -556,7 +556,7 @@ exit=0
 sh scripts/common/mine-repo.sh http2jp/hpack-test-case --out references
 ```
 
-[`../references/http2jp__hpack-test-case/`](../references/http2jp__hpack-test-case/)
+[`../references/http2jp__hpack-test-case/`](../../../references/http2jp__hpack-test-case/)
 at commit `8a1406e7d14bfcb6c046021f13cc15cfb162726d`, fetched 2026-09-01 through
 `gh`, with no gaps reported. ⭐ **47,142 cases across 446 story files**, and
 every one decodes.
@@ -669,7 +669,7 @@ than a capture that is missing something.
 
 ## HARNESS-05. Settle the priority block, and do it first
 
-**Source** [`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md) finding 1
+**Source** [`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md) finding 1
 **Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
@@ -681,7 +681,7 @@ profile may carry the field.
 
 ### Premise
 
-⭐ **Measured elsewhere, off frame bytes, on two versions.** [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 has
+⭐ **Measured elsewhere, off frame bytes, on two versions.** [`../docs/inherited-claims.md`](../../inherited-claims.md) section 5 has
 the table. The origin repository's probe reads the HEADERS flags byte for
 `0x20` and decodes the five bytes behind it, and reports exclusive, dependency
 zero, weight 255 for both Chrome 151 and Chrome 152.
@@ -705,7 +705,7 @@ weight byte. Report the raw five bytes as well as the parsed values.
 ⭐ **Run a positive control in the same session.** A probe that finds nothing may
 have been looking in the wrong place, and only a control separates the two. The
 control is any client known to write a block; the patch that makes one is cited
-in [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 4.
+in [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 4.
 
 Run it against at least two browsers and two versions, so a disagreement with
 the predicted answer is localisable to a version rather than to the probe.
@@ -726,7 +726,7 @@ cargo run -p b-ids-harness -- --plain --json --handshakes 8
 
 Passing means: the output records, per connection, whether the priority flag was
 set and the five raw bytes when it was; the positive control shows the flag set;
-and the result is written into [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 with the browser, the build and
+and the result is written into [`../docs/inherited-claims.md`](../../inherited-claims.md) section 5 with the browser, the build and
 the date, beside the inherited reading and saying whether the two agree.
 
 ### Closing
@@ -771,7 +771,7 @@ only the route to it changed.
 ⭐ **Two browsers and two versions, which is what the approach asked for**, so a
 disagreement would have been localisable to a version rather than to the probe.
 There was none. The reading is written into
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 with the
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 5 with the
 browser, the build, the date and the conditions, beside the inherited reading,
 and it says the two agree.
 
@@ -828,7 +828,7 @@ which is still open and is what makes this repeatable rather than driven once.
 
 ## HARNESS-06. Parse permissively, emit exactly
 
-**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
+**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../../inherited-claims.md) section 8
 **Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
@@ -842,7 +842,7 @@ and passes the next run.
 
 Measured elsewhere and inherited: three of the sixteen GREASE values failed that
 way, so about one handshake in five.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 carries
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 8 carries
 it.
 
 ### Approach
@@ -956,7 +956,7 @@ component with two jobs, and the schema is the seam between them.
 
 ## HARNESS-07. A browser opens sockets it abandons, and it resumes
 
-**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
+**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../../inherited-claims.md) section 8
 **Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
@@ -1053,7 +1053,7 @@ hellos share their bytes.
 ⛔ **No value in it is a measurement.** It rebuilds the SHAPE of a reading that
 is inherited: thirteen connections from one navigation, the first carrying no
 HTTP/2 at all, every one after the second offering a pre-shared key.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 carries
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 8 carries
 that reading and its source.
 
 ⚠ **Only a terminated connection carries both a `ClientHello` and HTTP/2
@@ -1088,7 +1088,7 @@ eleven observations rather than one.
 
 ## HARNESS-08. One handshake is not a sample
 
-**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8
+**Source** the founding brief; the trap is [`../docs/inherited-claims.md`](../../inherited-claims.md) section 8
 **Category** harness, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
@@ -1100,7 +1100,7 @@ times in five, and passes.
 ### Premise
 
 Arithmetic over the measured GREASE behaviour in
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 2.
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 2.
 
 ### Approach
 
@@ -1323,7 +1323,7 @@ the planted panic rather than the harness. Reverted, the suite is green again at
 #### ⛔ Windows cannot run the coverage-guided half, and three routes were measured
 
 ⚠ **Each failed differently, and the reasons are kept so the next session does
-not walk them again.** [`../fuzz/README.md`](../fuzz/README.md) carries the
+not walk them again.** [`../fuzz/README.md`](../../../fuzz/README.md) carries the
 table; the short form:
 
 | route | what stopped it |
@@ -1333,13 +1333,13 @@ table; the short form:
 | GNU nightly | libFuzzer's own `FuzzerExtFunctionsWindows.cpp` does not compile under mingw `g++`. Its Windows support is written for MSVC. |
 
 ⭐ **The fourth route is a Linux container and it is what produced the run
-above.** [`../docs/containers.md`](../docs/containers.md) is the procedure, and
+above.** [`../docs/containers.md`](../../containers.md) is the procedure, and
 it was followed: the platform was named on the pull, the image was removed
 afterwards, and the engine was left stopped exactly as it was found.
 
 #### ⚠ The trap that cost a whole run, and it will cost a CI job the same way
 
-[`../rust-toolchain.toml`](../rust-toolchain.toml) pins this tree to an exact
+[`../rust-toolchain.toml`](../../../rust-toolchain.toml) pins this tree to an exact
 stable compiler, and that file applies to every directory under the repository
 root. A nightly IMAGE is not enough: rustup reads the toolchain file, downloads
 the pinned stable, and then `-Z sanitizer` is refused as a nightly-only option.
@@ -1368,7 +1368,7 @@ will hit this on a runner.
 
 ## HARNESS-10. Check whether measuring changed what was measured
 
-**Source** the founding brief; [`../docs/methodology/experiments.md`](../docs/methodology/experiments.md)
+**Source** the founding brief; [`../docs/methodology/experiments.md`](../../methodology/experiments.md)
 **Category** harness, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
@@ -1526,7 +1526,7 @@ measurement:
 - `DRIVER-04`, the root store a browser actually reads, is the entry that has to
   land before a trust-store capture is even meaningful on Windows.
 
-⚠ It is written into `TODO/PROGRESS.md` as an open question with that
+⚠ It is written into `docs/history/todo/PROGRESS.md` as an open question with that
 recommendation rather than left as a sentence in a closed entry.
 
 #### What the suite proves that the driven run cannot
@@ -1732,7 +1732,7 @@ included, and the process created nothing in its own working directory.
 #### ⭐ The retention question, settled BEFORE the mode was built
 
 ⚠ The Approach said to settle it first, so it is settled and it is written into
-[`../SECURITY.md`](../SECURITY.md)'s threat model rather than here.
+[`../SECURITY.md`](../../../SECURITY.md)'s threat model rather than here.
 
 | the question | the answer |
 | --- | --- |
@@ -1744,7 +1744,7 @@ included, and the process created nothing in its own working directory.
 name, at parse time, before a socket is opened.** A flag that merely INTENDED to
 keep nothing while a writing switch sat beside it would be the "a setting or flag
 that no code reads" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md).
 
 ⭐ **And the assertion is over a DIRECTORY rather than over that list.**
 `oracle_no_retain_creates_no_file` runs the binary in an empty directory and
@@ -1783,7 +1783,7 @@ what it must not be is silent.
 ⛔ **Nothing is hosted, no endpoint exists, and no address of this project's
 answers anything.** ⭐ That is the state the Decision asks for rather than an
 unfinished one: hosting needs a person's approval, and
-[`../docs/HUMAN.md`](../docs/HUMAN.md) is where a decision like that is recorded
+[`../docs/HUMAN.md`](../../HUMAN.md) is where a decision like that is recorded
 when somebody takes it.
 
 ⚠ **A hosted deployment would also need a certificate a browser already trusts**,
@@ -2056,7 +2056,7 @@ looks exactly like a real result.
 
 ⛔ **The root is generated for the run and never committed.** It is a capture
 tool. Nothing about it may resemble something to ship in a client, and
-[`../docs/security/secrets.md`](../docs/security/secrets.md) is the rule.
+[`../docs/security/secrets.md`](../../security/secrets.md) is the rule.
 
 ⛔ **Both profiles record their own `captured.trust`**, so the comparison is
 readable from the corpus afterwards rather than only from a job log.
@@ -2079,10 +2079,10 @@ handshake.
 ### ⚠ The acceptance names `50-` rather than `30-`
 
 ⛔ **`30-` was taken** by
-[`../experiments/30-resumption-control.sh`](../experiments/30-resumption-control.sh).
+[`../experiments/30-resumption-control.sh`](../../../experiments/30-resumption-control.sh).
 [`corpus.md`](corpus.md), `CORPUS-05`, states the renumbering rule and why the
 Prove block is corrected rather than the file renamed; the script here is
-[`../experiments/50-trust-anchor.sh`](../experiments/50-trust-anchor.sh).
+[`../experiments/50-trust-anchor.sh`](../../../experiments/50-trust-anchor.sh).
 
 ### Closing
 
@@ -2159,7 +2159,7 @@ needs the matrix rather than a switch flip.
 
 ### ⛔ An inherited claim is refuted here, and the wording is kept
 
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 carried:
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 8 carried:
 **"Chrome on Linux does not read the user's NSS database for server
 authentication"**, with `certutil -t "C,,"` reported as still producing
 `CertificateUnknown`.
@@ -2171,7 +2171,7 @@ root added with exactly that command into `~/.pki/nssdb`.
 ⚠ **And it is not reliable.** Round 2's trust-store leg accepted **no connection
 at all**, so the route works sometimes and not always on this runner. ⛔ The
 honest statement is that the claim as written does not hold here, not that the
-NSS route is a good way to capture. [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md)
+NSS route is a good way to capture. [`../docs/history/README.md`](../README.md)
 carries the original wording with this measurement under it.
 
 ### ⛔ The teardown is counted, not remembered
@@ -2467,7 +2467,7 @@ said, and that the platform cannot be provisioned unattended.
 
 ⛔ **`certutil -addstore -user Root` on `windows-latest` returns 124**, which is
 coreutils `timeout`'s verdict: the command was still running when its bound
-expired. [`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 9
+expired. [`../docs/conventions/shell.md`](../../conventions/shell.md) section 9
 states what 124 means, and it is a different fact from a failure.
 
 ```text
@@ -2540,6 +2540,6 @@ inside it, so the number was meaningless and would have sent the next reader
 looking for a certutil that returns zero and does nothing.
 
 ⭐ **Same class as reading an exit code through a pipe**, which
-[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 2 already
+[`../docs/conventions/shell.md`](../../conventions/shell.md) section 2 already
 names. The status is captured from the command now, and 124 is what it actually
 says. ⚠ Two runs were needed for this entry and the first one is why.

@@ -1,7 +1,7 @@
 //! The smallest client, as a command.
 //!
 //! ⛔ **Four things and nothing else**: which profile, where to send it, and
-//! the two exit codes that say what happened. `TODO/library.md`, `LIB-02`.
+//! the two exit codes that say what happened. `docs/history/todo/library.md`, `LIB-02`.
 
 use std::net::ToSocketAddrs;
 use std::process::ExitCode;
@@ -23,11 +23,11 @@ usage: b-ids-cli --profile ID --url URL
                  per stack this tree cannot run, each carrying the file and the
                  line it was read at. ⛔ A cell is a run and a hole is a
                  reading, and the two are different kinds rather than two
-                 colours of one. TODO/emitters.md, EMIT-01.
+                 colours of one. docs/history/todo/emitters.md, EMIT-01.
 
 ⭐ What it proves: the bytes a profile describes can be put on a wire. Point it
    at `b-ids-harness --raw` and the harness reads back the same profile, field
-   by field, which is the acceptance in TODO/library.md.
+   by field, which is the acceptance in docs/history/todo/library.md.
 
 exit 0 sent, 1 refused, 2 the arguments could not be read.";
 

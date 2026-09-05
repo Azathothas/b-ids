@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -23,7 +23,7 @@ serde_json.workspace = true
 # pins a corpus has one home in this tree and a second implementation of SHA-256
 # for one identifier is what that home exists to prevent; a build dependency is
 # not in a consumer runtime graph, so the read-only path b-ids-corpus names in
-# its own manifest stays read-only. TODO/library.md, LIB-01.
+# its own manifest stays read-only. docs/history/todo/library.md, LIB-01.
 b-ids-harness = { path = "../b-ids-harness" }
 serde_json.workspace = true
 

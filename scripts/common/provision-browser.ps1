@@ -1,7 +1,7 @@
 ﻿# provision-browser.ps1 - purge every browser of one family from this machine,
 # install the build that was asked for, and prove both.
 #
-# ⭐ THE TWIN OF provision-browser.sh. TODO/driver.md, DRIVER-08 and DRIVER-09.
+# ⭐ THE TWIN OF provision-browser.sh. docs/history/todo/driver.md, DRIVER-08 and DRIVER-09.
 #
 # ⛔ ON A MACHINE THIS PROJECT CONTROLS COMPLETELY, IT MEASURED WHATEVER
 # SOMEBODY ELSE'S IMAGE INSTALLED. A capture lane called `b-ids-driver resolve`,
@@ -98,7 +98,7 @@ if ($Route -ne 'vendor' -and $Route -ne 'for-testing') {
 if ($Route -eq 'vendor' -and $Version) {
     [Console]::Error.WriteLine('provision-browser: -Route vendor serves the CURRENT build only, so -Version ' + $Version)
     [Console]::Error.WriteLine('  cannot be honoured. Use -Route for-testing for an exact build, and read that it')
-    [Console]::Error.WriteLine('  is UNBRANDED. TODO/driver.md, DRIVER-08.')
+    [Console]::Error.WriteLine('  is UNBRANDED. docs/history/todo/driver.md, DRIVER-08.')
     exit 2
 }
 if ($Route -eq 'for-testing' -and -not $Version) {
@@ -129,7 +129,7 @@ if (Test-Path 'variable:IsWindows') {
 # disposable.
 # ⭐ THE ROUTE TABLE IS PER FAMILY AND IT IS DATA, and it is defined HERE, above
 # the plan, because -Plan reads it too. ⛔ It purges the NAMED family and not
-# every browser. TODO/driver.md, DRIVER-10.
+# every browser. docs/history/todo/driver.md, DRIVER-10.
 $familyRoutes = @{
     chrome = @{
         packages       = @('google-chrome-stable', 'google-chrome-beta', 'google-chrome-unstable')
@@ -182,7 +182,7 @@ $routes = $familyRoutes[$Browser]
 function Write-Plan {
     # ⛔ KEYED ON THE FAMILY TOO. A plan that described Chrome's archive for an
     # edge request is a plan nobody could act on, and -Plan is what a person
-    # reads before letting this near a machine. TODO/driver.md, DRIVER-10.
+    # reads before letting this near a machine. docs/history/todo/driver.md, DRIVER-10.
     if ($os -eq 'linux') {
         Write-Output ('purge   apt-get remove --purge of ' + ($routes.packages -join ' ') + ', then ' + ($routes.paths -join ' ') + ' and the /usr/bin links')
     } else {
@@ -281,7 +281,7 @@ if ($disposable -ne '1' -or [string]::IsNullOrEmpty($onARunner)) {
     [Console]::Error.WriteLine('provision-browser: this machine is not marked disposable, so nothing was purged.')
     [Console]::Error.WriteLine('  B_IDS_DISPOSABLE=' + $shownDisposable + ' and CI=' + $shownRunner + ', and BOTH are required.')
     [Console]::Error.WriteLine('  Set them only on a machine that is thrown away afterwards.')
-    [Console]::Error.WriteLine('  Run with -Plan to read what it would do. TODO/driver.md, DRIVER-08.')
+    [Console]::Error.WriteLine('  Run with -Plan to read what it would do. docs/history/todo/driver.md, DRIVER-08.')
     exit 2
 }
 
@@ -303,7 +303,8 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('provision-browser: the driver did not build')
     exit 2
 }
-$driver = Join-Path $root 'target' | Join-Path -ChildPath 'debug' | Join-Path -ChildPath 'b-ids-driver'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$driver = Join-Path $targetDir 'debug' | Join-Path -ChildPath 'b-ids-driver'
 if (-not (Test-Path -LiteralPath $driver)) { $driver = $driver + '.exe' }
 if (-not (Test-Path -LiteralPath $driver)) {
     [Console]::Error.WriteLine('provision-browser: ' + $driver + ' is not there')
@@ -346,7 +347,7 @@ function Invoke-PurgeWindows {
         foreach ($key in (Get-ItemProperty $regRoot)) {
             $name = $key.DisplayName
             # ⛔ THE NAMED FAMILY ONLY. A run provisioning one family must not
-            # uninstall the other. TODO/driver.md, DRIVER-10.
+            # uninstall the other. docs/history/todo/driver.md, DRIVER-10.
             if ($name -match $routes.uninstallMatch) {
                 $uninstall = $key.UninstallString
                 if ($uninstall -match 'setup\.exe') {
@@ -414,7 +415,7 @@ $archive = ''
 
 # ⛔ KEYED ON THE FAMILY AS WELL AS THE PLATFORM AND THE ROUTE. Two families do
 # not install the same way, and a case that keyed on the platform alone
-# installed Chrome whatever -Browser said. TODO/driver.md, DRIVER-10.
+# installed Chrome whatever -Browser said. docs/history/todo/driver.md, DRIVER-10.
 $key = $Browser + '/' + $os + '/' + $Route
 if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
     # ⛔ A REFUSAL WITH ITS REASON, which is a complete outcome. Measured
@@ -422,7 +423,7 @@ if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
     # way it does for Chrome, and its enterprise index is keyed by build.
     [Console]::Error.WriteLine('provision-browser: -Route vendor serves a CURRENT-build URL, and the vendor')
     [Console]::Error.WriteLine('  publishes none for ' + $Browser + '. Its index is keyed by build, so use -Route for-testing')
-    [Console]::Error.WriteLine('  with the build you want. TODO/driver.md, DRIVER-10.')
+    [Console]::Error.WriteLine('  with the build you want. docs/history/todo/driver.md, DRIVER-10.')
     exit 2
 } elseif ($key -eq 'chrome/linux/vendor') {
     $url = 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'
@@ -449,7 +450,7 @@ if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
     # ⛔ THE INDEX IS READ BY THE DRIVER AND SO IS THE URL IT LIVES AT. A second
     # spelling in this file would 404 on its own the day the vendor moves the
     # file, and nothing would compare the two. The driver's route table is what
-    # decides which index a family has. TODO/driver.md, DRIVER-10.
+    # decides which index a family has. docs/history/todo/driver.md, DRIVER-10.
     #
     # ⚠ AN INDEX PUBLISHES A SUBSET OF BUILDS. Measured 2026-09-02: the Chrome
     # automation index carried 67 builds of 151 and neither of the two the
@@ -584,7 +585,7 @@ if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
     }
 } else {
     [Console]::Error.WriteLine('provision-browser: the ' + $Route + ' route on ' + $os + ' is not implemented yet')
-    [Console]::Error.WriteLine('  Run with -Plan to read what it would do. TODO/driver.md, DRIVER-08.')
+    [Console]::Error.WriteLine('  Run with -Plan to read what it would do. docs/history/todo/driver.md, DRIVER-08.')
     exit 2
 }
 
@@ -601,7 +602,7 @@ if (Test-Path -LiteralPath $archive) {
     # ⭐ WRITTEN WHERE A CAPTURE CAN READ IT, not only printed. Every profile
     # this project has published carries captured.acquisition null, which is the
     # weakest provenance the artefact half can have in a project whose product
-    # is provenance. TODO/driver.md, DRIVER-08.
+    # is provenance. docs/history/todo/driver.md, DRIVER-08.
     #
     # ⚠ THE ROUTE NAME IS THE PROFILE'S VOCABULARY, not this script's flag. The
     # flag is for-testing and the recorded route is chrome-for-testing, which is

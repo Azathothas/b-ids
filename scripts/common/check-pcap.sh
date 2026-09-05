@@ -3,7 +3,7 @@
 # does it say it was synthesised?
 #
 # ⛔ A SYNTHESISED CAPTURE THAT IS INDISTINGUISHABLE FROM A REAL ONE is the one
-# thing TODO/publish.md, PUB-06, forbids. A reader who opens this file expecting
+# thing docs/history/todo/publish.md, PUB-06, forbids. A reader who opens this file expecting
 # a capture has to be told, in the file, in a field a standard tool displays.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
@@ -192,5 +192,5 @@ fi
 printf 'pcap check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A synthesised capture that is indistinguishable from a real one is the\n' >&2
-printf 'one thing this entry forbids. TODO/publish.md, PUB-06.\n' >&2
+printf 'one thing this entry forbids. docs/history/todo/publish.md, PUB-06.\n' >&2
 exit 1

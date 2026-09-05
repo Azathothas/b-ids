@@ -7,7 +7,7 @@
 //! # The shape, and why it has this shape
 //!
 //! - **Three measured halves**, [`tls`], [`http2`] and [`http`], each defined
-//!   by its own entry in `TODO/schema.md`.
+//!   by its own entry in `docs/history/todo/schema.md`.
 //! - **`digests` and `raw` are siblings of the measured halves, never inside
 //!   them.** A digest is derived from a profile; a profile is never derived
 //!   from a digest, and putting a derived value inside a measured block is how
@@ -66,5 +66,5 @@ pub const SCHEMA_ID: &str = "browser-profile/1";
 /// may use it. `scripts/common/check-license-consistency.sh` is what asserts
 /// that the repository's own `LICENSE`, the workspace manifest, the published
 /// JSON Schema, the corpus index, every profile and the release body all agree.
-/// `TODO/publish.md`, `PUB-07`.
+/// `docs/history/todo/publish.md`, `PUB-07`.
 pub const LICENSE: &str = "0BSD";

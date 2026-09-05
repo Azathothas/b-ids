@@ -4,7 +4,7 @@
 #
 # ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER, and
 # that property is free right up until somebody rewrites the branch.
-# TODO/publish.md, PUB-02.
+# docs/history/todo/publish.md, PUB-02.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -68,7 +68,7 @@ cd "$REPO_ROOT" || { printf 'check-data-branch: cannot enter %s\n' "$REPO_ROOT" 
 # was exit 2, "could not run". That state cost two CI jobs: ubuntu runs
 # --strict, which fails on any skip, and windows asserts that only check-twins
 # may skip. ⚠ Neither job needed changing in the end, because the source branch
-# gave this check its question back. TODO/publish.md, PUB-11 and PUB-13.
+# gave this check its question back. docs/history/todo/publish.md, PUB-11 and PUB-13.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-data-branch: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -90,7 +90,7 @@ CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
 # this check reported `data branch ok: 200 file(s) regenerated, identical over
 # two builds` and exited 0, having compared the published branch against a
 # materialised copy of that same branch. ⛔ A check cannot pass by comparing
-# something to itself, and this one could. TODO/publish.md, PUB-11.
+# something to itself, and this one could. docs/history/todo/publish.md, PUB-11.
 # ⛔ TWO ANSWERS ARE CANONICAL AND TWO ARE REFUSED, and the refusals are what
 # this guard is for.
 #
@@ -150,7 +150,8 @@ cargo build -q -p b-ids-corpus || {
   printf 'check-data-branch: the corpus crate did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-corpus"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-corpus"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-data-branch: %s is not executable\n' "$BIN" >&2; exit 2; }
 
@@ -250,7 +251,7 @@ if [ -n "$REF" ]; then
       # branch is wrong, there is simply less of it than the generator produces.
       # ⚠ The gate then went red on a state the publisher clears on the next
       # push, which is a red nobody can act on and the kind that gets ignored.
-      # TODO/publish.md, PUB-14.
+      # docs/history/todo/publish.md, PUB-14.
       #
       # ⭐ THE TWO CASES ARE DISTINGUISHABLE, so they are distinguished:
       #
@@ -271,7 +272,7 @@ if [ -n "$REF" ]; then
       # seventh profile landed. Measured 2026-09-04: adding one Firefox profile
       # changed nineteen published artefacts, every one of them an aggregate,
       # and this check called it a rewritten branch. Under that rule no capture
-      # could ever be published again. TODO/driver.md, DRIVER-11.
+      # could ever be published again. docs/history/todo/driver.md, DRIVER-11.
       #
       # ⛔ The derived files are still compared by CONTENT rather than trusted:
       # every artefact line the published manifest carries for an IMMUTABLE path
@@ -290,7 +291,7 @@ if [ -n "$REF" ]; then
       # read as BEHIND until this leg existed.
       # ⭐ The branch's own manifest lists every artefact it published, so a path
       # in the manifest and not in the tree is a consumer's 404 and a rewrite.
-      # TODO/publish.md, PUB-14.
+      # docs/history/todo/publish.md, PUB-14.
       MISSING=0
       if git show "$REF:MANIFEST.json" > "$OUT/published-manifest.json" 2>/dev/null; then
         # ⛔ THE CARRIAGE RETURN IS STRIPPED. jq on Windows writes CRLF, so every
@@ -351,8 +352,8 @@ if [ -n "$REF" ]; then
       fi
 
       if [ "$GONE" = 0 ] && [ "$CHANGED" = 0 ] && [ "$SUMS_LOST" = 0 ] &&
-        [ "$MISSING" = 0 ] && [ "$ADDED" -gt 0 ]; then
-        PENDING=$ADDED
+        [ "$MISSING" = 0 ] && { [ "$ADDED" -gt 0 ] || [ "$DERIVED_CHANGED" -gt 0 ]; }; then
+        PENDING=$((ADDED + DERIVED_CHANGED))
       else
         note "the regenerated tree is $LOCAL_TREE and $REF carries $PUBLISHED_TREE, so what is published is not what this corpus derives to"
         [ "$GONE" = 0 ] ||
@@ -364,7 +365,6 @@ if [ -n "$REF" ]; then
         [ "$MISSING" = 0 ] ||
           note "$MISSING path(s) the branch's own manifest lists are not on the branch, so a consumer fetching one gets a 404"
       fi
-      : "$DERIVED_CHANGED"
     fi
   else
     note "the regenerated tree could not be written into a temporary index, so nothing was compared"
@@ -390,9 +390,9 @@ if [ "$COUNT" = 0 ]; then
   elif [ "$PENDING" -gt 0 ]; then
     printf '  ⚠ The %s branch is %s and BEHIND by %s artefact(s): every path it\n' \
       "$BRANCH" "$PUBLISHED" "$PENDING"
-    printf '  carries is still produced and still byte-identical, and the assembler\n'
-    printf '  now produces more. ⛔ Nothing published is wrong, so this is reported\n'
-    printf '  rather than failed. The publisher adds them on the next push.\n'
+    printf '  carries is still produced and every immutable artefact is byte-identical.\n'
+    printf '  The assembler adds or refreshes derived artefacts only, so this is reported\n'
+    printf '  rather than failed. The publisher appends the new tree on the next push.\n'
   else
     printf '  ⚠ A SKIP IS NOT A PASS: the %s branch is %s, so the regenerated tree was\n' \
       "$BRANCH" "$PUBLISHED"
@@ -405,5 +405,5 @@ fi
 printf 'data branch check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A consumer pinning a commit on this branch keeps working forever, and\n' >&2
-printf 'that property is free. TODO/publish.md, PUB-02.\n' >&2
+printf 'that property is free. docs/history/todo/publish.md, PUB-02.\n' >&2
 exit 1

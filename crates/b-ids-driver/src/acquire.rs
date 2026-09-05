@@ -3,7 +3,7 @@
 //! ⭐ **Every download URL will one day 404, and by then the build is gone.** A
 //! capture pipeline with one acquisition route stops working on that day, and
 //! the corpus can only ever describe what somebody happened to install.
-//! `TODO/driver.md`, `DRIVER-05`.
+//! `docs/history/todo/driver.md`, `DRIVER-05`.
 //!
 //! ⛔ **This project never redistributes a browser binary.** It publishes
 //! measurements, versions, digests and the URL a build was fetched from. The
@@ -83,7 +83,7 @@ pub enum Route {
     /// same-major, and the confound is no longer the version. ⛔ It IS the
     /// packaging: a distributor may build against system libraries and disable
     /// features, so what differs between the two is branding OR packaging and
-    /// this pair does not separate them. `TODO/corpus.md`, `CORPUS-02`.
+    /// this pair does not separate them. `docs/history/todo/corpus.md`, `CORPUS-02`.
     ChromiumUbuntuPpa,
 }
 
@@ -122,7 +122,7 @@ impl Route {
     /// enterprise index serves the vendor's own product and is branded, which
     /// is why the two indexes answer differently.
     ///
-    /// `TODO/driver.md`, `DRIVER-06`.
+    /// `docs/history/todo/driver.md`, `DRIVER-06`.
     #[must_use]
     pub fn branded(self) -> Option<bool> {
         match self {
@@ -219,7 +219,7 @@ pub fn plan(family: Family, version: Option<&str>) -> Vec<Candidate> {
     ];
     // ⛔ READ FROM THE ROUTE TABLE, never from a branch here. A family with no
     // first-party index gets no candidate offered, and saying so is better than
-    // a URL that cannot answer. TODO/driver.md, DRIVER-10.
+    // a URL that cannot answer. docs/history/todo/driver.md, DRIVER-10.
     if let (Some(index), Some(route), true) =
         (index_url(family), index_route(family), version.is_some())
     {
@@ -403,7 +403,7 @@ pub enum IndexRefusal {
     /// ⛔ **A refusal rather than a fallback.** `index_url` answers `None` for
     /// Chromium and for Firefox, so nothing should reach this reader with one,
     /// and if something does, guessing a reader would parse one vendor's index
-    /// with another vendor's meanings for every field. TODO/corpus.md,
+    /// with another vendor's meanings for every field. docs/history/todo/corpus.md,
     /// CORPUS-02.
     NoIndexForFamily(Family),
     /// The build is published and not for this platform.
@@ -619,7 +619,7 @@ pub struct Download {
 ///
 /// ⭐ **This is the route table, and it is data rather than a case statement in
 /// a caller.** Adding a family is a row here and a reader beside it.
-/// `TODO/driver.md`, `DRIVER-10`.
+/// `docs/history/todo/driver.md`, `DRIVER-10`.
 ///
 /// ⚠ `None` for a family this project has found no first-party index for.
 #[must_use]
@@ -631,14 +631,14 @@ pub fn index_url(family: Family) -> Option<&'static str> {
         // ⛔ NONE IS THE MEASURED ANSWER, not a gap left for later.
         //
         // Firefox has a first-party archive, and this project has not read it.
-        // ⚠ Writing a URL here from memory is exactly what TODO/RULES.md rule 1
+        // ⚠ Writing a URL here from memory is exactly what docs/history/todo/RULES.md rule 1
         // refuses: the value would be inherited rather than measured, and a
         // fetcher pointed at a URL nobody checked fails at provisioning time
         // with an error nobody can attribute.
         //
         // ⭐ `plan` offers no candidate for a family that answers None, so it
         // is reachable through Route::Installed and Route::Cache and nothing
-        // else. TODO/corpus.md, CORPUS-02.
+        // else. docs/history/todo/corpus.md, CORPUS-02.
         Family::Firefox => None,
     }
 }

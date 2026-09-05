@@ -1,4 +1,4 @@
-# library
+# Archived library record
 
 A crate another project can depend on, and the smallest possible tool that
 proves the crate works.

@@ -2,7 +2,7 @@
 //!
 //! ⭐ **"What changed between these two versions" is the single most useful
 //! artefact for anybody maintaining a client**, and it is free once two profiles
-//! exist. `TODO/validator.md`, `VALID-06`.
+//! exist. `docs/history/todo/validator.md`, `VALID-06`.
 //!
 //! ⛔ **It names the change, not the digest.** "This header moved from position
 //! twelve to position five" is something a reader can act on; "the digest

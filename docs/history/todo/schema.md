@@ -1,4 +1,4 @@
-# schema
+# Archived schema record
 
 The data model, its provenance rules, and the formats generated from it.
 Everything else in this project is a producer or a consumer of what these
@@ -10,7 +10,7 @@ entries define, so they are first.
 
 ## SCHEMA-01. The profile: one browser, one build, one platform, one channel, one instant
 
-**Source** the founding brief; the four provenance kinds are [`../docs/glossary.md`](../docs/glossary.md)
+**Source** the founding brief; the four provenance kinds are [`../docs/glossary.md`](../../glossary.md)
 **Category** schema, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
@@ -58,7 +58,7 @@ The three halves the model carries, each defined in its own entry:
 
 `digests` and `raw` are siblings of the measured halves, never inside them. A
 sibling `third_party` block is the shape `curl-impersonate` already uses for
-derived values, and [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md)
+derived values, and [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md)
 section 3 is the reading.
 
 The identifier is derived from the four keys and is not a hash. It exists so a
@@ -98,7 +98,7 @@ carries are the library and its doc-tests, which have none yet.
 
 ### What landed
 
-- [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json),
+- [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../../../crates/b-ids-schema/schema/browser-profile-1.schema.json),
   written first, and the Rust types checked against it.
 - The three measured halves in their own modules, with `digests` and `raw` as
   siblings. ⭐ A test asserts that shape rather than trusting the sentence:
@@ -147,7 +147,7 @@ and asserts the checker reports it.
 
 ## SCHEMA-02. The TLS half, in wire order, with unknown codepoints kept
 
-**Source** the founding brief; the extension model is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 1
+**Source** the founding brief; the extension model is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 1
 **Category** schema, **Priority** P0, **Effort** M, **Status** done
 
 ### Problem
@@ -160,7 +160,7 @@ cannot be retaken.
 ### Premise
 
 Measured by reading, at named commits, in
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md):
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md):
 one reference database uses a boolean per extension over a closed enum, and one
 TLS library documents that unknown extensions are dropped during parsing. A
 third library holds an ordered list of codepoint-and-body pairs and refuses an
@@ -257,14 +257,14 @@ for a suite to keep passing over less than it was written for.
 **Every field here is a shape, and this project has captured nothing.** The
 fixture's values are shaped like a real capture and are not one; the support
 module says so in as many words, and no field of it may be copied into the
-corpus. [`../docs/inherited-claims.md`](../docs/inherited-claims.md) is where a
+corpus. [`../docs/inherited-claims.md`](../../inherited-claims.md) is where a
 value that came from somewhere else lives.
 
 ---
 
 ## SCHEMA-03. The HTTP/2 half, as an ordered frame sequence
 
-**Source** the founding brief; the units are [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 2
+**Source** the founding brief; the units are [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 2
 **Category** schema, **Priority** P0, **Effort** S, **Status** done
 
 ### Problem
@@ -279,7 +279,7 @@ the protocol default, which is a visible difference.
 Read rather than measured. Three independent sources agree on a Chrome settings
 list; one of them reports that a settings key present in one version is absent
 in a later one, so the set is not version-invariant.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 4 carries
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 4 carries
 the values and their status.
 
 ### Approach
@@ -302,7 +302,7 @@ Separately:
 Must not: represent an absent setting as a default value, or record the priority
 block only as a rendered Akamai string. That string cannot distinguish "no block
 sent" from "block not read", which is why the field is recorded as the parsed
-five bytes and the string is derived from it. [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 5 is what
+five bytes and the string is derived from it. [`../docs/inherited-claims.md`](../../inherited-claims.md) section 5 is what
 that field is worth today.
 
 ### Prove
@@ -391,7 +391,7 @@ them by default is a corpus that will one day publish one.
 inherited capture carried `cache-control: max-age=0` and another did not, with
 the cause unisolated. Neither capture carries it, and the founding brief was
 wrong about its own source.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 10 has the
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 10 has the
 refutation and section 6 has both header sets in full.
 
 ⭐ **The entry survives the refutation because nothing in it rested on that
@@ -494,7 +494,7 @@ into evidence.
 
 ## SCHEMA-05. Provenance is per field, with four kinds and no more
 
-**Source** the founding brief; the four provenance kinds are [`../docs/glossary.md`](../docs/glossary.md)
+**Source** the founding brief; the four provenance kinds are [`../docs/glossary.md`](../../glossary.md)
 **Category** schema, **Priority** P0, **Effort** S, **Status** done
 
 ### Problem
@@ -903,7 +903,7 @@ implicit here.** ⛔ What the ruling refused is twelve hand-written
 implementations in the crate that already owns four parsers.
 
 ⚠ **The premise and the title above are unchanged**, per
-[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md): a
+[`../docs/methodology/authoring.md`](../../methodology/authoring.md): a
 re-scope is written underneath rather than edited over the top of what was
 believed.
 
@@ -999,7 +999,7 @@ disagreeing the first time either moved.
 
 ## SCHEMA-09. Name every field for the wire, because three quantities have two units
 
-**Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 2
+**Source** [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 2
 **Category** schema, **Priority** P1, **Effort** S, **Status** done
 
 ### Problem
@@ -1110,7 +1110,7 @@ asserts the two entries agree about it rather than leaving that to a reading.
 
 ## SCHEMA-10. Record the shuffle as a property, and consider recording its seed
 
-**Source** the founding brief; the ceiling is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 5
+**Source** the founding brief; the ceiling is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 5
 **Category** schema, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
@@ -1141,7 +1141,7 @@ Two things stay pinned regardless: the pre-shared-key extension is last by
 specification, and GREASE occupies the two ends.
 
 Must not: assert equality between two captures of a shuffling browser.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 2 states
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 2 states
 what two consecutive captures of one binary have to show, and why reproducing a
 recorded order exactly is a reason to doubt the capture.
 
@@ -1215,7 +1215,7 @@ exit=0
 
 ⛔ **A COUNT, never the orders themselves.** A profile is one connection, and
 carrying the other connections' orders inside it would fold a set of captures
-into one, which [`../docs/inherited-claims.md`](../docs/inherited-claims.md)
+into one, which [`../docs/inherited-claims.md`](../../inherited-claims.md)
 section 8 says never to do.
 
 ⛔ **Fewer than two is a contradiction and `Profile::check` refuses it.** A state
@@ -1252,7 +1252,7 @@ worth of work in `b_ids_corpus::profile_from` rather than a design question.
 
 ## SCHEMA-11. The multipart boundary, which is a per-browser surface nobody listed
 
-**Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 8
+**Source** [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 8
 **Category** schema, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
@@ -1312,7 +1312,7 @@ exit=0
 
 **This project has not captured a form submission from any browser.** The two
 patterns in the test are inherited by reading somebody else's client at a named
-commit, and [`../docs/inherited-claims.md`](../docs/inherited-claims.md) is
+commit, and [`../docs/inherited-claims.md`](../../inherited-claims.md) is
 where a value this project did not measure lives. ⛔ Nothing from there is
 published as data, so `http.multipart_boundary` is `None` in every profile and
 in both fixtures, and `multipart_no_profile_in_this_tree_claims_a_boundary`
@@ -1458,7 +1458,7 @@ formats check failed, 1 problem(s):
   cbor: required, and the support matrix does not publish it
 
 One generator, canonical JSON in, every format out. Never hand-edit a
-generated file. TODO/schema.md, SCHEMA-08 and SCHEMA-12.
+generated file. docs/history/todo/schema.md, SCHEMA-08 and SCHEMA-12.
 rc=1
 ```
 
@@ -1601,7 +1601,7 @@ sqlite3 was built without JSON1", which is a fact about the host. A dump whose
 `CREATE TABLE` no longer declares the column the format promises produces exactly
 that error, and the check reported `sqlite3 load: ok-no-json1` and exited 0. It
 is the "a step that exits 0 having done nothing it was asked to do" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 written by the session that was proving the guards. ⭐ The capability is probed
 separately from the question now, so "no JSON1 here" and "the column is not
 there" are two answers.
@@ -1630,7 +1630,7 @@ assertion is there.
 ### Problem
 
 `u8`, `u16` and `u32` are each a bare `{"type": "integer"}` in
-[`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json),
+[`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../../../crates/b-ids-schema/schema/browser-profile-1.schema.json),
 so a consumer validating a profile against the PUBLISHED schema accepts a value
 the Rust type cannot hold. A profile claiming 999 in a byte-wide field satisfies
 the contract this project publishes and fails the one it implements.
@@ -1842,4 +1842,3 @@ all asserted that the NAME was gone. ⭐ Each now asserts that the name is there
 and the VALUE is not, which is the rule this entry replaced the old one with.
 ⛔ None was deleted: a test removed here would be a door that stopped being
 watched.
-

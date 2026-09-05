@@ -4,7 +4,7 @@
 #
 # ⛔ NOTHING IN THIS REPOSITORY WAS EVER PUBLISHED UNTIL A TRIGGER EXISTED, and
 # the first thing a trigger can get wrong is irreversible: a force push over the
-# data branch discards every commit a consumer pinned. TODO/publish.md, PUB-10.
+# data branch discards every commit a consumer pinned. docs/history/todo/publish.md, PUB-10.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -23,9 +23,9 @@
 #      check-data-branch, so a tree that fails either publishes nothing;
 #   7. the archive epoch is READ from check-release.sh rather than typed here,
 #      because a second copy of it is a value in two places;
-#   8. ⭐ THE RULES ACTUALLY REFUSE. Nine refusal paths are driven against the
-#      built binary and each exit code is read from the process that produced
-#      it. A guard whose test has never been seen to fail is theatre.
+#   8. ⭐ THE RULES ACTUALLY REFUSE. Release and data-branch cases are driven
+#      against the built binary, and each exit code is read from the process
+#      that produced it. A guard whose test has never failed is theatre.
 #
 # -- ⚠ WHAT IT DOES NOT DO ---------------------------------------------------
 #
@@ -76,7 +76,7 @@ cd "$REPO_ROOT" || { printf 'check-publish: cannot enter %s\n' "$REPO_ROOT" >&2;
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-publish: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -135,6 +135,8 @@ trigger '^    branches:.*main' \
   "the workflow does not trigger on a push to the default branch"
 trigger '^    tags:' \
   "the workflow does not trigger on a pushed tag, so no release is ever cut"
+printf '%s\n' "$ON" | grep -qF "tags: ['v0.0.1', 'v1.*']" ||
+  note "the tag trigger does not admit exactly v0.0.1 and the dated v1 series"
 
 # -- 2: the write is job-scoped ----------------------------------------------
 #
@@ -244,7 +246,8 @@ cargo build -q -p b-ids-corpus || {
   printf 'check-publish: the corpus crate did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-corpus"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-corpus"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-publish: %s is not executable\n' "$BIN" >&2; exit 2; }
 
@@ -278,6 +281,8 @@ fi
 
 drive 0 'a well-formed tag over an assembled tree is releasable' \
   release --tree "$OUT/tree" --tag v1.2026.01.01.1 --notes "$OUT/NOTES.md"
+drive 0 'the explicit bootstrap tag is releasable once' \
+  release --tree "$OUT/tree" --tag v0.0.1
 drive 1 'a zero-padded counter is not the tag this rule produces' \
   release --tree "$OUT/tree" --tag v1.2026.01.01.01
 drive 1 'a malformed date is refused' release --tree "$OUT/tree" --tag v1.2026.1.1.1
@@ -285,6 +290,11 @@ drive 1 'a tag naming another layout is refused' release --tree "$OUT/tree" --ta
 printf 'v1.2026.01.01.1\n' > "$OUT/released.txt"
 drive 1 'a tag that already carries a release is refused' \
   release --tree "$OUT/tree" --tag v1.2026.01.01.1 --existing "$OUT/released.txt"
+printf 'v0.0.1\n' > "$OUT/released.txt"
+drive 1 'the bootstrap release is immutable once published' \
+  release --tree "$OUT/tree" --tag v0.0.1 --existing "$OUT/released.txt"
+drive 1 'another conventional semantic version is not a corpus release tag' \
+  release --tree "$OUT/tree" --tag v0.0.2
 
 if [ "$JSON" = 1 ]; then
   printf '{"schema":"check-publish/1","triggers":%s,"jobs":%s,"writes":%s,"cases":%s,"problems":%s}\n' \
@@ -304,5 +314,5 @@ fi
 printf 'publish check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A force push over the data branch discards every commit a consumer\n' >&2
-printf 'pinned. TODO/publish.md, PUB-10.\n' >&2
+printf 'pinned. docs/history/todo/publish.md, PUB-10.\n' >&2
 exit 1

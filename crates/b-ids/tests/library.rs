@@ -21,7 +21,7 @@ use b_ids::{Version, at, client_hints, header_order, latest_stable, profiles, re
 /// panicked with `NotFound` on the index while every other case here passed,
 /// because the others read what the BUILD embedded and only this one goes back
 /// to disk. ⭐ That asymmetry is the point of the case and it is why it is the
-/// one that broke. TODO/publish.md, `PUB-11` and `PUB-13`.
+/// one that broke. docs/history/todo/publish.md, `PUB-11` and `PUB-13`.
 fn corpus_root() -> PathBuf {
     b_ids_schema::root::corpus_root_or_explain(Path::new(env!("CARGO_MANIFEST_DIR")))
 }

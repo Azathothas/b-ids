@@ -5,7 +5,7 @@
 # check-twins.sh is what stops the two drifting.
 #
 # ⛔ FETCHING AND PARSING A CORPUS IS WORK. A DEPENDENCY LINE IS NOT.
-# TODO/publish.md, PUB-05.
+# docs/history/todo/publish.md, PUB-05.
 #
 # ⚠ NO sha256sum HERE. A native PowerShell session has none, and the job exists
 # on both platforms even where the tool does not: Get-FileHash is the platform's
@@ -96,7 +96,8 @@ $corpusDir = Join-Path (Join-Path $corpusRoot 'corpus') 'v1'
 $profileCount = @(Get-ChildItem -LiteralPath $corpusDir -Recurse -File -Filter '*.json' |
         Where-Object { $_.Name -ne 'index.json' -and $_.Name -ne 'latest.json' }).Count
 
-$node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue
+$node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue |
+    Select-Object -First 1
 $built = 0
 $driven = 0
 foreach ($eco in $ecosystems) {
@@ -185,5 +186,5 @@ if ($problems.Count -eq 0) {
 foreach ($p in $problems) { [Console]::Error.WriteLine('  ' + $p) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A package that needs the network to answer fails in the environment its')
-[Console]::Error.WriteLine('consumers care most about. TODO/publish.md, PUB-05.')
+[Console]::Error.WriteLine('consumers care most about. docs/history/todo/publish.md, PUB-05.')
 exit 1

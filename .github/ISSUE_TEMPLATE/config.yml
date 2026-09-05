@@ -5,8 +5,5 @@
 # than an omission. GitHub requires an absolute URL there, which would hardcode
 # one owner and one repository name into a tree that has to stay relocatable.
 #
-# The security route belongs in SECURITY.md, which this project does not have
-# yet: nothing is published from here, so there is no artefact to report
-# against. DOC-03 in TODO/docs.md is the entry that writes it when the first
-# release ships, and adding the link back here is part of that entry.
+# Security reports follow SECURITY.md. No contact link is duplicated here.
 blank_issues_enabled: true

@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -23,5 +23,5 @@ serde_json.workspace = true
 [dev-dependencies]
 # ⛔ THE HARNESS IS THE THING IT IS POINTED AT, and the acceptance runs the
 # listener in process rather than spawning a binary: a test that orchestrated a
-# process would be testing the orchestration. TODO/library.md, LIB-02.
+# process would be testing the orchestration. docs/history/todo/library.md, LIB-02.
 b-ids-harness = { path = "../b-ids-harness" }

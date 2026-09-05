@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -16,9 +16,9 @@ workspace = true
 b-ids-schema = { path = "../b-ids-schema" }
 serde.workspace = true
 serde_json.workspace = true
-# ⛔ The VENDORED tree, at vendor/rustls. TODO/vendor.md, VENDOR-01.
+# ⛔ The VENDORED tree, at vendor/rustls. docs/history/todo/vendor.md, VENDOR-01.
 rustls.workspace = true
-# The authority --ca-out mints per run. TODO/harness.md, HARNESS-13.
+# The authority --ca-out mints per run. docs/history/todo/harness.md, HARNESS-13.
 rcgen.workspace = true
 
 [dev-dependencies]

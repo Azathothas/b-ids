@@ -1,7 +1,7 @@
 ﻿# check-manual-path.ps1 - does every automated job name the command a person
 # runs instead, and does that command resolve on this host?
 #
-# ⭐ THE TWIN OF check-manual-path.sh. TODO/ci.md, CI-08.
+# ⭐ THE TWIN OF check-manual-path.sh. docs/history/todo/ci.md, CI-08.
 #
 # ⛔ A PROJECT WHOSE ONLY PATH TO A CAPTURE IS ONE PROVIDER'S AUTOMATION
 # DEGRADES TO NOTHING WHEN THAT PROVIDER DOES. The test is one sentence: if the
@@ -141,5 +141,5 @@ if ($problems.Count -eq 0) {
 foreach ($problem in $problems) { [Console]::Error.WriteLine($problem) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('Every automated job names the command a person runs instead, as a')
-[Console]::Error.WriteLine('manual comment inside the job. TODO/ci.md, CI-08.')
+[Console]::Error.WriteLine('manual comment inside the job. docs/history/todo/ci.md, CI-08.')
 exit 1

@@ -236,7 +236,7 @@ pub struct Config {
     /// says so: a hosted endpoint receives traffic from people, which is the
     /// one thing this project's scope boundary says it does not do, and that
     /// question needs an answer written down and a person's approval before
-    /// anything is stood up. `TODO/harness.md`, `HARNESS-12`.
+    /// anything is stood up. `docs/history/todo/harness.md`, `HARNESS-12`.
     ///
     /// ⚠ **It answers over CLEARTEXT HTTP/1.1 and nothing else**, and the note
     /// on every other connection says why rather than leaving a caller waiting.
@@ -463,7 +463,13 @@ impl Oracle {
             notes: Vec::new(),
         };
 
-        let _ = stream.set_read_timeout(Some(self.config.read_timeout));
+        if let Err(error) = stream.set_read_timeout(Some(self.config.read_timeout)) {
+            capture.notes.push(Note::new(
+                "connection",
+                format!("could not set the read timeout: {error}"),
+            ));
+            return capture;
+        }
         let mut source = stream;
         let bytes = match read_first_message(&mut source, self.config.protocol) {
             Ok(bytes) => bytes,
@@ -506,7 +512,7 @@ impl Oracle {
                         "nothing was returned to the caller: this surface completes a TLS \
                          handshake and answering over it needs an HPACK encoder, which this \
                          crate does not have. --plain is the surface that answers. \
-                         TODO/harness.md, HARNESS-12",
+                         docs/history/todo/harness.md, HARNESS-12",
                     ));
                 }
             }
@@ -534,7 +540,7 @@ impl Oracle {
                 "serve",
                 "nothing was returned to the caller: this connection is HTTP/2, and answering \
                  over it needs an HPACK encoder, which this crate does not have. \
-                 TODO/harness.md, HARNESS-12",
+                 docs/history/todo/harness.md, HARNESS-12",
             ));
             return;
         }

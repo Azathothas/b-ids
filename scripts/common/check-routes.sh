@@ -88,7 +88,7 @@ cd "$REPO_ROOT" || { printf 'check-routes: cannot enter %s\n' "$REPO_ROOT" >&2; 
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-routes: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -133,7 +133,8 @@ if [ "$GENERATE" = 1 ]; then
     printf 'check-routes: the corpus crate did not build\n' >&2
     exit 2
   }
-  BIN="$REPO_ROOT/target/debug/b-ids-corpus"
+  TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+  BIN="$TARGET_DIR/debug/b-ids-corpus"
   [ -x "$BIN" ] || BIN="$BIN.exe"
   [ -x "$BIN" ] || { printf 'check-routes: %s is not executable\n' "$BIN" >&2; exit 2; }
   # ⛔ READ FROM THE PROCESS, UNPIPED.
@@ -248,7 +249,7 @@ if [ "$GENERATE" = 1 ]; then
   # ⚠ One line per route, tab separated, so the loop below forks nothing per
   # iteration. TOOL-18 measured that a command substitution in a `while read`
   # assignment prefix is re-evaluated on every line.
-  # ⛔ jq ON WINDOWS WRITES CRLF, measured here and recorded in TODO/corpus.md,
+  # ⛔ jq ON WINDOWS WRITES CRLF, measured here and recorded in docs/history/todo/corpus.md,
   # CORPUS-02, when it first bit. The carriage return lands on the LAST field of
   # every line AND on the end of every value, so a comparison against a file
   # this project wrote with LF fails on every route while both sides are
@@ -296,7 +297,7 @@ if [ "$GENERATE" = 1 ]; then
       */latest/*)
         # ⛔ A CONSUMER FOLLOWING `latest` MUST NEVER BE HANDED A PRE-RELEASE
         # BUILD, and the route names the profile it came from, so this asks the
-        # profile rather than the path. TODO/corpus.md, CORPUS-03.
+        # profile rather than the path. docs/history/todo/corpus.md, CORPUS-03.
         channel=$(jq -r '.browser.channel' "$profile" 2>/dev/null | tr -d '\r')
         if [ "$channel" != "stable" ]; then
           PROBLEMS="$PROBLEMS  $route: latest names a $channel profile

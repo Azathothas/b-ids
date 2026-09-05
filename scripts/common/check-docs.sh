@@ -1,54 +1,18 @@
 #!/bin/sh
-# check-docs.sh - do the documents still resolve, and are they written the way
-# this repository writes documents?
+# check-docs.sh - validate first-party Markdown links, cited paths, vocabulary, and reachability.
 #
-# The defect this exists to catch is a document that was true when it was
-# written. Four shapes of it, and every one is invisible to every other check:
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-#   - a link or a path that stopped resolving when something was renamed;
-#   - a fenced shell block that does not parse, which is a block nobody can
-#     copy and paste;
-#   - an angle-bracket placeholder inside a shell block: a human reads it as
-#     "fill this in" and bash reads it as a redirect, so the reader gets a
-#     cryptic syntax error instead of an obvious instruction.
-#
-# ⚠ CONTROL BYTES ARE NOT CHECKED HERE. That rule scanned markdown only while
-# every .ts, .py, .rs and .sh in the tree went unchecked, so it moved to
-# check-control-bytes.sh, which reads every text file. Run both.
-#
-# ⚠ THE CHARACTER HALF OF THE PROSE RULE IS NOT HERE. No em dash and no
-# character outside the five belong to check-markers.sh, which reads every
-# tracked text file rather than markdown alone. Run both. What stays here is
-# what is specific to a document: links, fenced blocks, placeholders, banned
-# vocabulary and orphan pages.
-#
-# ⛔ WHAT IT DOES NOT CHECK IS WHETHER A CLAIM IS TRUE. That is a reading, and
-# it belongs to the review pass. A guard that tried to verify prose would
-# either pass vacuously or refuse legitimate writing, and both are worse than
-# an honest scope.
-#
-# ⚠ EVERY PER-LINE TEST IS DONE IN awk, NOT IN A SHELL LOOP. The first version
-# ran a pipeline per line of every file, which is tens of thousands of process
-# spawns, and it did not finish in two minutes on Windows. One awk pass per
-# file replaced it. The shell only touches the filesystem, which is the one
-# thing awk should not be doing here.
-#
-# Usage:
-#   sh scripts/common/check-docs.sh
-#   sh scripts/common/check-docs.sh --json
-#   sh scripts/common/check-docs.sh --path docs
-#
-# Exit codes: 0 clean, 1 something is wrong, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-docs.sh [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 set -u
 
 # ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
 # `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
 # '\t')" read ...` forks once per line. Measured 2026-09-02: a command
 # substitution costs 35 ms on this host, and check-docs.sh reads about 1100
-# lines that way. TODO/tooling.md, TOOL-18.
+# lines that way. docs/history/todo/tooling.md, TOOL-18.
 TAB=$(printf '\t')
 
 JSON=0
@@ -112,13 +76,15 @@ cd "$REPO_ROOT" || { printf '%s: cannot enter %s\n' "$SELF" "$REPO_ROOT" >&2; ex
 # ⚠ The exemption is vendor/NAME/ and never vendor/, so vendor/upstream.json,
 # which this project wrote, is checked like any other file here. An exemption
 # on the whole directory would have covered our own record by accident.
-# TODO/vendor.md, VENDOR-01.
+# docs/history/todo/vendor.md, VENDOR-01.
 
 list_files() {
   {
     git ls-files -- "$@" 2>/dev/null
     git ls-files --others --exclude-standard -- "$@" 2>/dev/null
-  } | sort -u | grep -vE '^(references|vendor/[^/]+)/'
+  } | sort -u |
+    while IFS= read -r p; do [ -f "$p" ] && printf '%s\n' "$p"; done |
+    grep -vE '^(references|vendor/[^/]+)/'
 }
 
 
@@ -126,7 +92,7 @@ list_files() {
 # here was removed rather than emptied. It covered a template directory whose
 # links are written relative to where the file will live in a PROJECT rather
 # than where it sits in the tree. This repository is not a template and has no
-# such directory: the one fill-in form it keeps, TODO/ENTRY.md, is written from
+# such directory: the one fill-in form it keeps, docs/history/todo/ENTRY.md, is written from
 # where it lives, so its links resolve here. ⚠ An exemption for a path that
 # does not exist is dead configuration, and the next file to land under that
 # path would have inherited it silently.
@@ -174,7 +140,7 @@ report() { PROBLEMS="$PROBLEMS  $1
 "; COUNT=$((COUNT + 1)); }
 
 # ⭐ EVERY LINK TARGET THAT EXISTS IS COLLECTED HERE AND ASKED ABOUT ONCE, after
-# the loop. TODO/tooling.md, TOOL-18: this was a `git check-ignore` per link,
+# the loop. docs/history/todo/tooling.md, TOOL-18: this was a `git check-ignore` per link,
 # 966 of them, and a subprocess costs 54.5 ms on the host that measured it.
 : > "$TMP/linktargets"
 
@@ -201,7 +167,7 @@ for f in $FILES; do
       # not, which is how most of this tree names a file. Seven code spans named
       # a licence filler, its twin and a directory of texts, none of which
       # existed; every link resolved and this check was green throughout.
-      # TODO/tooling.md TOOL-10.
+      # docs/history/todo/tooling.md TOOL-10.
       #
       # ⛔ NARROW, AND IT REFUSES TO GUESS. A span is a path only when it holds
       # a slash, ends in a known extension, has no whitespace, no angle bracket

@@ -6,8 +6,8 @@
 use std::path::Path;
 
 use b_ids_corpus::publish::{
-    CHECKSUMS, MANIFEST, NotReleasable, build, moving_tags, parse_tag, plan_release, tag,
-    would_rewrite,
+    CHECKSUMS, INITIAL_RELEASE_TAG, MANIFEST, NotReleasable, build, moving_tags, parse_tag,
+    plan_initial_release, plan_release, tag, would_rewrite,
 };
 
 /// The workspace root, canonicalised. ⚠ **This is where scratch output goes and
@@ -26,7 +26,7 @@ fn workspace_root() -> std::path::PathBuf {
 /// ⛔ **Resolved, never assumed.** `corpus/` and `raw/` are to leave the default
 /// branch, and this suite reached them by walking up from its own manifest, so
 /// it was one of the three legs that still failed with the corpus moved out of
-/// the working tree. TODO/publish.md, `PUB-11`.
+/// the working tree. docs/history/todo/publish.md, `PUB-11`.
 ///
 /// ⭐ The order is `b-ids/build.rs`'s, deliberately: an explicit root wins, then
 /// the nearest ancestor that actually holds a corpus. A checker that exports
@@ -140,7 +140,7 @@ fn publish_the_tree_carries_the_corpus_the_formats_and_the_routes() {
         "routes/",
         "anchors/",
         // ⭐ The published JA4 vectors, so an implementation in any language has
-        // something to check itself against. TODO/validator.md, VALID-04.
+        // something to check itself against. docs/history/todo/validator.md, VALID-04.
         "vectors/",
     ] {
         assert!(has(prefix), "nothing was published under {prefix}");
@@ -257,7 +257,7 @@ fn publish_the_tree_names_no_path_outside_itself() {
     // 668384 against 666710 on one machine, one minute apart. That is the
     // reproducibility PUB-01 asserts, and check-release could not see it
     // because it builds twice under ONE root. Found by running the assembler
-    // both ways. TODO/publish.md, PUB-10.
+    // both ways. docs/history/todo/publish.md, PUB-10.
     let (built, dir) = built_into("paths");
     // ⚠ THE CORPUS ROOT, NOT THE WORKSPACE ROOT. This asserts that the tree
     // does not name the path it was BUILT FROM, and `built_into` builds from
@@ -298,7 +298,7 @@ fn publish_a_tag_this_rule_did_not_produce_is_refused() {
     // invent one, so the tag is parsed and then rebuilt from its own parts. A
     // tag that does not survive that round trip is one this project's rule
     // never produced, and publishing under it would put two names on one
-    // release. TODO/publish.md, PUB-10.
+    // release. docs/history/todo/publish.md, PUB-10.
     let (built, _) = built_into("parse");
     assert_eq!(
         parse_tag("v1.2026.09.03.1"),
@@ -330,4 +330,23 @@ fn publish_a_tag_this_rule_did_not_produce_is_refused() {
         ),
         "a malformed date was accepted"
     );
+}
+
+#[test]
+fn publish_the_initial_release_is_explicit_and_one_time() {
+    let (built, _) = built_into("initial-release");
+    assert_eq!(
+        plan_initial_release(&built, &[]).expect("the first release is free"),
+        INITIAL_RELEASE_TAG
+    );
+    assert_eq!(
+        plan_initial_release(&built, &[INITIAL_RELEASE_TAG.to_owned()]),
+        Err(NotReleasable::TagExists {
+            tag: INITIAL_RELEASE_TAG.to_owned()
+        })
+    );
+
+    let mut empty = built;
+    empty.artefacts.clear();
+    assert_eq!(plan_initial_release(&empty, &[]), Err(NotReleasable::Empty));
 }

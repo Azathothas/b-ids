@@ -229,7 +229,7 @@ PROBE_TIMEOUT=6
 #
 # ⚠ Which component the kill lands inside decides whether the machine is left
 # broken, so the same probe on the same tree passes most of the time. That is
-# what made this read as a runner fault for three sessions. TODO/ci.md, CI-09.
+# what made this read as a runner fault for three sessions. docs/history/todo/ci.md, CI-09.
 #
 # ⭐ Measured 2026-09-04, in a tree pinned to an absent 1.75.0: the proxy was
 # killed at 6068 ms mid "downloading 5 components"; with this variable set it
@@ -254,7 +254,7 @@ STUBS=""
 # ⭐ THE README SAYS "IT IS READ-ONLY. NO INSTALLER, NO CONFIG CHANGE", AND FOR
 # THREE SESSIONS THAT WAS FALSE. `rustc` and `cargo` are rustup proxies, so a
 # version probe inside a tree pinning an absent toolchain started INSTALLING
-# one, and the 6 second limit above killed it partway through. TODO/ci.md,
+# one, and the 6 second limit above killed it partway through. docs/history/todo/ci.md,
 # CI-09 carries the measurement and the CI failure it produced.
 #
 # ⛔ SO THE CLAIM GETS A COMMAND. This builds the exact condition, asks a proxy
@@ -294,7 +294,7 @@ run_fixture() {
   # SC2015, and it is not an if-then-else: the fallback runs when A succeeds and
   # B fails too. ⛔ Two shellcheck versions disagreed about flagging it, this
   # host's 0.11.0 passing it and the ubuntu runner's refusing it, so the
-  # construct is avoided rather than argued about. TODO/ci.md, CI-09.
+  # construct is avoided rather than argued about. docs/history/todo/ci.md, CI-09.
   _fx_out=$(
     cd "$_fx_dir" || exit 0
     "$_fx_rustc" --version 2>&1 </dev/null
@@ -311,7 +311,7 @@ run_fixture() {
     printf 'doctor fixture FAILED: the probe created a %s toolchain directory.\n' "$_fx_chan"
     printf '  A version probe installed a toolchain. Remove it with\n'
     printf '  rustup toolchain uninstall %s\n' "$_fx_chan"
-    printf '  and see TODO/ci.md, CI-09.\n'
+    printf '  and see docs/history/todo/ci.md, CI-09.\n'
     _fx_bad=1
   fi
   if printf '%s' "$_fx_out" | grep -q 'syncing channel updates'; then

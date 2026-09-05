@@ -3,7 +3,7 @@
 # the dependency graph, or is it a number somebody typed?
 #
 # The defect this exists to catch is a `rust-version` field that nobody
-# measured. TODO/tooling.md TOOL-01 states the rule: the dependency graph says
+# measured. docs/history/todo/tooling.md TOOL-01 states the rule: the dependency graph says
 # what the workspace actually requires, and a number chosen by hand goes stale
 # the first time a dependency raises its own floor. What is left behind then is
 # a CLAIM that reads like a CONSTRAINT: consumers on the declared version get a

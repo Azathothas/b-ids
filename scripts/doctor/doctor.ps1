@@ -56,7 +56,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -97,7 +97,7 @@ $ProbeTimeoutMs = 6000
 #
 # ⚠ Which component the kill lands inside decides whether the machine is left
 # broken, so the same probe on the same tree passes most of the time. That is
-# what made this read as a runner fault for three sessions. TODO/ci.md, CI-09.
+# what made this read as a runner fault for three sessions. docs/history/todo/ci.md, CI-09.
 #
 # ⭐ Measured 2026-09-04 on this host, in a tree pinned to an absent 1.75.0:
 # the proxy was killed at 6068 ms mid "downloading 5 components"; with this
@@ -114,7 +114,7 @@ function Add-Note([string]$Text) { [void]$notes.Add($Text) }
 # ⭐ THE README SAYS "IT IS READ-ONLY. NO INSTALLER, NO CONFIG CHANGE", AND FOR
 # THREE SESSIONS THAT WAS FALSE. `rustc` and `cargo` are rustup proxies, so a
 # version probe inside a tree pinning an absent toolchain started INSTALLING
-# one, and the 6 second limit above killed it partway through. TODO/ci.md,
+# one, and the 6 second limit above killed it partway through. docs/history/todo/ci.md,
 # CI-09 carries the measurement and the CI failure it produced.
 #
 # ⛔ SO THE CLAIM GETS A COMMAND. This builds the exact condition, asks a proxy
@@ -167,7 +167,7 @@ function Invoke-Fixture {
         [Console]::Out.WriteLine("doctor fixture FAILED: the probe created a $chan toolchain directory.")
         [Console]::Out.WriteLine('  A version probe installed a toolchain. Remove it with')
         [Console]::Out.WriteLine("  rustup toolchain uninstall $chan")
-        [Console]::Out.WriteLine('  and see TODO/ci.md, CI-09.')
+        [Console]::Out.WriteLine('  and see docs/history/todo/ci.md, CI-09.')
         $bad = $true
     }
     if ($out -match 'syncing channel updates') {

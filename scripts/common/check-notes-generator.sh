@@ -3,7 +3,7 @@
 # of one generator, and do they agree fact for fact?
 #
 # ⛔ RELEASE NOTES AND A CHANGELOG WRITTEN SEPARATELY DRIFT, and the reader who
-# trusts the wrong one is the one who was doing something careful. TODO/publish.md,
+# trusts the wrong one is the one who was doing something careful. docs/history/todo/publish.md,
 # PUB-08.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
@@ -101,5 +101,5 @@ fi
 printf 'notes generator check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$MISSING" >&2
 printf 'One generator, two outputs, so the two cannot disagree by construction\n' >&2
-printf 'rather than by discipline. TODO/publish.md, PUB-08.\n' >&2
+printf 'rather than by discipline. docs/history/todo/publish.md, PUB-08.\n' >&2
 exit 1

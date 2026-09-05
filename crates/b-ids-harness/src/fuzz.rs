@@ -16,7 +16,7 @@
 //! purpose: an assertion about the value would make this a test of the parse
 //! rather than of the process surviving.
 //!
-//! `TODO/harness.md`, `HARNESS-09`.
+//! `docs/history/todo/harness.md`, `HARNESS-09`.
 
 use b_ids_schema::http::ValuePolicy;
 

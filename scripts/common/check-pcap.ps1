@@ -5,7 +5,7 @@
 # check-twins.sh is what stops the two drifting.
 #
 # ⛔ A SYNTHESISED CAPTURE THAT IS INDISTINGUISHABLE FROM A REAL ONE is the one
-# thing TODO/publish.md, PUB-06, forbids.
+# thing docs/history/todo/publish.md, PUB-06, forbids.
 #
 # ⚠ THE DISSECTION LEG IS A SKIP WHERE THERE IS NO TOOL, and a skip is reported
 # as a skip: this check does NOT claim a standard tool opened the file when none
@@ -208,5 +208,5 @@ if ($problems.Count -eq 0) {
 foreach ($p in $problems) { [Console]::Error.WriteLine('  ' + $p) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A synthesised capture that is indistinguishable from a real one is the')
-[Console]::Error.WriteLine('one thing this entry forbids. TODO/publish.md, PUB-06.')
+[Console]::Error.WriteLine('one thing this entry forbids. docs/history/todo/publish.md, PUB-06.')
 exit 1

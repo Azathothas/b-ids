@@ -51,7 +51,7 @@ set -u
 # `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
 # '\t')" read ...` forks once per line. Measured 2026-09-02: a command
 # substitution costs 35 ms on this host, and check-docs.sh reads about 1100
-# lines that way. TODO/tooling.md, TOOL-18.
+# lines that way. docs/history/todo/tooling.md, TOOL-18.
 TAB=$(printf '\t')
 
 JSON=0
@@ -75,7 +75,7 @@ cd "$REPO_ROOT" || { printf 'check-coverage: cannot enter %s\n' "$REPO_ROOT" >&2
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-coverage: no corpus is reachable, so nothing was checked\n' >&2
   exit 2

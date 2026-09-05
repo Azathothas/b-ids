@@ -129,7 +129,7 @@ pub fn version_order(version: &str) -> (Vec<u64>, String) {
 
 /// Refuse a version string that names a major and nothing else.
 ///
-/// ⛔ The rule `TODO/schema.md` SCHEMA-01 states is that a version alone is not
+/// ⛔ The rule `docs/history/todo/schema.md` SCHEMA-01 states is that a version alone is not
 /// an identity: a profile keyed on "Chrome 152" cannot express that two builds
 /// of that major sent different bytes.
 ///

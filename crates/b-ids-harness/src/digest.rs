@@ -19,7 +19,7 @@
 //! preserves wire order and browsers shuffle, so it is unstable per connection.
 //! `docs/inherited-claims.md` section 10.
 //!
-//! `TODO/validator.md`, `VALID-04`.
+//! `docs/history/todo/validator.md`, `VALID-04`.
 
 use b_ids_schema::tls::TlsHalf;
 

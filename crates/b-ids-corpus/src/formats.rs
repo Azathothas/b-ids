@@ -3,7 +3,7 @@
 //! ⛔ **JSON is one consumer, not the consumer.** A corpus reachable only by
 //! writing a JSON walker is a corpus most people copy values out of by hand,
 //! and a value copied by hand is a value that stops matching the day the build
-//! moves. `TODO/schema.md`, `SCHEMA-08` and `SCHEMA-12`.
+//! moves. `docs/history/todo/schema.md`, `SCHEMA-08` and `SCHEMA-12`.
 //!
 //! ⭐ **ONE generator, canonical JSON in, every format out.** Nothing here reads
 //! the corpus tree: it takes the profiles a caller already loaded, so the
@@ -206,7 +206,7 @@ impl core::fmt::Display for Format {
 ///
 /// ⛔ **A declined format is recorded rather than forgotten.** A consumer who
 /// wants one otherwise cannot tell "nobody thought of it" from "it was weighed
-/// and lost", and the second is the useful answer. `TODO/schema.md`,
+/// and lost", and the second is the useful answer. `docs/history/todo/schema.md`,
 /// `SCHEMA-12`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Declined {
@@ -638,7 +638,7 @@ pub fn read_flat(format: Format, text: &str) -> Result<Vec<Vec<String>>, String>
 /// says to do, and a reader that split on lines first cut such a row in two and
 /// reported a row of one field. Found on 2026-09-02 by rendering a profile
 /// whose values carry every character these formats escape.
-/// `TODO/schema.md`, `SCHEMA-12`.
+/// `docs/history/todo/schema.md`, `SCHEMA-12`.
 ///
 /// # Errors
 ///

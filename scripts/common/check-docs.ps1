@@ -1,50 +1,10 @@
-﻿# check-docs.ps1 - do the documents still resolve, and are they written the way
-# this repository writes documents?
+﻿# check-docs.ps1 - validate first-party Markdown links, cited paths, vocabulary, and reachability.
 #
-# ⭐ THE TWIN OF check-docs.sh. Same schema, same exit codes, same exemptions.
-# check-twins.sh is what stops the two drifting.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# The defect this exists to catch is a document that was true when it was
-# written. Three shapes of it, and every one is invisible to every other check:
-#
-#   - a link or a path that stopped resolving when something was renamed;
-#   - a fenced shell block that does not parse, which is a block nobody can
-#     copy and paste;
-#   - an angle-bracket placeholder inside a shell block: a human reads it as
-#     "fill this in" and bash reads it as a redirect, so the reader gets a
-#     cryptic syntax error instead of an obvious instruction.
-#
-# ⚠ CONTROL BYTES ARE NOT CHECKED HERE. That rule scanned markdown only while
-# every .ts, .py, .rs and .sh in the tree went unchecked, so it moved to
-# check-control-bytes.ps1, which reads every text file. Run both.
-#
-# ⚠ THE CHARACTER HALF OF THE PROSE RULE IS NOT HERE. No em dash and no
-# character outside the five belong to check-markers.ps1, which reads every
-# tracked text file rather than markdown alone. Run both. What stays here is
-# what is specific to a document: links, fenced blocks, placeholders, banned
-# vocabulary and orphan pages.
-#
-# ⛔ WHAT IT DOES NOT CHECK IS WHETHER A CLAIM IS TRUE. That is a reading, and
-# it belongs to the review pass. A guard that tried to verify prose would
-# either pass vacuously or refuse legitimate writing, and both are worse than
-# an honest scope.
-#
-# ⚠ THE SHELL-BLOCK PARSE NEEDS A POSIX SHELL, AND THIS HOST MAY NOT HAVE ONE.
-# When no `sh` is on PATH the blocks are still COUNTED, so the schema matches
-# the sh twin, and the parse rule is reported as SKIPPED on stderr rather than
-# silently passing. ⛔ A rule that cannot run must say so: reporting green for
-# a check that never executed is the failure this whole repository is built to
-# avoid.
-#
-# Usage:
-#   pwsh -NoProfile -File scripts/common/check-docs.ps1
-#   pwsh -NoProfile -File scripts/common/check-docs.ps1 -Json
-#   pwsh -NoProfile -File scripts/common/check-docs.ps1 -Path docs
-#
-# Exit codes: 0 clean, 1 something is wrong, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-docs.ps1 [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 [CmdletBinding()]
 param(
     [switch]$Json,
@@ -53,7 +13,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -98,7 +58,8 @@ finally { Pop-Location }
 # after every hit over the corpus was read once and recorded.
 # ⛔ Keep this identical to the sh twin.
 $all = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -cnotmatch '^(references|vendor/[^/]+)/' } | Sort-Object -Unique)
+    Where-Object { $_ -and $_ -cnotmatch '^(references|vendor/[^/]+)/' -and
+        (Test-Path -LiteralPath $_ -PathType Leaf) } | Sort-Object -Unique)
 $files = @($all | Where-Object { $_ -match '\.md$' })
 if ($Path) {
     $prefix = $Path.TrimEnd('/', '\').Replace('\', '/')
@@ -157,7 +118,7 @@ $skippedParse = 0
 # here was removed rather than emptied. It covered a template directory whose
 # links are written relative to where the file will live in a PROJECT rather
 # than where it sits in the tree. This repository is not a template and has no
-# such directory: the one fill-in form it keeps, TODO/ENTRY.md, is written from
+# such directory: the one fill-in form it keeps, docs/history/todo/ENTRY.md, is written from
 # where it lives, so its links resolve here. ⚠ An exemption for a path that
 # does not exist is dead configuration, and the next file to land under that
 # path would have inherited it silently.
@@ -187,7 +148,7 @@ function Get-CitedPath([string]$Text) {
       a code span was not, which is how most of this tree names a file. Seven
       code spans named a licence filler, its twin and a directory of texts,
       none of which existed; every link resolved and this check was green
-      throughout. TODO/tooling.md TOOL-10.
+      throughout. docs/history/todo/tooling.md TOOL-10.
 
       ⛔ NARROW, AND IT REFUSES TO GUESS. A span is a path only when it holds a
       slash, ends in a known extension, has no whitespace, no angle bracket and

@@ -1,4 +1,4 @@
-# publish
+# Archived publication record
 
 Three delivery surfaces, because each fails differently, and the routes a
 program with nothing but `curl` can read.
@@ -244,7 +244,7 @@ git for it, reports `published: absent`, and says in its own output that a skip
 is not a pass and what would make the leg start running. ⛔ Reporting a pass
 over a branch nobody has made is the "step that exits 0 having done nothing" row
 of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 and this entry would have been the easiest place in the tree to write one.
 
 #### What the branch carries, and what it must never
@@ -260,7 +260,7 @@ and this entry would have been the easiest place in the tree to write one.
 | `MANIFEST.json`, `SHA256SUMS` | what a program reads, and what `sha256sum -c` reads |
 
 ⛔ **Not on it: `crates/`, `vendor/`, `references/`, `scripts/`, `docs/`,
-`TODO/` or `target/`.** A consumer of the data never has to reason about
+`docs/history/todo/` or `target/`.** A consumer of the data never has to reason about
 somebody else's licence, because none of it is in what they downloaded, and both
 halves of the check assert each of those seven is absent.
 
@@ -385,7 +385,7 @@ designed rather than measured until this run; now it is measured.
 
 ## PUB-03. Routes a program with nothing but `curl` can read
 
-**Source** the operator; [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 9
+**Source** the operator; [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 9
 **Category** publish, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
@@ -400,7 +400,7 @@ is three dependencies for a string.
 uses exactly this naming shape, and its single-value files end with a newline:
 `od -c` over two of them shows a trailing `\n`. So a consumer has to strip it,
 which is the burden this entry exists to remove.
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md)
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md)
 has the measurement.
 
 ### Approach
@@ -546,7 +546,7 @@ read from the profile rather than from the path.
 ⚠ **And one exit code in this session's own measurement was read through a
 pipe** while proving the first row, which reported `rc=0` over a check that had
 plainly failed. It is the same defect
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md)
 carries a row for, made by the session doing the proving, and the row above is
 the re-run without the pipe.
 
@@ -658,7 +658,7 @@ restored from that copy, and the restored file compared byte for byte.**
 
 ⚠ **And the exit code was read twice**, because the first reading was through a
 pipe into `head` and reported `0`, which is the pipeline's status and the trap
-[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 2 names.
+[`../docs/conventions/shell.md`](../../conventions/shell.md) section 2 names.
 Unpiped it is 1.
 
 #### ⚠ What this entry does NOT generate, and why it is a question rather than a gap
@@ -976,7 +976,7 @@ one profile should not have to find this repository to learn they may use it.
 ### Premise
 
 Believed. The licence choice itself is settled and its reasoning is in
-[`../README.md`](../README.md).
+[`../README.md`](../../../README.md).
 
 ### Approach
 
@@ -1048,7 +1048,7 @@ Both halves agree, and each reads the seven statements itself:
 ⚠ **This is the entry's honest limit and it is reported rather than
 repaired.** The corpus is append-only, so adding `license` to a published
 profile would be an edit of a published file, which
-[`../docs/AGENTS.md`](../docs/AGENTS.md) forbids and `check-corpus`'s history
+[`../AGENTS.md`](../../../AGENTS.md) forbids and `check-corpus`'s history
 leg refuses. The field is therefore:
 
 | | |
@@ -1078,7 +1078,7 @@ with the field removed still reads back.
 ⛔ **The data branch is NOT checked, because it does not exist.** `PUB-02` is
 the entry that creates it, and reporting a pass over a branch nobody has made is
 the "step that exits 0 having done nothing" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md).
 The check says so in its own header rather than counting it.
 
 #### The guard mutation, each exit code read unpiped
@@ -1195,7 +1195,7 @@ $ pwsh -NoProfile -File scripts/common/check-notes-generator.ps1 -Json
 ⛔ **A backslash was lost crossing a shell**, so the PowerShell half's
 `'^running (\d+) tests'` arrived as `'^running (d+) tests'`, matched nothing and
 reported zero cases.
-[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 1 names
+[`../docs/conventions/shell.md`](../../conventions/shell.md) section 1 names
 exactly this: "A backslash escape that survives one hop loses a backslash on the
 next." ⚠ It was written by passing a payload through a shell, which is what that
 section says not to do, and it was found by running both halves rather than by
@@ -1314,7 +1314,7 @@ states and which a signing key would have ended.
 | when | ⛔ **before the release is created.** A release that existed with no attestation beside it is a window in which a consumer verifies nothing and is told nothing is wrong |
 
 ⭐ **And the verification command is published beside the route it verifies**, in
-[`../README.md`](../README.md), which is what the Approach asked for. The check
+[`../README.md`](../../../README.md), which is what the Approach asked for. The check
 asserts that a document publishes it: a command published nowhere is an
 instruction nobody can follow.
 
@@ -1370,7 +1370,7 @@ and in the gate. What is missing is an event.
 
 ### Approach
 
-One workflow, [`../.github/workflows/publish.yml`](../.github/workflows/publish.yml),
+One workflow, [`../.github/workflows/publish.yml`](../../../.github/workflows/publish.yml),
 triggered the three ways the operator ruled: `workflow_dispatch`, a push to the
 default branch, and a pushed tag. One job assembles and runs both existing
 checks with `contents: read`; two jobs publish, and only those two declare
@@ -1617,7 +1617,7 @@ a line rather than described. What follows is the state the tree is in, not a
 plan.
 
 **The resolver exists and is the one answer.**
-[`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh) and its
+[`../scripts/common/corpus-root.sh`](../../../scripts/common/corpus-root.sh) and its
 twin resolve `B_IDS_CORPUS_ROOT`, then the working tree, then a materialised
 copy of the data branch, and print one path.
 
@@ -1636,11 +1636,11 @@ corpus while a session is adding a profile to the working one, and report green
 over the corpus it is about to publish. The resolver prefers the working tree
 for exactly as long as that holds a corpus. ⚠ The Approach keeps its wording and
 this is the correction, by the rule in
-[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md).
+[`../docs/methodology/authoring.md`](../../methodology/authoring.md).
 
 **Twelve check pairs resolve rather than assume**, and the root is EXPORTED as
 well as passed, because
-[`../crates/b-ids/build.rs`](../crates/b-ids/build.rs) embeds the corpus at
+[`../crates/b-ids/build.rs`](../../../crates/b-ids/build.rs) embeds the corpus at
 build time from that same variable and already calls it the seam this entry
 needs. A check that resolved a root and did not export it would build against
 one corpus and report on another.
@@ -1665,7 +1665,7 @@ scratch copy, the checks were run, and both were restored and compared against
 corpus through code that resolves the WORKSPACE root rather than
 `B_IDS_CORPUS_ROOT`:
 
-- [`../crates/b-ids-corpus/tests/publish.rs`](../crates/b-ids-corpus/tests/publish.rs),
+- [`../crates/b-ids-corpus/tests/publish.rs`](../../../crates/b-ids-corpus/tests/publish.rs),
   run by `check-release`, opens the corpus relative to the crate;
 - the determinism leg of `check-validate` re-runs the generator inside a scratch
   root it copied, and the copy is now of the resolved root while the run is not;
@@ -1694,9 +1694,9 @@ running it, both of the same shape and neither in the three.
 
 | leg | what reached the working tree | what it reads now |
 | --- | --- | --- |
-| [`../crates/b-ids-corpus/tests/publish.rs`](../crates/b-ids-corpus/tests/publish.rs) | `repository_root()`, which walked up from `CARGO_MANIFEST_DIR` and was BOTH the build source and the scratch destination | `corpus_root()` for the source, reading `B_IDS_CORPUS_ROOT` in `b-ids/build.rs`'s own order, and `workspace_root()` for the destination |
-| [`../scripts/common/check-validate.sh`](../scripts/common/check-validate.sh) determinism leg | `RAW_DIR` relative to the repository, so the scratch copy got a branch corpus and no raw bytes | `"$CORPUS_ROOT/$RAW_DIR"`, and its PowerShell twin the same |
-| [`../scripts/common/check-trust-anchors.sh`](../scripts/common/check-trust-anchors.sh) carrier walk | `find "$REPO_ROOT/corpus"` while the publisher above it took `--root "$CORPUS_ROOT"` | `find "$CORPUS_ROOT/corpus"`. ⚠ The PowerShell twin already did, so the halves disagreed and only a run with the corpus moved out could show it |
+| [`../crates/b-ids-corpus/tests/publish.rs`](../../../crates/b-ids-corpus/tests/publish.rs) | `repository_root()`, which walked up from `CARGO_MANIFEST_DIR` and was BOTH the build source and the scratch destination | `corpus_root()` for the source, reading `B_IDS_CORPUS_ROOT` in `b-ids/build.rs`'s own order, and `workspace_root()` for the destination |
+| [`../scripts/common/check-validate.sh`](../../../scripts/common/check-validate.sh) determinism leg | `RAW_DIR` relative to the repository, so the scratch copy got a branch corpus and no raw bytes | `"$CORPUS_ROOT/$RAW_DIR"`, and its PowerShell twin the same |
+| [`../scripts/common/check-trust-anchors.sh`](../../../scripts/common/check-trust-anchors.sh) carrier walk | `find "$REPO_ROOT/corpus"` while the publisher above it took `--root "$CORPUS_ROOT"` | `find "$CORPUS_ROOT/corpus"`. ⚠ The PowerShell twin already did, so the halves disagreed and only a run with the corpus moved out could show it |
 
 ### ⛔ The two the driven pass found, and they are worse than the three
 
@@ -1775,7 +1775,7 @@ is what this corpus derives to, and one tree object is one set of bytes.
 
 ⛔ **"Twelve check pairs" was true the day it was written and is not now.**
 `PUB-04` added a thirteenth, and the number will move again. ⭐ The claim audit
-found it in [`../scripts/README.md`](../scripts/README.md) stating twelve in the
+found it in [`../scripts/README.md`](../../../scripts/README.md) stating twelve in the
 present tense about the tree, and that page reads it with a command now instead.
 
 ```bash
@@ -1795,7 +1795,7 @@ them have every tool; that is where the coverage for these comes from.
 
 ⛔ **A root named explicitly still makes `check-corpus`'s history question
 ambiguous.** With `B_IDS_CORPUS_ROOT` set by a caller,
-[`../scripts/common/check-corpus.sh`](../scripts/common/check-corpus.sh) line 90
+[`../scripts/common/check-corpus.sh`](../../../scripts/common/check-corpus.sh) line 90
 gets an empty ref and reads this repository's history, which is right when the
 explicit root IS this working tree and unanswerable when it is not. ⚠ It is not
 reachable from the gate, which never sets the variable before a check resolves.
@@ -1813,7 +1813,7 @@ to read is a property of that answer rather than of this entry.
 
 ### Problem
 
-[`../scripts/common/check-license-consistency.sh`](../scripts/common/check-license-consistency.sh)
+[`../scripts/common/check-license-consistency.sh`](../../../scripts/common/check-license-consistency.sh)
 compares six places that state this project's licence and skips the data
 branch, saying in its own header that the branch does not exist. ⛔ **It does**,
 and it carries a `LICENSE` file nothing compares against the one home.
@@ -1969,7 +1969,7 @@ single change.
    default branch holds them today, verified tree for tree the way
    `PUB-02` verified the data branch.
 2. **Teach the resolver a third rule.**
-   [`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh)
+   [`../scripts/common/corpus-root.sh`](../../../scripts/common/corpus-root.sh)
    resolves an explicit root, then the working tree, then the data branch. The
    source branch belongs between the working tree and the data branch, and
    `--source` must name it, because `check-data-branch` refuses anything that is
@@ -1978,7 +1978,7 @@ single change.
 3. **Point `check-data-branch` at the source branch** as the thing the data
    branch is compared against.
 4. **Move the capture lane's pull request** to open against the source branch.
-   [`../.github/workflows/capture.yml`](../.github/workflows/capture.yml).
+   [`../.github/workflows/capture.yml`](../../../.github/workflows/capture.yml).
 5. ⛔ **Only then remove `corpus/` and `raw/` from the default branch.**
 6. ⚠ **And fix what step 5 does to CI, which is not obvious.** `PUB-14` made
    the gate record `check-data-branch`'s designed exit 2 as a SKIP rather than a
@@ -1989,7 +1989,7 @@ single change.
    ⭐ Found by the door sweep on 2026-09-04, before it could bite.
 
 ⚠ **And one thing `PUB-11` left, which this entry owns.**
-[`../scripts/common/check-corpus.sh`](../scripts/common/check-corpus.sh) line 90
+[`../scripts/common/check-corpus.sh`](../../../scripts/common/check-corpus.sh) line 90
 asks the resolver which ref carries the corpus, so it can ask the right history
 whether a published file was ever edited. An explicitly named root answers with
 an empty ref, and the check then reads this repository's history, which is right
@@ -2047,9 +2047,9 @@ including removing the directories from the default branch.
 | step | what landed |
 | --- | --- |
 | 1 | ⭐ the branch is `source`, at `ea7d76b`, carrying `corpus/`, `raw/`, `vectors/` and `LICENSE`. ⛔ Verified as ONE TREE OBJECT before it existed as a branch: `aaf0a3589db5d6b8d61383c03eecc8344bae3da4` from `git ls-tree HEAD corpus raw \| git mktree` AND from an independent build of the working tree through a temporary index |
-| 2 | [`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh) and its twin resolve explicit, then the working tree, then **source**, then data. `--source` answers `source-branch` |
-| 3 | [`../scripts/common/check-data-branch.sh`](../scripts/common/check-data-branch.sh) accepts `working-tree` and `source-branch` as canonical and ⛔ still refuses `data-branch` and `explicit` |
-| 4 | [`../.github/workflows/capture.yml`](../.github/workflows/capture.yml) takes its corpus from `origin/source` and opens its pull request against `source` |
+| 2 | [`../scripts/common/corpus-root.sh`](../../../scripts/common/corpus-root.sh) and its twin resolve explicit, then the working tree, then **source**, then data. `--source` answers `source-branch` |
+| 3 | [`../scripts/common/check-data-branch.sh`](../../../scripts/common/check-data-branch.sh) accepts `working-tree` and `source-branch` as canonical and ⛔ still refuses `data-branch` and `explicit` |
+| 4 | [`../.github/workflows/capture.yml`](../../../.github/workflows/capture.yml) takes its corpus from `origin/source` and opens its pull request against `source` |
 | 5 | ⛔ `corpus/`, `raw/` and `vectors/` are gone from the default branch |
 | 6 | the CI change step 5 made necessary, which is **not the one this entry predicted**. Below. |
 
@@ -2060,7 +2060,7 @@ including removing the directories from the default branch.
 ever modified, deleted or renamed after its first commit. An orphan branch
 answers that over ONE commit, forever, and reports clean: the "step that exits 0
 having done nothing it was asked to do" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 in the check whose whole job is reading a history.
 
 ```text
@@ -2107,9 +2107,9 @@ moment the directories left:
 | `crates/b-ids-validator/tests/digest_vectors.rs` | the vectors AND the corpus, both assumed |
 | `crates/b-ids-conformance/src/main.rs` | its own copy of the walk |
 
-⭐ [`../crates/b-ids-schema/src/root.rs`](../crates/b-ids-schema/src/root.rs) is
+⭐ [`../crates/b-ids-schema/src/root.rs`](../../../crates/b-ids-schema/src/root.rs) is
 the one answer now, in the crate every reader already depends on, and
-[`../scripts/common/check-gate.sh`](../scripts/common/check-gate.sh) exports
+[`../scripts/common/check-gate.sh`](../../../scripts/common/check-gate.sh) exports
 `B_IDS_CORPUS_ROOT` around its three `cargo` steps and ⛔ **unsets it
 immediately after**, because `check-twins` runs both gates below and an export
 left standing would make every check inside them resolve `explicit`, which
@@ -2214,7 +2214,7 @@ git show origin/data:MANIFEST.json | jq -r .generated_from
 
 ⛔ **The digest is read with that command rather than written out here.** A
 64-character hex run in prose is refused by the public rules in
-[`../scripts/common/check-no-secrets.sh`](../scripts/common/check-no-secrets.sh),
+[`../scripts/common/check-no-secrets.sh`](../../../scripts/common/check-no-secrets.sh),
 which exempt one only where an identifier names it as a digest. ⚠ Widening that
 rule to make a document read better is how a secret scan stops working.
 
@@ -2305,7 +2305,7 @@ the two apart.
 CRLF, so every path came back with a carriage return riding on it and matched
 nothing. ⭐ `CORPUS-02` recorded that exact defect against that exact tool on
 2026-09-02, and it bit again in a new script. The read strips it now, as
-[`../scripts/common/check-coverage.sh`](../scripts/common/check-coverage.sh)
+[`../scripts/common/check-coverage.sh`](../../../scripts/common/check-coverage.sh)
 already did.
 
 ⚠ **A guard that fires on everything is as useless as one that fires on

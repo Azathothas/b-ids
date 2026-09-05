@@ -6,7 +6,7 @@
 # answer. Every capture went through a per-launch key pin rather than a root in
 # the browser's trust store, and `captured.trust` records which. ⛔ Nothing has
 # ever measured whether that choice changes the hello.
-# TODO/harness.md, HARNESS-14.
+# docs/history/todo/harness.md, HARNESS-14.
 #
 # ⚠ HARNESS-10 MEASURED THE ADJACENT QUESTION AND IT IS NOT THIS ONE. It
 # compared the raw surface against the terminating surface and found the two
@@ -88,7 +88,7 @@ DISPOSABLE="${B_IDS_DISPOSABLE:-}"
 if [ "$DISPOSABLE" != "1" ]; then
   printf '50-trust-anchor: this machine is not marked disposable, so no root is installed.\n' >&2
   printf '  Set B_IDS_DISPOSABLE=1 only on a machine that is thrown away afterwards.\n' >&2
-  printf '  .github/workflows/trust-anchor.yml is where this runs. TODO/harness.md, HARNESS-14.\n' >&2
+  printf '  .github/workflows/trust-anchor.yml is where this runs. docs/history/todo/harness.md, HARNESS-14.\n' >&2
   if [ "$JSON" = 1 ]; then
     printf '{"schema":"trust-anchor/1","ran":false,"why":"not a disposable machine"}\n'
   fi
@@ -136,7 +136,7 @@ PLATFORM=$(uname -s 2>/dev/null || printf 'unknown')
 STORE_NICK="b-ids-trust-anchor"
 # ⚠ Which Windows store took the root, set by install_root and read by
 # remove_root. Empty everywhere else, and declared here so `set -u` never sees
-# it unset. TODO/harness.md, HARNESS-16.
+# it unset. docs/history/todo/harness.md, HARNESS-16.
 WINDOWS_STORE=""
 
 # ⛔ EVERY STORE COMMAND IS BOUNDED AND ITS STDIN IS CLOSED, and both halves

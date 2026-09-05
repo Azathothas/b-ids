@@ -5,7 +5,7 @@
 # ⛔ MOST OF THE DAY-TO-DAY VALUE OF A CORPUS IS THE ARTEFACT SOMEBODY PASTES
 # INTO THEIR OWN TOOL, and a snippet that silently approximates is worse than no
 # snippet: it produces a client that is almost right, which is more
-# distinguishing than an honestly old one. TODO/publish.md, PUB-04.
+# distinguishing than an honestly old one. docs/history/todo/publish.md, PUB-04.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -57,7 +57,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { printf 'check-generated-configs: cannot enter %s\n' "$REPO_ROOT" >&2; exit 2; }
 
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED, like every other check that
-# reads it. TODO/publish.md, PUB-11.
+# reads it. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-generated-configs: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -104,7 +104,8 @@ cargo build -q -p b-ids-cli || {
   printf 'check-generated-configs: the client did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-cli"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-cli"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-generated-configs: %s is not executable\n' "$BIN" >&2; exit 2; }
 

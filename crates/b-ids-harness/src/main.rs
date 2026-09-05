@@ -213,7 +213,7 @@ fn parse_args() -> Result<Args, String> {
             if given {
                 return Err(format!(
                     "--no-retain and {flag} ask for opposite things: one says keep nothing and \
-                     the other names a file to write. TODO/harness.md, HARNESS-12"
+                     the other names a file to write. docs/history/todo/harness.md, HARNESS-12"
                 ));
             }
         }
@@ -226,7 +226,7 @@ fn parse_args() -> Result<Args, String> {
     if args.config.serve && !args.no_retain {
         eprintln!(
             "b-ids-harness: WARN --serve without --no-retain. This run answers callers AND may \
-             write to disk. TODO/harness.md, HARNESS-12: the default that keeps the scope \
+             write to disk. docs/history/todo/harness.md, HARNESS-12: the default that keeps the scope \
              boundary intact is to retain nothing."
         );
     }

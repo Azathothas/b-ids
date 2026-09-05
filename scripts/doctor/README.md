@@ -41,7 +41,7 @@ network flag is passed, and the only file it writes is a temp file it removes.
 a toolchain the host does not have started INSTALLING one, and the probe's own
 six-second limit then killed the install partway through. `--fixture` builds
 that exact condition and refuses unless the proxy declined instead.
-[`../../TODO/ci.md`](../../TODO/ci.md), `CI-09`, carries the measurement.
+[`../../docs/history/todo/ci.md`](../../docs/history/todo/ci.md), `CI-09`, carries the measurement.
 
 ⚠ **What that changes for a reader, on a machine without the pinned
 toolchain.** The probe reports `rustc` and `cargo` as present with no version,

@@ -5,7 +5,7 @@
 # ⛔ THE TOOL PURGES BROWSERS. Every refusal it makes is what stands between a
 # developer's machine and losing one, so the refusals are checked on EVERY host
 # and the provisioning itself only where the machine is thrown away.
-# TODO/driver.md, DRIVER-08.
+# docs/history/todo/driver.md, DRIVER-08.
 #
 # -- ⛔ WHAT IS CHECKED EVERYWHERE -------------------------------------------
 #
@@ -31,7 +31,7 @@
 #      `resolve` must then report that build and no other. ⛔ Skipped loudly
 #      without --build rather than run against a version spelled here: a build
 #      hardcoded in a check goes stale, and the matrix cell is where a build is
-#      named. TODO/driver.md, DRIVER-08.
+#      named. docs/history/todo/driver.md, DRIVER-08.
 #
 # Usage:
 #   sh scripts/common/check-provisioning.sh
@@ -72,7 +72,7 @@ cd "$REPO_ROOT" || { printf 'check-provisioning: cannot enter %s\n' "$REPO_ROOT"
 # on a runner at all: both lanes reported that the tool "did not purge and
 # install cleanly" when the tool had never been invoked. ⭐ It failed safe,
 # because nothing was purged, and it failed for a reason the message did not
-# name. TODO/driver.md, DRIVER-08.
+# name. docs/history/todo/driver.md, DRIVER-08.
 mkdir -p "$REPO_ROOT/.tmp" || {
   printf 'check-provisioning: cannot create %s/.tmp\n' "$REPO_ROOT" >&2
   exit 2
@@ -92,7 +92,7 @@ CHECKED=0
 # against a COPY of the tool under the ignored scratch directory, never against
 # the file on a machine the guard protects. ⚠ That rule is written down
 # because it was broken here on 2026-09-02 and the purge path ran on a
-# developer laptop. docs/HISTORY/README.md carries the incident.
+# developer laptop. docs/history/README.md carries the incident.
 refuses() {
   r_why=$1
   r_expect=$2
@@ -250,7 +250,7 @@ else
   printf 'provisioning check failed, %s problem(s):\n\n' "$COUNT" >&2
   printf '%s\n' "$PROBLEMS" >&2
   printf 'Every refusal here stands between a machine and losing its browser.\n' >&2
-  printf 'TODO/driver.md, DRIVER-08.\n' >&2
+  printf 'docs/history/todo/driver.md, DRIVER-08.\n' >&2
 fi
 
 [ "$COUNT" = 0 ] || exit 1

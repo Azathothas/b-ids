@@ -1,7 +1,7 @@
-# {{ID}}: {{title}}
+# Archived entry template: {{ID}} - {{title}}
 
 <!-- THE FORM AN ENTRY IS WRITTEN FROM. Copy the whole of it into
-     TODO/{{category}}.md and add its row to TODO/INDEX.md in the same change.
+     docs/history/todo/{{category}}.md and add its row to docs/history/todo/INDEX.md in the same change.
      Fill every {{PLACEHOLDER}} and delete every comment like this one.
      Authored per ../docs/methodology/authoring.md, and NOT filed until the
      operator approves it.

@@ -3,7 +3,7 @@
 # instead, and does that command resolve on this host?
 #
 # ⛔ A PROJECT WHOSE ONLY PATH TO A CAPTURE IS ONE PROVIDER'S AUTOMATION
-# DEGRADES TO NOTHING WHEN THAT PROVIDER DOES. TODO/ci.md, CI-08.
+# DEGRADES TO NOTHING WHEN THAT PROVIDER DOES. docs/history/todo/ci.md, CI-08.
 #
 # ⭐ THE TEST IS ONE SENTENCE: if the provider disappeared, the project degrades
 # to "somebody runs one command" rather than to nothing. This check is what says
@@ -48,7 +48,7 @@ set -u
 # `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
 # '\t')" read ...` forks once per line. Measured 2026-09-02: a command
 # substitution costs 35 ms on this host, and check-docs.sh reads about 1100
-# lines that way. TODO/tooling.md, TOOL-18.
+# lines that way. docs/history/todo/tooling.md, TOOL-18.
 TAB=$(printf '\t')
 
 JSON=0
@@ -74,7 +74,7 @@ cd "$REPO_ROOT" || { printf 'check-manual-path: cannot enter %s\n' "$REPO_ROOT" 
 # missing is the one moment nothing looked. Measured 2026-09-02: this reported
 # 9 jobs over a tree carrying 10, and `git add -N` alone changed the answer.
 # ⚠ check-exit-codes had this exact defect and was fixed on 2026-09-02; this
-# half of the same shape was left. TODO/ci.md, CI-08.
+# half of the same shape was left. docs/history/todo/ci.md, CI-08.
 WORKFLOWS=$({ git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml';
   git ls-files --others --exclude-standard -- '.github/workflows/*.yml' '.github/workflows/*.yaml';
 } | LC_ALL=C sort -u)
@@ -171,7 +171,7 @@ else
   printf '%s\n' "$PROBLEMS" >&2
   printf 'Every automated job names the command a person runs instead, as a\n' >&2
   # shellcheck disable=SC2016 # the text names a literal comment marker
-  printf '`# manual:` comment inside the job. TODO/ci.md, CI-08.\n' >&2
+  printf '`# manual:` comment inside the job. docs/history/todo/ci.md, CI-08.\n' >&2
 fi
 
 [ "$COUNT" = 0 ] || exit 1

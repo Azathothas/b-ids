@@ -117,7 +117,7 @@ pub enum Shuffle {
         /// ⛔ **Fewer than two is a contradiction and
         /// [`crate::Profile::check`] refuses it.** A state that says the order
         /// differed while reporting one order is a claim its own field denies.
-        /// `TODO/schema.md`, `SCHEMA-10`.
+        /// `docs/history/todo/schema.md`, `SCHEMA-10`.
         ///
         /// ⚠ Defaulted on the way in so a profile written before the field
         /// existed still reads, and 0 then means "not recorded".
@@ -220,7 +220,7 @@ impl TlsHalf {
 /// the hashed form asks `b_ids_harness::ja4`.
 ///
 /// ⛔ **Every list has GREASE removed**, which the specification requires
-/// everywhere it appears. `TODO/validator.md`, `VALID-04`.
+/// everywhere it appears. `docs/history/todo/validator.md`, `VALID-04`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Ja4Lists {
     /// `t13d1516h2`: transport, version, SNI, the two counts and the ALPN pair.

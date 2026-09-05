@@ -1,4 +1,4 @@
-# INDEX.md
+# Archived work index
 
 Every entry, one line each, sorted by id. This is a **list**, not a log and not
 an order. ⛔ The work order lives in [`PROGRESS.md`](PROGRESS.md) and nowhere

@@ -26,7 +26,7 @@
 //! | an empty mapping or sequence | `{}` or `[]`, on the key's own line |
 //! | a non-empty mapping or sequence | a block, indented two spaces from its key |
 //!
-//! `TODO/schema.md`, `SCHEMA-12`.
+//! `docs/history/todo/schema.md`, `SCHEMA-12`.
 
 use serde_json::{Map, Value};
 

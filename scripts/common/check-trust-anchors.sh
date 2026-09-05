@@ -6,7 +6,7 @@
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, so a client
 # copying one build's list is advertising which build it copied. It changes on a
 # different schedule from everything else a profile carries, which is why it is
-# published beside the corpus. TODO/corpus.md, CORPUS-04.
+# published beside the corpus. docs/history/todo/corpus.md, CORPUS-04.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -55,7 +55,7 @@ cd "$REPO_ROOT" || { printf 'check-trust-anchors: cannot enter %s\n' "$REPO_ROOT
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-trust-anchors: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -86,7 +86,8 @@ cargo build -q -p b-ids-corpus || {
   printf 'check-trust-anchors: the corpus crate did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-corpus"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-corpus"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-trust-anchors: %s is not executable\n' "$BIN" >&2; exit 2; }
 
@@ -112,7 +113,7 @@ PROFILES=$(printf '%s' "$STATUS" | awk -F'profiles:' '{ split($2, a, / /); print
 # count has to be independent of the PUBLISHER, not of the corpus.
 # ⚠ The PowerShell twin already read the resolved root here, so the two halves
 # disagreed and only a run with the corpus moved out could show it.
-# TODO/publish.md, PUB-11.
+# docs/history/todo/publish.md, PUB-11.
 CARRIERS=$(find "$CORPUS_ROOT/corpus" -name '*.json' -not -name 'index.json' -not -name 'latest.json' \
   -exec jq -r 'if ([.tls.extensions[].codepoint] | index(51764)) then "carrier" else empty end' {} \; \
   2>/dev/null | grep -c carrier)
@@ -130,7 +131,7 @@ note() {
 if [ "$CARRIERS" = "0" ]; then
   printf 'check-trust-anchors: no profile in this corpus carries codepoint 0xca34, so\n' >&2
   printf '  there is nothing to publish and nothing this check can verify. That is a\n' >&2
-  printf '  fact about the builds captured, not a pass. TODO/corpus.md, CORPUS-04.\n' >&2
+  printf '  fact about the builds captured, not a pass. docs/history/todo/corpus.md, CORPUS-04.\n' >&2
   exit 2
 fi
 
@@ -154,7 +155,7 @@ for f in "$OUT"/*.json; do
   # list of length zero, while the branded build beside it sends 206 bytes and
   # 32 identifiers. ⚠ Reporting the first as "no identifiers" called a genuine
   # finding about branding a failure of this tree, and it is the finding the
-  # `chromium` control cell exists to produce. TODO/corpus.md, CORPUS-04.
+  # `chromium` control cell exists to produce. docs/history/todo/corpus.md, CORPUS-04.
   if [ "${n:-0}" -gt 0 ] 2>/dev/null; then
     :
   elif [ "${len:-0}" = 2 ]; then
@@ -194,5 +195,5 @@ fi
 printf 'trust-anchor check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'The list is a snapshot of a root store and it changes per build.\n' >&2
-printf 'docs/trust-anchors.md is the recommendation. TODO/corpus.md, CORPUS-04.\n' >&2
+printf 'docs/trust-anchors.md is the recommendation. docs/history/todo/corpus.md, CORPUS-04.\n' >&2
 exit 1

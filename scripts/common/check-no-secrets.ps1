@@ -47,7 +47,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -216,7 +216,7 @@ if ($Public) {
         # vendored tree was taken at, and a commit id is public by
         # construction. Only a value assigned to base is excluded, so any
         # other 40-hex run in that file is still reported.
-        # ⛔ Keep this identical to the sh twin. TODO/vendor.md.
+        # ⛔ Keep this identical to the sh twin. docs/history/todo/vendor.md.
         Where-Object { $_ -cnotmatch '"base":\s*"[0-9a-f]{40}"' } |
         # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT PRODUCES ------
         #
@@ -262,7 +262,7 @@ if ($Public) {
         # decodes the recorded bytes and REFUSES the profile if they spell out
         # a cookie or authorization header.
         #
-        # ⛔ Keep this identical to the sh twin. TODO/corpus.md, CORPUS-01.
+        # ⛔ Keep this identical to the sh twin. docs/history/todo/corpus.md, CORPUS-01.
         Where-Object { $_ -cnotmatch '"sha256"\s*:\s*"[0-9a-f]{64}"' } |
         Where-Object { $_ -cnotmatch ':[0-9]+:sha256\s+[0-9a-f]{64}$' } |
         Where-Object { $_ -cnotmatch '"published_sha256":"[0-9a-f]{64}"' } |

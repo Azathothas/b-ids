@@ -1,4 +1,4 @@
-# Is the corpus behind the build the vendor is serving? TODO/ci.md, CI-02.
+# Is the corpus behind the build the vendor is serving? docs/history/todo/ci.md, CI-02.
 #
 # ⛔ A SCHEDULE, NEVER A PUSH TRIGGER, AND IT IS THE ENTRY RATHER THAN A
 # PREFERENCE. A browser shipping a new version is not a defect in a commit, and

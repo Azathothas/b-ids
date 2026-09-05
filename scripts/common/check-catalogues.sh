@@ -1,62 +1,11 @@
 #!/bin/sh
-# check-catalogues.sh - is every script and every document named by the
-# catalogue that claims to list it?
+# check-catalogues.sh - require every first-party script and document to appear in its owning index.
 #
-# ⛔ A CATALOGUE NOTHING CHECKS STOPS BEING A CATALOGUE. docs/AGENTS.md sends a
-# session writing a script to scripts/README.md, calling it the contract every
-# script is held to, and sends a session writing a document to its own table of
-# what each one owns. Neither was compared against the tree, so both drifted:
-# measured 2026-09-03, THIRTEEN of the checks the gate runs had no section in
-# scripts/README.md at all, and the gate was green throughout.
-# TODO/tooling.md, TOOL-19.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# -- ⛔ THE TWO RULES, AND THEY ARE THE ONLY TWO ------------------------------
-#
-#   1. every script under scripts/ is named by scripts/README.md. Twins collapse
-#      to ONE base name, because a pair is one contract and one section;
-#   2. every document under docs/ is named by its index: docs/AGENTS.md for the
-#      tree, docs/HISTORY/README.md for the history directory, which has its own
-#      because a superseded page is not routed to.
-#
-# ⛔ IT DOES NOT READ THE PROSE. Whether a section is any good is a review, and
-# a guard that tried to judge one would either pass vacuously or refuse
-# legitimate writing. What it holds is that the row EXISTS.
-#
-# ⚠ THE OTHER DIRECTION IS ALREADY HELD. check-docs resolves every relative link
-# and every cited path in every markdown file in this tree, so a catalogue
-# naming a file the tree does not have fails there rather than here. Two checks
-# holding one rule is two places for it to be wrong.
-#
-# -- ⚠ WHY A DOCUMENT IS MATCHED BY ITS PATH AND A SCRIPT BY ITS NAME ---------
-#
-# A document is cited as `methodology/gate.md`, relative to the index that names
-# it, and two documents can share a base name in different directories. A script
-# is cited as `common/check-gate.sh` in one place and `check-gate` in another,
-# and its two halves differ only by extension, so the base name is the unit the
-# contract is written against.
-#
-# -- ⛔ AN EMPTY SCOPE IS EXIT 2 ----------------------------------------------
-#
-# A check reporting clean over nothing is how it quietly stops applying, which
-# is the rule check-routes carries and the shape that was found there by the
-# fixture written to prove it could refuse.
-#
-# Usage:
-#   sh scripts/common/check-catalogues.sh
-#   sh scripts/common/check-catalogues.sh --json
-#   sh scripts/common/check-catalogues.sh --fixture
-#   sh scripts/common/check-catalogues.sh --fixtures DIR
-#
-# --fixture asserts that the check CAN fail: it builds a tree in which one
-# script and one document are missing from their catalogues and requires both to
-# be refused. --fixtures runs the same scan over ANOTHER tree, walking the
-# filesystem rather than asking git, which is how a session points it at an
-# earlier checkout of this repository and sees what it would have said.
-#
-# Exit codes: 0 every one is named, 1 one is not, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-catalogues.sh [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 set -u
 
 JSON=0
@@ -95,7 +44,8 @@ script_names() {
     listed 'scripts/*'
   else
     find scripts -type f 2>/dev/null
-  fi | grep -E '\.(sh|ps1|mjs)$' |
+  fi | while IFS= read -r p; do [ -f "$p" ] && printf '%s\n' "$p"; done |
+    grep -E '\.(sh|ps1|mjs)$' |
     sed -e 's|.*/||' -e 's|\.sh$||' -e 's|\.ps1$||' -e 's|\.mjs$||' |
     sort -u
 }
@@ -109,10 +59,12 @@ doc_pairs() {
   else
     find docs -type f -name '*.md' 2>/dev/null
   fi | sort -u | while IFS= read -r p; do
+    [ -f "$p" ] || continue
     case "$p" in
-      docs/AGENTS.md | docs/HISTORY/README.md) continue ;;
-      docs/HISTORY/*) printf 'docs/HISTORY/README.md|%s\n' "${p#docs/HISTORY/}" ;;
-      *) printf 'docs/AGENTS.md|%s\n' "${p#docs/}" ;;
+      docs/history/README.md | docs/history/todo/README.md) continue ;;
+      docs/history/todo/*) printf 'docs/history/todo/README.md|%s\n' "${p#docs/history/todo/}" ;;
+      docs/history/*) printf 'docs/history/README.md|%s\n' "${p#docs/history/}" ;;
+      *) printf 'AGENTS.md|%s\n' "${p#docs/}" ;;
     esac
   done
 }
@@ -175,7 +127,7 @@ if [ "$FIXTURE" = 1 ]; then
   printf 'catalogue naming alpha and nothing else\n' > "$FIX/scripts/README.md"
   printf '#!/bin/sh\n' > "$FIX/scripts/common/alpha.sh"
   printf '#!/bin/sh\n' > "$FIX/scripts/common/beta.sh"
-  printf 'router naming methodology/one.md and nothing else\n' > "$FIX/docs/AGENTS.md"
+  printf 'router naming methodology/one.md and nothing else\n' > "$FIX/AGENTS.md"
   printf '# one\n' > "$FIX/docs/methodology/one.md"
   printf '# two\n' > "$FIX/docs/methodology/two.md"
 

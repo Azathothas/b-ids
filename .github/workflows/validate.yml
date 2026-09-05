@@ -1,5 +1,5 @@
 # Every push: is what is PUBLISHED still true, with no network and no browser.
-# TODO/ci.md, CI-01.
+# docs/history/todo/ci.md, CI-01.
 #
 # ⭐ WHAT THIS ADDS THAT ci.yml DOES NOT, because two workflows running one list
 # is how one of them stops being maintained:

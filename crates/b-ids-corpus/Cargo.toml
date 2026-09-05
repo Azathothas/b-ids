@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -17,7 +17,7 @@ workspace = true
 b-ids-schema = { path = "../b-ids-schema" }
 # ⛔ A REAL dependency, not a dev one, and the direction is the point: turning a
 # capture into a profile is this crate's job, so it needs the capture type and
-# the digest the harness already links. TODO/corpus.md, CORPUS-01.
+# the digest the harness already links. docs/history/todo/corpus.md, CORPUS-01.
 #
 # ⚠ What that costs is worth writing down: a consumer that only wants to READ
 # the corpus links the TLS terminator through this crate. LIB-01 is the entry
@@ -30,7 +30,7 @@ b-ids-harness = { path = "../b-ids-harness" }
 # profile lives; this crate owns the layout. So the corpus-scale question -
 # "is every PUBLISHED profile coherent, and do any two of them share a
 # handshake" - is answerable here and nowhere else, and `b-ids-corpus
-# validate` is where CI-01 gets it from. TODO/ci.md, CI-01.
+# validate` is where CI-01 gets it from. docs/history/todo/ci.md, CI-01.
 #
 # ⚠ The reverse edge would have cost the harness: b-ids-validator would have
 # had to link this crate, and this crate links the TLS terminator.
@@ -39,13 +39,13 @@ b-ids-validator = { path = "../b-ids-validator" }
 # job, and what a headless launch did to a header is the driver's knowledge of
 # its own launch mode. The edge is cheap: b-ids-driver depends on b-ids-schema
 # and nothing else, so this adds no third-party linkage at all.
-# TODO/corpus.md, CORPUS-06.
+# docs/history/todo/corpus.md, CORPUS-06.
 b-ids-driver = { path = "../b-ids-driver" }
 # ⛔ THE SUPPORT MATRIX IS WHAT GATES A GENERATED SNIPPET, and this crate is
 # where the publish tree is assembled, so the gate and the tree have to be in
 # one place. `formats.rs` already reads this crate for the matrix table it
 # publishes; `configs.rs` reads the same matrix to decide which pairs get a
-# snippet and which get a named hole. TODO/publish.md, PUB-04.
+# snippet and which get a named hole. docs/history/todo/publish.md, PUB-04.
 b-ids-emit = { path = "../b-ids-emit" }
 serde.workspace = true
 serde_json.workspace = true

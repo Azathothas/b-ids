@@ -4,7 +4,7 @@
 //! no browser has not failed a capture; it cannot take one, and those are
 //! different facts.
 //!
-//! `TODO/driver.md`, `DRIVER-01`.
+//! `docs/history/todo/driver.md`, `DRIVER-01`.
 
 use std::process::ExitCode;
 use std::time::Duration;
@@ -255,7 +255,7 @@ fn acquire(
                     // installed the main artefact alone would install a package
                     // whose dependency is not on the machine. Empty for an
                     // index that serves one archive per build, which is both
-                    // JSON ones. TODO/corpus.md, CORPUS-02.
+                    // JSON ones. docs/history/todo/corpus.md, CORPUS-02.
                     "companions": found.companions,
                 });
                 match serde_json::to_string(&object) {
@@ -399,7 +399,7 @@ fn main() -> ExitCode {
     // has. This command is what a provisioning run calls immediately AFTER
     // purging every browser off the machine, so routing it through a resolver
     // that exits 2 when nothing is installed would refuse it exactly when it is
-    // needed. TODO/driver.md, DRIVER-08.
+    // needed. docs/history/todo/driver.md, DRIVER-08.
     if command == "acquire" {
         return acquire(
             wanted,

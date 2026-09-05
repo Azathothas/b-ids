@@ -498,7 +498,7 @@ fn coherence_a_header_the_browser_never_sent_is_not_reported_as_a_thin_capture()
     // capture was thin when the truth is about the browser.
     //
     // ⚠ Found by the door sweep on 2026-09-04, when b_ids_driver::Family
-    // learned firefox and made this case reachable. TODO/corpus.md, CORPUS-02.
+    // learned firefox and made this case reachable. docs/history/todo/corpus.md, CORPUS-02.
     let mut profile = b_ids_schema::fixture::profile();
     let set = profile
         .http

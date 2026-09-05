@@ -1,7 +1,7 @@
 //! A scheduled run that finds a change opens a pull request, not an issue.
 //!
 //! ⛔ **An issue is a request for somebody else to do work. A pull request with
-//! the work already in it is the deliverable.** `TODO/ci.md`, `CI-04`.
+//! the work already in it is the deliverable.** `docs/history/todo/ci.md`, `CI-04`.
 //!
 //! ⭐ **This is the THIRD renderer of [`crate::notes`]'s model**, beside the
 //! release body and the changelog entry. Nothing here recomputes what changed:

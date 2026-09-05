@@ -1,44 +1,19 @@
-﻿# check-record.ps1 - do the record's counts still agree with its rows, and does
-# every entry have a row and every row an entry?
+﻿# check-record.ps1 - validate the archived work record's entries, statuses, and counts.
 #
-# ⭐ THE TWIN OF check-record.sh. Same schema, same exit codes, same rules.
-# check-twins.sh is what stops the two drifting.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# The defect this exists to catch is a record that contradicts itself. Closing
-# one entry moves several numbers: the index total line, the priority table row,
-# that table's total row, and the status beside the entry itself. Nothing is
-# wrong with any single file afterwards. What is missing is anything that
-# compares two of them.
-#
-# ⭐ THIS WAS PAID FOR BEFORE IT WAS WRITTEN. docs/methodology/work-todo.md
-# records the incident: a published record said two entries were open, beside
-# entries saying done, for the whole of the next session.
-#
-# ⛔ IT CANNOT CHECK THAT AN ENTRY IS TRUE. That is a reading and it belongs to
-# the review pass.
-#
-# ⚠ THIS TWIN EXISTS BECAUSE THE sh ONE CANNOT BE ASSUMED TO RUN HERE. A native
-# PowerShell session may have no awk and no sed at all, and its `sort` is an
-# alias for Sort-Object, which succeeds and answers differently.
-#
-# Usage:
-#   pwsh -NoProfile -File scripts/common/check-record.ps1
-#   pwsh -NoProfile -File scripts/common/check-record.ps1 -Json
-#   pwsh -NoProfile -File scripts/common/check-record.ps1 -Dir TODO
-#
-# Exit codes: 0 consistent, 1 inconsistent, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-record.ps1 [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 [CmdletBinding()]
 param(
     [switch]$Json,
-    [string]$Dir = 'TODO',
+    [string]$Dir = 'docs/history/todo',
     # ⛔ EVERY UNBOUND ARGUMENT LANDS HERE, so an unknown one exits 2 rather
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -103,7 +78,7 @@ if ($rows.Count -eq 0) {
 $entries = New-Object System.Collections.ArrayList
 $dirFull = Join-Path $root $Dir
 foreach ($f in (Get-ChildItem -LiteralPath $dirFull -Filter '*.md' -File)) {
-    if ($f.Name -in 'INDEX.md', 'PROGRESS.md', 'RULES.md') { continue }
+    if ($f.Name -in 'INDEX.md', 'PROGRESS.md', 'RULES.md', 'README.md') { continue }
     $text = [System.IO.File]::ReadAllText($f.FullName)
     $lines = $text -split "`r?`n"
     for ($i = 0; $i -lt $lines.Count; $i++) {

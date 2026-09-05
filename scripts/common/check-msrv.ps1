@@ -7,11 +7,11 @@
 .DESCRIPTION
   ⛔ THE POWERSHELL TWIN OF scripts/common/check-msrv.sh. One rule, two
   implementations, and check-twins.sh compares their --json answers on one
-  tree. TODO/RULES.md section 4 is why a twin exists at all: a POSIX shell
+  tree. docs/history/todo/RULES.md section 4 is why a twin exists at all: a POSIX shell
   check cannot be assumed to run on Windows, and the reverse is equally true.
 
   The defect this exists to catch is a `rust-version` field that nobody
-  measured. TODO/tooling.md TOOL-01 states the rule: the dependency graph says
+  measured. docs/history/todo/tooling.md TOOL-01 states the rule: the dependency graph says
   what the workspace actually requires, and a number chosen by hand goes stale
   the first time a dependency raises its own floor. What is left behind then is
   a CLAIM that reads like a CONSTRAINT: consumers on the declared version get a
@@ -66,7 +66,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )

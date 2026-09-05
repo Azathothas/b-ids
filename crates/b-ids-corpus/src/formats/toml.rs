@@ -29,7 +29,7 @@
 //! | an array of scalars | an inline array on one line |
 //! | a null | ⛔ nothing at all. See above. |
 //!
-//! `TODO/schema.md`, `SCHEMA-12`.
+//! `docs/history/todo/schema.md`, `SCHEMA-12`.
 
 use serde_json::{Map, Value};
 

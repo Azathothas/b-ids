@@ -16,7 +16,7 @@
 //!
 //! ⚠ **What a consumer of the published tree never has to reason about:** the
 //! source, any vendored dependency, and the reference corpus. None of it is
-//! here, so none of it is in what they downloaded. `TODO/publish.md`, `PUB-02`.
+//! here, so none of it is in what they downloaded. `docs/history/todo/publish.md`, `PUB-02`.
 
 use std::path::Path;
 
@@ -65,7 +65,7 @@ pub struct Artefact {
     /// ⚠ **Found 2026-09-04, by adding the seventh profile.**
     /// `scripts/common/check-data-branch` reported nineteen published
     /// artefacts as having changed their bytes, and all nineteen were
-    /// aggregates. `TODO/publish.md`, `PUB-14`, and `TODO/driver.md`,
+    /// aggregates. `docs/history/todo/publish.md`, `PUB-14`, and `docs/history/todo/driver.md`,
     /// `DRIVER-11`, is the entry that surfaced it.
     pub derived: bool,
 }
@@ -218,7 +218,7 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     // ⛔ THE MATRIX IS BUILT ONCE AND HANDED IN, never rebuilt per profile. It
     // is what decides whether a pair gets a snippet or a named hole, and a
     // generator that rebuilt it would be asking a question whose answer could
-    // change between two files in one tree. TODO/publish.md, PUB-04.
+    // change between two files in one tree. docs/history/todo/publish.md, PUB-04.
     let matrix = b_ids_emit::support_matrix(&profiles);
     for generated in configs(&profiles, &matrix)? {
         put(
@@ -238,7 +238,7 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     // `--root .` and one under `--root /abs/path` produced different bytes for
     // the same corpus, which is the reproducibility `PUB-01` asserts, and the
     // absolute one shipped a home directory into a public artefact. Found by
-    // running the assembler both ways. `TODO/publish.md`, `PUB-10`.
+    // running the assembler both ways. `docs/history/todo/publish.md`, `PUB-10`.
     let with_paths: Vec<(String, Profile)> = published
         .iter()
         .map(|(path, profile)| Ok((relative_to(root, path)?, profile.clone())))
@@ -306,7 +306,7 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     // ⭐ SYNTHESISED FROM THE PROFILE'S OWN RAW SIDECAR, never captured again.
     // The bytes are already stored under raw/v1/, so this is a generated format
     // like every other rather than a second capture path that could disagree
-    // with the first. TODO/publish.md, PUB-06.
+    // with the first. docs/history/todo/publish.md, PUB-06.
     //
     // ⛔ A PROFILE WITH NO RAW SIDECAR PRODUCES NOTHING, and that is an absence
     // rather than a refusal: a profile taken before the sidecar existed carries
@@ -372,7 +372,8 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
                 .join("corpus")
                 .join("v1")
                 .join("latest.json");
-            let pointers_json = std::fs::read_to_string(&pointers_path).unwrap_or_default();
+            let pointers_json = std::fs::read_to_string(&pointers_path)
+                .map_err(|e| format!("{}: {e}", pointers_path.display()))?;
             for file in crate::packages::packages(&named, &index_json, &pointers_json, &release)? {
                 put(out, &file.path, file.text.as_bytes(), &mut artefacts)?;
             }
@@ -384,7 +385,7 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     // ⛔ COPIED VERBATIM, never regenerated. A vector's expected value comes
     // from the specification or from a derivation that is not this project's
     // code, and a build that recomputed one would publish this implementation's
-    // own answer as the thing it is checked against. `TODO/validator.md`,
+    // own answer as the thing it is checked against. `docs/history/todo/validator.md`,
     // `VALID-04`.
     // ⚠ ABSENT IS ABSENT rather than a refusal: a tree with no vectors
     // publishes none, which is what every build before they existed did.
@@ -397,7 +398,7 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     // -- the licence, so the tree says what it is ----------------------------
     //
     // ⛔ COPIED FROM THE REPOSITORY'S OWN FILE. A build that wrote its own text
-    // would be a second copy of a legal document. `TODO/publish.md`, `PUB-07`.
+    // would be a second copy of a legal document. `docs/history/todo/publish.md`, `PUB-07`.
     let license = Path::new(root).join("LICENSE");
     let license_body =
         std::fs::read(&license).map_err(|e| format!("{}: {e}", license.display()))?;
@@ -501,6 +502,13 @@ pub fn parse_tag(tag: &str) -> Option<(String, String, u32)> {
     ))
 }
 
+/// The repository's one bootstrap release tag.
+///
+/// Later corpus releases use the dated [`tag`] form. This conventional initial
+/// version exists so the repository can publish its first stable tool and data
+/// contract before a dated release series exists.
+pub const INITIAL_RELEASE_TAG: &str = "v0.0.1";
+
 /// Why a release cannot be cut.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NotReleasable {
@@ -536,6 +544,26 @@ impl core::fmt::Display for NotReleasable {
             }
         }
     }
+}
+
+/// Plan the repository's one bootstrap release.
+///
+/// This retains the same empty-build and immutable-release rules as
+/// [`plan_release`], but deliberately accepts only [`INITIAL_RELEASE_TAG`].
+///
+/// # Errors
+///
+/// [`NotReleasable::Empty`] when the build has no artefacts, or
+/// [`NotReleasable::TagExists`] when the initial release already exists.
+pub fn plan_initial_release(built: &Built, existing: &[String]) -> Result<String, NotReleasable> {
+    if built.artefacts.is_empty() {
+        return Err(NotReleasable::Empty);
+    }
+    let tag = INITIAL_RELEASE_TAG.to_owned();
+    if existing.contains(&tag) {
+        return Err(NotReleasable::TagExists { tag });
+    }
+    Ok(tag)
 }
 
 /// The tag a release would take, refusing one that already exists.
@@ -588,7 +616,7 @@ pub fn moving_tags(built: &Built) -> Vec<String> {
 ///
 /// ⛔ **The data branch is APPEND-ONLY and never force-pushed.** A consumer
 /// pinning a commit on it keeps working forever, and that property is free
-/// right up until somebody rewrites the branch. `TODO/publish.md`, `PUB-02`.
+/// right up until somebody rewrites the branch. `docs/history/todo/publish.md`, `PUB-02`.
 ///
 /// ⚠ **`head` is what the remote holds and `parent` is what the new commit was
 /// built on.** They agree on an append; they differ when the new commit was

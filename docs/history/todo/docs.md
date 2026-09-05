@@ -1,4 +1,4 @@
-# docs
+# Archived documentation record
 
 Documents this project will need and does not have, and the claims in the ones
 it does have that are waiting on a measurement.
@@ -33,7 +33,7 @@ in as many words that no single reference exists yet.
 When `SCHEMA-01` lands, write docs/architecture.md: the schema, the pipeline
 between the five components, the state a capture passes through, and the limits.
 Then rewrite the conflict rule to name it, and move the interim wording to
-[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) rather than deleting
+[`../docs/history/README.md`](../README.md) rather than deleting
 it.
 
 ⛔ Do not write it before the schema. A reference that describes a schema nobody
@@ -55,9 +55,9 @@ directory with its date.
 ### Closing
 
 **Closed 2026-09-02T04:45:00Z.**
-[`../docs/architecture.md`](../docs/architecture.md) exists, the conflict rule
+[`../docs/architecture.md`](../../architecture.md) exists, the conflict rule
 names it, and the interim wording is in
-[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) with its date.
+[`../docs/history/README.md`](../README.md) with its date.
 
 ```text
 $ sh scripts/common/check-docs.sh
@@ -86,7 +86,7 @@ by a gate rather than by memory.
 #### The conflict rule was amended in place, not doubled
 
 ⛔ **Both rules live is the failure mode the entry named.** The interim wording
-is gone from [`../docs/conventions/docs.md`](../docs/conventions/docs.md) and
+is gone from [`../docs/conventions/docs.md`](../../conventions/docs.md) and
 kept verbatim in the history directory with the date it was withdrawn and what
 replaced it.
 
@@ -98,7 +98,7 @@ be, and the new rule names all three.
 #### ⚠ Two stale claims this found on the way
 
 ⛔ **The router said the corpus holds one profile.** It holds three, and
-`docs/AGENTS.md` said one because the sentence was written the day the first
+`AGENTS.md` said one because the sentence was written the day the first
 landed. Corrected in the same change.
 
 ⛔ **The reference nearly said four crates when there are nine.** `b-ids` and
@@ -198,11 +198,11 @@ sh scripts/common/check-placeholders.sh
 ```
 
 ```text
-no placeholders survived in 325 files (TODO/ENTRY.md is exempt)
+no placeholders survived in 325 files (docs/history/todo/ENTRY.md is exempt)
 ```
 
 ⚠ **Exit 0, read from the process, unpiped**, over a tree that now contains
-[`../docs/HUMAN.md`](../docs/HUMAN.md). ⛔ The Approach forbade writing it with
+[`../docs/HUMAN.md`](../../HUMAN.md). ⛔ The Approach forbade writing it with
 placeholders in it, and the acceptance is exactly the check that would catch one.
 
 #### ⭐ What earned it, and what it deliberately leads with
@@ -307,7 +307,7 @@ ruling: a capture harness accepts connections from anything, and a hosted oracle
 would receive other people's traffic. ⚠ The second becomes real if `HARNESS-12`
 lands, which the operator has now put in scope.
 
-### ⭐ Closed 2026-09-04. [`../SECURITY.md`](../SECURITY.md) exists, and it degrades rather than lying
+### ⭐ Closed 2026-09-04. [`../SECURITY.md`](../../../SECURITY.md) exists, and it degrades rather than lying
 
 ⛔ **The ruling's route is measurably switched off, and the document is written
 so that this does not matter to a reporter.** Measured 2026-09-04, read from the
@@ -385,11 +385,11 @@ done.** It routed the brief's content into this tree without fetching the
 repository the brief's measurements were taken in, so about sixty values arrived
 with a provenance tag that resolved to nothing, five claims went unchecked, and
 one of them was wrong.
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md)
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md)
 carries the corrections.
 
 Measured, on 2026-08-31: the origin repository is fetched at a named commit into
-[`../references/Azathothas__bit-cli/`](../references/Azathothas__bit-cli/),
+[`../references/Azathothas__bit-cli/`](../../../references/Azathothas__bit-cli/),
 every measured claim is cited against a file in it, and the brief's own sections
 were read against those files rather than against the brief.
 
@@ -399,30 +399,30 @@ Where each part of it went:
 
 | the brief's content | destination |
 | --- | --- |
-| the governing rule, and the three consequences | [`../README.md`](../README.md), and absolute 1 in [`../docs/AGENTS.md`](../docs/AGENTS.md) |
-| the prior-art table | [`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md), re-derived from the trees rather than inherited |
-| ⭐ the repository every measurement was taken in | [`../references/Azathothas__bit-cli/`](../references/Azathothas__bit-cli/), tracked, at the commit its `PROVENANCE.md` names |
+| the governing rule, and the three consequences | [`../README.md`](../../../README.md), and absolute 1 in [`../AGENTS.md`](../../../AGENTS.md) |
+| the prior-art table | [`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md), re-derived from the trees rather than inherited |
+| ⭐ the repository every measurement was taken in | [`../references/Azathothas__bit-cli/`](../../../references/Azathothas__bit-cli/), tracked, at the commit its `PROVENANCE.md` names |
 | the data model, sections 2.1 to 2.6 | `SCHEMA-01` through `SCHEMA-07` |
-| the architecture and the capture harness | `HARNESS-01` through `HARNESS-04`, `DRIVER-01`, and [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) sections 14 and 15 |
-| every measured fingerprint, codepoint and constant | [`../docs/inherited-claims.md`](../docs/inherited-claims.md), each cited at a file in the origin tree |
+| the architecture and the capture harness | `HARNESS-01` through `HARNESS-04`, `DRIVER-01`, and [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) sections 14 and 15 |
+| every measured fingerprint, codepoint and constant | [`../docs/inherited-claims.md`](../../inherited-claims.md), each cited at a file in the origin tree |
 | the validator's eight checks | `VALID-01` |
 | the emitter holes | `EMIT-01`, corrected where the sweep found them stale |
 | automation, staleness and the capture matrix | `CI-01` through `CI-04`, and `CORPUS-02` |
 | durability and redundancy | `CI-05` through `CI-08`, and `DRIVER-05` |
 | publishing, formats and the licence | `PUB-01` through `PUB-09` |
-| the traps | [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8, and the entries that own each one |
+| the traps | [`../docs/inherited-claims.md`](../../inherited-claims.md) section 8, and the entries that own each one |
 | the layout, toolchain, definition of done and test strategy | [`RULES.md`](RULES.md), `TOOL-01`, and the methodology this tree already carries |
-| the scope boundary | [`../README.md`](../README.md) |
-| the glossary | [`../docs/glossary.md`](../docs/glossary.md), with the entries a reading corrected |
-| its own provenance section, naming what was unverified | [`../docs/inherited-claims.md`](../docs/inherited-claims.md), which is that section generalised into a document with a rule attached |
+| the scope boundary | [`../README.md`](../../../README.md) |
+| the glossary | [`../docs/glossary.md`](../../glossary.md), with the entries a reading corrected |
+| its own provenance section, naming what was unverified | [`../docs/inherited-claims.md`](../../inherited-claims.md), which is that section generalised into a document with a rule attached |
 
 ⭐ **Four of its claims were refuted during the reading**, and all four are in
-[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) with the reading that
+[`../docs/history/README.md`](../README.md) with the reading that
 took each away.
 
 Must not: reintroduce it, or cite it as a path. ⛔ **"The founding brief" is
 provenance and not a file**, defined once in
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md), and nothing in
+[`../docs/inherited-claims.md`](../../inherited-claims.md), and nothing in
 this tree needs it to be readable.
 
 ### Prove

@@ -1,7 +1,7 @@
 ﻿# check-pr-body.ps1 - would a scheduled run that found a change open a pull
 # request a reviewer can act on, and would a run that found nothing stay silent?
 #
-# ⭐ THE TWIN OF check-pr-body.sh. TODO/ci.md, CI-04, and TODO/driver.md,
+# ⭐ THE TWIN OF check-pr-body.sh. docs/history/todo/ci.md, CI-04, and docs/history/todo/driver.md,
 # DRIVER-09, is why a script in this directory does not land without one.
 #
 # ⛔ AN ISSUE IS A REQUEST FOR SOMEBODY ELSE TO DO WORK. A pull request with the
@@ -70,7 +70,7 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
 
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED TO BE THIS TREE. Until
 # PUB-13 this passed the repository root as `--after`, which stopped holding a
-# corpus the day corpus/ left the default branch. TODO/publish.md, PUB-13.
+# corpus the day corpus/ left the default branch. docs/history/todo/publish.md, PUB-13.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-pr-body: no corpus is reachable, so the generator has nothing to run over')
@@ -128,7 +128,8 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-pr-body: the corpus crate did not build')
     exit 2
 }
-$bin = Join-Path $root 'target' | Join-Path -ChildPath 'debug' | Join-Path -ChildPath 'b-ids-corpus'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug' | Join-Path -ChildPath 'b-ids-corpus'
 if (-not (Test-Path -LiteralPath $bin)) { $bin = $bin + '.exe' }
 if (-not (Test-Path -LiteralPath $bin)) {
     [Console]::Error.WriteLine('check-pr-body: ' + $bin + ' is not there')
@@ -257,5 +258,5 @@ foreach ($problem in $problems) { [Console]::Error.WriteLine($problem) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A pull request with the work in it is the deliverable, and one that')
 [Console]::Error.WriteLine('silently omits a field is worse than one that says it could not capture')
-[Console]::Error.WriteLine('it. TODO/ci.md, CI-04.')
+[Console]::Error.WriteLine('it. docs/history/todo/ci.md, CI-04.')
 exit 1

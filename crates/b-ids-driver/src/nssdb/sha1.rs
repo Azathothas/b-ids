@@ -21,7 +21,7 @@
 //! from an independent implementation, so a defect fails the suite rather than
 //! a browser launch.
 //!
-//! `TODO/driver.md`, `DRIVER-11`.
+//! `docs/history/todo/driver.md`, `DRIVER-11`.
 
 /// How many bytes a SHA-1 digest is.
 pub const LEN: usize = 20;

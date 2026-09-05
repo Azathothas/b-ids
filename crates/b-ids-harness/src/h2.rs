@@ -504,7 +504,7 @@ fn header_block_fragment(payload: &[u8], flags: u8, notes: &mut Vec<Note>) -> Ve
 /// ⭐ **A credential keeps its NAME and its POSITION and loses its value.**
 /// Before 2026-09-02 it was dropped entirely, so the recorded order closed over
 /// the gap and a consumer reading the sequence believed it had the whole of it.
-/// `TODO/schema.md`, `SCHEMA-14`. ⛔ There is no branch here that can put the
+/// `docs/history/todo/schema.md`, `SCHEMA-14`. ⛔ There is no branch here that can put the
 /// value into the field: the match is on the policy for an ordinary header and
 /// `None` unconditionally for a credential.
 fn record_fields(fields: &[HeaderRecord], policy: ValuePolicy) -> Vec<HeaderRecord> {

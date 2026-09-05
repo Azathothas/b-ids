@@ -73,7 +73,7 @@ fn conformance_this_projects_own_emitter_reproduces_a_profile() {
     // published profiles round-trips with nothing differing.
     // ⚠ EMIT-02's suite reads the real corpus for the same reason, in its own
     // words: a fixture would prove the emitter can write a hello somebody made
-    // up. TODO/emitters.md, EMIT-04.
+    // up. docs/history/todo/emitters.md, EMIT-04.
     let claimed = a_published_profile();
     let bytes = b_ids_emit::hello::client_hello(&claimed.tls, &[0u8; 32])
         .expect("a published profile is reproducible");

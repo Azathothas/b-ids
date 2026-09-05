@@ -1,8 +1,8 @@
 ﻿# check-data-branch.ps1 - is what the data branch would carry exactly what the
 # corpus derives to, and would a push that rewrote it be refused?
 #
-# ⭐ THE TWIN OF check-data-branch.sh. TODO/publish.md, PUB-02, and
-# TODO/driver.md, DRIVER-09, is why a script in this directory does not land
+# ⭐ THE TWIN OF check-data-branch.sh. docs/history/todo/publish.md, PUB-02, and
+# docs/history/todo/driver.md, DRIVER-09, is why a script in this directory does not land
 # without one.
 #
 # ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER, and
@@ -66,7 +66,7 @@ Set-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-data-branch: no corpus is reachable, so nothing was checked')
@@ -79,7 +79,7 @@ $corpusRoot = "$corpusRoot".Trim()
 # pass without asking anything.
 #
 # ⭐ SINCE PUB-13 THE CANONICAL CORPUS IS THE SOURCE BRANCH, and this check runs
-# against it rather than skipping. TODO/publish.md, PUB-11 and PUB-13.
+# against it rather than skipping. docs/history/todo/publish.md, PUB-11 and PUB-13.
 #
 #   working-tree    a session that has the corpus checked out. Canonical.
 #   source-branch   the everyday answer since PUB-13. Canonical.
@@ -147,7 +147,8 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-data-branch: the corpus crate did not build')
     exit 2
 }
-$bin = Join-Path $root 'target' | Join-Path -ChildPath 'debug' | Join-Path -ChildPath 'b-ids-corpus'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug' | Join-Path -ChildPath 'b-ids-corpus'
 if (-not (Test-Path -LiteralPath $bin)) { $bin = $bin + '.exe' }
 if (-not (Test-Path -LiteralPath $bin)) {
     [Console]::Error.WriteLine("check-data-branch: $bin is not there")
@@ -283,7 +284,7 @@ if ($ref) {
     else {
         # ⛔ BEHIND IS NOT THE SAME AS WRONG. The sh half carries the full
         # reasoning and the two cases it separates; this follows it.
-        # TODO/publish.md, PUB-14.
+        # docs/history/todo/publish.md, PUB-14.
         $a = Join-Path $out 'a'
         $publishedPaths = @(& git ls-tree -r --name-only $ref | ForEach-Object { $_.Trim() } | Sort-Object)
         $regenPaths = @(Get-ChildItem -LiteralPath $a -Recurse -File |
@@ -320,6 +321,7 @@ if ($ref) {
         }
 
         $changed = 0
+        $derivedChanged = 0
         $sumsLost = 0
         foreach ($rel in $publishedPaths) {
             $localFile = Join-Path $a $rel
@@ -331,7 +333,10 @@ if ($ref) {
                 $same = @(Compare-Object -ReferenceObject ([System.IO.File]::ReadAllBytes($blob)) `
                     -DifferenceObject ([System.IO.File]::ReadAllBytes($localFile))).Count -eq 0
             }
-            if (-not $same -and $immutable -contains $rel) { $changed++ }
+            if (-not $same) {
+                if ($immutable -contains $rel) { $changed++ }
+                else { $derivedChanged++ }
+            }
         }
 
         $publishedSums = Join-Path $out 'published-sums.txt'
@@ -353,8 +358,9 @@ if ($ref) {
             $sumsLost = 1
         }
 
-        if ($gone -eq 0 -and $changed -eq 0 -and $sumsLost -eq 0 -and $missing -eq 0 -and $added -gt 0) {
-            $pending = $added
+        if ($gone -eq 0 -and $changed -eq 0 -and $sumsLost -eq 0 -and $missing -eq 0 -and
+            ($added -gt 0 -or $derivedChanged -gt 0)) {
+            $pending = $added + $derivedChanged
         } else {
             [void]$problems.Add("  the regenerated tree is $($localTree.Trim()) and $ref carries $($publishedTree.Trim()), so what is published is not what this corpus derives to")
             if ($gone -ne 0) { [void]$problems.Add("  $gone published path(s) are no longer produced at all, which a consumer pinning them would notice") }
@@ -387,9 +393,9 @@ if ($count -eq 0) {
     }
     elseif ($pending -gt 0) {
         Write-Output "  `u{26A0} The $branch branch is $published and BEHIND by $pending artefact(s): every path it"
-        Write-Output '  carries is still produced and still byte-identical, and the assembler'
-        Write-Output '  now produces more. `u{26D4} Nothing published is wrong, so this is reported'
-        Write-Output '  rather than failed. The publisher adds them on the next push.'
+        Write-Output '  carries is still produced and every immutable artefact is byte-identical.'
+        Write-Output '  The assembler adds or refreshes derived artefacts only, so this is reported'
+        Write-Output '  rather than failed. The publisher appends the new tree on the next push.'
     }
     else {
         Write-Output "  `u{26A0} A SKIP IS NOT A PASS: the $branch branch is $published, so the regenerated tree was"
@@ -404,5 +410,5 @@ if ($count -eq 0) {
 $problems | ForEach-Object { [Console]::Error.WriteLine($_) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A consumer pinning a commit on this branch keeps working forever, and')
-[Console]::Error.WriteLine('that property is free. TODO/publish.md, PUB-02.')
+[Console]::Error.WriteLine('that property is free. docs/history/todo/publish.md, PUB-02.')
 exit 1

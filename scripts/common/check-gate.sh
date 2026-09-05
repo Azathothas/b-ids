@@ -1,110 +1,11 @@
 #!/bin/sh
-# check-gate.sh - run every local gate this host can run, in one command.
+# check-gate.sh - run every applicable repository check and report one verdict.
 #
-# The defect this exists to catch is a gate that was skipped because it was the
-# ninth thing to remember. Part (a) of docs/methodology/gate.md is a LIST, and a
-# list run by hand is a list run in the order somebody remembers it, missing
-# whichever entry was added last. The session that wrote this ran that list once
-# per work item and re-typed it every time, which is exactly how one of them
-# quietly stops being run.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# ⛔ IT IS NOT A SECOND SET OF RULES. Every line below shells out to a check
-# that already exists and reads that check's own exit code. When this file and
-# .github/workflows/ci.yml disagree about what runs, CI is the one that gates a
-# push and this one is the defect.
-#
-# -- ⚠ A SKIPPED CHECK IS NOT A PASSED CHECK ---------------------------------
-#
-# Some of these need a tool that is not everywhere: shellcheck, jq, pwsh,
-# PSScriptAnalyzer. A gate that silently dropped one of them and still printed
-# green would be the "step that exits 0 having done nothing it was asked to do"
-# row in docs/conventions/forbidden-patterns.md.
-#
-# So a missing tool is reported as SKIP, counted separately, named in the
-# summary line and carried in --json as `skipped`. ⭐ The exit code is still 0,
-# because "this host cannot run that one" is not a failure of the tree; the
-# caller reads `skipped` to decide whether it wants that answer. CI runs on two
-# hosts that between them have every tool, which is where the coverage comes
-# from.
-#
-# -- ⚠ --fast, AND WHY IT IS A FLAG RATHER THAN THE DEFAULT ------------------
-#
-# check-twins runs BOTH halves of every pair, so it costs roughly as much as the
-# rest of the gate put together. That is the right price before a push and the
-# wrong one before each of a dozen commits, and a gate too slow to run is a gate
-# that gets run once at the end.
-#
-# ⛔ THE FIGURES BELOW REPLACE A SET THAT WAS NOT MEASURED. The comment here
-# used to carry a full run of 88 seconds ending "gate ok: all 15 checks
-# passed", timed on a 4-CPU Linux container. That output could not have been
-# produced: on the tree it names, check-docs reported eleven problems and
-# check-twins reported twelve drifts, so the gate did not pass. TODO/tooling.md
-# T-007 carries the correction. ⚠ A pasted output nobody produced is worse than
-# no output, because a blank gets checked and a figure gets used.
-#
-# Measured 2026-08-31, Windows 11 (10.0.26200) on a 20-thread i7-12700H, Git
-# Bash 5.3 and PowerShell 7.6.5, over 13 twin pairs, on a tree of 4,476 tracked
-# files of which 4,389 are the reference corpus:
-#
-#   full run               403s
-#   --fast                 106s
-#   check-twins alone      294s
-#
-# ⚠ RE-MEASURED THE SAME DAY, AFTER THE GATE GREW. The workspace landed and this
-# runner gained four checks: check-msrv and the three suite entries. check-twins
-# gained two pairs, so it compares 15. Same machine, same shells:
-#
-#   --fast                 171s
-#   full run               ⛔ NOT RE-TAKEN. The run went green, all 19 checks,
-#                          and the timing line was lost when the shell holding
-#                          it was killed. A figure nobody measured does not go
-#                          here, so this row stays a dash until somebody times
-#                          it.
-#
-# ⚠ The two --fast figures are 106s and 171s on one machine with the same tree
-# plus a Rust workspace, and the difference is four checks of which three
-# compile. They are separate runs on a machine doing other things.
-#
-# ⭐ So --fast removes about 300 of the 403 seconds. ⚠ Every figure is one run on
-# a machine doing other things, and the three do not add up because they are
-# separate runs. Each carries its conditions, which is what makes a later one
-# comparable.
-#
-# ⚠ WINDOWS IS SLOW AT PROCESS SPAWNING and this gate spawns a great many, so a
-# POSIX host will be much faster. That is a reason to re-measure there rather
-# than to scale this number.
-#
-# ⚠ THIS IS NOT THE HOST THE FLAG EXISTS FOR. The twins exist because a native
-# Windows PowerShell session may have no POSIX shell, and no figure has been
-# taken there. A Windows number is still wanted and would be a different one.
-#
-# ⛔ --fast SKIPS check-twins. It does not weaken anything else, it is reported
-# as a SKIP like every other, and the summary says so. The full run is what a
-# push is gated on.
-#
-# -- ⛔ --strict, WHICH IS THE CI MODE --------------------------------------
-#
-# ⭐ It turns a SKIP into a failure. On a developer's machine a missing tool is
-# a fact about the machine; on a runner the tools are installed on purpose, so a
-# skip there means the install broke and the tree went unchecked.
-#
-# ⚠ IT WAS DOCUMENTED BEFORE IT EXISTED. docs/methodology/gate.md described this
-# flag and neither half of this runner had it, so a CI job passing `--strict`
-# would have been refused as an unknown argument and a job that stopped passing
-# it would have gone green over any number of skips. That is the "a setting or
-# flag that no code reads" row in docs/conventions/forbidden-patterns.md, in the
-# runner the whole gate goes through.
-#
-# Usage:
-#   sh scripts/common/check-gate.sh
-#   sh scripts/common/check-gate.sh --fast
-#   sh scripts/common/check-gate.sh --json
-#   sh scripts/common/check-gate.sh --strict
-#
-# Exit codes: 0 everything that ran passed, 1 something failed, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-gate.sh [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 set -u
 
 JSON=0
@@ -178,7 +79,7 @@ check_simple() {
 # is 431. That row runs BOTH gates in full, and each gate re-runs the fourteen
 # checks that ALREADY HAVE A ROW OF THEIR OWN. Fourteen rules were compared
 # three times each, and the two extra times cost more than everything else in
-# that file put together. TODO/tooling.md, TOOL-15.
+# that file put together. docs/history/todo/tooling.md, TOOL-15.
 #
 # ⭐ So a gate running inside check-twins skips them. What that pair uniquely
 # proves is untouched: the LIST each half runs, and the checks with no row of
@@ -220,10 +121,10 @@ compared_directly 'check-record'        || check_simple 'check-record'        sh
 compared_directly 'check-no-secrets'    || check_simple 'check-no-secrets'    sh "$HERE/check-no-secrets.sh" --public
 # ⛔ 1 is "it ran and the thing failed" and 2 is "it could not run", and a
 # script that returned 1 for the second is one somebody disables the day a
-# runner has no browser. TODO/ci.md, CI-07.
+# runner has no browser. docs/history/todo/ci.md, CI-07.
 compared_directly 'check-exit-codes'    || check_simple 'check-exit-codes'    sh "$HERE/check-exit-codes.sh"
 # ⛔ An automated step nobody can do by hand is a step that stops existing
-# when the platform does. TODO/ci.md, CI-08.
+# when the platform does. docs/history/todo/ci.md, CI-08.
 compared_directly 'check-manual-path'  || check_simple 'check-manual-path'  sh "$HERE/check-manual-path.sh"
 # ⛔ THE REFUSALS THAT STAND BETWEEN A MACHINE AND LOSING ITS BROWSER. It was
 # outside the gate while DRIVER-08 was unfinished, on the grounds that a check
@@ -233,12 +134,12 @@ compared_directly 'check-manual-path'  || check_simple 'check-manual-path'  sh "
 # and reports the provisioning itself as a SKIP, which is what it does here.
 compared_directly 'check-provisioning' || check_simple 'check-provisioning' sh "$HERE/check-provisioning.sh"
 # ⛔ ONE GENERATOR, CANONICAL JSON IN, EVERY FORMAT OUT, and the round trip is
-# what says a format has a reader as well as a writer. TODO/schema.md, SCHEMA-08.
+# what says a format has a reader as well as a writer. docs/history/todo/schema.md, SCHEMA-08.
 compared_directly 'check-formats'      || check_simple 'check-formats'      sh "$HERE/check-formats.sh"
 # ⛔ AN ISSUE IS A REQUEST FOR SOMEBODY ELSE TO DO WORK, and a pull request with
 # the work in it is the deliverable. --fixture is required: there is no pull
 # request to check, and a run with no argument would read as though there were.
-# TODO/ci.md, CI-04.
+# docs/history/todo/ci.md, CI-04.
 compared_directly 'check-pr-body'      || check_simple 'check-pr-body'      sh "$HERE/check-pr-body.sh" --fixture
 # ⭐ PUB-06. A synthesised capture that is indistinguishable from a real one is
 # the one thing that entry forbids, and this is what says it is not.
@@ -253,15 +154,15 @@ compared_directly 'check-packages'     || check_simple 'check-packages'     sh "
 compared_directly 'check-bindings'     || check_simple 'check-bindings'     sh "$HERE/check-bindings.sh"
 # ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. Six places state the
 # licence and one of them is the source every generated one reads.
-# TODO/publish.md, PUB-07.
+# docs/history/todo/publish.md, PUB-07.
 compared_directly 'check-license-consistency' ||   check_simple 'check-license-consistency' sh "$HERE/check-license-consistency.sh" --fixture
 # ⛔ A CONSUMER THAT PINS A RELEASE AND GETS DIFFERENT BYTES LATER HAS BEEN
 # BROKEN SILENTLY. --dry-run is required: this publishes nothing.
-# TODO/publish.md, PUB-01.
+# docs/history/todo/publish.md, PUB-01.
 compared_directly 'check-release' ||   check_simple 'check-release' sh "$HERE/check-release.sh" --dry-run
 # ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER, and
 # that property is free right up until somebody rewrites the branch.
-# TODO/publish.md, PUB-02.
+# docs/history/todo/publish.md, PUB-02.
 # ⚠ 2 IS "COULD NOT RUN" HERE AND IT WAS BEING READ AS A FAILURE. This check
 # exits 2 by design when the canonical corpus is not in this tree, because the
 # branch then has nothing independent to be compared against, and CI-07 rules
@@ -269,7 +170,7 @@ compared_directly 'check-release' ||   check_simple 'check-release' sh "$HERE/ch
 # designed refusal would have taken the gate red on the day PUB-13 removes
 # corpus/ from the default branch. ⛔ Recorded as a skip rather than a pass, so
 # --strict still refuses it in CI, where the corpus is present on purpose.
-# TODO/publish.md, PUB-14.
+# docs/history/todo/publish.md, PUB-14.
 if ! compared_directly 'check-data-branch'; then
   db_out=$(sh "$HERE/check-data-branch.sh" 2>&1)
   rc=$?
@@ -284,21 +185,21 @@ if ! compared_directly 'check-data-branch'; then
 fi
 # ⛔ THE TRIGGER, AND THE TWO CONDITIONS THAT STAND BETWEEN IT AND A REWRITTEN
 # BRANCH. A force push over the data branch discards every commit a consumer
-# pinned. TODO/publish.md, PUB-10.
+# pinned. docs/history/todo/publish.md, PUB-10.
 compared_directly 'check-publish' ||   check_simple 'check-publish' sh "$HERE/check-publish.sh"
 # ⛔ EVERY WARM RUN PASSES OVER A BROKEN COLD PATH, and nothing else in this
-# tree catches one. TODO/ci.md, CI-05.
+# tree catches one. docs/history/todo/ci.md, CI-05.
 compared_directly 'check-cold-start' ||   check_simple 'check-cold-start' sh "$HERE/check-cold-start.sh"
 # ⛔ A CELL THAT SAYS "approximately" IS WORSE THAN ONE THAT SAYS "cannot", and a
-# hole whose evidence stopped resolving is a claim. TODO/emitters.md, EMIT-01.
+# hole whose evidence stopped resolving is a claim. docs/history/todo/emitters.md, EMIT-01.
 compared_directly 'check-support-matrix' ||   check_simple 'check-support-matrix' sh "$HERE/check-support-matrix.sh"
 compared_directly 'check-generated-configs' || check_simple 'check-generated-configs' sh "$HERE/check-generated-configs.sh"
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
-# build that carries it gets a published list with its date. TODO/corpus.md,
+# build that carries it gets a published list with its date. docs/history/todo/corpus.md,
 # CORPUS-04.
 compared_directly 'check-trust-anchors' || check_simple 'check-trust-anchors' sh "$HERE/check-trust-anchors.sh"
 # ⛔ ONE GENERATOR, TWO OUTPUTS, so a release body and a changelog entry cannot
-# disagree by construction rather than by discipline. TODO/publish.md, PUB-08.
+# disagree by construction rather than by discipline. docs/history/todo/publish.md, PUB-08.
 compared_directly 'check-notes-generator' || check_simple 'check-notes-generator' sh "$HERE/check-notes-generator.sh"
 
 # Run one check whose 2 means "could not run", and report that as a SKIP.
@@ -392,7 +293,7 @@ fi
 # copies of one rule computed in two languages, compared by nothing: the twin
 # comparison covers a PAIR OF SCRIPTS, and a rule with no script of its own had
 # no row. ⭐ It is a check now, with both halves and a row, like every other
-# rule in this repository. TODO/tooling.md, TOOL-17.
+# rule in this repository. docs/history/todo/tooling.md, TOOL-17.
 #
 # ⚠ 2 is "could not run": git tracks no file here. That has verified nothing, so
 # it is a SKIP rather than a pass.

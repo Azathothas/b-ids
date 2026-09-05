@@ -1,4 +1,6 @@
-# stale-documents.md
+# Retired documentation findings
+
+This page records documentation defects found and resolved before the initial release.
 
 ⛔ **Nothing here is read to do work.** This is the wording nine documents and three
 script headers carried before 2026-09-03, kept in its original words because
@@ -8,9 +10,9 @@ passage is moved rather than summarised.
 ⚠ **What made it stale was not a wrong reading.** Every passage below was true
 when it was written. Four sessions built the schema, the harness, the corpus,
 the emitters, the library and the publishing surfaces, moved
-[`../../TODO/`](../../TODO/) and the changelog with each of them, and did not
+[`../../docs/history/todo/`](../../docs/history/todo/) and the changelog with each of them, and did not
 re-read the reference pages those name. ⛔ That is step 4 of
-[`../../TODO/RULES.md`](../../TODO/RULES.md) section 10, and skipping it is what
+[`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 10, and skipping it is what
 this page records.
 
 ---
@@ -32,8 +34,8 @@ this page records.
 | `check-data-branch`, both halves | the comparison against the published branch cannot run | it runs, and reports `matched` in its own JSON |
 | `check-formats.sh` | nothing here publishes a generated format | the data branch carries nine of them |
 | `check-license-consistency`, both halves | the data branch is not checked because it does not exist | both its manifest identifier and its licence text are compared |
-| [`../../TODO/RULES.md`](../../TODO/RULES.md) section 8.5 | the Windows toolchain failure is the runner's, and the answer is to rerun the job | this repository's own probe starts the install the conflict is a fragment of, and kills it |
-| ⭐ [`../../TODO/corpus.md`](../../TODO/corpus.md), `CORPUS-02` | an unbranded build publishes an EMPTY trust-anchor list, so the bundled root store is branding rather than engine | ⛔ **refuted the same day.** A distribution Chromium is equally unbranded and sends a full 206-byte list. The empty one is a property of the automation channel's build configuration |
+| [`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 8.5 | the Windows toolchain failure is the runner's, and the answer is to rerun the job | this repository's own probe starts the install the conflict is a fragment of, and kills it |
+| ⭐ [`../../docs/history/todo/corpus.md`](../../docs/history/todo/corpus.md), `CORPUS-02` | an unbranded build publishes an EMPTY trust-anchor list, so the bundled root store is branding rather than engine | ⛔ **refuted the same day.** A distribution Chromium is equally unbranded and sends a full 206-byte list. The empty one is a property of the automation channel's build configuration |
 
 ---
 
@@ -50,7 +52,7 @@ an unverified implementation is the fabricated value this project refuses.
 ⛔ **`VALID-04` closed on 2026-09-03** with JA4 implemented from the published
 specification and checked against sixteen vectors. What survives of the passage
 is the corpus half: a published profile still carries `digests: null`, and by
-the ruling in [`../../TODO/validator.md`](../../TODO/validator.md) it always
+the ruling in [`../../docs/history/todo/validator.md`](../../docs/history/todo/validator.md) it always
 will, because a digest is derived on demand rather than stored.
 
 ### `architecture.md`, section 4
@@ -58,7 +60,7 @@ will, because a digest is derived on demand rather than stored.
 ```text
 ⚠ **Nothing is published outside this repository yet.** There is no release, no
 data branch and no fetchable route; `PUB-01`, `PUB-02` and `PUB-03` are those
-three surfaces. [`../TODO/publish.md`](../TODO/publish.md).
+three surfaces. [`../docs/history/todo/publish.md`](../docs/history/todo/publish.md).
 ```
 
 ⛔ **All three closed**, and the data branch was pushed on 2026-09-03. The
@@ -161,7 +163,7 @@ comparing that is `TOOL-05`. |
 
 ⛔ **`TOOL-05` closed and the row stayed.** The comparison exists, on the
 self-test, and the row was deleted rather than emptied by the rule in
-[`../../TODO/RULES.md`](../../TODO/RULES.md) section 4. The same page called
+[`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 4. The same page called
 `TOOL-04` an open defect in the same tool, four sessions after it closed.
 
 ### `methodology/work-todo.md`, the session boundary
@@ -170,8 +172,8 @@ self-test, and the row was deleted rather than emptied by the rule in
 - **The next prompt**, in chat only.
 ```
 
-⛔ **[`../../TODO/RULES.md`](../../TODO/RULES.md) section 10 refuses one**, in
-as many words, and so does [`../AGENTS.md`](../AGENTS.md) section 6. The general
+⛔ **[`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 10 refuses one**, in
+as many words, and so does [`../../AGENTS.md`](../../AGENTS.md). The general
 methodology page kept the template's wording, so the tree carried two answers to
 whether a session ends by printing a prompt.
 
@@ -213,7 +215,7 @@ sentence stayed, which is the same shape as the skip above it: a leg whose own
 condition had been met, still declining. `PUB-12` is the entry that added the
 two legs.
 
-### `TODO/RULES.md`, section 8.5, on the Windows CI failure
+### `docs/history/todo/RULES.md`, section 8.5, on the Windows CI failure
 
 ```text
 ## 8.5 ⚠ The Windows CI job fails at the toolchain step, and it is not yours
@@ -247,7 +249,7 @@ read as evidence that the tree was innocent and the runner was not. It is
 actually the clue: that job passes `--fast`, which skips version probes, so it
 never starts an install for anything to interrupt. `CI-09` has the measurement.
 
-### `TODO/corpus.md`, `CORPUS-02`, the trust-anchor conclusion
+### `docs/history/todo/corpus.md`, `CORPUS-02`, the trust-anchor conclusion
 
 Written 2026-09-04, on the day the first two unbranded builds landed:
 

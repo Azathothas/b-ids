@@ -1,38 +1,10 @@
-﻿# check-catalogues.ps1 - is every script and every document named by the
-# catalogue that claims to list it?
+﻿# check-catalogues.ps1 - require every first-party script and document to appear in its owning index.
 #
-# ⭐ THE TWIN OF check-catalogues.sh. Same schema, same exit codes, same rules.
-# check-twins.sh is what stops the two drifting.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# ⛔ A CATALOGUE NOTHING CHECKS STOPS BEING A CATALOGUE. docs/AGENTS.md calls
-# scripts/README.md the contract every script is held to, and carries its own
-# table of what each document owns. Neither was compared against the tree:
-# measured 2026-09-03, THIRTEEN of the checks the gate runs had no section in
-# scripts/README.md at all, and the gate was green throughout.
-# TODO/tooling.md, TOOL-19.
-#
-# ⛔ THE TWO RULES, AND THEY ARE THE ONLY TWO. Every script under scripts/ is
-# named by scripts/README.md, with twins collapsed to one base name because a
-# pair is one contract. Every document under docs/ is named by its index:
-# docs/AGENTS.md for the tree, docs/HISTORY/README.md for the history directory.
-#
-# ⛔ IT DOES NOT READ THE PROSE. Whether a section is any good is a review.
-# ⚠ THE OTHER DIRECTION IS ALREADY HELD by check-docs, which resolves every
-# cited path in every markdown file here.
-#
-# ⛔ AN EMPTY SCOPE IS EXIT 2, because a check reporting clean over nothing is
-# how it quietly stops applying.
-#
-# Usage:
-#   pwsh -NoProfile -File scripts/common/check-catalogues.ps1
-#   pwsh -NoProfile -File scripts/common/check-catalogues.ps1 -Json
-#   pwsh -NoProfile -File scripts/common/check-catalogues.ps1 -Fixture
-#   pwsh -NoProfile -File scripts/common/check-catalogues.ps1 -Fixtures DIR
-#
-# Exit codes: 0 every one is named, 1 one is not, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-catalogues.ps1 [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 [CmdletBinding()]
 param(
     [switch]$Json,
@@ -77,6 +49,7 @@ function Get-ScriptCatalogue {
             ForEach-Object { $_.FullName })
     }
     @($paths |
+        Where-Object { Test-Path -LiteralPath "$_" -PathType Leaf } |
         Where-Object { "$_" -match '\.(sh|ps1|mjs)$' } |
         ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension("$_") } |
         Sort-Object -Unique -CaseSensitive)
@@ -95,14 +68,18 @@ function Get-DocCatalogue {
             ForEach-Object { $_.FullName.Substring((Get-Location).Path.Length + 1) -replace '\\', '/' })
     }
     $out = New-Object System.Collections.Generic.List[object]
-    foreach ($p in ($paths | Sort-Object)) {
+    foreach ($p in ($paths | Sort-Object -Unique)) {
         $rel = "$p"
-        if ($rel -eq 'docs/AGENTS.md' -or $rel -eq 'docs/HISTORY/README.md') { continue }
-        if ($rel.StartsWith('docs/HISTORY/')) {
-            $out.Add([pscustomobject]@{ Index = 'docs/HISTORY/README.md'; Name = $rel.Substring('docs/HISTORY/'.Length) })
+        if (-not (Test-Path -LiteralPath $rel -PathType Leaf)) { continue }
+        if ($rel -eq 'docs/history/README.md' -or $rel -eq 'docs/history/todo/README.md') { continue }
+        if ($rel.StartsWith('docs/history/todo/')) {
+            $out.Add([pscustomobject]@{ Index = 'docs/history/todo/README.md'; Name = $rel.Substring('docs/history/todo/'.Length) })
+        }
+        elseif ($rel.StartsWith('docs/history/')) {
+            $out.Add([pscustomobject]@{ Index = 'docs/history/README.md'; Name = $rel.Substring('docs/history/'.Length) })
         }
         else {
-            $out.Add([pscustomobject]@{ Index = 'docs/AGENTS.md'; Name = $rel.Substring('docs/'.Length) })
+            $out.Add([pscustomobject]@{ Index = 'AGENTS.md'; Name = $rel.Substring('docs/'.Length) })
         }
     }
     , $out
@@ -157,7 +134,7 @@ if ($Fixture) {
     Set-Content -LiteralPath (Join-Path $fix 'scripts/README.md') -Value 'catalogue naming alpha and nothing else'
     Set-Content -LiteralPath (Join-Path $fix 'scripts/common/alpha.sh') -Value '#!/bin/sh'
     Set-Content -LiteralPath (Join-Path $fix 'scripts/common/beta.sh') -Value '#!/bin/sh'
-    Set-Content -LiteralPath (Join-Path $fix 'docs/AGENTS.md') -Value 'router naming methodology/one.md and nothing else'
+    Set-Content -LiteralPath (Join-Path $fix 'AGENTS.md') -Value 'router naming methodology/one.md and nothing else'
     Set-Content -LiteralPath (Join-Path $fix 'docs/methodology/one.md') -Value '# one'
     Set-Content -LiteralPath (Join-Path $fix 'docs/methodology/two.md') -Value '# two'
 

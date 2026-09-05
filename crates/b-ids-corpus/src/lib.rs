@@ -22,17 +22,17 @@
 //! entries look measured and are not is the one failure this project cannot
 //! recover from, and every repair is a step towards one.
 //!
-//! `TODO/corpus.md`, `CORPUS-01`.
+//! `docs/history/todo/corpus.md`, `CORPUS-01`.
 
 pub mod capture;
 pub mod configs;
 pub mod formats;
 pub mod notes;
 // ⭐ A package per ecosystem, generated from the corpus rather than
-// maintained. TODO/publish.md, PUB-05.
+// maintained. docs/history/todo/publish.md, PUB-05.
 pub mod packages;
 // ⭐ A packet capture per profile, synthesised from the bytes it already
-// carries rather than taken a second time. TODO/publish.md, PUB-06.
+// carries rather than taken a second time. docs/history/todo/publish.md, PUB-06.
 pub mod pcap;
 pub mod publish;
 pub mod pull_request;
@@ -49,7 +49,10 @@ pub use formats::{
 pub use notes::{Change, Movement, changelog_entry, facts, model, release_body};
 pub use packages::{ECOSYSTEMS, File as PackageFile, packages};
 pub use pcap::{NotSynthesised, SYNTHESISED_MARKER, Synthesised, synthesise};
-pub use publish::{Artefact, Built, build, parse_tag, plan_release, would_rewrite};
+pub use publish::{
+    Artefact, Built, INITIAL_RELEASE_TAG, build, parse_tag, plan_initial_release, plan_release,
+    would_rewrite,
+};
 pub use pull_request::{ChangeClass, Condition, Conditions, Request, Run, batch, requests};
 pub use route::{CORPUS_DIR, LAYOUT, NoRoute, RAW_DIR, Route, route};
 pub use routes::{Manifest, Property, indexes, manifest, routes};

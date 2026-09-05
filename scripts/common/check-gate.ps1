@@ -1,105 +1,10 @@
-﻿# check-gate.ps1 - run every local gate this host can run, in one command.
+﻿# check-gate.ps1 - run every applicable repository check and report one verdict.
 #
-# ⭐ THE TWIN OF check-gate.sh, and the one to prefer on Windows. It earns a
-# twin by the rule in check-twins.sh: a native PowerShell session may have no
-# POSIX shell at all, and "run the whole gate" is exactly the command somebody
-# reaches for on a machine where that is true. Everything else under common/
-# runs after the probe has reported and can assume sh; this cannot, because it
-# is what a session runs first.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# The defect this exists to catch is a gate that was skipped because it was the
-# ninth thing to remember. Part (a) of docs/methodology/gate.md is a LIST, and a
-# list run by hand is run in the order somebody recalls it, missing whichever
-# entry was added last.
-#
-# ⛔ IT IS NOT A SECOND SET OF RULES. Every line below shells out to a check
-# that already exists and reads that check's own exit code. When this file and
-# .github/workflows/ci.yml disagree about what runs, CI is the one that gates a
-# push and this one is the defect.
-#
-# ⛔ IT RUNS EACH CHECK'S POWERSHELL TWIN, NOT ITS sh HALF. It used to run the
-# sh half of all six twinned checks and skip every one of them when no POSIX
-# shell was found, which is the host this file exists for. What still needs sh
-# is what has no twin: `sh -n`, `shellcheck`, and check-twins itself.
-#
-# -- ⚠ A SKIPPED CHECK IS NOT A PASSED CHECK ---------------------------------
-#
-# Some of these need a tool that is not everywhere: sh, jq, shellcheck,
-# PSScriptAnalyzer. A gate that silently dropped one and still printed green
-# would be the "step that exits 0 having done nothing it was asked to do" row in
-# docs/conventions/forbidden-patterns.md. So a missing tool is SKIP, counted
-# separately, named in the summary and carried in -Json as `skipped`.
-#
-# -- ⚠ -Fast, AND WHY IT IS A FLAG RATHER THAN THE DEFAULT -------------------
-#
-# check-twins runs BOTH halves of every pair, so it costs roughly as much as the
-# rest of the gate put together. That is the right price before a push and the
-# wrong one before each of a dozen commits, and a gate too slow to run is a gate
-# that gets run once at the end.
-#
-# ⛔ THE FIGURES BELOW REPLACE A SET THAT WAS NOT MEASURED. This comment used to
-# carry a full run of 88 seconds, timed on a 4-CPU Linux container, beside a
-# claim that the gate passed. On the tree it named, check-docs reported eleven
-# problems and check-twins reported twelve drifts, so it did not.
-# TODO/tooling.md T-007 carries the correction.
-#
-# Measured 2026-08-31, Windows 11 (10.0.26200) on a 20-thread i7-12700H, Git
-# Bash 5.3 and PowerShell 7.6.5, over 13 twin pairs, on a tree of 4,476 tracked
-# files of which 4,389 are the reference corpus:
-#
-#   full sh run            403s
-#   sh --fast              106s
-#   this half, -Fast        31s
-#   check-twins alone      294s
-#
-# ⚠ RE-MEASURED THE SAME DAY, AFTER THE GATE GREW. The workspace landed and this
-# runner gained four checks: check-msrv and the three suite entries. check-twins
-# gained two pairs, so it compares 15. Same machine, same shells:
-#
-#   sh --fast              171s
-#   this half, -Fast        65s
-#   full sh run            ⛔ NOT RE-TAKEN. The run went green, all 19 checks,
-#                          and the timing line was lost when the shell holding
-#                          it was killed. A figure nobody measured does not go
-#                          here.
-#
-# ⚠ This half went from 31s to 65s and the sh half from 106s to 171s, and the
-# difference in both is four checks of which three compile.
-#
-# ⚠ Each figure is one run on a machine doing other things, and they do not add
-# up because they are separate runs.
-#
-# ⚠ THIS IS NOT THE HOST THIS FILE EXISTS FOR. It earns a twin because a native
-# Windows PowerShell session may have no POSIX shell, and no figure has been
-# taken there. A Windows number is still wanted and would be a different one.
-#
-# ⛔ -Fast SKIPS check-twins. It does not weaken anything else, it is reported
-# as a SKIP like every other, and the summary says so. The full run is what a
-# push is gated on.
-#
-# -- ⛔ -Strict, WHICH IS THE CI MODE ---------------------------------------
-#
-# ⭐ It turns a SKIP into a failure. On a developer's machine a missing tool is a
-# fact about the machine; on a runner the tools are installed on purpose, so a
-# skip there means the install broke and the tree went unchecked.
-#
-# ⚠ IT WAS DOCUMENTED BEFORE IT EXISTED, in docs/methodology/gate.md, and
-# neither half of this runner had it. ⛔ Keep this identical to the sh twin.
-#
-# Usage:
-#   pwsh -NoProfile -File scripts/common/check-gate.ps1
-#   pwsh -NoProfile -File scripts/common/check-gate.ps1 -Fast
-#   pwsh -NoProfile -File scripts/common/check-gate.ps1 -Json
-#   pwsh -NoProfile -File scripts/common/check-gate.ps1 -Strict
-#
-#   pwsh -NoProfile -File scripts/common/git-sync.ps1 -Message "..." -BodyFile msg.txt `
-#        -Gate "pwsh -NoProfile -File scripts/common/check-gate.ps1"
-#
-# Exit codes: 0 everything that ran passed, 1 something failed, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
-# -- PSScriptAnalyzer, suppressed per rule with the reason --------------------
+# Usage: scripts/common/check-gate.ps1 [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '',
     Justification = 'Not used here. Declared so a future edit that reaches for Write-Host has to delete this line and think about it; every line of output below goes through Write-Output so -Json stays parseable.')]
 [CmdletBinding()]
@@ -111,7 +16,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -206,7 +111,7 @@ function Invoke-Check {
 # ⛔ MEASURED, NOT GUESSED. `check-twins --timings`, 2026-09-01, on one Windows
 # 11 host: 970 seconds across twenty pairs, of which the `check-gate` row alone
 # is 431. That row runs BOTH gates in full, and each gate re-runs the fourteen
-# checks that ALREADY HAVE A ROW OF THEIR OWN. TODO/tooling.md, TOOL-15.
+# checks that ALREADY HAVE A ROW OF THEIR OWN. docs/history/todo/tooling.md, TOOL-15.
 #
 # ⭐ So a gate running inside check-twins skips them. What that pair uniquely
 # proves is untouched: the LIST each half runs, and the checks with no row of
@@ -419,11 +324,11 @@ Invoke-PsCheck -Name 'check-coverage' -Script 'scripts/common/check-coverage.ps1
 #
 # ⛔ 1 is "it ran and the thing failed" and 2 is "it could not run", and a
 # script that returned 1 for the second is one somebody disables the day a
-# runner has no browser. TODO/ci.md, CI-07.
+# runner has no browser. docs/history/todo/ci.md, CI-07.
 Invoke-PsCheck -Name 'check-exit-codes' -Script 'scripts/common/check-exit-codes.ps1'
 
 # ⛔ An automated step nobody can do by hand is a step that stops existing
-# when the platform does. TODO/ci.md, CI-08.
+# when the platform does. docs/history/todo/ci.md, CI-08.
 Invoke-PsCheck -Name 'check-manual-path' -Script 'scripts/common/check-manual-path.ps1'
 
 # ⛔ THE REFUSALS THAT STAND BETWEEN A MACHINE AND LOSING ITS BROWSER. It was
@@ -435,13 +340,13 @@ Invoke-PsCheck -Name 'check-manual-path' -Script 'scripts/common/check-manual-pa
 Invoke-PsCheck -Name 'check-provisioning' -Script 'scripts/common/check-provisioning.ps1'
 
 # ⛔ ONE GENERATOR, CANONICAL JSON IN, EVERY FORMAT OUT, and the round trip is
-# what says a format has a reader as well as a writer. TODO/schema.md, SCHEMA-08.
+# what says a format has a reader as well as a writer. docs/history/todo/schema.md, SCHEMA-08.
 Invoke-PsCheck -Name 'check-formats' -Script 'scripts/common/check-formats.ps1'
 
 # ⛔ AN ISSUE IS A REQUEST FOR SOMEBODY ELSE TO DO WORK, and a pull request with
 # the work in it is the deliverable. -Fixture is required: there is no pull
 # request to check, and a run with no argument would read as though there were.
-# TODO/ci.md, CI-04.
+# docs/history/todo/ci.md, CI-04.
 Invoke-PsCheck -Name 'check-pr-body' -Script 'scripts/common/check-pr-body.ps1' -Arguments @('-Fixture')
 # ⭐ PUB-06. A synthesised capture that says it is one.
 Invoke-PsCheck -Name 'check-pcap' -Script 'scripts/common/check-pcap.ps1' -Arguments @()
@@ -454,45 +359,45 @@ Invoke-PsCheck -Name 'check-bindings' -Script 'scripts/common/check-bindings.ps1
 
 # ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. Six places state the
 # licence and one of them is the source every generated one reads.
-# TODO/publish.md, PUB-07.
+# docs/history/todo/publish.md, PUB-07.
 Invoke-PsCheck -Name 'check-license-consistency' -Script 'scripts/common/check-license-consistency.ps1' -Arguments @('-Fixture')
 
 # ⛔ A CONSUMER THAT PINS A RELEASE AND GETS DIFFERENT BYTES LATER HAS BEEN
 # BROKEN SILENTLY. -DryRun is required: this publishes nothing.
-# TODO/publish.md, PUB-01.
+# docs/history/todo/publish.md, PUB-01.
 Invoke-PsCheck -Name 'check-release' -Script 'scripts/common/check-release.ps1' -Arguments @('-DryRun')
 
 # ⛔ A CONSUMER PINNING A COMMIT ON THE DATA BRANCH KEEPS WORKING FOREVER.
-# TODO/publish.md, PUB-02.
+# docs/history/todo/publish.md, PUB-02.
 # ⚠ 2 IS "COULD NOT RUN" HERE AND IT WAS BEING READ AS A FAILURE. This check
 # exits 2 by design when the canonical corpus is not in this tree, and CI-07
 # rules that a 2 is not a failure. ⛔ A SKIP rather than a pass, so --strict
 # still refuses it in CI where the corpus is present on purpose.
-# TODO/publish.md, PUB-14.
+# docs/history/todo/publish.md, PUB-14.
 Invoke-PsCheck -Name 'check-data-branch' -Script 'scripts/common/check-data-branch.ps1' `
     -SkipCodes 2 -SkipReason 'the canonical corpus is not in this tree, so the branch has nothing to be compared against'
 
 # ⛔ THE TRIGGER, AND THE TWO CONDITIONS THAT STAND BETWEEN IT AND A REWRITTEN
-# BRANCH. TODO/publish.md, PUB-10.
+# BRANCH. docs/history/todo/publish.md, PUB-10.
 Invoke-PsCheck -Name 'check-publish' -Script 'scripts/common/check-publish.ps1'
 
 # ⛔ EVERY WARM RUN PASSES OVER A BROKEN COLD PATH, and nothing else in this tree
-# catches one. TODO/ci.md, CI-05.
+# catches one. docs/history/todo/ci.md, CI-05.
 Invoke-PsCheck -Name 'check-cold-start' -Script 'scripts/common/check-cold-start.ps1'
 
-# ⛔ A HOLE WHOSE EVIDENCE STOPPED RESOLVING IS A CLAIM. TODO/emitters.md, EMIT-01.
+# ⛔ A HOLE WHOSE EVIDENCE STOPPED RESOLVING IS A CLAIM. docs/history/todo/emitters.md, EMIT-01.
 Invoke-PsCheck -Name 'check-support-matrix' -Script 'scripts/common/check-support-matrix.ps1'
 
 # ⛔ A SNIPPET IS GENERATED ONLY WHERE THE MATRIX SAYS THE PAIR CAN EMIT, and a
-# hole gets a named refusal instead. TODO/publish.md, PUB-04.
+# hole gets a named refusal instead. docs/history/todo/publish.md, PUB-04.
 Invoke-PsCheck -Name 'check-generated-configs' -Script 'scripts/common/check-generated-configs.ps1'
 
 # ⛔ ONE EXTENSION CARRIES A SNAPSHOT OF THE BROWSER'S OWN ROOT STORE, and every
-# build that carries it gets a published list with its date. TODO/corpus.md,
+# build that carries it gets a published list with its date. docs/history/todo/corpus.md,
 # CORPUS-04.
 Invoke-PsCheck -Name 'check-trust-anchors' -Script 'scripts/common/check-trust-anchors.ps1'
 
-# ⛔ ONE GENERATOR, TWO OUTPUTS. TODO/publish.md, PUB-08.
+# ⛔ ONE GENERATOR, TWO OUTPUTS. docs/history/todo/publish.md, PUB-08.
 Invoke-PsCheck -Name 'check-notes-generator' -Script 'scripts/common/check-notes-generator.ps1'
 
 # -- the published route files, and the one byte a consumer should not have to
@@ -506,7 +411,7 @@ Invoke-PsCheck -Name 'check-routes' -Script 'scripts/common/check-routes.ps1' `
 # ⛔ IT USED TO BE INLINE HERE, IN BOTH HALVES, AND THAT WAS THE DEFECT. Two
 # copies of one rule computed in two languages, compared by nothing: the twin
 # comparison covers a PAIR OF SCRIPTS, and a rule with no script of its own had
-# no row. ⭐ It is a check now, with both halves and a row. TODO/tooling.md,
+# no row. ⭐ It is a check now, with both halves and a row. docs/history/todo/tooling.md,
 # TOOL-17.
 Invoke-PsCheck -Name 'check-line-endings' -Script 'scripts/common/check-line-endings.ps1' `
     -SkipCodes @(2) -SkipReason 'git tracks no file in this repository'

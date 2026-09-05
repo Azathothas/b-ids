@@ -1,5 +1,5 @@
 # Does trusting a real root change what the browser puts on the wire, against
-# trusting one key for one launch? TODO/harness.md, HARNESS-14.
+# trusting one key for one launch? docs/history/todo/harness.md, HARNESS-14.
 #
 # ⛔ THIS JOB EXISTS BECAUSE THE MACHINE IS THROWN AWAY. Installing a root
 # certificate is a change to a machine's security configuration, and the

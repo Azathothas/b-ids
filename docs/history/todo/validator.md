@@ -1,4 +1,4 @@
-# validator
+# Archived validator record
 
 Given a profile, answer one question: could a real browser have sent this?
 Pure logic over the model. No network, no browser.
@@ -173,7 +173,7 @@ the command reads cannot drift from the types.
   call.
 - **A command**, above.
 - **A JSON Schema**, which is
-  [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json)
+  [`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../../../crates/b-ids-schema/schema/browser-profile-1.schema.json)
   and landed with `SCHEMA-01`. ⚠ It expresses shape rather than coherence: a
   schema cannot say that a User-Agent and a brand list disagree, which is why
   the other two forms exist.
@@ -214,9 +214,9 @@ and the project has no publishable result at all until a capture exists.
 ### Premise
 
 ⭐ **Measured by reading, and the violations are already located.**
-[`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md)
+[`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md)
 section 7 names three, at file and line, in
-[`../references/`](../references/):
+[`../references/`](../../../references/):
 
 - five entries of one reference database return another version's TLS and
   HTTP/2 wholesale beside their own User-Agent and brand list, which is check 4;
@@ -239,7 +239,7 @@ input for the validator, and none of them enters the corpus.
 
 ⚠ Write it as a technical report, not as a complaint. Name the defect, name the
 line, and stop. A characterisation of a project or its maintainers is forbidden
-by [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) and
+by [`../docs/methodology/vendoring.md`](../../methodology/vendoring.md) and
 would be read by the person it is about.
 
 Must not: publish a claim without opening the file at the captured commit. A
@@ -367,7 +367,7 @@ directory walk, and only an assertion about the order can see that.
 
 ## VALID-03. A family the resolver cannot produce is data nobody can reach
 
-**Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 7
+**Source** [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 7
 **Category** validator, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
@@ -483,7 +483,7 @@ implementations that agree may be agreeing on the same defect.
 Believed. ⚠ And one specification detail matters here and was got wrong once
 already: the order-preserving raw form of the modern digest also strips GREASE,
 so a vector set that expects GREASE in it is wrong.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 10 carries
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 10 carries
 the correction.
 
 ### Approach
@@ -495,7 +495,7 @@ language can be checked against them.
 ⚠ **A licence question comes first and is not settled.** The modern digest's own
 implementation carries an attribution licence and its extended family carries a
 restrictive one.
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md)
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md)
 finding 5 has the split. Implement from the published specification, never by
 copying source, and do not emit any member of the extended family until the
 question has an answer written down.
@@ -531,7 +531,7 @@ test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 ⛔ **Ruled by this session under the operator's standing instruction, taking
 what the record recommends.**
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md)
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md)
 finding 5 splits FoxIO's licensing, and the answer follows from it:
 
 | | |
@@ -651,7 +651,7 @@ refuses both. ⚠ It also asserts the corruption changed something, because a
 
 ## VALID-05. A conformance suite for impersonating clients
 
-**Source** the founding brief; the shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 10
+**Source** the founding brief; the shape is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 10
 **Category** validator, **Priority** P2, **Effort** L, **Status** done
 
 ### Problem
@@ -691,7 +691,7 @@ report names that field and nothing else, and exits non-zero.
 ### ⭐ Closed 2026-09-04. Twenty-eight fields, three verdicts, and the third is the one that matters
 
 ⛔ **A field-level diff, never a digest comparison.**
-[`../crates/b-ids-conformance/`](../crates/b-ids-conformance/) compares a
+[`../crates/b-ids-conformance/`](../../../crates/b-ids-conformance/) compares a
 captured client against the profile it claims to be and names the fields.
 
 ```text
@@ -772,7 +772,7 @@ a field-level result where the premise in `CORPUS-02` had only a digest match.
 ⛔ **It names `chrome-152.0.7977.64-linux64-stable`, and no such profile has
 ever been in this corpus.** The nearest are `152.0.7977.75` on `linux64` and
 `152.0.7977.76` on `win64`. ⚠ This is the "acceptance command that cannot pass"
-defect [`../docs/conventions/prose.md`](../docs/conventions/prose.md) records,
+defect [`../docs/conventions/prose.md`](../../conventions/prose.md) records,
 and it sat in the entry from the day it was authored.
 
 ⭐ **The tool refuses it correctly rather than guessing**, which is how it was
@@ -798,7 +798,7 @@ and asserts the report names that field and nothing else, and the suite.
 
 ⛔ **It does not capture.** The observed side is a file. Standing up the harness
 and pointing a client at it is what
-[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh)
+[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh)
 already does for a browser, and a client author runs that once and this as often
 as they like. ⚠ Wiring the two into one command is worth doing and is not this
 entry.
@@ -824,7 +824,7 @@ anybody maintaining a client, and it is free once two profiles exist.
 Believed, and there is already one worked example to test against: a header
 moved position between two versions in the inherited captures, and it is the
 kind of change only a capture finds.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 6.
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 6.
 
 ### Approach
 
@@ -937,4 +937,3 @@ a profile, or a call that named other than exactly two.
 - ⛔ **Nothing puts it in a pull-request body.** `CI-04` is that entry, and the
   point of putting the diff in a library is that the two cannot disagree when it
   does.
-

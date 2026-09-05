@@ -16,16 +16,16 @@ its place, and a role listed here with no file behind it is a defect.
 
 | file | owns |
 | --- | --- |
-| [`../AGENTS.md`](../AGENTS.md) | the router, and the ONLY one. Where you are, the absolutes, the start of a session, and what to read for which task. |
+| [`../../AGENTS.md`](../../AGENTS.md) | the router, and the ONLY one. Where you are, the absolutes, the start of a session, and what to read for which task. |
 | [`../../README.md`](../../README.md) | what this is, for a competent stranger: the thing, the honest limits, the licence, and the map |
-| [`../../TODO/PROGRESS.md`](../../TODO/PROGRESS.md) | the record. The baseline, what the last session did, and the work order. Nothing else carries a work order. |
-| [`../../TODO/RULES.md`](../../TODO/RULES.md) | the half of the record that does not change between sessions: the standing facts, and the rules that are this project's own |
-| [`../../TODO/INDEX.md`](../../TODO/INDEX.md) | every entry, one line each, with the counts a check holds |
-| [`../../TODO/ENTRY.md`](../../TODO/ENTRY.md) | the form an entry is written from |
-| [`../../TODO/SUMMARY.md`](../../TODO/SUMMARY.md) | the last session's table. A snapshot, never an authority. |
+| [`../../docs/history/todo/PROGRESS.md`](../../docs/history/todo/PROGRESS.md) | the record. The baseline, what the last session did, and the work order. Nothing else carries a work order. |
+| [`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) | the half of the record that does not change between sessions: the standing facts, and the rules that are this project's own |
+| [`../../docs/history/todo/INDEX.md`](../../docs/history/todo/INDEX.md) | every entry, one line each, with the counts a check holds |
+| [`../../docs/history/todo/ENTRY.md`](../../docs/history/todo/ENTRY.md) | the form an entry is written from |
+| [`../../docs/history/todo/SUMMARY.md`](../../docs/history/todo/SUMMARY.md) | the last session's table. A snapshot, never an authority. |
 | [`../../CHANGELOG.md`](../../CHANGELOG.md) | what shipped, when, and where the evidence is |
 | [`../../SECURITY.md`](../../SECURITY.md) | ⭐ **the threat model**, and where to report. What this project accepts connections from, what a hosted oracle would receive, and what is in scope. `DOC-03`. |
-| [`../HISTORY/RESUME.md`](../HISTORY/RESUME.md) | ⚠ written at the START of a session and refreshed as work moves, so a session that dies mid-task still hands something over. Overwritten every session, never appended to. |
+| [`../history/RESUME.md`](../history/RESUME.md) | ⚠ written at the START of a session and refreshed as work moves, so a session that dies mid-task still hands something over. Overwritten every session, never appended to. |
 | ⭐ [`../architecture.md`](../architecture.md) | **the technical reference.** What a profile is, what each crate does to one, the state a capture passes through, and the limits. `DOC-01`. |
 | ⭐ [`../glossary.md`](../glossary.md) | the terms this project uses without stopping to define them |
 | ⭐ [`../inherited-claims.md`](../inherited-claims.md) | every value this project carries that was measured somewhere else. **When a document states a fingerprint, a version or a codepoint, this file is where its provenance lives, and when the two disagree this one wins.** |
@@ -35,7 +35,7 @@ its place, and a role listed here with no file behind it is a defect.
 | [`../trust-anchors.md`](../trust-anchors.md) | the extension that carries a snapshot of the browser's own root store, the three things a client can do about it, and the cost of each. ⛔ It asserts no preference. |
 | [`../reference-sweeps/findings.md`](../reference-sweeps/findings.md) | what external projects were read, at which commit, and what was true in them |
 | [`../reference-sweeps/usable.md`](../reference-sweeps/usable.md) | which of those findings this project can actually use, and where each one lands |
-| ⭐ [`../HISTORY/README.md`](../HISTORY/README.md) | **the story.** Superseded wording, reversed decisions, dead ends, review passes. ⛔ Everything above says what is true now; this says what was believed and why that changed. |
+| ⭐ [`../history/README.md`](../history/README.md) | **the story.** Superseded wording, reversed decisions, dead ends, review passes. ⛔ Everything above says what is true now; this says what was believed and why that changed. |
 
 ⭐ **Three were filled, and the third waited nearly a week for a reason.** The
 technical reference is `DOC-01`, written once there was a schema to describe;
@@ -49,7 +49,7 @@ attestation means no workflow needs a secret and no release needs a signing key.
 needs a packet-capture library on the machine, which is a decision about a host
 rather than about code. ⭐ That measurement is section 3 of the file.
 
-⛔ **`docs/HISTORY/` exists so that none of the rows above fill up with
+⛔ **`docs/history/` exists so that none of the rows above fill up with
 narrative.** ⚠ The instinct to record the story is right, which is why
 forbidding it does not work: a superseded explanation is worth keeping for the
 reason [`prose.md`](prose.md) gives. It needed a destination.
@@ -88,7 +88,7 @@ reference page can be:
 | a reading of somebody else's code | [`../reference-sweeps/findings.md`](../reference-sweeps/findings.md), which names the commit it was read at |
 
 ⚠ **This rule replaced an interim one on 2026-09-02**, and the wording it
-replaced is in [`../HISTORY/README.md`](../HISTORY/README.md) rather than
+replaced is in [`../history/README.md`](../history/README.md) rather than
 deleted. `DOC-01`.
 
 ### Documentation ships with the code it describes
@@ -142,9 +142,9 @@ they opened first.
 | --- | --- |
 | mechanical, so a script can hold it | ⭐ a check under [`../../scripts/common/`](../../scripts/common/). A rule enforced by a script is a rule nobody has to remember. |
 | greppable, so a reviewer can recognise it | a row in [`forbidden-patterns.md`](forbidden-patterns.md), with what it caused |
-| specific to this project, and it cost something | [`../../TODO/RULES.md`](../../TODO/RULES.md) section 4 |
+| specific to this project, and it cost something | [`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 4 |
 | a value somebody else measured | ⭐ [`../inherited-claims.md`](../inherited-claims.md), with its source and the entry that re-measures it |
-| a thing that was believed and is not any more | [`../HISTORY/README.md`](../HISTORY/README.md) |
+| a thing that was believed and is not any more | [`../history/README.md`](../history/README.md) |
 | what one reference project taught | [`../reference-sweeps/usable.md`](../reference-sweeps/usable.md) |
 
 ⚠ **A lesson that fits none of those rows is usually not a lesson yet.** It is

@@ -1,6 +1,6 @@
 //! `b-ids-conformance` - how close is this client to the browser it claims to be?
 //!
-//! ⛔ **A FIELD-LEVEL DIFF, NEVER A DIGEST COMPARISON.** `TODO/validator.md`,
+//! ⛔ **A FIELD-LEVEL DIFF, NEVER A DIGEST COMPARISON.** `docs/history/todo/validator.md`,
 //! `VALID-05`.
 //!
 //! Usage:
@@ -29,7 +29,7 @@ use b_ids_schema::Profile;
 /// The environment variable that names a corpus root explicitly.
 ///
 /// ⭐ **The same seam every other reader of the corpus uses.**
-/// `TODO/publish.md`, `PUB-11`.
+/// `docs/history/todo/publish.md`, `PUB-11`.
 const ROOT_ENV: &str = "B_IDS_CORPUS_ROOT";
 
 fn fail(why: &str) -> ExitCode {

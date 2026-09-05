@@ -67,7 +67,7 @@ fn resolve_and_drive_reports_a_build_from_a_source_it_names() {
         // panicked with `154.0 is not a build` on both. It passed on the
         // development host because that machine happens to carry `148.0.2`, a
         // point release with three components. ⛔ A local pass proved nothing
-        // about the assumption. TODO/corpus.md, CORPUS-02.
+        // about the assumption. docs/history/todo/corpus.md, CORPUS-02.
         assert!(
             browser.version.split('.').count() >= 2
                 && browser
@@ -243,7 +243,7 @@ fn resolve_and_drive_a_family_name_round_trips() {
     // ⚠ THE STAND-IN WAS `firefox` AND IS NOW `safari`. The resolver learned
     // firefox on 2026-09-04, so this assertion had started proving the opposite
     // of what it says: it would have gone red on the change that FIXED the gap
-    // it was written about. TODO/corpus.md, CORPUS-02.
+    // it was written about. docs/history/todo/corpus.md, CORPUS-02.
     assert_eq!(b_ids_driver::Family::parse("safari"), None);
     assert_eq!(b_ids_driver::Family::parse("Chrome"), None);
     assert_eq!(b_ids_driver::Family::parse(""), None);
@@ -424,7 +424,7 @@ fn an_automation_build_is_versioned_from_the_manifest_beside_the_executable() {
     // 151.0.7922.76.manifest and there is no version-shaped DIRECTORY at all.
     // Before this source existed, that layout resolved as an executable no
     // source could version, so the resolver skipped it and a provisioning run
-    // could not confirm its own install on Windows. TODO/driver.md, DRIVER-08.
+    // could not confirm its own install on Windows. docs/history/todo/driver.md, DRIVER-08.
     let dir = layout_dir("automation");
     let exe = dir.join("chrome.exe");
     std::fs::write(&exe, b"not a browser").expect("write the stand-in");
@@ -592,7 +592,7 @@ fn resolve_and_drive_a_family_with_no_index_offers_no_index_route() {
     // ⛔ index_url and index_route are asked together so they cannot disagree.
     // index_route used to answer a Route unconditionally, so a family with no
     // index still had a route name: a value describing an acquisition that
-    // cannot happen. TODO/corpus.md, CORPUS-02.
+    // cannot happen. docs/history/todo/corpus.md, CORPUS-02.
     for family in Family::all() {
         assert_eq!(
             b_ids_driver::acquire::index_url(family).is_some(),
@@ -605,7 +605,7 @@ fn resolve_and_drive_a_family_with_no_index_offers_no_index_route() {
     // The measurement changed rather than the rule: an APT archive publishing a
     // Packages index with a SHA-256 per artefact serves it by version, which
     // neither the snapshot bucket nor Ubuntu's own snap shim can do.
-    // TODO/corpus.md, CORPUS-02.
+    // docs/history/todo/corpus.md, CORPUS-02.
     assert_eq!(
         b_ids_driver::acquire::index_route(Family::Chromium),
         Some(b_ids_driver::acquire::Route::ChromiumUbuntuPpa)
@@ -759,7 +759,7 @@ fn resolve_and_drive_gecko_is_given_its_own_switches_and_none_of_chromium_s() {
     // headless without a mode; it has no `--user-data-dir` and reads a bare
     // `--no-first-run` as a file to open, so a Chromium switch passed here
     // navigates somewhere nobody asked for and the capture is of the wrong
-    // thing. TODO/driver.md, DRIVER-11.
+    // thing. docs/history/todo/driver.md, DRIVER-11.
     let exe = layout_dir("gecko-switches").join("firefox.exe");
     std::fs::write(&exe, b"not a browser").expect("write the stand-in");
     let browser = b_ids_driver::Resolved {

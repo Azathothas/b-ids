@@ -41,7 +41,7 @@ pub enum Channel {
     /// ⛔ **`branded: false` FOLLOWS from it rather than becoming a path
     /// component.** The alternative, `branded` as a fifth component, would have
     /// changed `corpus/v1/` for every consumer to carry a dimension only one
-    /// browser family has. `TODO/driver.md`, `DRIVER-06`.
+    /// browser family has. `docs/history/todo/driver.md`, `DRIVER-06`.
     ///
     /// ⚠ **It is never `latest`.** `CORPUS-03` says `latest` means stable and
     /// nothing else, and the pointer map is built from stable profiles alone,
@@ -263,7 +263,7 @@ impl fmt::Display for Trust {
 /// `capture.yml`: Chrome on `ubuntu-latest` abandoned both of its first two
 /// connections after the handshake and every later one resumed, so the
 /// navigation produced NO cold connection and nothing could be published from
-/// it. `TODO/corpus.md`, `CORPUS-02`.
+/// it. `docs/history/todo/corpus.md`, `CORPUS-02`.
 ///
 /// ⚠ **An enum rather than a boolean, and absent rather than defaulted.** A
 /// profile written before this field existed did not record the condition, and
@@ -352,7 +352,7 @@ pub struct Captured {
     /// ⭐ **The digest is what makes an acquisition reproducible after the
     /// artefact stops being served.** Every download URL will one day 404, and
     /// a later reader still needs to be able to say whether two captures used
-    /// the same bytes. `TODO/driver.md`, `DRIVER-05`.
+    /// the same bytes. `docs/history/todo/driver.md`, `DRIVER-05`.
     ///
     /// ⚠ **Absent where nothing was fetched**, which is a different fact from
     /// an acquisition that failed: a build already installed on the machine was
@@ -370,7 +370,7 @@ pub struct Captured {
     /// Two halves from two sockets of one navigation is a condition of the
     /// measurement rather than a detail: a reader who cannot tell cannot reason
     /// about anything that spans them, and the ordinary case and the
-    /// interesting case look identical without it. `TODO/harness.md`,
+    /// interesting case look identical without it. `docs/history/todo/harness.md`,
     /// `HARNESS-15`.
     ///
     /// ⚠ **Absent on every profile written before 2026-09-02.** Those were
@@ -428,7 +428,7 @@ pub const ACQUISITION_ROUTES: [&str; 6] = [
 ///
 /// ⛔ **The URL is recorded and the artefact never is.** This project publishes
 /// measurements, versions, digests and where a build was fetched from; the
-/// binary is the vendor's to serve. `TODO/driver.md`, `DRIVER-05`.
+/// binary is the vendor's to serve. `docs/history/todo/driver.md`, `DRIVER-05`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Acquisition {
     /// Which route answered, from [`ACQUISITION_ROUTES`].
@@ -666,14 +666,12 @@ pub struct Profile {
     ///
     /// ⛔ **A file that travels alone still has to say what it is.** A consumer
     /// who downloads one profile should not have to find this repository to
-    /// learn they may use it. `TODO/publish.md`, `PUB-07`.
+    /// learn they may use it. `docs/history/todo/publish.md`, `PUB-07`.
     ///
-    /// ⚠ **Defaulted rather than required, and that is not laziness.** The six
-    /// profiles published before 2026-09-03 do not carry the field in their
-    /// bytes and never will: the corpus is append-only and adding it to them
-    /// would be an edit of a published file. Reading one fills the default in,
-    /// every profile written from now on carries it literally, and the
-    /// published JSON Schema lists it as OPTIONAL for exactly that reason.
+    /// Older profiles may omit this field because versioned corpus files are
+    /// append-only. Deserialization supplies the project license for those
+    /// profiles; newly written profiles include it literally. The published
+    /// JSON Schema therefore keeps the field optional.
     #[serde(default = "default_license")]
     pub license: String,
     /// The identifier, derived from the four keys.
@@ -802,7 +800,7 @@ impl Profile {
         // constrains the route to an enum and the object to four fields;
         // nothing on this side did, so a profile could claim a route no driver
         // can produce and a digest that is not one, and every check in the tree
-        // would have passed it. `TODO/driver.md`, `DRIVER-05`.
+        // would have passed it. `docs/history/todo/driver.md`, `DRIVER-05`.
         //
         // ⚠ ABSENT IS CORRECT AND IS NOT CHECKED. A build already installed on
         // the machine was not obtained by this project and has no route.
@@ -961,7 +959,7 @@ impl Profile {
         // differed between draws; reporting fewer than two distinct orders
         // beside it is a claim its own field contradicts, and a consumer
         // reading the state alone would take one draw for the shape.
-        // `TODO/schema.md`, `SCHEMA-10`.
+        // `docs/history/todo/schema.md`, `SCHEMA-10`.
         if let crate::tls::Shuffle::Observed {
             distinct_orders, ..
         } = self.tls.shuffled

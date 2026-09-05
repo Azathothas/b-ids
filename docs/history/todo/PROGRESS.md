@@ -1,4 +1,4 @@
-# PROGRESS.md
+# Archived progress record
 
 ⭐ **The one file every session reads first.** Where the work is, what is next,
 and why. [`INDEX.md`](INDEX.md) is the list of entries and the **order lives
@@ -76,7 +76,7 @@ the cipher list is identical in order, and the whole HTTP/2 half is identical.
 | `EMIT-03` `S` | `h2` vendored and patched. The five bytes of the priority block a browser sends and this library could not write |
 | `PUB-06` `M` | a packet capture per profile, synthesised from the bytes it already carries and saying so three times in the file |
 | `PUB-09` `M` | keyless attestation from the runner's own identity. No key, no secret |
-| `DOC-02` `S` | [`../docs/HUMAN.md`](../docs/HUMAN.md), whose third trigger `PUB-06` measured rather than eliminated |
+| `DOC-02` `S` | [`../docs/HUMAN.md`](../../HUMAN.md), whose third trigger `PUB-06` measured rather than eliminated |
 | `EMIT-04` `M` | `--stack`, and fourteen of fourteen profiles reproduced with nothing differing |
 | `HARNESS-12` `L` | the oracle mode: a caller gets its own capture back and nothing is retained. ⛔ Built, not hosted |
 | `PUB-05` `L` | a JavaScript package generated from the corpus, embedding it, reporting its release |
@@ -108,7 +108,7 @@ the forge at `{"enabled":true}`.
 ## The three review passes, and what each one swept
 
 ⛔ **Three different questions, not one sweep written up three times.**
-[`../docs/methodology/reviews.md`](../docs/methodology/reviews.md) is the
+[`../docs/methodology/reviews.md`](../../methodology/reviews.md) is the
 specification. ⭐ All three found something.
 
 ### 1. The door sweep: what else reaches the code that changed
@@ -176,7 +176,7 @@ README, the technical reference and `RULES.md` are corrected.
 store is branding rather than engine" was a confound: the empty list came from a
 Chrome **for Testing** build, and a distribution Chromium is equally unbranded
 and sends a full 206-byte list. ⭐ Superseded in
-[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md) with
+[`../docs/history/stale-documents.md`](../stale-documents.md) with
 the original wording kept.
 
 ⚠ **What it did NOT find:** any pasted block that could not be reproduced. Every
@@ -206,7 +206,7 @@ the operator and all four are done.
    operator's since 2026-09-02.
 3. **Hosting the capture oracle.** ⛔ `HARNESS-12`'s mode is built and nothing is
    hosted; the retention answer is written into
-   [`../SECURITY.md`](../SECURITY.md) and the decision to stand anything up is a
+   [`../SECURITY.md`](../../../SECURITY.md) and the decision to stand anything up is a
    person's.
 
 ---
@@ -217,12 +217,12 @@ the operator and all four are done.
 
 ⚠ **What a next session would do is AUTHOR rather than work**, from
 [`ENTRY.md`](ENTRY.md) per
-[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md). The
+[`../docs/methodology/authoring.md`](../../methodology/authoring.md). The
 honest candidates this session measured and did not take:
 
 | what | why it is not an entry yet |
 | --- | --- |
-| ⭐ **the TCP half** | `PUB-06` measured that it needs a packet-capture library, which makes the Windows gate job fail at link time until Npcap is on that runner. It is a machine decision and [`../docs/HUMAN.md`](../docs/HUMAN.md) section 3 is the whole measurement |
+| ⭐ **the TCP half** | `PUB-06` measured that it needs a packet-capture library, which makes the Windows gate job fail at link time until Npcap is on that runner. It is a machine decision and [`../docs/HUMAN.md`](../../HUMAN.md) section 3 is the whole measurement |
 | a true binding rather than a reimplementation | `LIB-03` closed on a comparison. One would call the Rust crate through WASM or an FFI and needs a target in the toolchain pin |
 | the HTTP/2 half of the oracle's answer | it needs an HPACK encoder, and the one in this tree is the vendored `h2` that `b-ids-emit` owns; reaching it from the harness inverts the dependency |
 | `chrome/beta/linux64` and `chrome/stable/macos-arm64` | the two planned cells not attempted. Both wait on an acquisition route rather than on code |

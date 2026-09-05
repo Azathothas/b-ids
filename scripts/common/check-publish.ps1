@@ -1,12 +1,12 @@
 ﻿# check-publish.ps1 - does the workflow that publishes this project declare what
 # it must, and do the rules it defers to actually refuse?
 #
-# ⭐ THE TWIN OF check-publish.sh. TODO/driver.md, DRIVER-09, is why a script in
+# ⭐ THE TWIN OF check-publish.sh. docs/history/todo/driver.md, DRIVER-09, is why a script in
 # this directory does not land without one.
 #
 # ⛔ NOTHING IN THIS REPOSITORY WAS EVER PUBLISHED UNTIL A TRIGGER EXISTED, and
 # the first thing a trigger can get wrong is irreversible: a force push over the
-# data branch discards every commit a consumer pinned. TODO/publish.md, PUB-10.
+# data branch discards every commit a consumer pinned. docs/history/todo/publish.md, PUB-10.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -17,7 +17,8 @@
 #   5. the crate's rule is consulted before the push, by line order;
 #   6. both publishing jobs need the job that runs the two existing checks;
 #   7. the archive epoch is read from check-release.sh rather than typed;
-#   8. ⭐ THE RULES ACTUALLY REFUSE, driven against the built binary.
+#   8. ⭐ THE RELEASE AND DATA-BRANCH RULES ACTUALLY REFUSE, driven against the
+#      built binary.
 #
 # ⚠ THE READING IS THIS HALF'S OWN: -match and -split over the file's lines
 # where the twin uses awk, sed and grep, so the pair compares two readings
@@ -66,7 +67,7 @@ Set-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-publish: no corpus is reachable, so nothing was checked')
@@ -99,7 +100,7 @@ function Show-Failure {
     $problems | ForEach-Object { [Console]::Error.WriteLine($_) }
     [Console]::Error.WriteLine('')
     [Console]::Error.WriteLine('A force push over the data branch discards every commit a consumer')
-    [Console]::Error.WriteLine('pinned. TODO/publish.md, PUB-10.')
+    [Console]::Error.WriteLine('pinned. docs/history/todo/publish.md, PUB-10.')
 }
 
 if (-not (Test-Path -LiteralPath $workflow -PathType Leaf)) {
@@ -132,6 +133,9 @@ if ($onBlock -match '^    branches:.*main') { $triggers++ }
 else { [void]$problems.Add('  the workflow does not trigger on a push to the default branch') }
 if ($onBlock -match '^    tags:') { $triggers++ }
 else { [void]$problems.Add('  the workflow does not trigger on a pushed tag, so no release is ever cut') }
+if (-not ($onBlock -match [regex]::Escape("tags: ['v0.0.1', 'v1.*']"))) {
+    [void]$problems.Add('  the tag trigger does not admit exactly v0.0.1 and the dated v1 series')
+}
 
 # -- 2: the write is job-scoped ----------------------------------------------
 $topPermissions = Get-TopBlock -Text $lines -Key 'permissions'
@@ -274,9 +278,10 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-publish: the corpus crate did not build')
     exit 2
 }
-$bin = Join-Path $root 'target/debug/b-ids-corpus.exe'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug/b-ids-corpus.exe'
 if (-not (Test-Path -LiteralPath $bin -PathType Leaf)) {
-    $bin = Join-Path $root 'target/debug/b-ids-corpus'
+    $bin = Join-Path $targetDir 'debug/b-ids-corpus'
 }
 if (-not (Test-Path -LiteralPath $bin -PathType Leaf)) {
     [Console]::Error.WriteLine("check-publish: $bin is not executable")
@@ -310,12 +315,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Invoke-Rule 0 'a well-formed tag over an assembled tree is releasable' @('release', '--tree', $tree, '--tag', 'v1.2026.01.01.1', '--notes', (Join-Path $out 'NOTES.md'))
+Invoke-Rule 0 'the explicit bootstrap tag is releasable once' @('release', '--tree', $tree, '--tag', 'v0.0.1')
 Invoke-Rule 1 'a zero-padded counter is not the tag this rule produces' @('release', '--tree', $tree, '--tag', 'v1.2026.01.01.01')
 Invoke-Rule 1 'a malformed date is refused' @('release', '--tree', $tree, '--tag', 'v1.2026.1.1.1')
 Invoke-Rule 1 'a tag naming another layout is refused' @('release', '--tree', $tree, '--tag', 'v9.2026.01.01.1')
 $released = Join-Path $out 'released.txt'
 Set-Content -LiteralPath $released -Value 'v1.2026.01.01.1' -NoNewline
 Invoke-Rule 1 'a tag that already carries a release is refused' @('release', '--tree', $tree, '--tag', 'v1.2026.01.01.1', '--existing', $released)
+Set-Content -LiteralPath $released -Value 'v0.0.1' -NoNewline
+Invoke-Rule 1 'the bootstrap release is immutable once published' @('release', '--tree', $tree, '--tag', 'v0.0.1', '--existing', $released)
+Invoke-Rule 1 'another conventional semantic version is not a corpus release tag' @('release', '--tree', $tree, '--tag', 'v0.0.2')
 
 $count = $problems.Count
 

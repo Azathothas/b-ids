@@ -10,7 +10,7 @@
 //! a second implementation of SHA-256 for one identifier is the thing that home
 //! exists to prevent. A build dependency is not in a consumer's runtime graph,
 //! so the read-only path `b-ids-corpus` names in its own manifest stays
-//! read-only. `TODO/library.md`, `LIB-01`.
+//! read-only. `docs/history/todo/library.md`, `LIB-01`.
 
 use std::path::{Path, PathBuf};
 
@@ -62,9 +62,8 @@ fn main() {
             .and_then(serde_json::Value::as_str)
             .unwrap_or_else(|| panic!("b-ids: an index entry names no profile path"));
         let full = root.join(path);
-        // ⛔ AN INDEXED FILE THAT IS NOT THERE IS A REFUSAL, never a skip. A
-        // crate that embedded four of five profiles and said nothing would hand
-        // a consumer a corpus that is quietly smaller than the one it names.
+        // An indexed file that is missing is a build failure. Otherwise the
+        // embedded corpus would be smaller than the index it reports.
         assert!(
             full.is_file(),
             "b-ids: the index names {path} and there is no file at {}",

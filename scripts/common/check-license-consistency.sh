@@ -4,7 +4,7 @@
 #
 # ⛔ A FILE THAT TRAVELS ALONE STILL HAS TO SAY WHAT IT IS. A consumer who
 # downloads one profile should not have to find this repository to learn they may
-# use it. TODO/publish.md, PUB-07.
+# use it. docs/history/todo/publish.md, PUB-07.
 #
 # -- ⛔ THE PLACES, AND WHY EACH ONE ------------------------------------------
 #
@@ -26,7 +26,7 @@
 # somebody else's host is down. ⚠ NO LOCAL REF IS A SKIP naming the branch,
 # never a pass: reporting a pass over a branch nobody fetched is the "step that
 # exits 0 having done nothing" row of docs/conventions/forbidden-patterns.md.
-# TODO/publish.md, PUB-12.
+# docs/history/todo/publish.md, PUB-12.
 #
 # Usage:
 #   sh scripts/common/check-license-consistency.sh
@@ -68,7 +68,7 @@ cd "$REPO_ROOT" || { printf 'check-license-consistency: cannot enter %s\n' "$REP
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-license-consistency: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -149,7 +149,7 @@ PREDATES=0
 # ⚠ A FILESYSTEM WALK RATHER THAN `git ls-files`, because the corpus is not
 # always a tracked path of THIS repository: once it leaves the default branch
 # the root resolves to a materialised copy of the data branch, which git knows
-# nothing about as a working tree. TODO/publish.md, PUB-11.
+# nothing about as a working tree. docs/history/todo/publish.md, PUB-11.
 for file in $(find "$CORPUS_ROOT/corpus/v1" -type f -name '*.json' 2>/dev/null | LC_ALL=C sort); do
   case "$file" in
     */index.json | */latest.json) continue ;;
@@ -173,7 +173,7 @@ state "corpus profiles" "$CARRIES carrying it, $PREDATES published before the fi
 # that is red when somebody else's host is down, and check-data-branch already
 # reads the branch this way. ⚠ NO LOCAL REF AT ALL IS A SKIP naming the branch,
 # never a pass: a clone that has not fetched it cannot answer the question.
-# TODO/publish.md, PUB-12.
+# docs/history/todo/publish.md, PUB-12.
 DATA_BRANCH=data
 DATA_REF=""
 if git rev-parse -q --verify "refs/heads/$DATA_BRANCH" >/dev/null 2>&1; then
@@ -270,5 +270,5 @@ printf '%s\n' "$PROBLEMS" >&2
 printf 'Every statement of the licence, as read:\n\n' >&2
 printf '%s\n' "$SEEN" >&2
 printf 'A file that travels alone still has to say what it is.\n' >&2
-printf 'TODO/publish.md, PUB-07.\n' >&2
+printf 'docs/history/todo/publish.md, PUB-07.\n' >&2
 exit 1

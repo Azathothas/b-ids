@@ -5,7 +5,7 @@
 # ⛔ A BROWSER SHIPPING A NEW VERSION IS NOT A DEFECT IN A COMMIT. Asserting
 # current versions on push makes every unrelated change fail on the day a
 # browser ships, so this runs on a SCHEDULE and never on a push.
-# TODO/ci.md, CI-02.
+# docs/history/todo/ci.md, CI-02.
 #
 # -- ⭐ WHEN IT GOES RED ITS OUTPUT CARRIES THE REPLACEMENT VALUES -----------
 #
@@ -70,7 +70,7 @@ cd "$REPO_ROOT" || { printf 'check-staleness: cannot enter %s\n' "$REPO_ROOT" >&
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-staleness: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -203,7 +203,7 @@ if (jsonOut === "1") {
   }
   process.stderr.write("\n" +
     "  the replacement is a CAPTURE of " + chosen.version + ", not an edit: the corpus\n" +
-    "  is append-only and a correction is a new profile. TODO/ci.md, CI-02.\n");
+    "  is append-only and a correction is a new profile. docs/history/todo/ci.md, CI-02.\n");
   process.exit(1);
 }
 ' "$POINTER" "$REPORT" "$JSON" "$CHANNEL"

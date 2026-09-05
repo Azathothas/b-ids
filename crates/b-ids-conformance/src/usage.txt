@@ -42,4 +42,4 @@ once and this as often as you like.
 A not-checkable field is not a passing one. It is a field one side does not
 carry, and nothing was compared on it.
 
-TODO/validator.md, VALID-05.
+docs/history/todo/validator.md, VALID-05.

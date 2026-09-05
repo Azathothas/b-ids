@@ -1,50 +1,22 @@
 #!/bin/sh
-# check-record.sh - do the record's counts still agree with its rows, and does
-# every entry have a row and every row an entry?
+# check-record.sh - validate the archived work record's entries, statuses, and counts.
 #
-# The defect this exists to catch is a record that contradicts itself. Closing
-# one entry moves several numbers: the index total line, the priority table row,
-# that table's total row, and the status beside the entry itself. Nothing is
-# wrong with any single file afterwards. What is missing is anything that
-# compares two of them.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# ⭐ THIS WAS PAID FOR BEFORE IT WAS WRITTEN. docs/methodology/work-todo.md
-# records the incident: a session closed two high-priority entries, wrote it
-# into the entries, the index and the record, pushed, then rewrote a fourth file
-# and never pushed again. The published state said those entries were open,
-# beside entries saying done, for the whole of the next session.
-#
-# -- WHAT IT ASSERTS ---------------------------------------------------------
-#   - every id in the index table has an entry heading in the named file;
-#   - every entry heading has a row in the index;
-#   - the status in the index equals the status in the entry;
-#   - the `total N open N blocked N done N` line agrees with the rows;
-#   - the priority table's per-row and total figures agree with the rows.
-#
-# ⛔ IT CANNOT CHECK THAT AN ENTRY IS TRUE. That is a reading and it belongs to
-# the review pass. It checks that the bookkeeping is consistent, which is the
-# part that rots silently.
-#
-# Usage:
-#   sh scripts/common/check-record.sh
-#   sh scripts/common/check-record.sh --json
-#   sh scripts/common/check-record.sh --dir TODO
-#
-# Exit codes: 0 consistent, 1 inconsistent, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-record.sh [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 set -u
 
 # ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
 # `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
 # '\t')" read ...` forks once per line. Measured 2026-09-02: a command
 # substitution costs 35 ms on this host, and check-docs.sh reads about 1100
-# lines that way. TODO/tooling.md, TOOL-18.
+# lines that way. docs/history/todo/tooling.md, TOOL-18.
 TAB=$(printf '\t')
 
 JSON=0
-DIR="TODO"
+DIR="docs/history/todo"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -104,7 +76,7 @@ ROWS=$(wc -l < "$TMP/rows" | tr -d ' ')
 # A heading is: ## ID. Title
 for f in "$DIR"/*.md; do
   case "$f" in
-    "$INDEX"|"$DIR/PROGRESS.md"|"$DIR/RULES.md") continue ;;
+    "$INDEX"|"$DIR/PROGRESS.md"|"$DIR/RULES.md"|"$DIR/README.md") continue ;;
   esac
   [ -f "$f" ] || continue
   awk -v F="$f" '

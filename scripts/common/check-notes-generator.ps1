@@ -1,8 +1,8 @@
 ﻿# check-notes-generator.ps1 - do the release body and the changelog entry come
 # out of one generator, and do they agree fact for fact?
 #
-# ⭐ THE TWIN OF check-notes-generator.sh. TODO/publish.md, PUB-08, and
-# TODO/driver.md, DRIVER-09, is why a script in this directory does not land
+# ⭐ THE TWIN OF check-notes-generator.sh. docs/history/todo/publish.md, PUB-08, and
+# docs/history/todo/driver.md, DRIVER-09, is why a script in this directory does not land
 # without one.
 #
 # ⛔ RELEASE NOTES AND A CHANGELOG WRITTEN SEPARATELY DRIFT, and the reader who
@@ -110,5 +110,5 @@ if ($count -eq 0) {
 foreach ($problem in $problems) { [Console]::Error.WriteLine($problem) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('One generator, two outputs, so the two cannot disagree by construction')
-[Console]::Error.WriteLine('rather than by discipline. TODO/publish.md, PUB-08.')
+[Console]::Error.WriteLine('rather than by discipline. docs/history/todo/publish.md, PUB-08.')
 exit 1

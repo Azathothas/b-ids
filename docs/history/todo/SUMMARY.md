@@ -1,4 +1,4 @@
-# SUMMARY.md
+# Archived project summary
 
 ⚠ **The last session's table, and a snapshot rather than an authority.**
 [`PROGRESS.md`](PROGRESS.md) is the record. ⛔ Overwritten every session.
@@ -51,7 +51,7 @@ one was a Chrome for Testing build.
 
 | | |
 | --- | --- |
-| **the TCP half** | five of six fields are still unread. `PUB-06` measured why: it needs a packet-capture library, which makes the Windows gate fail at link time until one is installed on that runner. A machine decision, and [`../docs/HUMAN.md`](../docs/HUMAN.md) section 3 is the measurement |
+| **the TCP half** | five of six fields are still unread. `PUB-06` measured why: it needs a packet-capture library, which makes the Windows gate fail at link time until one is installed on that runner. A machine decision, and [`../docs/HUMAN.md`](../../HUMAN.md) section 3 is the measurement |
 | **a release** | none. A pushed tag is the only thing that cuts one, and that is the operator's act. `check-signing`'s live leg reports a skip because of it |
 | **anything hosted** | ⛔ nothing. `HARNESS-12`'s oracle mode is built and no endpoint of this project's is reachable |
 | **a registry** | ⛔ nothing published to one. Publishing needs a credential and this tree has none |

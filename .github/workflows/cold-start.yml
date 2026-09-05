@@ -1,4 +1,4 @@
-# The cold-start job. TODO/ci.md, CI-05.
+# The cold-start job. docs/history/todo/ci.md, CI-05.
 #
 # ⭐ WHAT THIS CATCHES THAT NOTHING ELSE DOES. Every other workflow here runs
 # against a warm world: the toolchain is already on the image, the crates are

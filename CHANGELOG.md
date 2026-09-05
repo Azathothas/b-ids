@@ -2,23 +2,32 @@
 
 What shipped, when, and where the evidence is. Newest first.
 
-⛔ **No release has been cut**, and a pushed tag is the only thing that produces
-one. Most entries below are repository changes rather than published artefacts,
-and ⛔ **every entry says which it was**: the `data` branch is the one surface
-anything here has reached.
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md) is where the work stands.
+## v0.0.1
 
----
+### 2026-09-05 - initial public release
 
-## Unreleased
+**Record:** [`docs/history/2026-09-05-publication-review.md`](docs/history/2026-09-05-publication-review.md).
+**Deployed:** yes, by tag `v0.0.1` through the release workflow.
 
-⛔ **Nothing here has been released.** The section exists because an entry is a
-`### ` heading under a `## ` section, and a file with no section has no
-entries a check can read. TOOL-14.
+- reconciled the repository with `Azathothas/TEMPLATE` at commit
+  `620616638320147aa2465b304c1240b20eb2d097`;
+- moved the repository router to `AGENTS.md` and archived the completed 107-item
+  work record under `docs/history/todo/`;
+- replaced contradictory current documentation with direct `data`-branch
+  result links and current architecture, trust-anchor, and maintenance rules;
+- fixed silent failures in package-pointer reads, trust-anchor batching,
+  reference importing, and listener timeout setup;
+- added grouped Cargo and GitHub Actions dependency updates, verified immutable
+  action pins, enabled repository security updates, and completed branch
+  protection;
+- validated the pinned toolchain, generated outputs, scripts, documents,
+  release assembly, data integrity, and supported Linux environment.
+
+## Pre-release development
 
 ### 2026-09-04T19:32:53Z - the corpus moves to its own branch, and the last ten entries close
 
-**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and the ten entries it names:
+**Record:** [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md), and the ten entries it names:
 `PUB-13`, `CORPUS-02`, `EMIT-03`, `PUB-06`, `PUB-09`, `DOC-02`, `EMIT-04`,
 `HARNESS-12`, `PUB-05` and `LIB-03`.
 **Deployed:** no. ⛔ No tag was pushed and no release cut. ⚠ Two surfaces DID
@@ -29,9 +38,10 @@ run on this session's closing commit pushed. ⭐ `check-data-branch` reports
 
 What landed:
 
-- ⭐ **Three branches, where there were two.** `corpus/`, `raw/`, `vectors/` and
-  `LICENSE` moved to a `source` branch and left the default branch entirely, so
-  the `data` branch is a derivation of something rather than of itself.
+- ⭐ **Three branches, where there were two.** `corpus/`, `raw/`, and `vectors/`
+  moved to a `source` branch and left the default branch; the identical 0BSD
+  license remains on both. The `data` branch is a derivation of a canonical
+  source rather than of itself.
   ⛔ `check-data-branch` had once reported `data branch ok` while comparing the
   published branch against a copy of itself; it now refuses to run at all unless
   the canonical corpus resolves to this tree or to `source`, which was seen to
@@ -62,8 +72,8 @@ comment rather than the declaration it meant to read.
 
 ### 2026-09-04T08:30:00Z - the capture matrix added five profiles, which is five more than it has ever added
 
-**Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02` (open),
-[`TODO/docs.md`](TODO/docs.md) `DOC-03`.
+**Record:** [`docs/history/todo/corpus.md`](docs/history/todo/corpus.md) `CORPUS-02` (open),
+[`docs/history/todo/docs.md`](docs/history/todo/docs.md) `DOC-03`.
 **Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch gains
 five profiles, five raw sidecars and the regenerated aggregates on the next push
 to the default branch.
@@ -93,7 +103,7 @@ What landed:
 
 ### 2026-09-04T07:20:00Z - the corpus has a non-Chromium profile, and three checks that were green would have refused every capture after it
 
-**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-11`.
+**Record:** [`docs/history/todo/driver.md`](docs/history/todo/driver.md) `DRIVER-11`.
 **Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch gains
 the Firefox profile, its raw sidecar and 42 regenerated aggregates on the next
 push to the default branch; every profile it already carries is unchanged.
@@ -130,10 +140,10 @@ What landed:
 
 ### 2026-09-04T05:20:00Z - the Windows CI failure was this repository's own probe, and two checks were passing by comparing something to itself
 
-**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-09`,
-[`TODO/publish.md`](TODO/publish.md) `PUB-11`, `PUB-04` and `PUB-14`,
-[`TODO/validator.md`](TODO/validator.md) `VALID-05`,
-[`TODO/harness.md`](TODO/harness.md) `HARNESS-11`.
+**Record:** [`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-09`,
+[`docs/history/todo/publish.md`](docs/history/todo/publish.md) `PUB-11`, `PUB-04` and `PUB-14`,
+[`docs/history/todo/validator.md`](docs/history/todo/validator.md) `VALID-05`,
+[`docs/history/todo/harness.md`](docs/history/todo/harness.md) `HARNESS-11`.
 **Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch gains
 a `configs/` tree on the next push to the default branch; the profiles it
 carries are unchanged.
@@ -171,9 +181,9 @@ What landed:
 
 ### 2026-09-03T13:07:00Z - the documents were checked against the tree, and nine of them were wrong about what it does
 
-**Record:** [`TODO/tooling.md`](TODO/tooling.md) `TOOL-19`,
-[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-06`,
-[`TODO/publish.md`](TODO/publish.md) `PUB-12` and `PUB-11`.
+**Record:** [`docs/history/todo/tooling.md`](docs/history/todo/tooling.md) `TOOL-19`,
+[`docs/history/todo/corpus.md`](docs/history/todo/corpus.md) `CORPUS-06`,
+[`docs/history/todo/publish.md`](docs/history/todo/publish.md) `PUB-12` and `PUB-11`.
 **Deployed:** no. No tag was pushed and no release cut. ⚠ The data branch
 rebuilds on the next push to the default branch, and the profiles it carries are
 unchanged by this.
@@ -184,7 +194,7 @@ What landed:
   the one on disk.** The reference pages still said there was no corpus, nothing
   published and no digest computed, four sessions after each became false. Every
   one is amended in place and the superseded wording is in
-  [`docs/HISTORY/stale-documents.md`](docs/HISTORY/stale-documents.md).
+  [`docs/history/stale-documents.md`](docs/history/stale-documents.md).
 - ⭐ **A check now holds both catalogues.** `check-catalogues` asserts every
   script is named by [`scripts/README.md`](scripts/README.md) and every document
   by the index that routes to it. Pointed at this repository as it stood before
@@ -223,11 +233,11 @@ rather than what happened:
 
 ### 2026-09-03T09:00:00Z - the trigger, the consumer crate, and a client that puts a profile back on a wire
 
-**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-10`,
-[`TODO/library.md`](TODO/library.md) `LIB-01` and `LIB-02`,
-[`TODO/emitters.md`](TODO/emitters.md) `EMIT-01` and `EMIT-02`,
-[`TODO/validator.md`](TODO/validator.md) `VALID-04`,
-[`TODO/ci.md`](TODO/ci.md) `CI-05`, [`TODO/driver.md`](TODO/driver.md)
+**Record:** [`docs/history/todo/publish.md`](docs/history/todo/publish.md) `PUB-10`,
+[`docs/history/todo/library.md`](docs/history/todo/library.md) `LIB-01` and `LIB-02`,
+[`docs/history/todo/emitters.md`](docs/history/todo/emitters.md) `EMIT-01` and `EMIT-02`,
+[`docs/history/todo/validator.md`](docs/history/todo/validator.md) `VALID-04`,
+[`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-05`, [`docs/history/todo/driver.md`](docs/history/todo/driver.md)
 `DRIVER-06`.
 **Deployed:** ⭐ the data branch, and nothing else. The push that landed this
 change ran the workflow it adds, which created `origin/data` with 200 files.
@@ -271,7 +281,7 @@ What landed:
 
 ### 2026-09-03T05:40:00Z - one assembler, two publishing surfaces
 
-**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-01` and `PUB-02`.
+**Record:** [`docs/history/todo/publish.md`](docs/history/todo/publish.md) `PUB-01` and `PUB-02`.
 **Deployed:** no. No release was cut, no tag created and no branch pushed. Both
 acceptances are local and say so in their own output.
 
@@ -303,7 +313,7 @@ rather than what happened:
 
 ### 2026-09-03T04:20:00Z - the licence stated in seven places, from one home
 
-**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-07`.
+**Record:** [`docs/history/todo/publish.md`](docs/history/todo/publish.md) `PUB-07`.
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -321,7 +331,7 @@ What landed:
 
 ### 2026-09-03T03:10:00Z - fifty-four routes a program can read with curl
 
-**Record:** [`TODO/publish.md`](TODO/publish.md) `PUB-03`.
+**Record:** [`docs/history/todo/publish.md`](docs/history/todo/publish.md) `PUB-03`.
 **Deployed:** no. The tree is generated into an ignored directory and checked
 there; `PUB-02` is the surface that will serve it.
 
@@ -351,7 +361,7 @@ rather than what happened:
 
 ### 2026-09-03T01:40:00Z - a scheduled run that finds a change opens a pull request
 
-**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-04`.
+**Record:** [`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-04`.
 **Deployed:** no. Nothing is published from this repository yet, and no pull
 request has been opened by anything in this change.
 
@@ -385,7 +395,7 @@ rather than what happened:
 
 ### 2026-09-02T23:55:00Z - four more formats, two declined, and a support matrix nobody types
 
-**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-12`.
+**Record:** [`docs/history/todo/schema.md`](docs/history/todo/schema.md) `SCHEMA-12`.
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -418,13 +428,13 @@ than what happened:
 
 ### 2026-09-02T15:30:00Z - the corpus stopped recording builds nobody chose
 
-**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and the eight entries it
-names: [`TODO/driver.md`](TODO/driver.md) `DRIVER-08` and `DRIVER-10`,
-[`TODO/schema.md`](TODO/schema.md) `SCHEMA-08`,
-[`TODO/harness.md`](TODO/harness.md) `HARNESS-15` and `HARNESS-16`,
-[`TODO/tooling.md`](TODO/tooling.md) `TOOL-18`,
-[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-04`, and
-[`TODO/publish.md`](TODO/publish.md) `PUB-08`.
+**Record:** [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md), and the eight entries it
+names: [`docs/history/todo/driver.md`](docs/history/todo/driver.md) `DRIVER-08` and `DRIVER-10`,
+[`docs/history/todo/schema.md`](docs/history/todo/schema.md) `SCHEMA-08`,
+[`docs/history/todo/harness.md`](docs/history/todo/harness.md) `HARNESS-15` and `HARNESS-16`,
+[`docs/history/todo/tooling.md`](docs/history/todo/tooling.md) `TOOL-18`,
+[`docs/history/todo/corpus.md`](docs/history/todo/corpus.md) `CORPUS-04`, and
+[`docs/history/todo/publish.md`](docs/history/todo/publish.md) `PUB-08`.
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -467,13 +477,13 @@ unread failure, and `HARNESS-14`'s comparison still has no answer there.
 ⛔ **Nine defects in this session's own work, every one caught by running it**,
 including two that only a specific lens found: a guard added the same day that
 passed because a different line satisfied it, and one fact carrying two names
-across two types. [`TODO/PROGRESS.md`](TODO/PROGRESS.md) has the table.
+across two types. [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md) has the table.
 
 ### 2026-09-02T12:10:00Z - the exact-build route, and two findings that moved what it can promise
 
-**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-08`,
-[`TODO/ci.md`](TODO/ci.md) `CI-08`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/driver.md`](docs/history/todo/driver.md) `DRIVER-08`,
+[`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-08`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -515,9 +525,9 @@ workflow with its `# manual:` line removed.
 
 ### 2026-09-02T11:25:00Z - a tool that purges browsers, and the guard it needed twice
 
-**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-08`, `DRIVER-09` and
-`DRIVER-10`, [`docs/HISTORY/README.md`](docs/HISTORY/README.md), and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/driver.md`](docs/history/todo/driver.md) `DRIVER-08`, `DRIVER-09` and
+`DRIVER-10`, [`docs/history/README.md`](docs/history/README.md), and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -535,7 +545,7 @@ What landed:
   condition was measured to be too few: this session mutated the single
   condition and ran the purge path on the operator's own machine. Nothing was
   removed, and that was an accident of registry matching rather than a margin.
-  [`docs/HISTORY/README.md`](docs/HISTORY/README.md) carries the incident.
+  [`docs/history/README.md`](docs/history/README.md) carries the incident.
 - ⛔ **Two rules were written down that this project did not have**: a guard on
   something irreversible takes two conditions from two sources, and a test that
   has to bypass a guard runs against a copy rather than against the file on a
@@ -559,9 +569,9 @@ What landed:
 
 ### 2026-09-02T06:50:00Z - more than one source, a manual path for every job, and a diff
 
-**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-06` and `CI-08`,
-[`TODO/validator.md`](TODO/validator.md) `VALID-06`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-06` and `CI-08`,
+[`docs/history/todo/validator.md`](docs/history/todo/validator.md) `VALID-06`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -582,8 +592,8 @@ What landed:
 
 ### 2026-09-02T05:55:00Z - the shuffle is a property, and the seed stays out of the profile
 
-**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-10` and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/schema.md`](docs/history/todo/schema.md) `SCHEMA-10` and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -603,9 +613,9 @@ What landed:
 
 ### 2026-09-02T05:30:00Z - the pin measured against a real trust anchor, and a claim refuted
 
-**Record:** [`TODO/harness.md`](TODO/harness.md) `HARNESS-14`,
-[`docs/HISTORY/README.md`](docs/HISTORY/README.md), and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/harness.md`](docs/history/todo/harness.md) `HARNESS-14`,
+[`docs/history/README.md`](docs/history/README.md), and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -624,8 +634,8 @@ What landed:
 
 ### 2026-09-02T04:45:00Z - the technical reference exists, and the conflict rule names it
 
-**Record:** [`TODO/docs.md`](TODO/docs.md) `DOC-01` and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/docs.md`](docs/history/todo/docs.md) `DOC-01` and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -635,15 +645,15 @@ What landed:
   capture passes through as a diagram, what is published against what is
   derived, and the limits stated rather than left to be discovered.
 - **The conflict rule names it**, and the interim wording it replaced is in
-  [`docs/HISTORY/README.md`](docs/HISTORY/README.md) with its date rather than
+  [`docs/history/README.md`](docs/history/README.md) with its date rather than
   deleted. Its three exceptions survived the replacement deliberately.
 - ⛔ **The router said the corpus holds one profile.** It holds three.
 
 ### 2026-09-02T04:35:00Z - the trust anchor apparatus, and a search that narrowed itself
 
-**Record:** [`TODO/harness.md`](TODO/harness.md) `HARNESS-14`,
-[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-05`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/harness.md`](docs/history/todo/harness.md) `HARNESS-14`,
+[`docs/history/todo/corpus.md`](docs/history/todo/corpus.md) `CORPUS-05`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -663,8 +673,8 @@ What landed:
 
 ### 2026-09-02T04:20:00Z - staleness is a schedule, and its output carries the replacement
 
-**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-02` and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-02` and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -686,8 +696,8 @@ What landed:
 
 ### 2026-09-02T04:00:00Z - the multipart boundary, as a pattern rather than a value
 
-**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-11` and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/schema.md`](docs/history/todo/schema.md) `SCHEMA-11` and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -704,8 +714,8 @@ What landed:
 
 ### 2026-09-02T03:45:00Z - every script answers 2 for a state it cannot act on
 
-**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-07` and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-07` and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -722,10 +732,10 @@ What landed:
 
 ### 2026-09-02T03:20:00Z - four entries close: bounds, credentials, reachability and trust routes
 
-**Record:** [`TODO/schema.md`](TODO/schema.md) `SCHEMA-13` and `SCHEMA-14`,
-[`TODO/validator.md`](TODO/validator.md) `VALID-03`,
-[`TODO/driver.md`](TODO/driver.md) `DRIVER-04`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/schema.md`](docs/history/todo/schema.md) `SCHEMA-13` and `SCHEMA-14`,
+[`docs/history/todo/validator.md`](docs/history/todo/validator.md) `VALID-03`,
+[`docs/history/todo/driver.md`](docs/history/todo/driver.md) `DRIVER-04`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -751,14 +761,14 @@ What landed:
   seconds and its own output had been discarded.
 
 ⚠ **Seven existing tests were rewritten rather than removed**, and
-[`TODO/schema.md`](TODO/schema.md) `SCHEMA-14` names each and says what it
+[`docs/history/todo/schema.md`](docs/history/todo/schema.md) `SCHEMA-14` names each and says what it
 asserts now.
 
 ### 2026-09-02T02:45:00Z - the linux64 profile lands, and the matrix column reaches the driver
 
-**Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02`,
-[`TODO/driver.md`](TODO/driver.md) `DRIVER-01`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/corpus.md`](docs/history/todo/corpus.md) `CORPUS-02`,
+[`docs/history/todo/driver.md`](docs/history/todo/driver.md) `DRIVER-01`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -788,9 +798,9 @@ What landed:
 
 ### 2026-09-02T02:20:00Z - the capture matrix runs, and a lane that captured nothing says why
 
-**Record:** [`TODO/corpus.md`](TODO/corpus.md) `CORPUS-02`,
-[`TODO/harness.md`](TODO/harness.md) `HARNESS-07`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/corpus.md`](docs/history/todo/corpus.md) `CORPUS-02`,
+[`docs/history/todo/harness.md`](docs/history/todo/harness.md) `HARNESS-07`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -824,9 +834,9 @@ twice, because Chrome abandoned the connections that were not resumed.
 
 ### 2026-09-01T15:10:00Z - acquisition, the capture matrix, and a coverage report
 
-**Record:** [`TODO/driver.md`](TODO/driver.md) `DRIVER-05`,
-[`TODO/ci.md`](TODO/ci.md) `CI-03`, [`TODO/corpus.md`](TODO/corpus.md)
-`CORPUS-02`, and [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/driver.md`](docs/history/todo/driver.md) `DRIVER-05`,
+[`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-03`, [`docs/history/todo/corpus.md`](docs/history/todo/corpus.md)
+`CORPUS-02`, and [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -857,9 +867,9 @@ lane has run: closing it needs one run of the matrix on a hosted runner and the
 
 ### 2026-09-01T14:10:00Z - the assertions a push makes, and three checks that were not checking
 
-**Record:** [`TODO/ci.md`](TODO/ci.md) `CI-01`,
-[`TODO/tooling.md`](TODO/tooling.md) `TOOL-04`, `TOOL-15`, `TOOL-16`, `TOOL-17`,
-and [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/ci.md`](docs/history/todo/ci.md) `CI-01`,
+[`docs/history/todo/tooling.md`](docs/history/todo/tooling.md) `TOOL-04`, `TOOL-15`, `TOOL-16`, `TOOL-17`,
+and [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -895,9 +905,9 @@ implementations that agree exactly on a still tree.
 
 ### 2026-09-01T10:17:42Z - latest means stable, and a route check that can refuse
 
-**Record:** [`TODO/tooling.md`](TODO/tooling.md) `TOOL-06`,
-[`TODO/corpus.md`](TODO/corpus.md) `CORPUS-03`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/tooling.md`](docs/history/todo/tooling.md) `TOOL-06`,
+[`docs/history/todo/corpus.md`](docs/history/todo/corpus.md) `CORPUS-03`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -924,8 +934,8 @@ points at it, and the amendment is recorded rather than made silently.
 
 ### 2026-09-01T09:48:20Z - a million runs at the parsers, and no panic
 
-**Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-09`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/harness.md`](docs/history/todo/harness.md), `HARNESS-09`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -956,8 +966,8 @@ and `-Z sanitizer` is then refused. The toolchain is overridden explicitly.
 
 ### 2026-09-01T09:27:16Z - the build that is serving, not the one that is published
 
-**Record:** [`TODO/driver.md`](TODO/driver.md), `DRIVER-02`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/driver.md`](docs/history/todo/driver.md), `DRIVER-02`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -985,8 +995,8 @@ own TLS stack into a workspace that vendors one.
 
 ### 2026-09-01T09:13:54Z - measuring did not change what was measured
 
-**Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-10`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/harness.md`](docs/history/todo/harness.md), `HARNESS-10`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -1015,8 +1025,8 @@ stays an open question with that recommendation attached.
 
 ### 2026-09-01T08:27:32Z - the corpus holds a profile
 
-**Record:** [`TODO/corpus.md`](TODO/corpus.md), `CORPUS-01`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/corpus.md`](docs/history/todo/corpus.md), `CORPUS-01`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet; the profile is
 committed on the default branch and no release and no data branch exist.
 
@@ -1052,8 +1062,8 @@ would arrive.
 
 ### 2026-09-01T05:40:00Z - the first bytes a browser put on a wire
 
-**Record:** [`TODO/harness.md`](TODO/harness.md), `HARNESS-13`, `HARNESS-02`
-and `HARNESS-05`, and [`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/harness.md`](docs/history/todo/harness.md), `HARNESS-13`, `HARNESS-02`
+and `HARNESS-05`, and [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet, and the corpus
 is still empty.
 
@@ -1085,8 +1095,8 @@ refusing, and killing it left a test binary locked. Every test that drives the
 command now passes a deadline.
 ### 2026-09-01T04:33:47Z - the TLS terminator is vendored, and the record that keeps it honest
 
-**Record:** [`TODO/vendor.md`](TODO/vendor.md), `VENDOR-01`, and
-[`TODO/PROGRESS.md`](TODO/PROGRESS.md).
+**Record:** [`docs/history/todo/vendor.md`](docs/history/todo/vendor.md), `VENDOR-01`, and
+[`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md).
 **Deployed:** no. Nothing is published from this repository yet, and no capture
 has been taken.
 
@@ -1114,7 +1124,7 @@ scan refused the patch record, because a pasted cargo failure carried the
 operator's home directory into a public repository.
 ### 2026-09-01T02:55:37Z - the half of the fingerprint above TLS
 
-**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and `HARNESS-03`,
+**Record:** [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md), and `HARNESS-03`,
 `HARNESS-04`, `HARNESS-06`, `HARNESS-07`, `HARNESS-08`, `SCHEMA-06`.
 **Deployed:** no. Nothing is published from this repository yet, and no capture
 has been taken.
@@ -1143,7 +1153,7 @@ HTTP/1.1 alone, because the peer picks the protocol.
 
 ### 2026-08-31T22:40:00Z - the schema, the validator and the capture oracle
 
-**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and `SCHEMA-01` through
+**Record:** [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md), and `SCHEMA-01` through
 `SCHEMA-05`, `SCHEMA-07`, `SCHEMA-09`, `VALID-01`, `HARNESS-01`, `TOOL-03`,
 `TOOL-05`, `TOOL-10`, `TOOL-14`.
 **Deployed:** no. Nothing is published from this repository yet, and no capture
@@ -1178,7 +1188,7 @@ rule was widened, which was the tempting fix in both cases.
 
 ### 2026-08-31T14:10:15Z - the workspace exists, and the gate runs a suite
 
-**Record:** [`TODO/tooling.md`](TODO/tooling.md), `TOOL-01` and `TOOL-02`.
+**Record:** [`docs/history/todo/tooling.md`](docs/history/todo/tooling.md), `TOOL-01` and `TOOL-02`.
 **Deployed:** no. Nothing is published from this repository yet.
 
 What landed:
@@ -1215,10 +1225,10 @@ working on the strength of that first run would have been theatre.
 
 ### 2026-08-31T00:30:00Z - the repository is initialised
 
-**Record:** [`TODO/PROGRESS.md`](TODO/PROGRESS.md), and
-[`TODO/INDEX.md`](TODO/INDEX.md) for the 77 entries this created.
+**Record:** [`docs/history/todo/PROGRESS.md`](docs/history/todo/PROGRESS.md), and
+[`docs/history/todo/INDEX.md`](docs/history/todo/INDEX.md) for the 77 entries this created.
 **Deployed:** no. Nothing is published from this repository yet, and
-[`TODO/RULES.md`](TODO/RULES.md) records that as a standing fact rather than an
+[`docs/history/todo/RULES.md`](docs/history/todo/RULES.md) records that as a standing fact rather than an
 omission.
 
 What landed:
@@ -1244,10 +1254,10 @@ What landed:
   term rather than to the page that uses it.
 - **77 work entries** across eleven categories, four of which close.
 - **The 0BSD licence**, a bare README, and the repository's own router at
-  [`docs/AGENTS.md`](docs/AGENTS.md).
+  [`AGENTS.md`](AGENTS.md).
 
 ⛔ **Four inherited claims were refuted during the reading**, before any of them
-had been acted on. [`docs/HISTORY/README.md`](docs/HISTORY/README.md) lists each
+had been acted on. [`docs/history/README.md`](docs/history/README.md) lists each
 with the reading that took it away. One changes what this project claims about
 itself, and [`README.md`](README.md) makes the narrower claim; one was refuted by
 the capture the claim was quoting.

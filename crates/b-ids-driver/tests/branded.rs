@@ -11,7 +11,7 @@
 //! claims a brand its build does not carry, and this suite is the pass that
 //! drives an unbranded acquisition and hands the claim to the rule.
 //!
-//! `TODO/driver.md`, `DRIVER-06`.
+//! `docs/history/todo/driver.md`, `DRIVER-06`.
 
 use b_ids_driver::acquire::{Candidate, Route, acquire_with, plan};
 use b_ids_driver::resolve::Family;

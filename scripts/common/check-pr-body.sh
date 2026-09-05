@@ -3,7 +3,7 @@
 # request a reviewer can act on, and would a run that found nothing stay silent?
 #
 # ⛔ AN ISSUE IS A REQUEST FOR SOMEBODY ELSE TO DO WORK. A pull request with the
-# work already in it is the deliverable. TODO/ci.md, CI-04.
+# work already in it is the deliverable. docs/history/todo/ci.md, CI-04.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -74,7 +74,7 @@ command -v cargo >/dev/null 2>&1 || { printf 'check-pr-body: cargo not found\n' 
 # PUB-13 this check passed $REPO_ROOT as `--after`, which stopped holding a
 # corpus the day corpus/ left the default branch: the generator would have read
 # an empty store, produced no request, and this check would have failed on a
-# tree that is correct. TODO/publish.md, PUB-11 and PUB-13.
+# tree that is correct. docs/history/todo/publish.md, PUB-11 and PUB-13.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-pr-body: no corpus is reachable, so the generator has nothing to run over\n' >&2
   exit 2
@@ -130,7 +130,8 @@ cargo build -q -p b-ids-corpus || {
   printf 'check-pr-body: the corpus crate did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-corpus"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-corpus"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-pr-body: %s is not executable\n' "$BIN" >&2; exit 2; }
 
@@ -235,5 +236,5 @@ printf 'pr body check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A pull request with the work in it is the deliverable, and one that\n' >&2
 printf 'silently omits a field is worse than one that says it could not capture\n' >&2
-printf 'it. TODO/ci.md, CI-04.\n' >&2
+printf 'it. docs/history/todo/ci.md, CI-04.\n' >&2
 exit 1

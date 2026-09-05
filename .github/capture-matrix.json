@@ -8,7 +8,7 @@
     "",
     "enabled false is a cell that is PLANNED and not attempted. It is reported",
     "as such rather than dropped, because a coverage report that lists only what",
-    "was tried cannot show what is missing. TODO/corpus.md, CORPUS-02.",
+    "was tried cannot show what is missing. docs/history/todo/corpus.md, CORPUS-02.",
     "",
     "required true means check-coverage --require-rows can be asked to fail on",
     "it. Nothing is required by default: the flag names what a caller cares",

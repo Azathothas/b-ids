@@ -59,7 +59,7 @@ jobs:
       # clone that question is asked of one commit and answered "nothing" every
       # time: the leg ran on both jobs from the day it was written and verified
       # nothing on either. The check refuses a shallow clone now, so losing this
-      # line fails the job rather than quietly emptying it. TODO/ci.md, CI-01.
+      # line fails the job rather than quietly emptying it. docs/history/todo/ci.md, CI-01.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -79,7 +79,7 @@ jobs:
       # partway through leaves a component's files on disk that the toolchain's
       # own manifest does not list, which the next install refuses. Installing
       # here means the probe below has nothing left to start.
-      # TODO/ci.md, CI-09.
+      # docs/history/todo/ci.md, CI-09.
       - name: the pinned Rust toolchain
         run: |
           rustup show active-toolchain
@@ -165,7 +165,7 @@ jobs:
       # clone that question is asked of one commit and answered "nothing" every
       # time: the leg ran on both jobs from the day it was written and verified
       # nothing on either. The check refuses a shallow clone now, so losing this
-      # line fails the job rather than quietly emptying it. TODO/ci.md, CI-01.
+      # line fails the job rather than quietly emptying it. docs/history/todo/ci.md, CI-01.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -186,7 +186,7 @@ jobs:
       #
       # ⚠ The ubuntu job never saw it because it passes --fast, which skips
       # version probes entirely. Three sessions read that asymmetry as the
-      # runner being at fault. TODO/ci.md, CI-09.
+      # runner being at fault. docs/history/todo/ci.md, CI-09.
       - name: the pinned Rust toolchain
         shell: pwsh
         run: |

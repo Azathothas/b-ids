@@ -277,7 +277,7 @@ if [ "$PUBLIC" = "1" ]; then
   # was taken at, which is the field that makes the record checkable at all,
   # and a commit id is public by construction. ⛔ Only a value assigned to
   # `base` is excluded, so any other 40-hex run in that file is still
-  # reported. ⛔ Keep this identical to the ps1 twin. TODO/vendor.md.
+  # reported. ⛔ Keep this identical to the ps1 twin. docs/history/todo/vendor.md.
   _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '"base":[[:space:]]*"[0-9a-f]{40}"' || true)
 
   # -- ⭐ THE FOURTH SHAPE, AND IT IS THE ONE THIS PROJECT EXISTS TO PRODUCE ---
@@ -337,14 +337,14 @@ if [ "$PUBLIC" = "1" ]; then
   # thing already checked by the model itself.
   #
   # ⛔ Mutation-proved: a credential-shaped value planted inside a corpus
-  # profile under a different field name is still refused. TODO/corpus.md,
+  # profile under a different field name is still refused. docs/history/todo/corpus.md,
   # CORPUS-01, carries the run.
   # ⚠ AND THE DIGEST LINE THE PROVISIONING TOOL PRINTS, which is a label and a
   # hash and nothing else. `provision-browser` prints `sha256  HEX` for the
   # archive it fetched, and an entry that pastes that output is pasting a
   # measurement rather than a credential. ⛔ Narrowed to that exact shape: a
   # label, whitespace, 64 hex, end of line. A hex run with anything else beside
-  # it is still refused. TODO/driver.md, DRIVER-08.
+  # it is still refused. docs/history/todo/driver.md, DRIVER-08.
   _hex_out=$(printf '%s\n' "$_hex_out" \
     | grep -vE '"sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' \
     | grep -vE ':[0-9]+:sha256[[:space:]]+[0-9a-f]{64}$' \

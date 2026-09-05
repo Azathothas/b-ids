@@ -1,201 +1,136 @@
-# architecture.md
+# Architecture
 
-⭐ **The technical reference.** What a profile is, what the nine crates do to
-one, what state a capture passes through, and where the limits are. ⛔ When two
-documents in this tree disagree about a technical fact, this one settles it;
-[`conventions/docs.md`](conventions/docs.md) is the rule that says so.
+`b-ids` captures a browser's network identity, validates the result, stores the
+canonical measurement, and deterministically publishes consumer formats.
 
-⚠ **It describes what the thing IS, not what the project did.** A reference page
-that turns into a diary stops being read.
-[`HISTORY/README.md`](HISTORY/README.md) is where a superseded explanation goes.
+## Profile model
 
----
+A profile represents one browser, build, channel, platform, and capture instant.
+Its published JSON contains:
 
-## 1. The product is a profile
+| section | contents |
+| --- | --- |
+| `tls` | `ClientHello` fields in wire order, including unknown codepoints |
+| `http2` | ordered frames, settings, connection window, and priority data |
+| `http` | ordered request headers for each captured request kind |
+| `raw` | the source bytes required to reproduce parser output |
+| `captured` | time, tool, acquisition, trust, resumption, and connection conditions |
+| `provenance` | source classification for each recorded field |
 
-A **profile** is one browser, one build, one platform, one channel, one instant.
-It is a JSON file with a schema identifier, published at a route derived from its
-own keys, with the `ClientHello` it was read from beside it.
+The machine contract is
+[`browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json).
+`Profile::check` enforces cross-field invariants before a profile can be stored
+or published.
 
-⭐ **Every field carries where it came from.** The provenance map is per field,
-with four kinds and no more, and it is the one thing that cannot be retrofitted:
-a profile captured before it existed can never get one, because the capture is
-gone. [`../crates/b-ids-schema/src/provenance.rs`](../crates/b-ids-schema/src/provenance.rs).
+Digests are derived from a profile and are not stored as measurements. The raw
+`ClientHello` remains authoritative for questions a digest discards, including
+GREASE values and shuffled extension order.
 
-| half | what it holds | where |
-| --- | --- | --- |
-| `tls` | the `ClientHello` in wire order, with unknown codepoints kept | [`../crates/b-ids-schema/src/tls.rs`](../crates/b-ids-schema/src/tls.rs) |
-| `http2` | an ordered frame sequence, the settings, the window and the priority block | [`../crates/b-ids-schema/src/http2.rs`](../crates/b-ids-schema/src/http2.rs) |
-| `http` | one header set per request kind, in wire order | [`../crates/b-ids-schema/src/http.rs`](../crates/b-ids-schema/src/http.rs) |
-| `raw` | the bytes, so this project's own parser can be checked against them | [`../crates/b-ids-schema/src/profile.rs`](../crates/b-ids-schema/src/profile.rs) |
-| `captured` | the conditions: when, by what, under which trust and resumption configuration, with which switches | the same file |
-| `digests` | ⚠ null on every published profile, and it stays null. A digest is DERIVED from a profile on demand rather than stored in it, so the append-only corpus never carries a value a later reading might correct. ⛔ JA3 is not implemented and no JA4+ member is. Section 4 says where the derivation lives. | the same file |
+## Workspace components
 
-⛔ **The published contract is a file, not a doc comment.**
-[`../crates/b-ids-schema/schema/browser-profile-1.schema.json`](../crates/b-ids-schema/schema/browser-profile-1.schema.json)
-is what a consumer validates against, and a test asserts it agrees with the Rust
-types about every integer's width.
+| crate | responsibility |
+| --- | --- |
+| [`b-ids-schema`](../crates/b-ids-schema/) | profile types, invariants, schema, routes, and digest input rendering |
+| [`b-ids-harness`](../crates/b-ids-harness/) | server-side TLS and HTTP/2 capture from bytes received on the socket |
+| [`b-ids-driver`](../crates/b-ids-driver/) | browser discovery, acquisition metadata, and isolated launch |
+| [`b-ids-corpus`](../crates/b-ids-corpus/) | capture conversion, append-only storage, indexing, routes, packages, and publication assembly |
+| [`b-ids-validator`](../crates/b-ids-validator/) | coherence validation and comparison against supported dimensions |
+| [`b-ids-emit`](../crates/b-ids-emit/) | byte/configuration emission and support-matrix generation |
+| [`b-ids`](../crates/b-ids/) | offline library with corpus data embedded at build time |
+| [`b-ids-cli`](../crates/b-ids-cli/) | minimal profile-backed connection client |
+| [`b-ids-conformance`](../crates/b-ids-conformance/) | field-level comparison of an observed client with a claimed profile |
 
----
+`b-ids-harness` is a server, not a browser client. `b-ids-driver` launches a
+browser but does not parse captures. `b-ids-validator` has no network access.
+`b-ids-cli` intentionally omits general HTTP-client behavior such as cookies,
+redirects, and retries.
 
-## 2. Eight crates, and what each is not
-
-| crate | what it does | ⛔ what it is not |
-| --- | --- | --- |
-| [`b-ids-schema`](../crates/b-ids-schema/) | the model, its refusals, the published JSON schema, and the rendered digest lists | it captures nothing and reaches no network |
-| [`b-ids-harness`](../crates/b-ids-harness/) | a SERVER that accepts connections and reads what arrived: the hello, the frames, the headers. It also hashes a JA4, because SHA-256 has one home and it is here | ⛔ not a client. It never asks a browser what it sends; it reads what the browser put on a socket. |
-| [`b-ids-driver`](../crates/b-ids-driver/) | resolves a browser on the machine, reports what the vendor is serving, and launches one at a URL into a profile nobody keeps | it parses no bytes |
-| [`b-ids-corpus`](../crates/b-ids-corpus/) | turns a capture into a profile, publishes it at its route, verifies the whole store, and assembles the tree that leaves this repository | ⛔ it never edits a published profile. A correction is a NEW profile naming the one it replaces. |
-| [`b-ids-validator`](../crates/b-ids-validator/) | pure logic over the model: could a real browser have sent this? | ⛔ it does not warn. Every check answers passed, failed, or not-checkable. |
-| [`b-ids-emit`](../crates/b-ids-emit/) | turns a profile back into the bytes a `ClientHello` carries, and generates the support matrix from a run | ⛔ it refuses rather than approximating. A hello it cannot write byte for byte is a refusal naming every reason. |
-| [`b-ids`](../crates/b-ids/) | hands a program a profile, with the corpus embedded at build time | ⛔ it never fetches and never substitutes. A platform this project has not captured returns nothing. |
-| [`b-ids-cli`](../crates/b-ids-cli/) | the smallest client: it puts one profile's hello on a socket and stops | ⛔ not a general-purpose HTTP client, and it must never grow into one. No cookie jar, no redirects, no retries. |
-
-| [`b-ids-conformance`](../crates/b-ids-conformance/) | compares a captured client against the profile it claims to be, field by field | ⛔ never a digest comparison. A digest says two things differ without saying what, and it also cannot tell a shuffle from a defect. |
-
-⚠ **`b-ids-conformance` reports three outcomes per field and not two.** A field
-both sides carry and agree on conforms; one they disagree on differs; and one a
-real browser varies PER CONNECTION, which is the extension shuffle and the
-GREASE draw, is reported with the reason a single capture cannot conclude from
-it. ⛔ It is not counted as a pass either: `glossary.md` records that a client
-whose order never changes is more distinguishable, not less.
-
----
-
-## 3. The state a capture passes through
-
-⭐ **Read this in order. Every arrow is a place a value can be lost, and the
-project's rules are mostly about one of them.**
+## Capture flow
 
 ```text
-  a browser on a machine
-        |  b-ids-driver: resolve, then launch into a throwaway profile
-        v
-  a socket to b-ids-harness
-        |  the listener reads the first TLS record itself
-        v
-  a Capture per connection            <- one navigation is MANY connections
-        |  b_ids_harness::select, PER HALF: the first cold hello, and the
-        |  first connection that reached HTTP/2. They need not be the same one.
-        v
-  two connections, and the profile records both numbers
-        |  b_ids_corpus::profile_from, with an identity read from the run
-        v
-  a Profile, checked by Profile::check
-        |  Store::add, refusing a route that is already published
-        v
-  corpus/v1/<browser>/<channel>/<platform>/<version>.json
-  raw/v1/...  the ClientHello beside it
-        |  ⛔ on the SOURCE branch, not the default one. Section 4.
-        v
-  one pull request per RUN, against `source`
+browser build
+  | b-ids-driver resolves and launches an isolated profile
+  v
+local b-ids-harness socket
+  | reads TLS records and HTTP/2 frames as received
+  v
+connection captures
+  | selection chooses the first cold TLS hello and first HTTP/2 connection
+  v
+normalized Profile
+  | Profile::check and Store::add
+  v
+source branch: corpus/v1/... + raw/v1/...
+  | deterministic publication assembly
+  v
+data branch and tagged release archive
 ```
 
-### ⛔ The four things that go wrong at those arrows
+A browser may open, abandon, or resume several connections during one
+navigation. TLS and HTTP/2 halves can therefore come from different connection
+numbers; the profile records both. Resumed TLS handshakes are not substituted
+for cold handshakes.
 
-| where | what goes wrong | what holds it |
-| --- | --- | --- |
-| browser to socket | the subject will not complete a handshake with a certificate it does not trust | a per-launch key pin, recorded as `captured.trust`. [`../experiments/40-trust-paths.sh`](../experiments/40-trust-paths.sh) reports which routes work per platform |
-| many connections to one | a browser opens sockets it abandons and it resumes, and a resumed hello is a different hello | `select` chooses PER HALF: the TLS half comes from the first hello offering no pre-shared key, whether or not that connection reached HTTP/2, and the HTTP/2 half from the first connection that did. `captured.connections` records both numbers and `captured.resumption` records what the harness offered |
-| capture to profile | a field somebody typed rather than read | the identity file is written from what the run reported, and the capture script reads the driver's and the harness's own output back |
-| profile to store | an edit to something already published | `Store::add` refuses a path that exists. The corpus is append-only. |
+Capture uses a disposable browser profile and a local endpoint. The trust route
+and browser acquisition are recorded as capture conditions. Provisioning scripts
+refuse hosts that do not present both CI and explicit disposable-runner guards.
 
----
+## Branch authority
 
-## 4. What is published, and what is derived
-
-⭐ **One assembler builds everything that leaves this repository, and both
-surfaces take what it produced.**
-[`../crates/b-ids-corpus/src/publish.rs`](../crates/b-ids-corpus/src/publish.rs)
-writes a tree carrying the corpus, the raw bytes, the generated formats, the
-flat routes, the per-build anchor lists, the digest vectors, a manifest and a
-checksums file. ⛔ It reads no clock and it writes to no remote: a workflow
-pushes what it built, and the manifest is stamped with a digest of the corpus,
-so a rebuild is byte-identical and a change is not.
-
-### ⭐ Three branches, and each one answers a different question
-
-⛔ **Since `PUB-13`, 2026-09-04.** The default branch carries no corpus at all.
-
-| branch | carries | why it is not one of the others |
-| --- | --- | --- |
-| the default branch | the code, the checks, the documents, the reference corpus | it is what READS the corpus. A branch that carried both would make the derivation below a comparison of a tree against itself, which is a defect this repository has already shipped once |
-| ⭐ `source` | `corpus/`, `raw/`, `vectors/` and `LICENSE`, and nothing else | ⛔ **the CANONICAL corpus.** Append-only. A capture opens ONE pull request per run against this branch |
-| `data` | what the assembler produces from `source` | ⭐ DERIVED, and that is the whole point: something has to be canonical for "is the published branch what the corpus derives to" to be a real question |
-
-⚠ **`LICENSE` and `vectors/` are on `source` because the code put them there
-first**, not as a layout preference. `publish::build` reads both from the corpus
-root it is given, and the digest suite asserts one JA4 vector per published
-profile, so a profile and its vector on two branches leave the gate red until
-both land, in either merge order.
-
-⛔ **Every reader resolves the root rather than assuming it.**
-[`../scripts/common/corpus-root.sh`](../scripts/common/corpus-root.sh) is the
-one answer for a shell and
-[`../crates/b-ids-schema/src/root.rs`](../crates/b-ids-schema/src/root.rs) for
-Rust, and the gate exports `B_IDS_CORPUS_ROOT` around its three `cargo` steps so
-the suite and the crate's build script read one corpus rather than two.
-
-| surface | state |
+| branch | authority |
 | --- | --- |
-| the `data` branch | ⭐ published. `origin/data` carries that tree. A push to the default branch OR to `source` appends to it, a push that would change nothing is a no-op, and ⛔ it is never force-pushed. |
-| a tagged release | ⚠ none. A pushed tag is the only thing that cuts one, and pushing one is the operator's act. |
+| `main` | implementation, tests, workflows, documentation, reference evidence, and vendored code |
+| `source` | canonical reviewed profiles, raw captures, vectors, and license |
+| `data` | generated consumer tree derived from `source` |
 
-⭐ **A digest is derived, never stored.**
-[`../crates/b-ids-schema/src/tls.rs`](../crates/b-ids-schema/src/tls.rs) renders
-JA4's sorted lists and its two raw forms and
-[`../crates/b-ids-harness/src/digest.rs`](../crates/b-ids-harness/src/digest.rs)
-hashes them, both from the model rather than from bytes, so one parser answers
-for every consumer. ⛔ **No digest route is generated**, because a route exists
-only where the corpus holds the value and the corpus holds none.
-[`../TODO/publish.md`](../TODO/publish.md) and
-[`../TODO/validator.md`](../TODO/validator.md) carry both rules.
+`main` deliberately carries no profile corpus. All readers resolve the corpus
+root through the shared shell/PowerShell helpers or the Rust root resolver.
+This prevents a validator from accidentally comparing generated output with a
+second copy of itself.
 
-| path | written by | ⛔ rule |
-| --- | --- | --- |
-| `corpus/v1/<route>/<version>.json` | `b-ids-corpus add` | append-only. Never edited, never deleted. |
-| `raw/v1/<route>/<version>.hello.hex` | the same | the bytes the profile was read from, one line, no trailing newline |
-| `corpus/v1/index.json` | `b-ids-corpus index --write` | ⭐ DERIVED. It is rewritten from the tree and is exempt from the append-only rule. |
-| `corpus/v1/latest.json` | the same | DERIVED, and `latest` means the newest STABLE build. `CORPUS-03`. |
+The `source` branch is append-only for versioned profile and raw-capture paths.
+Derived indexes may be regenerated. The `data` branch is replaced only by a
+successful deterministic assembly and is never force-pushed.
 
----
+## Publication
 
-## 5. ⛔ The limits, stated rather than discovered
+`b-ids-corpus::publish` produces one sorted tree containing:
 
-- **The corpus holds fourteen profiles.** Nine Chrome, one Chromium, one Edge
-  and three Firefox, majors 151, 152 and 154, on two platforms. ⚠ Six of them
-  were taken through whatever build the machine happened to have and record
-  `captured.acquisition: null`; eight name the URL and the digest they were
-  installed from. ⭐ Three are unbranded builds.
-  [`../TODO/corpus.md`](../TODO/corpus.md), `CORPUS-02`, is the matrix, and it
-  is closed: eight of ten planned cells captured, none absent.
-- **No digest is stored in a profile**, by the rule in section 4, and ⛔ JA3 is
-  not computed anywhere: it is an MD5, this tree links no MD5, and a digest that
-  changes with a browser's per-connection shuffle is not one to assert on.
-- **Every capture went through a per-launch key pin**, and on ONE platform that
-  is now measured to cost nothing: on `ubuntu-latest` with Chrome `151`, 19 TLS
-  fields compared against a root in the store the browser reads, 0 differing.
-  ⚠ Windows is unmeasured, because the install could not be made to succeed
-  there non-interactively.
-  [`../experiments/50-trust-anchor.sh`](../experiments/50-trust-anchor.sh) is the
-  run and `HARNESS-14` is the entry.
-- **The resolver knows two families.** `chrome` and `edge`. A corpus dimension no
-  resolver can produce is reported by `b_ids_validator::unreachable_dimensions`.
-- **The HTTP half is one variant.** A capture records the navigation; a
-  subresource fetch and a reload are shapes the model has and the capture path
-  does not yet produce.
-- ⚠ **A credential header is recorded as present with no value.** Whether it was
-  sent and where in the order is a fingerprint signal; the value never appears on
-  any surface.
+- canonical profiles and raw captures;
+- current and per-channel pointers;
+- flat routes for individual fields;
+- aggregate formats and language/package bindings;
+- generated client and detector configuration;
+- trust-anchor lists and packet captures;
+- schema vectors, `MANIFEST.json`, and `SHA256SUMS`.
 
----
+The assembler reads no clock and performs no remote write. Workflows publish its
+output only after validation. A no-change rebuild produces no data-branch
+commit.
 
-## 6. Where to look next
+## Failure behavior
 
-| you want | read |
-| --- | --- |
-| the terms, each with its caveat | [`glossary.md`](glossary.md) |
-| a value this project did not measure | [`inherited-claims.md`](inherited-claims.md) |
-| what a script does and what it is held to | [`../scripts/README.md`](../scripts/README.md) |
-| a measurement this project took | [`../experiments/README.md`](../experiments/README.md) |
-| how work is done here | [`AGENTS.md`](AGENTS.md) |
+- Existing versioned profile routes are not overwritten. A correction is a new
+  profile that records what it supersedes.
+- Missing dimensions return no profile; they are not approximated from another
+  browser or platform.
+- Malformed measured bytes fail conversion or publication. Absence is accepted
+  only where the schema explicitly permits it.
+- Conformance reports `conforms`, `differs`, or `not-checkable`; per-connection
+  variation is never counted as a pass.
+- Generator output is sorted and checked against a second regeneration.
+- Script exit code 2 means the check could not run and is reported as a skip,
+  never success.
+
+## External source boundaries
+
+`references/` contains pinned evidence and conformance vectors. Tests read the
+NSS and HPACK reference trees directly, so the directory is an operational
+input as well as review evidence. `vendor/` contains code compiled by the
+workspace, and `patches/` records local modifications. Each retains its
+upstream license and provenance.
+
+See [`inherited-claims.md`](inherited-claims.md) for facts not measured by this
+project, [`trust-anchors.md`](trust-anchors.md) for the inferred-name boundary,
+and [`reference-sweeps/findings.md`](reference-sweeps/findings.md) for upstream
+review evidence.

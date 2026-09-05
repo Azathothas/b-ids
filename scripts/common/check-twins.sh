@@ -74,7 +74,7 @@ JSON=0
 VERBOSE=0
 # ⭐ MEASURE BEFORE SCOPING. This file is the slowest thing in the repository and
 # nothing said WHICH row cost what, so any scoping would have been a guess.
-# TODO/tooling.md, TOOL-15.
+# docs/history/todo/tooling.md, TOOL-15.
 TIMINGS=0
 
 while [ $# -gt 0 ]; do
@@ -120,7 +120,7 @@ trap 'rm -rf "$TMP"' EXIT INT TERM
 # hypothetical: `repo.has_codegraph` came back `sh=false ps=true` here on
 # 2026-09-01 because `.codegraph/` was created between the two probes, and the
 # only way to tell it from a real drift was to re-run the pair by hand.
-# TODO/tooling.md, TOOL-16.
+# docs/history/todo/tooling.md, TOOL-16.
 #
 # ⚠ THREE READINGS, AND EACH CATCHES SOMETHING THE OTHERS DO NOT. The index
 # catches a staged change, the porcelain status catches an edit and an untracked
@@ -265,7 +265,7 @@ sh_flags=$(awk '
 # ⛔ THE CATCH-ALL PARAMETER IS NOT A FLAG, and excluding it is not widening
 # the comparison. `$UnboundArguments` is what makes an unknown flag exit 2
 # rather than 1, so demanding a POSIX `--unbound-arguments` beside it would be
-# demanding a flag that must not exist. TODO/ci.md, CI-07.
+# demanding a flag that must not exist. docs/history/todo/ci.md, CI-07.
 # ⚠ `true` goes with it, from `ValueFromRemainingArguments = $true`: the
 # extractor reads the first $NAME on a line and that attribute carries one.
 ps_flags=$(awk '
@@ -427,7 +427,7 @@ compare_pair "check-routes"         check-routes.sh         "--json"          ch
 # ⚠ THE PAIR THAT FOUND ITS OWN DEFECT. Every POSIX half answered 2 for an
 # argument it cannot act on and every PowerShell half answered 1, 22 of 22, and
 # the comparison could not see it because it compares runs that SUCCEED.
-# TODO/ci.md, CI-07.
+# docs/history/todo/ci.md, CI-07.
 compare_pair "check-exit-codes"     check-exit-codes.sh     "--json"          check-exit-codes.ps1     "-Json"
 
 # ⚠ AGAINST A TRACKED FIXTURE, never the network. Without --versions this
@@ -455,7 +455,7 @@ compare_pair "check-manual-path"    check-manual-path.sh    "--json"          ch
 # provisioning tool landed alone, and check-exit-codes immediately reported 27
 # scripts against 25: the counts had been equal only by coincidence, and two
 # untwinned scripts broke the tie. ⭐ A drift nobody could dismiss is what a
-# comparison is for. TODO/driver.md, DRIVER-09.
+# comparison is for. docs/history/todo/driver.md, DRIVER-09.
 #
 # ⚠ EACH HALF DRIVES THE TOOL IN ITS OWN LANGUAGE, so this row compares two
 # acceptances of two implementations rather than two wrappers over one. The
@@ -471,13 +471,13 @@ compare_pair "check-provisioning"   check-provisioning.sh   "--json"          ch
 # compares is the two acceptance wrappers rather than two implementations of the
 # round trip. ⭐ That is deliberate: a round trip written twice would be two
 # readers of five formats, and the pair would disagree the first time either
-# moved. TODO/schema.md, SCHEMA-08.
+# moved. docs/history/todo/schema.md, SCHEMA-08.
 compare_pair "check-formats"        check-formats.sh        "--json"          check-formats.ps1        "-Json"
 
 # ⚠ BOTH HALVES DRIVE THE SAME GENERATOR AND THE SAME SUITE, as the row above
 # does, and each also reads the generated bodies itself: one in grep and one in
 # String.Contains. ⛔ Both refuse without the fixture flag at exit 2 rather than
-# reading as though a real pull request had been checked. TODO/ci.md, CI-04.
+# reading as though a real pull request had been checked. docs/history/todo/ci.md, CI-04.
 compare_pair "check-pr-body"        check-pr-body.sh        "--fixture --json" check-pr-body.ps1        "-Fixture -Json"
 compare_pair "check-pcap"           check-pcap.sh           "--json"           check-pcap.ps1           "-Json"
 compare_pair "check-signing"        check-signing.sh        "--json"           check-signing.ps1        "-Json"
@@ -486,35 +486,35 @@ compare_pair "check-bindings"       check-bindings.sh       "--json"           c
 
 # ⚠ EACH HALF READS THE SIX STATEMENTS ITSELF, one in jq and one in
 # ConvertFrom-Json, so this row compares two readings of the tree rather than
-# two wrappers over one. TODO/publish.md, PUB-07.
+# two wrappers over one. docs/history/todo/publish.md, PUB-07.
 compare_pair "check-license-consistency" check-license-consistency.sh "--fixture --json" check-license-consistency.ps1 "-Fixture -Json"
 
 # ⚠ ONE ASSEMBLER, TWO WRAPPERS, AND EACH COMPARES THE TWO BUILDS ITSELF: the
 # POSIX half in `diff -r` and the PowerShell half by hashing every file on both
-# sides. ⛔ Both refuse without the dry-run flag at exit 2. TODO/publish.md,
+# sides. ⛔ Both refuse without the dry-run flag at exit 2. docs/history/todo/publish.md,
 # PUB-01.
 compare_pair "check-release"        check-release.sh        "--dry-run --json" check-release.ps1        "-DryRun -Json"
 
 # ⚠ AND EACH READS THE MANIFEST ITSELF, one in jq and one in ConvertFrom-Json.
-# TODO/publish.md, PUB-02.
+# docs/history/todo/publish.md, PUB-02.
 compare_pair "check-data-branch"    check-data-branch.sh    "--json"          check-data-branch.ps1    "-Json"
 
 # ⚠ EACH HALF READS THE WORKFLOW ITSELF, one in awk, sed and grep and one in
 # -match over its lines, and each DRIVES the binary over ten refusal paths. ⛔ So
 # this row compares two readings of one file rather than two wrappers over one.
-# TODO/publish.md, PUB-10.
+# docs/history/todo/publish.md, PUB-10.
 compare_pair "check-publish"        check-publish.sh        "--json"          check-publish.ps1        "-Json"
 
 # ⭐ THE PAIR THE COLD-START JOB ITSELF DEPENDS ON: its Windows half RUNS the
 # .ps1 as its first step, so a twin that drifted would probe a different list
 # from the one the job is checked against. ⚠ Two rows, because the probe is a
-# different question from the workflow's shape. TODO/ci.md, CI-05.
+# different question from the workflow's shape. docs/history/todo/ci.md, CI-05.
 compare_pair "check-cold-start"     check-cold-start.sh     "--json"          check-cold-start.ps1     "-Json"
 compare_pair "check-cold-start probe" check-cold-start.sh   "--resolve --json" check-cold-start.ps1    "-Resolve -Json"
 
 # ⚠ EACH HALF RESOLVES EVERY CITATION ITSELF, one with wc and one with
 # Get-Content, over a matrix each generates by RUNNING the generator. ⭐ Two
-# readings of one run rather than two wrappers over one. TODO/emitters.md,
+# readings of one run rather than two wrappers over one. docs/history/todo/emitters.md,
 # EMIT-01.
 compare_pair "check-support-matrix"  check-support-matrix.sh "--json"          check-support-matrix.ps1 "-Json"
 compare_pair "check-generated-configs" check-generated-configs.sh "--json"     check-generated-configs.ps1 "-Json"
@@ -522,13 +522,13 @@ compare_pair "check-generated-configs" check-generated-configs.sh "--json"     c
 # ⚠ EACH HALF COUNTS THE CARRIERS ITSELF, in jq and in ConvertFrom-Json, so this
 # row compares two readings of the corpus rather than two wrappers over one.
 # ⛔ Both refuse a corpus with no carrier at exit 2 rather than passing over an
-# empty set. TODO/corpus.md, CORPUS-04.
+# empty set. docs/history/todo/corpus.md, CORPUS-04.
 compare_pair "check-trust-anchors"  check-trust-anchors.sh  "--json"          check-trust-anchors.ps1  "-Json"
 
 # ⚠ BOTH HALVES NAME THE FOUR CASES AND RUN THE SAME SUITE, so this row compares
 # two wrappers over one set of assertions. ⭐ The pair earned itself before it
 # was registered: a backslash lost crossing a shell turned the ps half's `(\d+)`
-# into `(d+)`, and the two halves reported 6 cases and 0. TODO/publish.md, PUB-08.
+# into `(d+)`, and the two halves reported 6 cases and 0. docs/history/todo/publish.md, PUB-08.
 compare_pair "check-notes-generator" check-notes-generator.sh "--json"        check-notes-generator.ps1 "-Json"
 
 # ⚠ THE FETCHER, THROUGH ITS OFFLINE SELF-TEST ONLY. The pair was the one twin
@@ -546,7 +546,7 @@ compare_pair "mine-repo selftest"   mine-repo.sh            "--selftest --json" 
 # string, and the two halves compute the digest with DIFFERENT third-party
 # arithmetic: the sh half uses sha256sum and the ps half the platform's own
 # SHA-256. Two implementations of one rule is exactly what this file compares.
-# TODO/validator.md, VALID-04.
+# docs/history/todo/validator.md, VALID-04.
 compare_pair "derive-ja4-vector"    derive-ja4-vector.sh    "--selftest --json" derive-ja4-vector.ps1  "-Selftest -Json"
 
 # ⚠ THE GATE RUNNER'S TWO HALVES RUN DIFFERENT PROGRAMS TO REACH THE SAME

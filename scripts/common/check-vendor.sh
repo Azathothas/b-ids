@@ -41,7 +41,7 @@ set -u
 # `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
 # '\t')" read ...` forks once per line. Measured 2026-09-02: a command
 # substitution costs 35 ms on this host, and check-docs.sh reads about 1100
-# lines that way. TODO/tooling.md, TOOL-18.
+# lines that way. docs/history/todo/tooling.md, TOOL-18.
 TAB=$(printf '\t')
 
 JSON=0
@@ -90,7 +90,7 @@ SCHEMA=$(jq -r '.schema_version // empty' "$MANIFEST")
 # correct for eighteen months of sessions; the day a second one landed, the
 # FIRST reported five problems it does not have and the second reported none.
 # ⭐ A latent defect that only a second element could ever show.
-# TODO/emitters.md, EMIT-03, and TODO/vendor.md, VENDOR-01.
+# docs/history/todo/emitters.md, EMIT-03, and docs/history/todo/vendor.md, VENDOR-01.
 NAMES=$(jq -r '.upstreams[]?.name' "$MANIFEST" | tr -d '\r')
 NUPSTREAMS=0
 NCRATES=0

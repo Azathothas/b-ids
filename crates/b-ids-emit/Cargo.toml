@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -32,6 +32,6 @@ http.workspace = true
 # comparison rather than the emitter checking its own arithmetic. EMIT-03.
 b-ids-harness = { path = "../b-ids-harness" }
 # ⚠ THE ESCAPE HATCH SUITE READS THE PUBLISHED CORPUS, because a fixture would
-# prove the emitter can write a hello somebody made up. TODO/emitters.md,
+# prove the emitter can write a hello somebody made up. docs/history/todo/emitters.md,
 # EMIT-02.
 serde_json.workspace = true

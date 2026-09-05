@@ -15,7 +15,7 @@
 //! cargo +nightly fuzz run parsers -- -runs=1000000
 //! ```
 //!
-//! `TODO/harness.md`, `HARNESS-09`.
+//! `docs/history/todo/harness.md`, `HARNESS-09`.
 
 #![no_main]
 

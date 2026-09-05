@@ -2,7 +2,7 @@
 //!
 //! ⛔ **A client that omits it carries a zero in one field of four** in a
 //! widely-read HTTP/2 fingerprint, and that is one of the fields an origin can
-//! still tell apart. `TODO/emitters.md`, `EMIT-03`.
+//! still tell apart. `docs/history/todo/emitters.md`, `EMIT-03`.
 //!
 //! ⭐ **The measurement is in and it is unanimous.** Every profile this corpus
 //! holds carries the block, and every one of them carries the same value:

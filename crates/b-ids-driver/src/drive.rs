@@ -28,7 +28,7 @@
 //! asks for the other one is refused rather than started with an argument the
 //! browser reads as a file name. `DRIVER-11`.
 //!
-//! `TODO/driver.md`, `DRIVER-01`.
+//! `docs/history/todo/driver.md`, `DRIVER-01`.
 
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -186,7 +186,7 @@ pub struct Launch {
     /// 2026-09-02 the `edge` capture lane launched Edge on a hosted runner, the
     /// browser exited after 1.4 seconds having opened no connection, and the
     /// only thing anybody could read was that it had exited: whatever Edge said
-    /// about why went to `Stdio::null()`. `TODO/corpus.md`, `CORPUS-02`.
+    /// about why went to `Stdio::null()`. `docs/history/todo/corpus.md`, `CORPUS-02`.
     ///
     /// ⚠ **A FILE rather than a pipe.** A pipe nobody drains fills, and a
     /// browser that filled it would block on a write while this process waits
@@ -202,7 +202,7 @@ pub struct Launch {
     ///
     /// ⚠ **It is the way through on the platform where the browser does not
     /// read the trust store a caller can write to.** `docs/inherited-claims.md`
-    /// section 8 carries the measurement, and `TODO/driver.md`, `DRIVER-04`, is
+    /// section 8 carries the measurement, and `docs/history/todo/driver.md`, `DRIVER-04`, is
     /// the entry that reports which route completes a handshake here.
     ///
     /// ⛔ Refused together with a pin: two trust configurations at once is a

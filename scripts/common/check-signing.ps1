@@ -5,7 +5,7 @@
 # check-twins.sh is what stops the two drifting.
 #
 # ⛔ A CHECKSUMS FILE PUBLISHED IN THE SAME RELEASE AS THE ARTEFACT PROVES
-# TRANSPORT, NOT AUTHORSHIP. TODO/publish.md, PUB-09.
+# TRANSPORT, NOT AUTHORSHIP. docs/history/todo/publish.md, PUB-09.
 #
 # ⭐ THE ANSWER IS KEYLESS: the runner's own OIDC identity signs, so no
 # long-lived key exists and no workflow names a secret.
@@ -195,5 +195,5 @@ if ($problems.Count -eq 0) {
 foreach ($p in $problems) { [Console]::Error.WriteLine('  ' + $p) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A checksums file published beside the artefact proves transport rather')
-[Console]::Error.WriteLine('than authorship. TODO/publish.md, PUB-09.')
+[Console]::Error.WriteLine('than authorship. docs/history/todo/publish.md, PUB-09.')
 exit 1

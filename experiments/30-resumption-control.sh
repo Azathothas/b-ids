@@ -17,7 +17,7 @@
 # were not resumed and resumed every one it kept, so the navigation produced NO
 # cold connection and nothing could be published from it. More connections do
 # not help: the first completed handshake leaves a ticket and everything after
-# it resumes. TODO/corpus.md, CORPUS-02.
+# it resumes. docs/history/todo/corpus.md, CORPUS-02.
 #
 # -- ⛔ THE CONTROL, WHICH IS THE WHOLE DESIGN --------------------------------
 #

@@ -83,7 +83,7 @@ cd "$REPO_ROOT" || { printf '%s: cannot enter %s\n' "$SELF" "$REPO_ROOT" >&2; ex
 # ⚠ The exemption is vendor/NAME/ and never vendor/, so vendor/upstream.json,
 # which this project wrote, is checked like any other file here. An exemption
 # on the whole directory would have covered our own record by accident.
-# TODO/vendor.md, VENDOR-01.
+# docs/history/todo/vendor.md, VENDOR-01.
 
 list_files() {
   {
@@ -93,7 +93,7 @@ list_files() {
 }
 
 
-# ⚠ THE ONE FILL-IN FORM IS EXEMPT AND MUST BE. TODO/ENTRY.md is the shape an
+# ⚠ THE ONE FILL-IN FORM IS EXEMPT AND MUST BE. docs/history/todo/ENTRY.md is the shape an
 # entry is written from, so holding placeholders is its whole job, and a check
 # that failed on it would fail on a correct tree. A check that fails on a
 # correct tree gets switched off within a week.
@@ -107,7 +107,7 @@ list_files() {
 # it looks for. Exempting only one is how the twins disagree, and it did: the
 # sh side scanned the new ps1 twin and reported four categories the ps1 side
 # did not.
-EXEMPT='^(TODO/ENTRY\.md$|scripts/common/check-placeholders\.(sh|ps1))'
+EXEMPT='^(docs/history/todo/ENTRY\.md$|scripts/common/check-placeholders\.(sh|ps1))'
 
 if [ -n "$SCOPE" ]; then
   FILES=$(list_files "$SCOPE" | grep -Ev "$EXEMPT" || true)
@@ -211,6 +211,6 @@ if [ "$COUNT" -gt 0 ]; then
   exit 1
 fi
 
-printf 'no placeholders survived in %s files (TODO/ENTRY.md is exempt)\n' \
+printf 'no placeholders survived in %s files (docs/history/todo/ENTRY.md is exempt)\n' \
   "$(printf '%s\n' "$FILES" | wc -l | tr -d ' ')"
 exit 0

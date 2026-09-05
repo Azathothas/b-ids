@@ -173,7 +173,7 @@ pub fn extensions(tls: &TlsHalf) -> Result<Vec<EmittableExtension>, Vec<Unreprod
 /// faithfully needs an ordered list of codepoint-and-body pairs, and a model
 /// with one typed field per extension cannot hold one. Retrofitting the list
 /// into such a model is the largest change in this space, so it is the shape
-/// this project started from. `TODO/emitters.md`, `EMIT-02`.
+/// this project started from. `docs/history/todo/emitters.md`, `EMIT-02`.
 ///
 /// ⛔ **The order is the capture's, never sorted and never normalised.** A
 /// browser's extension order is a fingerprint in its own right, and an emitter
@@ -236,8 +236,8 @@ pub fn unnamed_codepoints(tls: &TlsHalf) -> Vec<u16> {
 /// project does not record. A per-connection random carries no fingerprint, so
 /// the model steps over it at capture time; an emitter therefore cannot
 /// reproduce a capture byte for byte and must not pretend to. Everything else
-/// on the wire comes from the profile. `TODO/emitters.md`, `EMIT-02`, and
-/// `TODO/library.md`, `LIB-02`.
+/// on the wire comes from the profile. `docs/history/todo/emitters.md`, `EMIT-02`, and
+/// `docs/history/todo/library.md`, `LIB-02`.
 ///
 /// ⚠ **The lengths are all derived from what was written**, at three levels:
 /// the extensions block, the handshake body and the record. A length taken from

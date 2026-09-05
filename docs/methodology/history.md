@@ -21,8 +21,8 @@ already says a superseded rule is moved and never dropped. What it did not say
 is **where to**, so it went into the page it was superseding.
 
 ⭐ **Two independent projects built from this template invented the same
-answer within days of each other**, one at `docs/HISTORY/` and one at
-`HISTORY/`, with almost the same rules written on the front of each. That is
+answer within days of each other**, one at `docs/history/` and one at
+`history/`, with almost the same rules written on the front of each. That is
 the evidence for putting it in the template: it is not a preference, it is the
 thing adopters keep having to build.
 
@@ -31,7 +31,7 @@ thing adopters keep having to build.
 ## Where it lives
 
 ```
-docs/HISTORY/
+docs/history/
   README.md      what is here, and one line on each file
   RESUME.md      ⚠ the one file here that is read to do work
   <topic>.md     the superseded wording, kept verbatim
@@ -43,7 +43,7 @@ is a deliberate departure from the shape above.
 [`../reference-sweeps/`](../reference-sweeps/) is its home, because a sweep here
 is read **to do work** rather than to understand a decision: it carries the
 mechanisms, at file and line, that the open entries are written against.
-[`../HISTORY/README.md`](../HISTORY/README.md) says the same thing from the
+[`../history/README.md`](../history/README.md) says the same thing from the
 other side.
 
 ⚠ **Under `docs/`, not at the repository root.** The root holds code, tooling

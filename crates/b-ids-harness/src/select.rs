@@ -38,7 +38,7 @@ pub enum Kind {
     /// way can carry the only cold `ClientHello` of a navigation, and on
     /// `ubuntu-latest` that is exactly what happened: every connection that
     /// reached HTTP/2 had resumed, so discarding these published nothing.
-    /// `TODO/harness.md`, `HARNESS-15`.
+    /// `docs/history/todo/harness.md`, `HARNESS-15`.
     NoHttp2,
     /// It reached HTTP/2 and nothing says the session resumed.
     Cold,
@@ -88,7 +88,7 @@ pub struct Selection<'a> {
     /// ⛔ **The `whether or not` is the whole entry.** Requiring one connection
     /// to carry both halves threw away a perfectly good cold hello whenever the
     /// connection carrying it was a preconnect, and on `ubuntu-latest` that was
-    /// every cold hello there was. `TODO/harness.md`, `HARNESS-15`.
+    /// every cold hello there was. `docs/history/todo/harness.md`, `HARNESS-15`.
     pub tls_from: Option<&'a Capture>,
     /// ⭐ **The connection the HTTP/2 half is taken from: the first that
     /// reached HTTP/2, resumed or not.**
@@ -142,7 +142,7 @@ impl Selection<'_> {
     /// navigation is a condition of the measurement rather than a detail.** A
     /// reader who cannot tell cannot reason about anything that spans the two,
     /// and the ordinary case and the interesting case look identical without
-    /// it. `TODO/harness.md`, `HARNESS-15`.
+    /// it. `docs/history/todo/harness.md`, `HARNESS-15`.
     #[must_use]
     pub fn one_connection(&self) -> Option<bool> {
         match (self.tls_from, self.http2_from) {

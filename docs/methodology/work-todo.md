@@ -4,7 +4,7 @@ The todo model. Work is a set of entries in an index; one record file carries
 the baseline and the work order and is rewritten every session.
 
 ⭐ **This is the model this project uses**, and the choice is recorded in
-[`../../TODO/RULES.md`](../../TODO/RULES.md). [`authoring.md`](authoring.md)
+[`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md). [`authoring.md`](authoring.md)
 says how an entry is written.
 
 ---
@@ -12,7 +12,7 @@ says how an entry is written.
 ## The shape
 
 ```
-TODO/
+docs/history/todo/
   PROGRESS.md       ⭐ the record. What the last session did, the measured
                     baseline, and the work order. Rewritten every session,
                     carries no history.
@@ -146,7 +146,7 @@ separately. What still has to exist at every session boundary:
   progress, the work order, and open questions for the operator.
 - **The summary table**, in chat and saved.
 - ⚠ **A prompt for whoever comes next, where the project wants one.** ⛔ This
-  project does not: [`../../TODO/RULES.md`](../../TODO/RULES.md) section 10
+  project does not: [`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md) section 10
   refuses it, because a prompt restating the work order is a second copy of it
   going stale the moment an entry closes.
 

@@ -2,7 +2,7 @@
 //!
 //! ⛔ Every variant names the FIELD it is about. An error that says a profile is
 //! malformed without saying where is an error whose reader has to re-derive the
-//! answer, and the acceptance for three entries in `TODO/schema.md` is a
+//! answer, and the acceptance for three entries in `docs/history/todo/schema.md` is a
 //! message naming the field.
 
 use core::fmt;

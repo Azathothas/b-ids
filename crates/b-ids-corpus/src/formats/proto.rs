@@ -18,7 +18,7 @@
 //! the profiles, so a field or a comment deleted from the file fails the round
 //! trip.
 //!
-//! `TODO/schema.md`, `SCHEMA-12`.
+//! `docs/history/todo/schema.md`, `SCHEMA-12`.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -45,7 +45,7 @@ pub const UNMEASURED: &str = "// unmeasured: ";
 /// field name may carry. A generator that decided map-or-message by looking at
 /// whether the keys happened to be identifier-shaped would change the published
 /// shape the day a profile's keys changed, which is a contract moving under a
-/// consumer for a reason nobody chose. `TODO/schema.md`, `SCHEMA-12`.
+/// consumer for a reason nobody chose. `docs/history/todo/schema.md`, `SCHEMA-12`.
 const MAP_PATHS: [&str; 1] = ["provenance"];
 
 /// One field of one message, as the definition declares it.

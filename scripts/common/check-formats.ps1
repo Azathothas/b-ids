@@ -1,8 +1,8 @@
 ﻿# check-formats.ps1 - does every published format come out of the one generator,
 # round-trip, and produce the same bytes twice?
 #
-# ⭐ THE TWIN OF check-formats.sh. TODO/schema.md, SCHEMA-08 and SCHEMA-12, and
-# TODO/driver.md, DRIVER-09, is why a script in this directory does not land
+# ⭐ THE TWIN OF check-formats.sh. docs/history/todo/schema.md, SCHEMA-08 and SCHEMA-12, and
+# docs/history/todo/driver.md, DRIVER-09, is why a script in this directory does not land
 # without one.
 #
 # ⛔ JSON IS ONE CONSUMER, NOT THE CONSUMER. A corpus reachable only by writing a
@@ -68,7 +68,7 @@ Set-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-formats: no corpus is reachable, so nothing was checked')
@@ -101,7 +101,8 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-formats: the corpus crate did not build')
     exit 2
 }
-$bin = Join-Path $root 'target' | Join-Path -ChildPath 'debug' | Join-Path -ChildPath 'b-ids-corpus'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug' | Join-Path -ChildPath 'b-ids-corpus'
 if (-not (Test-Path -LiteralPath $bin)) { $bin = $bin + '.exe' }
 if (-not (Test-Path -LiteralPath $bin)) {
     [Console]::Error.WriteLine('check-formats: ' + $bin + ' is not there')
@@ -320,5 +321,5 @@ if ($count -eq 0) {
 foreach ($problem in $problems) { [Console]::Error.WriteLine($problem) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('One generator, canonical JSON in, every format out. Never hand-edit a')
-[Console]::Error.WriteLine('generated file. TODO/schema.md, SCHEMA-08 and SCHEMA-12.')
+[Console]::Error.WriteLine('generated file. docs/history/todo/schema.md, SCHEMA-08 and SCHEMA-12.')
 exit 1

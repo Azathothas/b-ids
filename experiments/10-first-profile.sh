@@ -178,7 +178,7 @@ printf 'harness at %s\n' "$BASE"
 # command line and Gecko takes no certificate switch at all, so the trust goes
 # into the certificate database of the profile the launch creates. A case
 # statement here keyed on a family name would be a second family list, which is
-# the defect DRIVER-10 records. TODO/driver.md, DRIVER-11.
+# the defect DRIVER-10 records. docs/history/todo/driver.md, DRIVER-11.
 # shellcheck disable=SC2086 # BROWSER_FLAG is a flag and its value, or empty
 TRUST_ROUTE=$("$DRIVER" trust-route $BROWSER_FLAG 2>"$OUT/trust-route.err")
 case "$TRUST_ROUTE" in
@@ -266,7 +266,7 @@ printf '  switches  %s\n' "$(wc -l < "$OUT/switches.txt" | tr -d ' ')"
 # here rather than retyped. ⚠ ABSENT IS THE NORMAL CASE AND IT IS NOT AN ERROR:
 # a build already installed on the machine was not obtained by this project and
 # has no route or digest to record, which is a different fact from an
-# acquisition that failed. TODO/driver.md, DRIVER-08.
+# acquisition that failed. docs/history/todo/driver.md, DRIVER-08.
 ACQUISITION="$ROOT/.tmp/provision-browser/acquisition.json"
 [ -f "$ACQUISITION" ] || ACQUISITION=""
 printf '  acquisition %s\n' "${ACQUISITION:-none, this build was already on the machine}"
@@ -302,7 +302,7 @@ fs.writeFileSync(out, JSON.stringify({
   // command line: a Gecko launch passes no certificate switch at all, so the
   // same rule read not-applicable over a completed handshake, which is a
   // combination the schema refuses. The driver names the configuration it
-  // actually used. TODO/driver.md, DRIVER-11.
+  // actually used. docs/history/todo/driver.md, DRIVER-11.
   trust: (() => {
     const m = fs.readFileSync(drivenPath, "utf8").match(/(?:^|[ ])trust=([^ \r\n]+)/);
     if (!m) { throw new Error("the driver reported no trust configuration"); }

@@ -84,7 +84,7 @@ pub struct HeaderField {
     /// fingerprint signal in its own right, and it carries no secret.** Before
     /// 2026-09-02 a credential header was dropped entirely, name and all, so a
     /// recorded order closed over the gap and nothing downstream could tell
-    /// that a header had been there. `TODO/schema.md`, `SCHEMA-14`.
+    /// that a header had been there. `docs/history/todo/schema.md`, `SCHEMA-14`.
     ///
     /// ⛔ **There is no mode under which the value is retained.** This field
     /// adds a way to say a header was here; it adds no way to say what was in
@@ -241,7 +241,7 @@ impl core::fmt::Display for BoundaryAlphabet {
 /// ⛔ **THE PATTERN, NEVER A DRAWN VALUE.** The boundary is generated per
 /// request, like a GREASE codepoint, so one captured boundary is one draw and
 /// recording it as though it were the value would publish a constant no browser
-/// has. `TODO/schema.md`, `SCHEMA-11`.
+/// has. `docs/history/todo/schema.md`, `SCHEMA-11`.
 ///
 /// ⚠ **Measured by reading somebody else's client, at a named commit, and not
 /// by this project.** One client generates `----WebKitFormBoundary` plus

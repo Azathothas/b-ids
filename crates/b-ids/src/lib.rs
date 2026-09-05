@@ -45,7 +45,7 @@
 //! here would be a second implementation of a rule the corpus already holds,
 //! and the day the two disagreed the consumer would be the one who found out.
 //!
-//! `TODO/library.md`, `LIB-01`.
+//! `docs/history/todo/library.md`, `LIB-01`.
 
 use std::sync::OnceLock;
 

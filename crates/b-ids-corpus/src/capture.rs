@@ -25,7 +25,7 @@
 //! backstop against this project's own parser being wrong, and a corpus that
 //! repaired them would have destroyed the artefact it exists to keep.
 //!
-//! `TODO/corpus.md`, `CORPUS-01`.
+//! `docs/history/todo/corpus.md`, `CORPUS-01`.
 
 use b_ids_harness::Capture;
 use b_ids_schema::http::{HeaderSet, HttpHalf, ValuePolicy, Variant};
@@ -106,7 +106,7 @@ pub struct Identity {
     /// ⛔ **Read from what the harness printed, never typed.** ⚠ Defaulted
     /// on the way in so an identity file written before this field existed still
     /// reads, and absent rather than assumed: a run that did not report the
-    /// condition did not measure it. `TODO/corpus.md`, `CORPUS-02`.
+    /// condition did not measure it. `docs/history/todo/corpus.md`, `CORPUS-02`.
     #[serde(default)]
     pub resumption: Option<b_ids_schema::Resumption>,
     /// The switches the subject was launched with, in order.
@@ -117,7 +117,7 @@ pub struct Identity {
     /// an acquisition that failed. A build already installed on the machine
     /// was not obtained by this project and has no route or digest.
     /// ⭐ Defaulted on the way in so an identity file written before this
-    /// field existed still reads. `TODO/driver.md`, `DRIVER-05`.
+    /// field existed still reads. `docs/history/todo/driver.md`, `DRIVER-05`.
     #[serde(default)]
     pub acquisition: Option<b_ids_schema::Acquisition>,
 }
@@ -170,7 +170,7 @@ fn redact_switches(switches: &[String]) -> (Vec<String>, bool) {
 /// connection to satisfy both is what this signature replaced, and it is what
 /// made a navigation whose only cold hello arrived on an abandoned preconnect
 /// publish nothing at all. `b_ids_harness::select` chooses both, and the
-/// profile records which connection each half came from. `TODO/harness.md`,
+/// profile records which connection each half came from. `docs/history/todo/harness.md`,
 /// `HARNESS-15`.
 ///
 /// ⚠ **The instant is the TLS connection's.** A profile carries one `at` and
@@ -316,7 +316,7 @@ pub fn profile_from(
         schema: SCHEMA_ID.to_owned(),
         // ⛔ READ FROM THE ONE HOME, never typed. A licence identifier a
         // capture path carried its own copy of would be a second answer to a
-        // question the project has one answer to. `TODO/publish.md`, `PUB-07`.
+        // question the project has one answer to. `docs/history/todo/publish.md`, `PUB-07`.
         license: b_ids_schema::LICENSE.to_owned(),
         // ⚠ A placeholder that is immediately overwritten by the derivation
         // below. `Profile::derived_id` needs a profile to read the four keys
@@ -350,7 +350,7 @@ pub fn profile_from(
             // each half arrived on is a fact about this run that nothing
             // outside it can know, and a reader who cannot tell whether the two
             // halves came from one connection cannot reason about anything that
-            // spans them. TODO/harness.md, HARNESS-15.
+            // spans them. docs/history/todo/harness.md, HARNESS-15.
             connections: Some(b_ids_schema::Connections {
                 tls: tls_from.connection,
                 http2: http2_from.connection,
@@ -362,7 +362,7 @@ pub fn profile_from(
         // ⚠ EMPTY, and that is the ruling rather than a gap. JA4 and its raw
         // forms are DERIVED from a profile on demand, by `b_ids_schema::tls`
         // and `b_ids_harness::digest`; the corpus is append-only, so a derived
-        // value stored in it could never be corrected. `TODO/validator.md`
+        // value stored in it could never be corrected. `docs/history/todo/validator.md`
         // carries the decision, and ⛔ JA3 is not computed anywhere.
         digests: Digests::default(),
         raw,
@@ -372,7 +372,7 @@ pub fn profile_from(
 
     // ⭐ THE SEAM `DRIVER-03` NAMED, wired where it said it belonged. Its
     // closing left the normalisation callerless because no capture path wrote a
-    // profile yet; this is that path. `TODO/corpus.md`, `CORPUS-06`.
+    // profile yet; this is that path. `docs/history/todo/corpus.md`, `CORPUS-06`.
     //
     // ⛔ GATED ON THE LAUNCH, NEVER ON THE VALUE. A windowed build that
     // announced a headless product token would be announcing its own value, and

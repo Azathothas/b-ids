@@ -6,7 +6,7 @@
 # SOMEBODY ELSE'S IMAGE INSTALLED. A capture lane called `b-ids-driver resolve`,
 # which by design finds what is already there, so the corpus recorded a build
 # nobody chose from a source nobody named, and every profile carried
-# `captured.acquisition: null`. TODO/driver.md, DRIVER-08.
+# `captured.acquisition: null`. docs/history/todo/driver.md, DRIVER-08.
 #
 # ⛔ MEASURED, AND THE COST WAS ALREADY PAID: on 2026-09-02 ubuntu-latest served
 # Chrome 151.0.7922.173 and windows-latest served 151.0.7922.174, so the single
@@ -93,7 +93,7 @@ esac
 if [ "$ROUTE" = "vendor" ] && [ -n "$VERSION" ]; then
   printf 'provision-browser: --route vendor serves the CURRENT build only, so --version %s\n' "$VERSION" >&2
   printf '  cannot be honoured. Use --route for-testing for an exact build, and read that it\n' >&2
-  printf '  is UNBRANDED. TODO/driver.md, DRIVER-08.\n' >&2
+  printf '  is UNBRANDED. docs/history/todo/driver.md, DRIVER-08.\n' >&2
   exit 2
 fi
 if [ "$ROUTE" = "for-testing" ] && [ -z "$VERSION" ]; then
@@ -122,7 +122,7 @@ esac
 # ⭐ THE ROUTE TABLE IS PER FAMILY AND IT IS DATA, and it is defined HERE, above
 # the plan, because --plan reads it too. A table defined below its first caller
 # is a table the plan cannot see: measured 2026-09-02, --plan for an edge
-# request printed an empty purge line and a command-not-found. TODO/driver.md,
+# request printed an empty purge line and a command-not-found. docs/history/todo/driver.md,
 # DRIVER-10.
 #
 # ⛔ IT PURGES THE NAMED FAMILY AND NOT EVERY BROWSER. Before 2026-09-02 the
@@ -177,7 +177,7 @@ sandbox_for() {
 # ⛔ SNAPS ARE A SECOND PACKAGE MANAGER AND apt CANNOT SEE THEM. Empty for every
 # family the vendor ships as a deb, which is why this is a table rather than a
 # flag: the one family that needs it is the one whose distribution ships it that
-# way. TODO/corpus.md, CORPUS-02.
+# way. docs/history/todo/corpus.md, CORPUS-02.
 snaps_for() {
   case "$1" in
     chromium) printf 'chromium\n' ;;
@@ -204,7 +204,7 @@ vendor_dir_for() {
 plan_for() {
   # ⛔ KEYED ON THE FAMILY TOO. A plan that described Chrome's archive for an
   # `edge` request is a plan nobody could act on, and --plan is what a person
-  # reads before letting this near a machine. TODO/driver.md, DRIVER-10.
+  # reads before letting this near a machine. docs/history/todo/driver.md, DRIVER-10.
   printf 'purge   %s\n' "$(purge_line)"
   case "$BROWSER/$OS/$ROUTE" in
     chrome/linux/vendor)
@@ -311,7 +311,7 @@ if [ "$DISPOSABLE" != "1" ] || [ -z "$ON_A_RUNNER" ]; then
   printf '  B_IDS_DISPOSABLE=%s and CI=%s, and BOTH are required.\n' \
     "${DISPOSABLE:-unset}" "${ON_A_RUNNER:-unset}" >&2
   printf '  Set them only on a machine that is thrown away afterwards.\n' >&2
-  printf '  Run with --plan to read what it would do. TODO/driver.md, DRIVER-08.\n' >&2
+  printf '  Run with --plan to read what it would do. docs/history/todo/driver.md, DRIVER-08.\n' >&2
   exit 2
 fi
 
@@ -326,7 +326,8 @@ cargo build -q -p b-ids-driver || {
   printf 'provision-browser: the driver did not build\n' >&2
   exit 2
 }
-DRIVER="$ROOT/target/debug/b-ids-driver"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$ROOT/target"}
+DRIVER="$TARGET_DIR/debug/b-ids-driver"
 [ -x "$DRIVER" ] || DRIVER="$DRIVER.exe"
 [ -x "$DRIVER" ] || { printf 'provision-browser: %s is not executable\n' "$DRIVER" >&2; exit 2; }
 
@@ -350,7 +351,7 @@ printf 'before  %s\n' "${before:-nothing resolved}"
 
 # ⭐ THE ROUTE TABLE IS PER FAMILY AND IT IS DATA. Adding a family is a row in
 # each of these three functions and a fixture, rather than a fifth arm of a case
-# statement threaded through the script. TODO/driver.md, DRIVER-10.
+# statement threaded through the script. docs/history/todo/driver.md, DRIVER-10.
 #
 # ⛔ IT PURGES THE NAMED FAMILY AND NOT EVERY BROWSER. Before 2026-09-02 the
 # Linux purge removed Chrome AND Edge whatever --browser said, so a lane
@@ -406,7 +407,7 @@ confirm_sandbox_linux() {
 
 # ⛔ THE FAMILY IS PASSED IN, so a run provisioning one family does not uninstall
 # the other. The uninstaller pattern and the directory list are per family, which
-# is the same table the Linux half reads. TODO/driver.md, DRIVER-10.
+# is the same table the Linux half reads. docs/history/todo/driver.md, DRIVER-10.
 
 
 purge_windows() {
@@ -764,7 +765,7 @@ case "$BROWSER/$OS/$ROUTE" in
   # that is not a version a profile records, and Ubuntu's own package is a shim
   # for a snap whose zygote will not start on a hosted runner. The archive that
   # remains publishes a SHA-256 per artefact, which is what makes it usable.
-  # TODO/corpus.md, CORPUS-02.
+  # docs/history/todo/corpus.md, CORPUS-02.
   chromium/linux/for-testing)
     index_fetch || exit $?
     install_package_linux
@@ -782,13 +783,13 @@ case "$BROWSER/$OS/$ROUTE" in
   edge/*/vendor)
     printf 'provision-browser: --route vendor serves a CURRENT-build URL, and the vendor\n' >&2
     printf '  publishes none for %s. Its index is keyed by build, so use --route for-testing\n' "$BROWSER" >&2
-    printf '  with the build you want. TODO/driver.md, DRIVER-10.\n' >&2
+    printf '  with the build you want. docs/history/todo/driver.md, DRIVER-10.\n' >&2
     exit 2
     ;;
   *)
     printf 'provision-browser: the %s route for %s on %s is not implemented yet\n' \
       "$ROUTE" "$BROWSER" "$OS" >&2
-    printf '  Run with --plan to read what it would do. TODO/driver.md, DRIVER-10.\n' >&2
+    printf '  Run with --plan to read what it would do. docs/history/todo/driver.md, DRIVER-10.\n' >&2
     exit 2
     ;;
 esac
@@ -808,7 +809,7 @@ if [ -f "$ARCHIVE" ]; then
   # weakest provenance the artefact half can have in a project whose product is
   # provenance. experiments/10-first-profile.sh reads this file into the
   # identity, and b_ids_corpus::capture copies it onto the profile.
-  # TODO/driver.md, DRIVER-08.
+  # docs/history/todo/driver.md, DRIVER-08.
   #
   # ⛔ SERIALISED BY node, never by a format string. A URL carrying a character
   # that has to be escaped would otherwise emit JSON that does not parse, and it

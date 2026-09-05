@@ -18,7 +18,7 @@
 //! ⚠ **The two are generated from the same profile in one pass**, so a flat
 //! column cannot disagree with the JSON beside it.
 //!
-//! `TODO/schema.md`, `SCHEMA-12`.
+//! `docs/history/todo/schema.md`, `SCHEMA-12`.
 
 use b_ids_schema::Profile;
 

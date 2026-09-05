@@ -4,7 +4,7 @@
 //! throws it away.** The source port, the maximum segment size, the window size
 //! and scale, the time to live and the order of the TCP options are
 //! operating-system-level signal, and they cost almost nothing when the
-//! listener already belongs to this project. `TODO/harness.md`, `HARNESS-11`.
+//! listener already belongs to this project. `docs/history/todo/harness.md`, `HARNESS-11`.
 //!
 //! ⛔ **FOUR OF THE FIVE ARE ABSENT ON EVERY HOST THIS WORKSPACE CAN BUILD
 //! FOR, and that is a measurement rather than a limitation of this module.**
@@ -49,7 +49,7 @@ use serde::Serialize;
 ///
 /// ⛔ **An unavailable field is ABSENT WITH A REASON, never zero.** A zero
 /// window size is a real value a real stack can send, so a model that used it
-/// for "not measured" would publish a measurement nobody took. `TODO/RULES.md`
+/// for "not measured" would publish a measurement nobody took. `docs/history/todo/RULES.md`
 /// rule 1.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Absent {
@@ -130,11 +130,11 @@ impl TcpObservation {
 /// site is a reason that drifts between two of them.
 const WHY_NO_RAW_SOCKET: &str = "safe std exposes no TCP option data on an accepted connection, and reading it needs a raw \
      socket or a packet capture. The workspace denies unsafe_code, so it needs a dependency \
-     this project has not taken. TODO/harness.md, HARNESS-11";
+     this project has not taken. docs/history/todo/harness.md, HARNESS-11";
 
 const WHY_TTL_IS_LOCAL: &str = "TcpStream::ttl is this host's own outgoing hop limit rather than the peer's. Measured: a \
      client that set 37 was read as 128 on the server, which is the server's default. Reading \
-     the peer's needs a raw socket or a packet capture. TODO/harness.md, HARNESS-11";
+     the peer's needs a raw socket or a packet capture. docs/history/todo/harness.md, HARNESS-11";
 
 /// Observe the TCP layer of an accepted connection.
 ///

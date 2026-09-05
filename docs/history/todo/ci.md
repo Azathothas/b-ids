@@ -1,4 +1,4 @@
-# ci
+# Archived CI record
 
 Automation, staleness, the capture matrix, and the durability that decides
 whether this project still works in five years.
@@ -140,9 +140,9 @@ exit=0
 
 ⛔ **The append-only rule is the corpus's central promise and continuous
 integration had never once checked it.** Which row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md)
 this is, and what it means for the check, is written where the check is:
-[`../scripts/README.md`](../scripts/README.md).
+[`../scripts/README.md`](../../../scripts/README.md).
 
 ⭐ **Both halves refuse a shallow clone now**, and both workflows carry
 `fetch-depth: 0`, so losing that line fails a job rather than emptying it. The
@@ -190,7 +190,7 @@ third needs a second profile of the same build, which is `CORPUS-02`.
 
 ⭐ **It also runs the CROSS-profile form of check 4**, `shared_handshakes`, which
 no per-profile invocation can reach at all.
-[`../scripts/README.md`](../scripts/README.md) says what that check compares.
+[`../scripts/README.md`](../../../scripts/README.md) says what that check compares.
 ⚠ It is structurally silent on a corpus of one, and saying so is the point:
 `CORPUS-02` is what ends that.
 
@@ -259,7 +259,7 @@ strips trailing newlines, so the separator is a literal one now.
 
 ## CI-02. Staleness is a schedule, not a push trigger
 
-**Source** the founding brief; the shape is [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 10
+**Source** the founding brief; the shape is [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 10
 **Category** ci, **Priority** P1, **Effort** M, **Status** done
 
 ### Problem
@@ -320,7 +320,7 @@ staleness: 1 of 1 route(s) are behind
   sources that did not:  chrome-for-testing=connection refused
 
   the replacement is a CAPTURE of 151.0.7922.200, not an edit: the corpus
-  is append-only and a correction is a new profile. TODO/ci.md, CI-02.
+  is append-only and a correction is a new profile. docs/history/todo/ci.md, CI-02.
 exit=1
 ```
 
@@ -356,7 +356,7 @@ the new build, not an edit, because the corpus is append-only.
 ⚠ **Measured on the first run.** The JSON branch printed `"stale":1` and
 returned 0, because only the human branch carried the exit. That is the "a step
 that exits 0 having done nothing it was asked to do" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 in the mode a scheduled job reads. ⭐ Both halves carry the exit in both modes
 now, and the row above shows the JSON form at exit 1.
 
@@ -526,11 +526,11 @@ publishing what the lanes managed.
 
 | | |
 | --- | --- |
-| ⭐ the plan lives in the tree | [`../.github/capture-matrix.json`](../.github/capture-matrix.json). The `plan` job reads it and the lanes fan out from `fromJSON`, and `check-coverage` reads the same file to say what landed. ⛔ A matrix written into the workflow and a report written from somewhere else is a value in two places with no check that they agree. |
+| ⭐ the plan lives in the tree | [`../.github/capture-matrix.json`](../../../.github/capture-matrix.json). The `plan` job reads it and the lanes fan out from `fromJSON`, and `check-coverage` reads the same file to say what landed. ⛔ A matrix written into the workflow and a report written from somewhere else is a value in two places with no check that they agree. |
 | ⭐ a lane with no browser is exit 2 | "this runner has no browser" and "the capture failed" are different facts. The lane records the resolver's code and skips the capture on 2 rather than failing. `CI-07`. |
 | ⭐ the capture path is the one a person runs | the lane runs `experiments/10-first-profile.sh`, which is also `CI-08`'s manual equivalent. Two pipelines is two things to keep correct and one of them stops being run. |
 | ⛔ no lane writes to the repository | every job keeps `contents: read`. A lane runs a browser it downloaded, and that is the last thing that should hold a write token. `CI-04` is where a write belongs, on the collect job alone. |
-| ⛔ the fuzz lane overrides the toolchain | `RUSTUP_TOOLCHAIN: nightly`, explicitly. `rust-toolchain.toml` pins an exact stable and applies to `fuzz/` too, so a nightly image is not enough. [`../fuzz/README.md`](../fuzz/README.md) carries the measurement that cost a run. |
+| ⛔ the fuzz lane overrides the toolchain | `RUSTUP_TOOLCHAIN: nightly`, explicitly. `rust-toolchain.toml` pins an exact stable and applies to `fuzz/` too, so a nightly image is not enough. [`../fuzz/README.md`](../../../fuzz/README.md) carries the measurement that cost a run. |
 
 ⚠ **The action pins were RESOLVED rather than recalled**, and their declared
 runtimes were read at the pinned commit. The v4 artefact actions still declare
@@ -725,7 +725,7 @@ rather than a body with a blank where a run identifier belongs.
 #### ⛔ What `CI-04` predicted about condition 4, and what is actually true
 
 ⚠ **The entry says a version bump may move the User-Agent and the brand list.**
-[`../crates/b-ids-validator/src/diff.rs`](../crates/b-ids-validator/src/diff.rs)
+[`../crates/b-ids-validator/src/diff.rs`](../../../crates/b-ids-validator/src/diff.rs)
 compares header POSITIONS and not header VALUES, so **neither is a field the
 diff can report**, and a table of predicted fields naming them would name two
 fields nothing produces.
@@ -934,7 +934,7 @@ stopped updating in year two was not worth building.
 
 Believed, and one instance is already measured: two first-party version sources
 disagreed, and the disagreement was the defect.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 7.
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 7.
 
 ### Approach
 
@@ -1010,7 +1010,7 @@ source contract failed, 1 problem(s):
 
   Two sources that disagree are the most valuable signal this
   project produces. Record both, publish both, never pick.
-  TODO/ci.md, CI-06.
+  docs/history/todo/ci.md, CI-06.
 exit=1
 ```
 
@@ -1164,14 +1164,14 @@ exit code check failed, 1 script(s) did not answer 2:
   scripts/common/check-msrv.ps1: exit 1, and could-not-run is 2
 
 Exit 2 is could-not-run. 1 is it ran and the thing failed, and 0 is it ran
-and passed. TODO/ci.md, CI-07.
+and passed. docs/history/todo/ci.md, CI-07.
 exit=1
 ```
 
 Restored, and the same command answered 0.
 
 ⭐ **And the check carries its own fixture leg**, run on every invocation.
-[`../scripts/README.md`](../scripts/README.md) describes what it plants and why
+[`../scripts/README.md`](../../../scripts/README.md) describes what it plants and why
 the check refuses to report at all when that leg comes back wrong.
 
 ### ⚠ What each half covers, and it is not the same set
@@ -1179,7 +1179,7 @@ the check refuses to report at all when that leg comes back wrong.
 ⛔ **The `.sh` half checks the `.sh` scripts and the `.ps1` half checks the
 `.ps1` scripts.** A POSIX half that shelled out to `pwsh` would report a green
 half of a pair as the whole pair on a host without it, and
-[`../scripts/README.md`](../scripts/README.md) is the contract that says
+[`../scripts/README.md`](../../../scripts/README.md) is the contract that says
 `check-twins` runs both halves on one machine.
 
 ### The lane half of this entry was already true
@@ -1322,7 +1322,7 @@ four jobs read as named that were not. They are inside the block now.
 
 ⛔ **A workflow that was written and never staged escaped this check entirely**,
 which is the one moment a new job's manual line is most likely to be missing.
-Found by adding [`../.github/workflows/provision.yml`](../.github/workflows/provision.yml)
+Found by adding [`../.github/workflows/provision.yml`](../../../.github/workflows/provision.yml)
 for `DRIVER-08`: `check-workflows` reported ten jobs and this reported nine, and
 `git add -N` on that one file alone changed the answer to ten.
 
@@ -1341,7 +1341,7 @@ manual path check failed, 1 problem(s):
   .github/workflows/provision.yml: job 'provision' names no manual equivalent
 
 Every automated job names the command a person runs instead, as a
-`# manual:` comment inside the job. TODO/ci.md, CI-08.
+`# manual:` comment inside the job. docs/history/todo/ci.md, CI-08.
 exit=1
 ```
 
@@ -1385,7 +1385,7 @@ measured on this Windows host on 2026-09-04.
 answer a version question: it begins installing that toolchain.
 
 The probe gives every tool six seconds and then kills it
-([`../scripts/doctor/doctor.ps1`](../scripts/doctor/doctor.ps1), `$ProbeTimeoutMs`,
+([`../scripts/doctor/doctor.ps1`](../../../scripts/doctor/doctor.ps1), `$ProbeTimeoutMs`,
 and `PROBE_TIMEOUT` in its twin). A fresh runner has no `1.98.0`, so the probe
 started a multi-minute install and killed it partway through:
 
@@ -1465,7 +1465,7 @@ would leave the ordering as the only thing holding.
   declines in milliseconds instead of installing for minutes.
 - **The workflow installs before it probes.** The toolchain step moves above
   the probe step in both jobs of
-  [`../.github/workflows/ci.yml`](../.github/workflows/ci.yml), so there is no
+  [`../.github/workflows/ci.yml`](../../../.github/workflows/ci.yml), so there is no
   install left for a probe to interrupt even where the variable is ignored.
 - ⚠ **An error is not a version.** With the guard in place the proxy answers
   `error: toolchain '...' is not installed`, and the probe reported that
@@ -1521,7 +1521,7 @@ component conflict rather than anything about this tree, and the answer is to
 rerun the job. What was measured: this tree's own probe starts the install that
 the conflict is a fragment of, and kills it. Section 8.5 is rewritten to the
 cause, and its original wording is in
-[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
+[`../docs/history/stale-documents.md`](../stale-documents.md).
 
 **The guard mutation, both halves.** ⛔ Each mutation was made against a copy
 under the ignored scratch directory, the live file restored from that copy, and

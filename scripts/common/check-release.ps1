@@ -1,7 +1,7 @@
 ﻿# check-release.ps1 - would a release build produce the same bytes twice, and
 # would it refuse to overwrite a tag somebody has already pinned?
 #
-# ⭐ THE TWIN OF check-release.sh. TODO/publish.md, PUB-01, and TODO/driver.md,
+# ⭐ THE TWIN OF check-release.sh. docs/history/todo/publish.md, PUB-01, and docs/history/todo/driver.md,
 # DRIVER-09, is why a script in this directory does not land without one.
 #
 # ⛔ A CONSUMER THAT PINS A RELEASE AND GETS DIFFERENT BYTES LATER HAS BEEN
@@ -65,7 +65,7 @@ Set-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-release: no corpus is reachable, so nothing was checked')
@@ -114,7 +114,8 @@ if ($LASTEXITCODE -ne 0) {
     [Console]::Error.WriteLine('check-release: the corpus crate did not build')
     exit 2
 }
-$bin = Join-Path $root 'target' | Join-Path -ChildPath 'debug' | Join-Path -ChildPath 'b-ids-corpus'
+$targetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $root 'target' }
+$bin = Join-Path $targetDir 'debug' | Join-Path -ChildPath 'b-ids-corpus'
 if (-not (Test-Path -LiteralPath $bin)) { $bin = $bin + '.exe' }
 if (-not (Test-Path -LiteralPath $bin)) {
     [Console]::Error.WriteLine("check-release: $bin is not there")
@@ -261,5 +262,5 @@ if ($count -eq 0) {
 $problems | ForEach-Object { [Console]::Error.WriteLine($_) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('A consumer that pins a release and gets different bytes later has been')
-[Console]::Error.WriteLine('broken silently. TODO/publish.md, PUB-01.')
+[Console]::Error.WriteLine('broken silently. docs/history/todo/publish.md, PUB-01.')
 exit 1

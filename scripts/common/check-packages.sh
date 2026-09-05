@@ -3,7 +3,7 @@
 # corpus release it embeds, and does that release match the one it was cut from?
 #
 # ⛔ FETCHING AND PARSING A CORPUS IS WORK. A DEPENDENCY LINE IS NOT.
-# TODO/publish.md, PUB-05.
+# docs/history/todo/publish.md, PUB-05.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -185,5 +185,5 @@ fi
 printf 'packages check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A package that needs the network to answer fails in the environment its\n' >&2
-printf 'consumers care most about. TODO/publish.md, PUB-05.\n' >&2
+printf 'consumers care most about. docs/history/todo/publish.md, PUB-05.\n' >&2
 exit 1

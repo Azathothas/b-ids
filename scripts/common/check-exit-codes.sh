@@ -5,7 +5,7 @@
 # The defect this exists to catch is a check that fails because a machine cannot
 # run it. A capture job on a runner with no browser must not fail the build, and
 # a check that returns 1 for "I could not run" is a check somebody disables.
-# TODO/ci.md, CI-07.
+# docs/history/todo/ci.md, CI-07.
 #
 # -- ⛔ WHAT IT ACTUALLY MEASURES, AND WHY THIS INPUT ------------------------
 #
@@ -120,7 +120,7 @@ else
   printf 'exit code check failed, %s script(s) did not answer 2:\n\n' "$COUNT" >&2
   printf '%s\n' "$PROBLEMS" >&2
   printf 'Exit 2 is could-not-run. 1 is it ran and the thing failed, and 0 is it ran\n' >&2
-  printf 'and passed. TODO/ci.md, CI-07.\n' >&2
+  printf 'and passed. docs/history/todo/ci.md, CI-07.\n' >&2
 fi
 
 [ "$COUNT" = 0 ] || exit 1

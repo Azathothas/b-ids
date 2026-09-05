@@ -4,7 +4,7 @@
 //! ⭐ **A client author who wants to know how close their client is to a real
 //! browser has to build a capture server and a comparison by hand.** Every
 //! client examined in the reference sweep would use one if it existed.
-//! `TODO/validator.md`, `VALID-05`.
+//! `docs/history/todo/validator.md`, `VALID-05`.
 //!
 //! ⛔ **A FIELD-LEVEL DIFF, NEVER A DIGEST COMPARISON.** A digest says two
 //! things differ without saying what, and that is the tool everybody already

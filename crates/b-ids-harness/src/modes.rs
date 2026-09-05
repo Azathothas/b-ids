@@ -48,7 +48,7 @@
 //! comparison, because "only one of these surfaces can produce a resumption at
 //! all" is a finding rather than noise.
 //!
-//! `TODO/harness.md`, `HARNESS-10`.
+//! `docs/history/todo/harness.md`, `HARNESS-10`.
 
 use std::collections::BTreeSet;
 
@@ -174,7 +174,7 @@ impl Comparison {
 /// to be, over the same [`FIELDS`] vocabulary. A second renderer would be two
 /// spellings of one value, and the two comparisons would disagree about what
 /// "the same" means for a field with no check between them.
-/// `TODO/validator.md`, `VALID-05`.
+/// `docs/history/todo/validator.md`, `VALID-05`.
 ///
 /// ⚠ `None` means the half carries nothing for that field, which is a different
 /// fact from carrying an empty value.

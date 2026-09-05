@@ -14,7 +14,7 @@
 #
 # -- ⛔ THE DEFECT THIS EXISTS TO CATCH -------------------------------------
 #
-# TODO/validator.md, VALID-04, forbids a vector whose expected value came from
+# docs/history/todo/validator.md, VALID-04, forbids a vector whose expected value came from
 # running the implementation it is meant to check, so every capture vector is
 # derived with `jq` and `sha256sum`. That rule was written down and the command
 # lived in a document, so deriving one was a job somebody did by hand.
@@ -23,7 +23,7 @@
 # and five landed in one run. Every one of them failed
 # `digest_vectors_every_capture_vector_matches_the_profile_it_names` until five
 # vectors were derived by hand, so a working capture pipeline left the gate red
-# and the only fix was a person with a shell. TODO/corpus.md, CORPUS-02.
+# and the only fix was a person with a shell. docs/history/todo/corpus.md, CORPUS-02.
 #
 # -- ⭐ WHY AUTOMATING IT DOES NOT WEAKEN THE VECTOR -------------------------
 #

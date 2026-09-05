@@ -35,7 +35,7 @@
 # Both legs read files and run one already-built binary. Nothing here resolves a
 # browser, opens a socket or asks an upstream what version is current: that is
 # CI-02's job on a schedule, and a push that failed because a browser shipped
-# would be a push failing for something no commit did. TODO/ci.md, CI-01.
+# would be a push failing for something no commit did. docs/history/todo/ci.md, CI-01.
 #
 # ⚠ WHAT IT DOES NOT ASSERT YET, said rather than implied: the generated
 # formats' round trip. There is one generator in this tree and it writes the
@@ -75,7 +75,7 @@ cd "$REPO_ROOT" || { printf 'check-validate: cannot enter %s\n' "$REPO_ROOT" >&2
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-validate: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -146,7 +146,7 @@ if mkdir -p "$SCRATCH/root" "$SCRATCH/first" 2>/dev/null; then
   # failed with `raw/v1/.../151.0.7922.173.hello.hex: The system cannot find
   # the path specified`, and this check reported that as a NON-DETERMINISTIC
   # GENERATOR. ⚠ The wrong verdict is the point: the leg was not measuring what
-  # its message claimed. TODO/publish.md, PUB-11.
+  # its message claimed. docs/history/todo/publish.md, PUB-11.
   [ -d "$CORPUS_ROOT/$RAW_DIR" ] && cp -R "$CORPUS_ROOT/$RAW_DIR" "$SCRATCH/root/" 2>/dev/null
 
   if cargo run -q -p b-ids-corpus -- index --write --root "$SCRATCH/root" >/dev/null 2>&1; then

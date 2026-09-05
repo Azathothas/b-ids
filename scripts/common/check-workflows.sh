@@ -134,8 +134,9 @@ REPORT=$(for wf in $FILES; do
       line = $0
       sub(/.*uses:[ \t]*/, "", line)
       sub(/[ \t]+#.*$/, "", line)
+      sub(/\r$/, "", line)
       ref = line; sub(/^[^@]*@/, "", ref)
-      if (ref !~ /^[0-9a-f]{40}$/)
+      if (ref !~ /^[0-9a-f]+$/ || length(ref) != 40)
         print "P" file ": uses " line ", which is not a 40-character commit. A moved tag runs code nobody reviewed."
     }
     /^jobs:[ \t]*$/ { in_jobs = 1; next }

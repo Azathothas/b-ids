@@ -19,7 +19,7 @@
 //! reason `--ca-out` exists: a browser launched with certificate errors ignored
 //! is a browser in a different configuration from the one being measured.
 //!
-//! `TODO/harness.md`, `HARNESS-13`.
+//! `docs/history/todo/harness.md`, `HARNESS-13`.
 
 use std::io::{Read, Write};
 use std::net::{IpAddr, TcpStream};
@@ -140,7 +140,7 @@ impl Authority {
     /// 2026-09-02: with tickets offered, Chrome on `ubuntu-latest` abandoned the
     /// only connections that were not resumed, so the navigation produced no
     /// cold handshake and nothing could be published from it.
-    /// `TODO/corpus.md`, `CORPUS-02`.
+    /// `docs/history/todo/corpus.md`, `CORPUS-02`.
     ///
     /// ⛔ **Refusing resumption removes the resumed connections from the
     /// sample; it does not change what a cold hello looks like.** A subject with

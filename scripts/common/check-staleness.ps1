@@ -1,7 +1,7 @@
 ﻿# check-staleness.ps1 - is the corpus behind the build the vendor is serving,
 # and what would replace it?
 #
-# ⭐ THE TWIN OF check-staleness.sh. TODO/ci.md, CI-02.
+# ⭐ THE TWIN OF check-staleness.sh. docs/history/todo/ci.md, CI-02.
 #
 # ⛔ A BROWSER SHIPPING A NEW VERSION IS NOT A DEFECT IN A COMMIT. Asserting
 # current versions on push makes every unrelated change fail on the day a
@@ -39,7 +39,7 @@ param(
     [string]$Versions = '',
     [string]$Channel = 'stable',
     # ⛔ EVERY UNBOUND ARGUMENT LANDS HERE, so an unknown one exits 2 rather
-    # than 1. TODO/ci.md, CI-07.
+    # than 1. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -64,7 +64,7 @@ if ($LASTEXITCODE -ne 0 -or -not $root) {
 Set-Location -LiteralPath $root
 
 # ⭐ THE DEFAULT IS THE RESOLVED ROOT rather than the working tree.
-# TODO/publish.md, PUB-11.
+# docs/history/todo/publish.md, PUB-11.
 if (-not $Corpus) {
     $resolved = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
     if ($LASTEXITCODE -ne 0 -or -not $resolved) {
@@ -201,5 +201,5 @@ if ($silent.Count) {
 }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('  the replacement is a CAPTURE of ' + $chosen.version + ', not an edit: the corpus')
-[Console]::Error.WriteLine('  is append-only and a correction is a new profile. TODO/ci.md, CI-02.')
+[Console]::Error.WriteLine('  is append-only and a correction is a new profile. docs/history/todo/ci.md, CI-02.')
 exit 1

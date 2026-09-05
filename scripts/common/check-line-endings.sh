@@ -8,7 +8,7 @@
 # in the index passed it. Eight files became CRLF that way in one session and
 # the gate stayed green throughout: `.gitattributes` normalises on commit, so
 # nothing reached the history and nothing said the working tree was wrong.
-# TODO/tooling.md, TOOL-17.
+# docs/history/todo/tooling.md, TOOL-17.
 #
 # -- ⛔ TWO COLUMNS, AND THEY ARE DIFFERENT FACTS ------------------------------
 #

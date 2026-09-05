@@ -1,4 +1,4 @@
-# The fuzz targets. TODO/harness.md, HARNESS-09.
+# The fuzz targets. docs/history/todo/harness.md, HARNESS-09.
 #
 # ⛔ ITS OWN CRATE, OUTSIDE THE WORKSPACE, and the exclusion in the root
 # Cargo.toml is what makes that true. Cargo resolves a path dependency against

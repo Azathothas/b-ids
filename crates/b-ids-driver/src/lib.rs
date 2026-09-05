@@ -22,7 +22,7 @@
 //! is the one that matters most: it trusts one key for one launch rather than
 //! switching verification off.
 //!
-//! `TODO/driver.md`, `DRIVER-01`.
+//! `docs/history/todo/driver.md`, `DRIVER-01`.
 
 pub mod acquire;
 pub mod drive;

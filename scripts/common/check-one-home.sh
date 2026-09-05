@@ -1,77 +1,18 @@
 #!/bin/sh
-# check-one-home.sh - does any sentence appear in two documents?
+# check-one-home.sh - reject duplicated long prose sentences outside history and imported sources.
 #
-# ⛔ THE DEFECT: one fact with two homes. docs/conventions/prose.md has always
-# said every fact lives in exactly one document, and nothing checked it, so it
-# drifted the way an unchecked rule always drifts. The copy a reader trusts is
-# then whichever they saw first, and the one that is wrong is invisible until
-# somebody notices the two disagree.
+# Run from the repository root. The POSIX and PowerShell forms must
+# return equivalent results. A missing prerequisite is reported, not passed.
 #
-# ⭐ WHAT IT COST, MEASURED RATHER THAN ASSERTED. A project built from
-# `Azathothas/TEMPLATE` accumulated 8 sentences appearing verbatim in two
-# documents and 3 whole sections that were near-copies of a convention, in a
-# file that opened by saying it restated nothing. Its maintainer cut that file
-# from 149 lines to 66. That template's own tree, checked for the first time on
-# 2026-08-28, held 42 duplicated sentences of 8 words or more.
-#
-# ⭐ THIS TREE WAS BOOTSTRAPPED FROM IT AND INHERITED THE SHAPE. First run
-# here, 2026-08-29, before anything was cleaned: 17 sentences of 12 words or
-# more with two homes, and 7 of the 17 involved a skeleton this repository had
-# copied across and never filled in.
-#
-# -- ⚠ THE FIRST RUN OF THE INSTRUMENT REPORTED ZERO, AND WAS WRONG ----------
-#
-# ⛔ It reported no duplicates at any threshold, over a 60-file document set,
-# and the reason was that its file collector matched NOTHING: a quoted pathspec
-# reached git through a shell that treats a single quote as an ordinary
-# character. Zero duplicates over zero files reads exactly like a clean tree.
-#
-# ⭐ That is why this file ends by refusing to report success over an empty
-# scope, and why the collector below is deliberately dull. A guard that cannot
-# distinguish "nothing wrong" from "nothing examined" is not a guard.
-#
-# -- THE EXEMPTIONS, AND WHY EACH IS NOT A LOOPHOLE --------------------------
-#
-# ⛔ THERE IS NO ROUTER EXEMPTION ANY MORE, AND ITS REMOVAL IS THE POINT.
-# AGENTS.md and docs/AGENTS.md each stated the absolutes in full, on the
-# reasoning that a session may be handed exactly one of them, and this check
-# exempted the pair from each other by name. DOC-07 deleted the root file on
-# 2026-08-30, so there is one router, nothing is duplicated, and an exemption
-# for a file that no longer exists would grant itself to whatever landed at that
-# path next. ⭐ An exemption is deleted, never emptied.
-#
-# ⛔ docs/HISTORY/ IS EXEMPT ENTIRELY. A retired page states things the live
-# pages now state differently, or no longer state at all, which is the whole
-# point of it. docs/conventions/prose.md is the rule that sends superseded
-# wording there, and docs/HISTORY/README.md is what the directory holds.
-#
-# -- ⚠ WHAT IT CANNOT SEE ----------------------------------------------------
-#
-# It compares SENTENCES, so a fact restated in different words passes and fails
-# a review instead. That is the same split every other prose rule here has: the
-# linter owns the mechanical half and the reading owns the rest. ⭐ The
-# mechanical half is still worth having, because verbatim duplication is what
-# copy-and-paste actually produces.
-#
-# ⚠ Headings, table rows, fenced blocks and code spans are excluded. A shared
-# command is not a shared fact, and two documents naming the same file in a
-# table is a cross-reference rather than a copy.
-#
-# Usage:
-#   sh scripts/common/check-one-home.sh
-#   sh scripts/common/check-one-home.sh --json
-#
-# Exit codes: 0 clean, 1 a sentence has two homes, 2 could not run.
-#
-# ⛔ Read the exit code from this process, unpiped.
-
+# Usage: scripts/common/check-one-home.sh [--json or -Json and documented options]
+# Exit codes: 0 passed, 1 assertion failed, 2 could not run.
 set -u
 
 # ⛔ ONE SUBSTITUTION, NOT ONE PER LINE READ. An assignment prefix on a
 # `while ... read` is re-evaluated on EVERY iteration, so `IFS="$(printf
 # '\t')" read ...` forks once per line. Measured 2026-09-02: a command
 # substitution costs 35 ms on this host, and check-docs.sh reads about 1100
-# lines that way. TODO/tooling.md, TOOL-18.
+# lines that way. docs/history/todo/tooling.md, TOOL-18.
 TAB=$(printf '\t')
 
 JSON=0
@@ -105,7 +46,7 @@ FILES=$(
   {
     git ls-files 2>/dev/null
     git ls-files --others --exclude-standard 2>/dev/null
-  } | sort -u | grep '\.md$' | grep -v '^docs/HISTORY/' \
+  } | sort -u | grep '\.md$' | grep -v '^docs/history/' \
     | grep -vE '^(references|vendor/[^/]+)/' || true
 )
 if [ -z "$FILES" ]; then
@@ -166,7 +107,7 @@ fi
 # verdict was right and every number beside it was wrong.
 sort -u "$TMP/pairs" | awk -F'\t' '
   BEGIN {
-    R["docs/AGENTS.md"] = 1
+    R["AGENTS.md"] = 1
   }
   { key = $1; files[key] = files[key] " " $2; count[key]++ }
   END {

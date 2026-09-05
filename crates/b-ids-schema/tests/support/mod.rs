@@ -176,7 +176,7 @@ fn validate_at(
     // ⛔ BOUNDS ARE CHECKED, not merely allowed as a keyword. The schema said
     // nothing about width until 2026-09-02, so a profile claiming 999 in a
     // byte-wide field satisfied the contract this project PUBLISHES and failed
-    // the one it implements. `TODO/schema.md`, `SCHEMA-13`.
+    // the one it implements. `docs/history/todo/schema.md`, `SCHEMA-13`.
     // ⚠ Read as f64 rather than i64, because a number outside the Rust width is
     // exactly the case being refused and `as_i64` returns None for some of them.
     if let Some(number) = instance.as_f64() {

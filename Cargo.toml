@@ -1,4 +1,4 @@
-# The workspace. TODO/tooling.md, TOOL-01.
+# The workspace. docs/history/todo/tooling.md, TOOL-01.
 #
 # ⛔ THE TOOLCHAIN IS PINNED IN rust-toolchain.toml TO AN EXACT VERSION, never a
 # floating channel, so every host builds this tree with one compiler.
@@ -16,11 +16,11 @@ members = ["crates/*"]
 # Cargo resolves a path dependency against the OUTERMOST workspace that does not exclude it, so
 # without this line vendor/rustls/rustls inherits from THIS table and the build fails on the
 # first key it does not carry. Measured 2026-09-01: "dependency.aws-lc-rs was not found in
-# workspace.dependencies". TODO/vendor.md, VENDOR-01.
+# workspace.dependencies". docs/history/todo/vendor.md, VENDOR-01.
 #
 # ⚠ `fuzz` is here for the same reason and it is the second crate to need it.
 # It is a cargo-fuzz crate with its own edition and its own dependency set, and
-# it builds only on a nightly toolchain. TODO/harness.md, HARNESS-09.
+# it builds only on a nightly toolchain. docs/history/todo/harness.md, HARNESS-09.
 exclude = ["vendor", "fuzz"]
 
 [workspace.package]
@@ -50,8 +50,8 @@ serde_json = "1"
 bytes = "1"
 http = "1.1"
 
-# ⭐ VENDORED, not a registry dependency. TODO/vendor.md, VENDOR-01, and the ruling is in
-# TODO/RULES.md: the TLS terminator is vendored here and patched here, so the seam HARNESS-13
+# ⭐ VENDORED, not a registry dependency. docs/history/todo/vendor.md, VENDOR-01, and the ruling is in
+# docs/history/todo/RULES.md: the TLS terminator is vendored here and patched here, so the seam HARNESS-13
 # needs is one this tree can open. vendor/upstream.json says at which commit, patches/README.md
 # says what was changed, and scripts/common/check-vendor.sh asserts the manifest still describes
 # the tree.
@@ -71,7 +71,7 @@ rustls = { path = "vendor/rustls/rustls", default-features = false, features = [
 rcgen = { version = "0.14", default-features = false, features = ["pem", "ring"] }
 
 # ⭐ VENDORED AND PATCHED, ruled by the operator 2026-09-04 against the
-# recommendation attached to the question. TODO/emitters.md, EMIT-03.
+# recommendation attached to the question. docs/history/todo/emitters.md, EMIT-03.
 #
 # ⛔ THE PATCH IS FIVE BYTES AND UPSTREAM WILL NOT TAKE IT, for a stated reason
 # rather than by neglect: RFC 9113 deprecates stream priority, so a release

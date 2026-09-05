@@ -151,7 +151,7 @@ rm -f "$OUT"
 # repository's CHANGELOG.md wrote its entries at `## `, which this check reads
 # as a SECTION. So it found no entries, asserted all four rules over nothing,
 # and printed "0 entries, in order, each dated with a record and a deploy
-# line". It was green in the gate from the first commit. TODO/tooling.md
+# line". It was green in the gate from the first commit. docs/history/todo/tooling.md
 # TOOL-14.
 #
 # ⚠ 1 RATHER THAN 2, and the difference decides whether this is visible. The

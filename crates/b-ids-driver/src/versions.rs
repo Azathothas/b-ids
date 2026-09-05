@@ -40,7 +40,7 @@
 //!   out of it. Its cost is that a host without one cannot run this, which is
 //!   exit 2 and an honest answer rather than a wrong one.
 //!
-//! `TODO/driver.md`, `DRIVER-02`.
+//! `docs/history/todo/driver.md`, `DRIVER-02`.
 
 use std::process::Command;
 use std::time::Duration;

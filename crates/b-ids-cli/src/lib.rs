@@ -21,7 +21,7 @@
 //! profile; what it does not prove is that a request can be completed with
 //! them.
 //!
-//! `TODO/library.md`, `LIB-02`.
+//! `docs/history/todo/library.md`, `LIB-02`.
 
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};

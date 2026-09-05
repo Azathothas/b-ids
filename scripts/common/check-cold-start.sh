@@ -4,7 +4,7 @@
 #
 # ⛔ EVERY WARM RUN PASSES OVER A BROKEN COLD PATH. A dead URL, a removed field
 # or a renamed flag is invisible until the day somebody needs a capture, and
-# nothing else in this tree catches it. TODO/ci.md, CI-05.
+# nothing else in this tree catches it. docs/history/todo/ci.md, CI-05.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -122,7 +122,7 @@ if [ "$RESOLVE" = 1 ]; then
   fi
   if [ "$REQUIRE" = 1 ]; then
     printf '⛔ the cold path breaks at the first absent program: %s\n' "$FIRST_MISSING" >&2
-    printf 'Every warm run passes over a broken cold path. TODO/ci.md, CI-05.\n' >&2
+    printf 'Every warm run passes over a broken cold path. docs/history/todo/ci.md, CI-05.\n' >&2
     exit 1
   fi
   printf '⚠ %s absent, first %s. On this host that is a fact about the host;\n' "$MISSING" "$FIRST_MISSING"
@@ -209,5 +209,5 @@ fi
 
 printf 'cold start check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
-printf 'Every warm run passes over a broken cold path. TODO/ci.md, CI-05.\n' >&2
+printf 'Every warm run passes over a broken cold path. docs/history/todo/ci.md, CI-05.\n' >&2
 exit 1

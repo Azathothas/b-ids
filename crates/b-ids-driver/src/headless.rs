@@ -17,7 +17,7 @@
 //! reaches the brand list on some builds. On the build measured here it does
 //! not, and nothing is rewritten in a field nothing was seen to change.
 //!
-//! `TODO/driver.md`, `DRIVER-03`.
+//! `docs/history/todo/driver.md`, `DRIVER-03`.
 
 use b_ids_schema::{Profile, ProvenanceEntry, ProvenanceKind};
 

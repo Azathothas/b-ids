@@ -15,7 +15,7 @@
 //! a git ref is the shell resolver's job, because it needs `git` and this crate
 //! has no process-spawning code at all. What this reads is an explicit root or
 //! an ancestor that already holds one, which is exactly the seam the shell side
-//! fills in. `docs/AGENTS.md` section 5 is the rule that a general tool used
+//! fills in. `AGENTS.md` section 5 is the rule that a general tool used
 //! where a purpose-built one exists gives a plausible wrong answer.
 
 use std::path::{Path, PathBuf};

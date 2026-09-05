@@ -26,7 +26,7 @@
     "license": {
       "type": "string",
       "const": "0BSD",
-      "description": "The licence this profile is published under, as an SPDX identifier. OPTIONAL: the six profiles published before 2026-09-03 do not carry it, because the corpus is append-only and adding it to them would be an edit of a published file. A reader that does not find it may take the project licence."
+      "description": "The licence this profile is published under, as an SPDX identifier. OPTIONAL: older append-only profiles may omit it. A reader that does not find it may take the project licence."
     },
     "id": {
       "type": "string",

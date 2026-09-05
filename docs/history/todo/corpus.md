@@ -1,4 +1,4 @@
-# corpus
+# Archived corpus record
 
 The canonical data: how it is stored, what it must cover, and the policies that
 decide what goes in.
@@ -26,8 +26,8 @@ tell what it used to say.
 Believed. Reinforced by a measurement from the sweep: two published copies of
 one dataset, both carrying the same version number and both naming the same
 upstream, contain a different number of entries.
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md)
-has it, and [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md)
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md)
+has it, and [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md)
 section 9 draws the conclusion about what a version number does and does not
 guarantee.
 
@@ -103,7 +103,7 @@ raw/v1/chrome/stable/win64/151.0.7922.76.hello.hex
 
 #### ⭐ The first profile, and the conditions it was taken under
 
-[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh) is
+[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh) is
 the script that took it, so the run is repeatable rather than a transcript.
 What it reported:
 
@@ -117,7 +117,7 @@ connections recorded: 7
 ⭐ **That split is the inherited trap reproducing exactly**, on a different
 browser build from the one it was measured on: the navigation opened seven
 sockets, one carried no HTTP/2 at all, and four resumed.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 8 has the
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 8 has the
 original reading. The profile is built from the cold one and nothing else is
 averaged into it.
 
@@ -353,9 +353,9 @@ closing on machinery.
 
 | what exists now | |
 | --- | --- |
-| ⭐ [`../.github/capture-matrix.json`](../.github/capture-matrix.json) | eight planned cells, three enabled, each with the reason it is or is not attempted yet, and each naming the `route` it gets its browser by. It is the ONE place the plan lives. |
+| ⭐ [`../.github/capture-matrix.json`](../../../.github/capture-matrix.json) | eight planned cells, three enabled, each with the reason it is or is not attempted yet, and each naming the `route` it gets its browser by. It is the ONE place the plan lives. |
 | ⭐ `check-coverage`, both halves | every planned cell reported as `captured`, `absent` or `not-attempted`, with `--require-rows` for the caller's own assertion |
-| ⭐ [`../.github/workflows/capture.yml`](../.github/workflows/capture.yml) | the fan-out, from `CI-03`, reading the plan above through `fromJSON` |
+| ⭐ [`../.github/workflows/capture.yml`](../../../.github/workflows/capture.yml) | the fan-out, from `CI-03`, reading the plan above through `fromJSON` |
 
 ```text
 $ sh scripts/common/check-coverage.sh
@@ -436,7 +436,7 @@ and everything after it resumes.
 ⛔ **And the report said `1 cold` on the line above the refusal saying there was
 none.** `b-ids-corpus add` carried the word behind a hardcoded `1` in its format
 string: the "a hardcoded or synthetic status, progress or metric" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md).
 ⭐ Fixed by moving the line to `Selection::report`, where a test can reach it,
 and the guard was seen to fail: reverting `cold_count` to a literal `1` takes
 `connection_selection_reports_no_cold_connection_when_every_one_resumed` red at
@@ -561,14 +561,14 @@ an executable it cannot version. `application.ini` states it, and
 
 | what changed | where |
 | --- | --- |
-| `Family::Chromium` and `Family::Firefox` | [`../crates/b-ids-driver/src/resolve.rs`](../crates/b-ids-driver/src/resolve.rs) |
+| `Family::Chromium` and `Family::Firefox` | [`../crates/b-ids-driver/src/resolve.rs`](../../../crates/b-ids-driver/src/resolve.rs) |
 | `Family::is_chromium`, which the launcher reads | the same file |
 | `Source::ApplicationIni` and `from_application_ini` | the same file |
 | candidate paths for both families, on Windows and POSIX | the same file |
-| `index_route` returns `Option<Route>`, so it cannot disagree with `index_url` | [`../crates/b-ids-driver/src/acquire.rs`](../crates/b-ids-driver/src/acquire.rs) |
+| `index_route` returns `Option<Route>`, so it cannot disagree with `index_url` | [`../crates/b-ids-driver/src/acquire.rs`](../../../crates/b-ids-driver/src/acquire.rs) |
 | `IndexRefusal::NoIndexForFamily` | the same file |
-| the launcher refuses a non-Chromium family rather than passing it Chromium switches | [`../crates/b-ids-driver/src/drive.rs`](../crates/b-ids-driver/src/drive.rs) |
-| a `chromium` cell, which the plan did not have while the acceptance required the row | [`../.github/capture-matrix.json`](../.github/capture-matrix.json) |
+| the launcher refuses a non-Chromium family rather than passing it Chromium switches | [`../crates/b-ids-driver/src/drive.rs`](../../../crates/b-ids-driver/src/drive.rs) |
+| a `chromium` cell, which the plan did not have while the acceptance required the row | [`../.github/capture-matrix.json`](../../../.github/capture-matrix.json) |
 
 #### ⛔ Four tests used `firefox` as the example of an impossible family
 
@@ -691,7 +691,7 @@ corpus=pull-request requests:0 auto:0
 ```
 
 ⛔ **The cause: nothing ever ran `b-ids-corpus add`.**
-[`../experiments/10-first-profile.sh`](../experiments/10-first-profile.sh)
+[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh)
 deliberately writes nothing into the corpus, because the corpus is append-only
 and a profile in it is permanent, so the write is a deliberate act rather than a
 side effect of measuring. ⭐ That rule was applied to the SCRIPT on 2026-09-02
@@ -700,7 +700,7 @@ each lane uploaded the checkout unchanged, `collect` merged nothing over
 nothing, and the run reported success.
 
 ⚠ **It is the "step that exits 0 having done nothing it was asked to do" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 at the scale of a whole workflow**, and it had been that way since the workflow
 was written.
 
@@ -769,7 +769,7 @@ one route whose diff carries five is a title a reviewer cannot act on.
 workflows on a pull request created with the run's own token, so every one was
 `MERGEABLE` and `BLOCKED` with no checks at all. ⭐ They were re-derived locally
 instead, which is what
-[`../docs/security/remote-ops.md`](../docs/security/remote-ops.md) asks for
+[`../docs/security/remote-ops.md`](../../security/remote-ops.md) asks for
 anyway: fetched, compared against the default branch, read, merged, and then
 `b-ids-corpus verify` and `validate` run over the result.
 
@@ -829,7 +829,7 @@ acceptance command.
 ⛔ **REFUTED THE SAME DAY, BY THE CAPTURE THIS PARAGRAPH ASKED FOR. The original
 wording is kept below and it is WRONG**; the correction is in the closing
 section of this entry and in
-[`../docs/HISTORY/stale-documents.md`](../docs/HISTORY/stale-documents.md).
+[`../docs/history/stale-documents.md`](../stale-documents.md).
 
 > ⚠ **And one thing the `for-testing` captures already settled that this cell was
 > for.** The unbranded build publishes an EMPTY trust-anchor list and the branded
@@ -968,7 +968,7 @@ ahead rather than perpetually behind.
 
 ### Approach
 
-Three rules, and ⛔ **they live in [`../README.md`](../README.md)**, because a
+Three rules, and ⛔ **they live in [`../README.md`](../../../README.md)**, because a
 consumer will not read this file and that is where they are aimed:
 
 - `latest` means stable and nothing else, with the pre-release channels
@@ -1079,7 +1079,7 @@ written twice.
 
 ## CORPUS-04. Per-build trust-anchor lists, and a recommendation
 
-**Source** the founding brief; the two codepoints are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3
+**Source** the founding brief; the two codepoints are [`../docs/inherited-claims.md`](../../inherited-claims.md) section 3
 **Category** corpus, **Priority** P2, **Effort** M, **Status** done
 
 ### Problem
@@ -1087,13 +1087,13 @@ written twice.
 One extension carries a snapshot of the browser's own root store, so a client
 carrying one build's list is advertising which build it copied. What a client
 with no store of its own can do instead is a genuine trade with three answers,
-and [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3
+and [`../docs/inherited-claims.md`](../../inherited-claims.md) section 3
 states all three.
 
 ### Premise
 
 Measured elsewhere and inherited: the codepoint, the length and the body shape
-are in [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3.
+are in [`../docs/inherited-claims.md`](../../inherited-claims.md) section 3.
 ⚠ The **name** attached to that codepoint is inferred rather than read against a
 specification, and the entry says so.
 
@@ -1166,7 +1166,7 @@ capture date is the only honest way to carry it, which is what this does.
 
 ⚠ **And `0x12e0` is absent from this project's own `152`**, where the origin's
 `152` capture carries it. `CORPUS-05` recorded it absent from every `151` here;
-that now extends to a `152`. [`../docs/inherited-claims.md`](../docs/inherited-claims.md)
+that now extends to a `152`. [`../docs/inherited-claims.md`](../../inherited-claims.md)
 section 3 carries both.
 
 #### The two deliverables
@@ -1174,7 +1174,7 @@ section 3 carries both.
 | | |
 | --- | --- |
 | ⭐ **the list, per build, beside the corpus** | `b-ids-corpus anchors --out DIR` writes one file per carrying build: the profile it came from, the capture instant, the declared length and every identifier **in the browser's own order**. ⛔ The order is part of what was measured and sorting it would publish a list no browser sent. |
-| ⭐ **the recommendation** | [`../docs/trust-anchors.md`](../docs/trust-anchors.md), stating all three options with the cost of each and asserting no preference: omit it and be one extension short; carry a captured list and be honest the day it was captured and a fingerprint of that day afterwards; send it empty and produce a shape no browser sends. |
+| ⭐ **the recommendation** | [`../docs/trust-anchors.md`](../../trust-anchors.md), stating all three options with the cost of each and asserting no preference: omit it and be one extension short; carry a captured list and be honest the day it was captured and a fingerprint of that day afterwards; send it empty and produce a shape no browser sends. |
 
 ```text
 $ cargo run -q -p b-ids-corpus -- anchors --root . --out dist/anchors
@@ -1188,14 +1188,14 @@ corpus=anchors lists:2 profiles:6
 ⚠ **Every assertion this check makes is satisfiable by an empty set.** A corpus
 in which no profile carries the extension would pass rule 1 by having nothing to
 check, which is the "acceptance command that cannot fail" row of
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md).
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md).
 ⭐ So the no-carrier case exits **2** and says why, and it was seen to:
 
 ```text
 $ sh COPY-OF-THE-CHECK-COUNTING-A-CODEPOINT-NOTHING-CARRIES
 check-trust-anchors: no profile in this corpus carries codepoint 0xca34, so
   there is nothing to publish and nothing this check can verify. That is a
-  fact about the builds captured, not a pass. TODO/corpus.md, CORPUS-04.
+  fact about the builds captured, not a pass. docs/history/todo/corpus.md, CORPUS-04.
 exit=2
 ```
 
@@ -1213,8 +1213,8 @@ exit=1
 
 ⛔ **The name is still inferred**, and settling it is one reading of
 `draft-ietf-tls-trust-anchor-ids` against these bytes.
-[`../docs/trust-anchors.md`](../docs/trust-anchors.md) says what would settle it
-and [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3 is
+[`../docs/trust-anchors.md`](../../trust-anchors.md) says what would settle it
+and [`../docs/inherited-claims.md`](../../inherited-claims.md) section 3 is
 where its status lives. ⚠ That reading is not this entry's acceptance and was
 not done here.
 
@@ -1245,7 +1245,7 @@ distinguishes "the order is per platform" from "the order is per connection"
 not at all, and asserting either would be a conclusion from a single sample per
 side. ⭐ What would settle it is two connections of ONE navigation on ONE
 platform, which is a comparison
-[`../docs/trust-anchors.md`](../docs/trust-anchors.md) now names and nothing has
+[`../docs/trust-anchors.md`](../../trust-anchors.md) now names and nothing has
 run.
 
 ⭐ **The published lists carry the order they arrived in**, so whichever answer
@@ -1256,7 +1256,7 @@ comes back, the evidence is already on disk rather than needing a re-capture.
 
 ## CORPUS-05. Name the unidentified extension
 
-**Source** the founding brief; the two codepoints are [`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3
+**Source** the founding brief; the two codepoints are [`../docs/inherited-claims.md`](../../inherited-claims.md) section 3
 **Category** corpus, **Priority** P3, **Effort** S, **Status** done
 
 ### Problem
@@ -1269,7 +1269,7 @@ unnamed field in a published corpus is a question every consumer will ask.
 
 Measured elsewhere and inherited: codepoint, length two, body two zero bytes,
 seen at position seven in one capture.
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) section 3.
+[`../docs/inherited-claims.md`](../../inherited-claims.md) section 3.
 
 ### Approach
 
@@ -1299,11 +1299,11 @@ exhausted with a list of what was ruled out.
 ### ⚠ The acceptance names `60-` rather than `30-`, and the reason is a rule
 
 ⛔ **A number is never reused and `30-` was taken** by
-[`../experiments/30-resumption-control.sh`](../experiments/30-resumption-control.sh),
+[`../experiments/30-resumption-control.sh`](../../../experiments/30-resumption-control.sh),
 written after this entry was authored.
-[`../docs/methodology/experiments.md`](../docs/methodology/experiments.md) says a
+[`../docs/methodology/experiments.md`](../../methodology/experiments.md) says a
 citation has to keep meaning what it meant, so the script is
-[`../experiments/60-identify-extension.sh`](../experiments/60-identify-extension.sh)
+[`../experiments/60-identify-extension.sh`](../../../experiments/60-identify-extension.sh)
 and the Prove block above is corrected rather than the file misnumbered to match.
 
 ### Closing
@@ -1337,7 +1337,7 @@ exit=0
 profiles this project has captured.** The origin's capture of Chrome
 `152.0.7977.64` on `linux64` does: its `ja4_r` extension list reads
 `...,0033,12e0,44cd,ca34,fe0d,ff01`, at
-[`../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json`](../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json).
+[`../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json`](../../../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json).
 
 ⭐ **So it is a codepoint Chrome added between 151 and 152**, which narrows the
 search from "somewhere in an engine" to "a change in one release". ⚠ The same is
@@ -1369,7 +1369,7 @@ be narrowing it to get the answer that fits.
 ### ⛔ Why the engine source was not searched
 
 **A claim about a repository is not written until that repository is in
-[`../references/`](../references/) at a named commit**, and a browser engine
+[`../references/`](../../../references/) at a named commit**, and a browser engine
 checkout is not a tree this project keeps.
 [`RULES.md`](RULES.md) section 3 is the rule and it cost this repository its most
 expensive defect. ⭐ So the verdict names what would settle it: the engine source
@@ -1400,7 +1400,7 @@ grep -rn "headless::normalise\|normalise(&mut" crates/*/src/*.rs
 ```
 
 The function, its five tests and its provenance reason are all in
-[`../crates/b-ids-driver/src/headless.rs`](../crates/b-ids-driver/src/headless.rs),
+[`../crates/b-ids-driver/src/headless.rs`](../../../crates/b-ids-driver/src/headless.rs),
 and ⛔ **nothing outside that module calls it.** The last paragraph of
 [`driver.md`](driver.md)'s `DRIVER-03` names the seam this belongs at and says
 it was left unwired because no capture path wrote a profile yet.
@@ -1415,7 +1415,7 @@ missing is the substitution `DRIVER-03` specified, with its provenance entry.
 Call it where `DRIVER-03` said it belongs, in the path that turns a capture into
 a profile, and record what it changed.
 
-- ⭐ **In [`../crates/b-ids-corpus/src/capture.rs`](../crates/b-ids-corpus/src/capture.rs)**,
+- ⭐ **In [`../crates/b-ids-corpus/src/capture.rs`](../../../crates/b-ids-corpus/src/capture.rs)**,
   beside the switch redaction, which is the same shape: a published value that
   differs from the captured one, with a reason in the provenance map.
 - ⛔ **The raw bytes are untouched.** `raw.http2_frames_hex` keeps the frames the
@@ -1464,7 +1464,7 @@ window produces a profile the normalisation did not touch.
 ### Closing
 
 **Closed 2026-09-03T13:07:00Z.** The seam is wired in
-[`../crates/b-ids-corpus/src/capture.rs`](../crates/b-ids-corpus/src/capture.rs),
+[`../crates/b-ids-corpus/src/capture.rs`](../../../crates/b-ids-corpus/src/capture.rs),
 gated on the launch rather than on the value, and five cases hold it.
 
 ```text

@@ -4,14 +4,14 @@
 //! ⭐ **Most of the day-to-day value of a corpus is the artefact somebody pastes
 //! into their own tool, and none of the generated DATA formats is that.** A
 //! consumer reading `formats/corpus.json` still has to work out what to do with
-//! it. `TODO/publish.md`, `PUB-04`.
+//! it. `docs/history/todo/publish.md`, `PUB-04`.
 //!
 //! ⛔ **A SNIPPET IS GENERATED ONLY WHERE THE SUPPORT MATRIX SAYS THE PAIR IS
 //! EMITTABLE, and a pair the matrix records as a hole gets a comment naming the
 //! hole instead.** That is the whole design constraint, and it is the one this
 //! project exists to hold: a snippet that silently approximates is worse than
 //! no snippet, because it produces a client that is almost right, and
-//! `TODO/RULES.md` rule 2 says an almost-right fingerprint is more
+//! `docs/history/todo/RULES.md` rule 2 says an almost-right fingerprint is more
 //! distinguishing than an honestly old one.
 //!
 //! ⚠ **A cell comes from a run and a hole comes from a reading**, and this
@@ -23,7 +23,7 @@
 //! that a route resolves only to a value the corpus HOLDS is what declined
 //! digest routes under `PUB-03`. A digest allowlist is the same value on a
 //! different surface, so it needs its own ruling rather than this module's
-//! judgement. `TODO/PROGRESS.md` carries the question.
+//! judgement. `docs/history/todo/PROGRESS.md` carries the question.
 
 use b_ids_emit::{Hole, Matrix, RUNNABLE_STACK, client_hello, unnamed_codepoints};
 use b_ids_schema::{Profile, http::Variant};
@@ -277,9 +277,8 @@ pub fn configs(profiles: &[Profile], matrix: &Matrix) -> Result<Vec<Generated>, 
 
         // -- the stack this tree runs, where its cell says it emits ----------
         //
-        // ⛔ THE CELL IS LOOKED UP BY PROFILE, never assumed to cover every
-        // one. A matrix with a cell for five of six profiles must generate five
-        // snippets and nothing for the sixth.
+        // The cell is looked up by profile. A missing cell produces no snippet
+        // for that profile rather than borrowing another profile's support.
         let cell = matrix
             .cells
             .iter()

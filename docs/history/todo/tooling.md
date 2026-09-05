@@ -1,4 +1,4 @@
-# tooling
+# Archived tooling record
 
 This repository's own scripts, gates and toolchain. Everything here was found by
 setting the repository up, so each entry names what it is missing rather than
@@ -44,7 +44,7 @@ then it is a claim rather than a constraint.
 
 **Prefer the standard library on the critical path**, and vendor anything that
 has to be patched, with the rationale recorded per
-[`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md).
+[`../docs/methodology/vendoring.md`](../../methodology/vendoring.md).
 
 Must not: pin a floating channel, or state a minimum version that no command
 derived.
@@ -101,7 +101,7 @@ written down side by side with how each was arrived at.
 records `cargo 1.94.1` measured 2026-08-30; the probe on the same host reports
 `cargo 1.98.0` and `rustc 1.98.0` on 2026-08-31. Nothing was decided from the
 stale number, and it is left in the premise rather than edited, per
-[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md).
+[`../docs/methodology/authoring.md`](../../methodology/authoring.md).
 
 ### ⛔ What the minimum is NOT
 
@@ -169,7 +169,7 @@ What would have to be true for it to fire: a workspace whose members declare
 their own `rust-version` rather than inheriting one, so cargo resolves and the
 field is still absent from the workspace table. The branch stays as a
 validation branch, which
-[`../docs/conventions/code.md`](../docs/conventions/code.md) permits by name.
+[`../docs/conventions/code.md`](../../conventions/code.md) permits by name.
 
 ### ⚠ A defect in the check, found by running it
 
@@ -200,17 +200,17 @@ rc=0
 - **Eight crates**, one per name the entries already use, all libraries.
   ⛔ No binary targets: an entry whose acceptance says `cargo run -p NAME` adds
   the target with the behaviour, because a `main` that does nothing is the dead
-  code [`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+  code [`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md)
   forbids.
 - **Lints at the workspace, inherited by every member**: `unsafe_code` denied
   rather than forbidden, so the escape hatch
-  [`../docs/conventions/code.md`](../docs/conventions/code.md) allows can still
+  [`../docs/conventions/code.md`](../../conventions/code.md) allows can still
   be written with a comment saying why.
-- ⛔ **`Cargo.lock` is committed**, and [`../.gitignore`](../.gitignore) carries
+- ⛔ **`Cargo.lock` is committed**, and [`../.gitignore`](../../../.gitignore) carries
   the ruling: a measurement taken with an unrecorded dependency set cannot be
   retaken.
 - **`*.rs` and `*.lock` given explicit line-ending rules** in
-  [`../.gitattributes`](../.gitattributes), rather than left to the `text=auto`
+  [`../.gitattributes`](../../../.gitattributes), rather than left to the `text=auto`
   fallback.
 - **Continuous integration pins nothing of its own.** Both jobs run
   `rustup show active-toolchain`, which reads `rust-toolchain.toml`. ⛔ A
@@ -281,7 +281,7 @@ The total was 15. It is 19: three suite entries from this entry and
 
 The approach above says "add the suite". What landed is **`cargo fmt`,
 `cargo clippy` and `cargo test`, scored separately**, because part (a) of
-[`../docs/methodology/gate.md`](../docs/methodology/gate.md) is "typecheck,
+[`../docs/methodology/gate.md`](../../methodology/gate.md) is "typecheck,
 lint, format, the full test suite" rather than the suite alone.
 
 ⛔ **Separately rather than behind one verdict**, and the runner already makes
@@ -374,7 +374,7 @@ exists yet.
 
 ⭐ **And it has already fired, on 2026-08-31, before any capture existed.** Two
 inherited JA3 hashes written into
-[`../docs/inherited-claims.md`](../docs/inherited-claims.md) are bare
+[`../docs/inherited-claims.md`](../../inherited-claims.md) are bare
 32-character hexadecimal strings and the sweep refused them. ⚠ **The rule was
 not widened.** The values were dropped, because a JA3 changes per connection and
 an inherited one cannot be compared against a re-measurement, so nothing was
@@ -611,7 +611,7 @@ the machine-readable line.
 The reporting shape gained `metadata`, so it is `mine-repo/2`. ⛔ Adding a field
 without moving the version is the "positional or implicit format with no
 version" row in
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 and this project's own gate reads these lines.
 
 ⚠ **The pair's `check-twins` row is unaffected**, and that is not luck: it
@@ -720,7 +720,7 @@ compared, not the script covered.
 
 ## TOOL-06. The route check does not exist and it is three lines
 
-**Source** [`../docs/reference-sweeps/usable.md`](../docs/reference-sweeps/usable.md) section 9
+**Source** [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) section 9
 **Category** tooling, **Priority** P2, **Effort** S, **Status** done
 
 ### Problem
@@ -804,7 +804,7 @@ rc=0
 
 ⛔ **Green, over nothing, on the file written to make it go red.** That is the
 "step that exits 0 having done nothing it was asked to do" row in
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 in a check whose entire job is refusing.
 
 Two changes, and the second matters more than the first:
@@ -918,7 +918,7 @@ is why it gets a correction rather than a deletion: the whole work model rests o
 an entry closing with its acceptance command actually run and its real output
 pasted underneath. A pasted output nobody produced turns the record from
 evidence into prose, and nothing downstream can tell the difference.
-[`../docs/conventions/prose.md`](../docs/conventions/prose.md) now states the
+[`../docs/conventions/prose.md`](../../conventions/prose.md) now states the
 rule that covers it.
 
 **Re-measured 2026-08-31**, and both halves of the runner carry these instead:
@@ -958,7 +958,7 @@ there rather than scaling this one.
 
 ### Problem
 
-[`../docs/methodology/gate.md`](../docs/methodology/gate.md) describes a strict
+[`../docs/methodology/gate.md`](../../methodology/gate.md) describes a strict
 mode that turns a skipped check into a failure, and says it is what a
 continuous integration job should pass. Neither half of the gate runner had it.
 
@@ -969,7 +969,7 @@ would have gone green over any number of skipped checks, which is the whole
 thing the flag exists to prevent.
 
 That is the "a setting or flag that no code reads" row in
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 in the one script every gate goes through.
 
 ### Premise
@@ -1076,14 +1076,14 @@ defect in a smaller shape:
 - the `LICENSES/` directory, which did not exist;
 - `check-twins.sh`'s licence comparison, which tested them;
 - `check-markers`'s exemption for `LICENSES/*.txt`, in both halves;
-- the rows and sections in [`../scripts/README.md`](../scripts/README.md) and
-  [`../docs/AGENTS.md`](../docs/AGENTS.md);
+- the rows and sections in [`../scripts/README.md`](../../../scripts/README.md) and
+  [`../AGENTS.md`](../../../AGENTS.md);
 - the standing rule in [`RULES.md`](RULES.md) whose only worked example it was.
 
 ⚠ **The incident it came from stays.**
-[`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) records a licence
+[`../docs/history/README.md`](../README.md) records a licence
 written by hand whose warranty clause was corrupted and which exited 0. That
-happened, and it is why [`../LICENSE`](../LICENSE) is not edited by hand now.
+happened, and it is why [`../LICENSE`](../../../LICENSE) is not edited by hand now.
 ⛔ What does not survive is the conclusion drawn from it, that the answer was a
 tool: the answer was that the file is written once and then left alone.
 
@@ -1104,7 +1104,7 @@ reported the twelve drifts. ⛔ **The acceptance is deliberately not a grep for
 the tool's name.** This entry and the history that records the removal both
 carry that name, so a grep written here would match itself and pass forever
 whatever the tree held. That is the row
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md)
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md)
 carries about an acceptance command that cannot fail, and it shipped once in
 this tree already.
 
@@ -1269,9 +1269,9 @@ still name a retired tool, an unwritten page or an example of the defect without
 either lying or being refused.
 
 That rule is in
-[`../docs/conventions/prose.md`](../docs/conventions/prose.md), beside the
+[`../docs/conventions/prose.md`](../../conventions/prose.md), beside the
 mechanical-half list it belongs to, and
-[`../scripts/README.md`](../scripts/README.md) carries the measurement behind
+[`../scripts/README.md`](../../../scripts/README.md) carries the measurement behind
 the scope. ⚠ Five places were rewritten to follow it, including two in this
 entry's own text.
 
@@ -1304,7 +1304,7 @@ vocabulary at all.
 
 Measured: a sentence carrying two banned words was appended to a document and
 `check-docs` passed. That is lens 2 of
-[`../docs/methodology/reviews.md`](../docs/methodology/reviews.md), a guard
+[`../docs/methodology/reviews.md`](../../methodology/reviews.md), a guard
 planted with the defect it exists to catch, and it did not fire.
 
 ### Approach
@@ -1321,7 +1321,7 @@ nineteen-to-nothing false positive rate is a guard somebody switches off.
 
 So the fourteen unambiguous quality-assertions are the check, the four
 dismissals stay a reading, and
-[`../docs/conventions/prose.md`](../docs/conventions/prose.md) says which half
+[`../docs/conventions/prose.md`](../../conventions/prose.md) says which half
 owns which.
 
 Must not: widen it to the four to make the rule look fully enforced. ⛔ The
@@ -1375,14 +1375,14 @@ brings one. `Azathothas/bit-cli`'s carries `/bench/*.json`, so **92 files** of
 that corpus sat on disk and in no commit.
 
 ⛔ **One of them is
-[`bench/browser-fingerprint-cft-152.json`](../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json),
+[`bench/browser-fingerprint-cft-152.json`](../../../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json),
 the Chrome 152 capture**: one of the two primary artefacts every inherited value
-in [`../docs/inherited-claims.md`](../docs/inherited-claims.md) is cited against,
+in [`../docs/inherited-claims.md`](../../inherited-claims.md) is cited against,
 and it is cited by name twice in
-[`../docs/reference-sweeps/findings.md`](../docs/reference-sweeps/findings.md).
+[`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md).
 ⭐ **A reader cloning this repository would have found the citation and not the
 file**, which is precisely the failure
-[`../docs/methodology/references.md`](../docs/methodology/references.md) section
+[`../docs/methodology/references.md`](../../methodology/references.md) section
 4 exists to prevent, arriving through a door nobody had looked at.
 
 ### Premise
@@ -1435,7 +1435,7 @@ against the defect it exists to catch.
 $ git ls-files --others --ignored --exclude-standard references | wc -l
 0
 
-$ printf '[x](../../.tmp/SEED.md)
+$ printf '[x](../../../../.tmp/SEED.md)
 ' >> docs/reference-sweeps/findings.md
 $ sh scripts/common/check-docs.sh
   docs/reference-sweeps/findings.md:832 link target is on disk and NOT COMMITTED -> ../../.tmp/SEED.md
@@ -1515,7 +1515,7 @@ skip: the twin comparison, which the ubuntu job runs.
 
 ⛔ **`check-changelog` reported `changelog ok: 0 entries` over a file with two,
 and that line asserts all four rules.** It reads an entry as a `### ` heading
-under a `## ` section. This repository's [`../CHANGELOG.md`](../CHANGELOG.md)
+under a `## ` section. This repository's [`../CHANGELOG.md`](../../../CHANGELOG.md)
 wrote its entries at `## `, which the check reads as a section heading and
 skips. So it found nothing, validated nothing, and printed a sentence saying
 every entry is dated and names a record and says whether it deployed.
@@ -1523,7 +1523,7 @@ every entry is dated and names a record and says whether it deployed.
 ⭐ **It was green in the gate from the first commit**, in both halves, on both
 runners. That is the "step that exits 0 having done nothing it was asked to do"
 row in
-[`../docs/conventions/forbidden-patterns.md`](../docs/conventions/forbidden-patterns.md),
+[`../docs/conventions/forbidden-patterns.md`](../../conventions/forbidden-patterns.md),
 in a check whose own header argues at length that an absent changelog must be
 exit 2 rather than a pass. ⚠ The same reasoning was never applied one level
 down, to a file that exists and presents nothing the check can read.
@@ -1541,7 +1541,7 @@ rc=0
 ```
 
 That is lens 2 of
-[`../docs/methodology/reviews.md`](../docs/methodology/reviews.md): the guard was
+[`../docs/methodology/reviews.md`](../../methodology/reviews.md): the guard was
 planted with the defect it exists to catch and did not fire.
 
 ### Approach
@@ -1639,7 +1639,7 @@ fired in the second plant, where the body has no such word.
 ⛔ **Left as it is, and recorded rather than tightened.** Matching `deployed:`
 instead would refuse "not deployed" and "this deployed nothing", which are
 legitimate answers, and what counts as a valid answer is
-[`../docs/conventions/docs.md`](../docs/conventions/docs.md)'s question rather
+[`../docs/conventions/docs.md`](../../conventions/docs.md)'s question rather
 than this check's. ⚠ The looseness costs a false PASS on an entry whose prose
 happens to mention deployment; the tightening would cost false FAILURES on
 correct entries. The first is the cheaper error for a rule whose other half is
@@ -1647,7 +1647,7 @@ read by a person.
 
 ### ⚠ Authoring and implementing happened in one session, deliberately
 
-[`../docs/methodology/authoring.md`](../docs/methodology/authoring.md) opens
+[`../docs/methodology/authoring.md`](../../methodology/authoring.md) opens
 with the rule that they are different sessions, and the reason it gives is that
 a premise authored and implemented together is a premise never checked against
 the code. ⭐ **That reason is already satisfied here**: the premise is a
@@ -1919,7 +1919,7 @@ between two files that are identical.
 
 ⛔ **A guard whose test has never been seen to fail is theatre.** So it was
 arranged: `check-twins --json` was started, and the closings for this session's
-entries were written into `TODO/*.md` while it ran.
+entries were written into `docs/history/todo/*.md` while it ran.
 
 ```text
 $ sh scripts/common/check-twins.sh --json
@@ -2058,7 +2058,7 @@ written last session by a tool that writes LF, the attributes normalised it into
 the index, and every check in this tree reported green over it. ⛔ The
 declaration is not decoration: Windows PowerShell 5.1 mis-parses a here-string
 whose terminator arrives with a bare LF, and
-[`../docs/conventions/shell.md`](../docs/conventions/shell.md) section 8 is why
+[`../docs/conventions/shell.md`](../../conventions/shell.md) section 8 is why
 the exception exists at all.
 
 ⭐ **Fixing it produced no git diff**, which is the whole shape of the defect:
@@ -2085,7 +2085,7 @@ no row, which is exactly how it went eight files wrong without anybody noticing.
 ⭐ So the rule was extracted into `scripts/common/check-line-endings.{sh,ps1}`
 and given a row. That is a larger change than the entry asked for and the gate
 was re-passed against it, per
-[`../docs/methodology/gate.md`](../docs/methodology/gate.md).
+[`../docs/methodology/gate.md`](../../methodology/gate.md).
 
 ⚠ **The Prove command below is the entry's own and still exercises it**, through
 the gate, under the name `check-line-endings` rather than `line-endings`.
@@ -2294,8 +2294,8 @@ that now runs one more check than the one that cost 600.
 
 ### Problem
 
-[`../docs/AGENTS.md`](../docs/AGENTS.md) sends a session writing a script to
-[`README.md`](../scripts/README.md), calling it the contract every script is
+[`../AGENTS.md`](../../../AGENTS.md) sends a session writing a script to
+[`README.md`](../../../scripts/README.md), calling it the contract every script is
 held to, and sends a session writing a document to the router's own table of
 what each document owns. ⛔ **Neither catalogue is checked against the tree**,
 so a script or a document arrives, the catalogue is not touched, and the gate
@@ -2330,18 +2330,18 @@ check-workflows
 ⚠ **Thirteen of the checks the gate runs had no section at all**, and two more
 carried rows naming entries that had closed four sessions earlier. The document
 half was the same shape: the technical reference had no row in the set table of
-[`../docs/conventions/docs.md`](../docs/conventions/docs.md), which is the
+[`../docs/conventions/docs.md`](../../conventions/docs.md), which is the
 document that says a role with no file behind it is a defect.
 
 ### Approach
 
 One check pair, `check-catalogues`, holding the two rules a machine can hold.
 
-- ⭐ **Every script is named by [`README.md`](../scripts/README.md).** Twins
+- ⭐ **Every script is named by [`README.md`](../../../scripts/README.md).** Twins
   collapse to one base name, because a pair is one contract.
-- ⭐ **Every document under [`../docs/`](../docs/) is named by its index**:
-  [`../docs/AGENTS.md`](../docs/AGENTS.md) for the tree, and
-  [`../docs/HISTORY/README.md`](../docs/HISTORY/README.md) for the history
+- ⭐ **Every document under [`../docs/`](../../) is named by its index**:
+  [`../AGENTS.md`](../../../AGENTS.md) for the tree, and
+  [`../docs/history/README.md`](../README.md) for the history
   directory, which has its own because a superseded page is not routed to.
 - ⚠ **Both directions, on the paths.** A catalogue naming a file the tree does
   not have is the `TOOL-10` defect, and it is the same reading.
@@ -2429,7 +2429,7 @@ went from 43 to 44 the moment it could see itself.
 
 | | |
 | --- | --- |
-| whether a section says anything true | ⛔ a reading. A guard over prose either passes vacuously or refuses legitimate writing, and [`../docs/methodology/reviews.md`](../docs/methodology/reviews.md) lens 3 is what owns it |
+| whether a section says anything true | ⛔ a reading. A guard over prose either passes vacuously or refuses legitimate writing, and [`../docs/methodology/reviews.md`](../../methodology/reviews.md) lens 3 is what owns it |
 | whether a catalogue names a file that is gone | `check-docs`, which resolves every cited path in every markdown file here. ⛔ Two checks holding one rule is two places for it to be wrong |
 | whether an entry a document cites is still open | ⚠ nothing holds it, and this session found three rows naming closed entries as open. A grep for that shape has no honest form: the phrasing is prose |
 

@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -13,11 +13,11 @@ publish = false
 # ⛔ THE RENDERER AND THE FIELD VOCABULARY COME FROM HERE, and that is the whole
 # reason for this edge. The capture-mode comparison already renders a TLS half
 # field by field; a second renderer in this crate would be two spellings of one
-# value with nothing checking that they agree. TODO/validator.md, VALID-05.
+# value with nothing checking that they agree. docs/history/todo/validator.md, VALID-05.
 b-ids-harness = { path = "../b-ids-harness" }
 # ⭐ EMIT-04. --stack emits a ClientHello from the claimed profile and reads it
 # back, so the emitter and the parser are both in this graph and neither is the
-# other. TODO/emitters.md, EMIT-04.
+# other. docs/history/todo/emitters.md, EMIT-04.
 b-ids-emit = { path = "../b-ids-emit" }
 b-ids-schema = { path = "../b-ids-schema" }
 serde_json.workspace = true

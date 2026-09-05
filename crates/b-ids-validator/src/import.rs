@@ -25,7 +25,7 @@
 //! violation disappear from the report by being edited into a shape the reader
 //! does not know.
 //!
-//! `TODO/validator.md`, `VALID-02`.
+//! `docs/history/todo/validator.md`, `VALID-02`.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -126,12 +126,15 @@ struct Entry {
 fn read_impit(tree: &Path, name: &str) -> Result<Vec<Exhibit>, String> {
     let dir = tree.join("impit/src/fingerprint/database");
     let mut out = Vec::new();
-    let mut files: Vec<_> = std::fs::read_dir(&dir)
-        .map_err(|e| format!("{}: {e}", dir.display()))?
-        .filter_map(Result::ok)
-        .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|x| x == "rs"))
-        .collect();
+    let mut files = Vec::new();
+    for entry in std::fs::read_dir(&dir).map_err(|e| format!("{}: {e}", dir.display()))? {
+        let path = entry
+            .map_err(|e| format!("could not read an entry under {}: {e}", dir.display()))?
+            .path();
+        if path.extension().is_some_and(|extension| extension == "rs") {
+            files.push(path);
+        }
+    }
     files.sort();
 
     let mut entries_seen = 0;

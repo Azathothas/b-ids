@@ -6,7 +6,7 @@
 //! The fetcher is injected for exactly that reason: this suite arranges the
 //! primary route's failure, which no test against a live network could.
 //!
-//! `TODO/driver.md`, `DRIVER-05`.
+//! `docs/history/todo/driver.md`, `DRIVER-05`.
 
 use b_ids_driver::acquire::{
     Candidate, IndexRefusal, Platform, Route, acquire_with, download, download_url, index_route,
@@ -143,7 +143,7 @@ fn acquisition_treats_an_empty_answer_as_a_refusal() {
 // `b_ids_driver::acquire` names: it carried 2497 builds, and the two entries
 // below are two of them verbatim. ⚠ A fixture somebody invented would let this
 // suite agree with a reader that cannot read the real thing, which is the
-// defect these tests exist to catch. `TODO/driver.md`, `DRIVER-08`.
+// defect these tests exist to catch. `docs/history/todo/driver.md`, `DRIVER-08`.
 const INDEX: &str = r#"{
   "timestamp": "2026-09-02T09:03:41.795Z",
   "versions": [
@@ -331,7 +331,7 @@ fn the_published_schema_carries_the_same_route_vocabulary() {
 // carried five products and 157 Stable releases; the two below are two of them
 // verbatim, with the CVE lists dropped because this reader does not look at
 // them. ⚠ A fixture somebody invented would let this suite agree with a reader
-// that cannot read the real thing. `TODO/driver.md`, `DRIVER-10`.
+// that cannot read the real thing. `docs/history/todo/driver.md`, `DRIVER-10`.
 const EDGE_INDEX: &str = r#"[
   { "Product": "Dev", "Releases": [] },
   {

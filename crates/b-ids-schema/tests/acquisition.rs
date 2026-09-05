@@ -3,7 +3,7 @@
 //! ⭐ **The door sweep found nothing read this field.** The published schema
 //! constrained it and `Profile::check` did not, so a profile could claim a
 //! route no driver can produce and every check in the tree would have passed
-//! it. `TODO/driver.md`, `DRIVER-05`.
+//! it. `docs/history/todo/driver.md`, `DRIVER-05`.
 
 mod support;
 

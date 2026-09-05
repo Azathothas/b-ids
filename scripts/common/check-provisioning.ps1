@@ -1,7 +1,7 @@
 ﻿# check-provisioning.ps1 - does the provisioning tool refuse what it must, and
 # does it provision what it promises?
 #
-# ⭐ THE TWIN OF check-provisioning.sh. TODO/driver.md, DRIVER-08 and DRIVER-09.
+# ⭐ THE TWIN OF check-provisioning.sh. docs/history/todo/driver.md, DRIVER-08 and DRIVER-09.
 #
 # ⛔ THE TOOL PURGES BROWSERS. Every refusal it makes is what stands between a
 # developer's machine and losing one, so the refusals are checked on EVERY host
@@ -97,7 +97,7 @@ $checked = 0
 # against a COPY of the tool under the ignored scratch directory, never against
 # the file on a machine the guard protects. ⚠ That rule is written down
 # because it was broken here on 2026-09-02 and the purge path ran on a
-# developer laptop. docs/HISTORY/README.md carries the incident.
+# developer laptop. docs/history/README.md carries the incident.
 function Test-Refusal {
     param(
         [string]$Why,
@@ -284,7 +284,7 @@ if ($Json) {
     foreach ($problem in $problems) { [Console]::Error.WriteLine($problem) }
     [Console]::Error.WriteLine('')
     [Console]::Error.WriteLine('Every refusal here stands between a machine and losing its browser.')
-    [Console]::Error.WriteLine('TODO/driver.md, DRIVER-08.')
+    [Console]::Error.WriteLine('docs/history/todo/driver.md, DRIVER-08.')
 }
 
 if ($count -ne 0) { exit 1 }

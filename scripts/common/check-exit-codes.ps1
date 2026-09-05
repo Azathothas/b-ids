@@ -2,7 +2,7 @@
 # as 2, on both halves of every pair?
 #
 # ⭐ THE TWIN OF check-exit-codes.sh, and the half that matters most, because
-# the PowerShell side is where the defect was. TODO/ci.md, CI-07.
+# the PowerShell side is where the defect was. docs/history/todo/ci.md, CI-07.
 #
 # The defect this exists to catch is a check that fails because a machine cannot
 # run it. A capture job on a runner with no browser must not fail the build, and
@@ -124,7 +124,7 @@ if ($Json) {
     foreach ($problem in $problems) { [Console]::Error.WriteLine($problem) }
     [Console]::Error.WriteLine('')
     [Console]::Error.WriteLine('Exit 2 is could-not-run. 1 is it ran and the thing failed, and 0 is it ran')
-    [Console]::Error.WriteLine('and passed. TODO/ci.md, CI-07.')
+    [Console]::Error.WriteLine('and passed. docs/history/todo/ci.md, CI-07.')
 }
 
 if ($problems.Count -ne 0) { exit 1 }

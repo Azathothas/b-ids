@@ -1,7 +1,7 @@
 ﻿# check-sources.ps1 - does every external question get asked more than one way,
 # and is a disagreement reported rather than resolved?
 #
-# ⭐ THE TWIN OF check-sources.sh. TODO/ci.md, CI-06.
+# ⭐ THE TWIN OF check-sources.sh. docs/history/todo/ci.md, CI-06.
 #
 # ⛔ EVERY EXTERNAL DEPENDENCY WILL ONE DAY ANSWER DIFFERENTLY, and a corpus
 # that stopped updating in year two was not worth building.
@@ -163,5 +163,5 @@ foreach ($problem in $real.Problems) { [Console]::Error.WriteLine('  ' + $proble
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('  Two sources that disagree are the most valuable signal this')
 [Console]::Error.WriteLine('  project produces. Record both, publish both, never pick.')
-[Console]::Error.WriteLine('  TODO/ci.md, CI-06.')
+[Console]::Error.WriteLine('  docs/history/todo/ci.md, CI-06.')
 exit 1

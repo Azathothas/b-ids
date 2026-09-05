@@ -9,7 +9,7 @@
 //! against itself. An encoder tested by decoding its own output agrees with
 //! every defect it has.
 //!
-//! `TODO/driver.md`, `DRIVER-01`.
+//! `docs/history/todo/driver.md`, `DRIVER-01`.
 
 use std::net::IpAddr;
 

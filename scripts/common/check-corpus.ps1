@@ -43,7 +43,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -77,7 +77,7 @@ Push-Location -LiteralPath $root
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 $corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-corpus: no corpus is reachable, so nothing was checked')
@@ -94,7 +94,7 @@ $corpusRoot = "$corpusRoot".Trim()
 # have said a line earlier. This question sat AFTER the export, so the ref was
 # always empty and this check always read THIS repository's history, including
 # for a corpus that lives on a branch.
-# ⚠ It passed that way rather than failing. TODO/publish.md, PUB-11.
+# ⚠ It passed that way rather than failing. docs/history/todo/publish.md, PUB-11.
 $corpusRef = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Ref | Select-Object -First 1)
 if ($null -eq $corpusRef) { $corpusRef = '' }
 $corpusRef = "$corpusRef".Trim()
@@ -112,7 +112,7 @@ try {
         }
         else {
             [Console]::Error.WriteLine("check-corpus: there is no $corpusDir/ directory, so nothing was verified.")
-            [Console]::Error.WriteLine('The corpus is empty. TODO/corpus.md, CORPUS-01.')
+            [Console]::Error.WriteLine('The corpus is empty. docs/history/todo/corpus.md, CORPUS-01.')
         }
         exit 2
     }
@@ -125,7 +125,7 @@ try {
     #
     # ⚠ It is not hypothetical: this check ran inside the gate on both CI jobs
     # from the day it was written, under the default checkout depth, and its git
-    # leg verified nothing on either. TODO/ci.md, CI-01.
+    # leg verified nothing on either. docs/history/todo/ci.md, CI-01.
     #
     # ⛔ EXIT 2, NOT 0. The corpus may be fine and this run cannot say so. ⛔ Keep
     # this identical to the sh twin.

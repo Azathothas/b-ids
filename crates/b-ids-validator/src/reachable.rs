@@ -2,7 +2,7 @@
 //!
 //! ⭐ **A corpus can carry data for a browser family, a channel or a platform
 //! that no code path can select.** It sits there looking authoritative, and a
-//! reader who finds it believes it is used. `TODO/validator.md`, `VALID-03`.
+//! reader who finds it believes it is used. `docs/history/todo/validator.md`, `VALID-03`.
 //!
 //! ⛔ **Measured by reading, at a named commit**: one library's classifier
 //! returns three families and its header-order table carries a fourth key that

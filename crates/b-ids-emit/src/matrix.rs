@@ -2,7 +2,7 @@
 //!
 //! ⭐ **A profile is only useful if some stack can emit it, and no published
 //! table says which stack can emit which profile.** A client author currently
-//! finds out by building it. `TODO/emitters.md`, `EMIT-01`.
+//! finds out by building it. `docs/history/todo/emitters.md`, `EMIT-01`.
 //!
 //! ⛔ **A CELL IS PRODUCED BY A RUN AND A HOLE IS PRODUCED BY A READING, and
 //! the two are different kinds in this model rather than two colours of one.**
@@ -58,7 +58,7 @@ pub struct Cell {
 ///
 /// ⛔ **Read at a file and a line, in a tree this repository holds at a named
 /// commit.** A hole filled from a project's own documentation, or from memory,
-/// is a claim nobody can re-check. `TODO/RULES.md` section 3.
+/// is a claim nobody can re-check. `docs/history/todo/RULES.md` section 3.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct Hole {
     /// The stack.
@@ -131,7 +131,7 @@ pub fn holes() -> Vec<Hole> {
             // Headers::set_stream_priority, which sets the payload AND the flag
             // in one call. ⚠ The hole is still real about UPSTREAM, which is
             // what this matrix describes; what moved is whether this project
-            // can close it, and it can. TODO/emitters.md, EMIT-03.
+            // can close it, and it can. docs/history/todo/emitters.md, EMIT-03.
             true,
         ),
         hole(

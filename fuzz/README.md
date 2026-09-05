@@ -1,7 +1,7 @@
 # fuzz
 
 Coverage-guided fuzzing of every parser the harness exposes to the network.
-[`../TODO/harness.md`](../TODO/harness.md), `HARNESS-09`.
+[`../docs/history/todo/harness.md`](../docs/history/todo/harness.md), `HARNESS-09`.
 
 ⭐ **The half that runs everywhere is not here.**
 [`../crates/b-ids-harness/tests/hostile.rs`](../crates/b-ids-harness/tests/hostile.rs)

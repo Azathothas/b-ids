@@ -19,7 +19,7 @@
 //! entries. `docs/reference-sweeps/usable.md` section 9 has it. A version that
 //! does not pin its bytes pins nothing.
 //!
-//! `TODO/corpus.md`, `CORPUS-01`.
+//! `docs/history/todo/corpus.md`, `CORPUS-01`.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -124,7 +124,7 @@ pub struct Index {
     ///
     /// ⛔ **Read from `b_ids_schema::LICENSE`, never typed.** A consumer that
     /// fetches the index and nothing else still learns what they may do with
-    /// what it names. `TODO/publish.md`, `PUB-07`.
+    /// what it names. `docs/history/todo/publish.md`, `PUB-07`.
     #[serde(default = "default_license")]
     pub license: String,
     /// The layout version every path in it is under.

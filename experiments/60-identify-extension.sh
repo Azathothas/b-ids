@@ -5,7 +5,7 @@
 # ⭐ THE QUESTION. One extension codepoint observed in a shipped browser is
 # unidentified. It is two zero bytes and trivially reproducible, so nothing is
 # blocked by it, but an unnamed field in a published corpus is a question every
-# consumer will ask. TODO/corpus.md, CORPUS-05.
+# consumer will ask. docs/history/todo/corpus.md, CORPUS-05.
 #
 # -- ⛔ WHAT THIS SCRIPT IS ALLOWED TO CONCLUDE ------------------------------
 #

@@ -171,9 +171,9 @@ what the last one actually did.
 
 ## The next prompt, where a project wants one
 
-⛔ **This repository does not.** [`../../TODO/RULES.md`](../../TODO/RULES.md)
+⛔ **This repository does not.** [`../../docs/history/todo/RULES.md`](../../docs/history/todo/RULES.md)
 section 10 says why in one sentence: the next session is started by pointing an
-agent at [`../AGENTS.md`](../AGENTS.md), and everything it needs is reached from
+agent at [`../../AGENTS.md`](../../AGENTS.md), and everything it needs is reached from
 there. A prompt that restates the reading list is a second copy of a routing
 table that already exists, going stale the moment a document moves. ⚠ The rest
 of this section is the general shape, for a project whose entry point is not a

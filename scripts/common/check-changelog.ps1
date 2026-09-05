@@ -41,7 +41,7 @@ param(
     # than 1. `pwsh -File` reports a parameter-binding failure as 1, which is
     # this project's code for "it ran and the thing failed"; the POSIX twin
     # exits 2 for the same input. Measured across every pair 2026-09-02:
-    # 22 of 22 disagreed. TODO/ci.md, CI-07.
+    # 22 of 22 disagreed. docs/history/todo/ci.md, CI-07.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$UnboundArguments = @()
 )
@@ -158,7 +158,7 @@ Complete-Entry
 # repository's CHANGELOG.md wrote its entries at '## ', which this check reads
 # as a SECTION. So it found no entries, asserted all four rules over nothing,
 # and printed "0 entries, in order, each dated with a record and a deploy
-# line". It was green in the gate from the first commit. TODO/tooling.md
+# line". It was green in the gate from the first commit. docs/history/todo/tooling.md
 # TOOL-14.
 #
 # ⚠ 1 RATHER THAN 2, and the difference decides whether this is visible. The

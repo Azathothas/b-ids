@@ -19,7 +19,7 @@
 //! not implement, so it fails loudly at the boundary rather than producing a
 //! file whose first page reads and whose second does not exist.
 //!
-//! `TODO/driver.md`, `DRIVER-11`.
+//! `docs/history/todo/driver.md`, `DRIVER-11`.
 
 /// The page size every database this writer produces uses.
 ///

@@ -7,7 +7,7 @@
 # ⛔ A REIMPLEMENTATION IN EACH LANGUAGE IS THE FAILURE TO AVOID. Four
 # implementations of one selection rule is four places for it to be wrong, and
 # the one that is wrong is the one nobody uses often enough to notice.
-# TODO/library.md, LIB-03.
+# docs/history/todo/library.md, LIB-03.
 #
 # ⭐ THE COMPARISON IS OVER THE ANSWERS RATHER THAN OVER THE INTERFACES, which
 # is the entry's own wording, and it includes the case where a profile is
@@ -97,7 +97,8 @@ $rustText = $rustText -join "`n"
 Set-Content -LiteralPath (Join-Path $out 'rust.json') -Value $rustText -Encoding utf8NoBOM
 $rust = $rustText | ConvertFrom-Json
 
-$node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue
+$node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue |
+    Select-Object -First 1
 $nodeState = if ($node) { 'present' } else { 'absent' }
 $compared = 0
 
@@ -195,5 +196,5 @@ if ($problems.Count -eq 0) {
 foreach ($p in $problems) { [Console]::Error.WriteLine('  ' + $p) }
 [Console]::Error.WriteLine('')
 [Console]::Error.WriteLine('Four implementations of one selection rule is four places for it to be')
-[Console]::Error.WriteLine('wrong. TODO/library.md, LIB-03.')
+[Console]::Error.WriteLine('wrong. docs/history/todo/library.md, LIB-03.')
 exit 1

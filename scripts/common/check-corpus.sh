@@ -64,7 +64,7 @@ cd "$REPO_ROOT" || { printf 'check-corpus: cannot enter %s\n' "$REPO_ROOT" >&2; 
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-corpus: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -86,7 +86,7 @@ CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
 # repository's history, including for a corpus that lives on a branch.
 # ⚠ It passed that way rather than failing: driven 2026-09-04 with corpus/
 # moved out, it reported `nothing edited after publication` having asked main's
-# history about files that are not on main. TODO/publish.md, PUB-11.
+# history about files that are not on main. docs/history/todo/publish.md, PUB-11.
 CORPUS_REF=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --ref)
 # ⛔ EXPORTED ONLY NOW, because cargo is downstream of this decision. The b-ids
 # crate's build script embeds the corpus at build time and reads exactly this
@@ -102,7 +102,7 @@ if [ ! -d "$CORPUS_ROOT/$CORPUS_DIR" ]; then
     printf '{"schema":"check-corpus/2","corpus":false,"shallow":false,"profiles":0,"edits":0,"problems":0}\n'
   else
     printf 'check-corpus: there is no %s/ directory, so nothing was verified.\n' "$CORPUS_DIR" >&2
-    printf 'The corpus is empty. TODO/corpus.md, CORPUS-01.\n' >&2
+    printf 'The corpus is empty. docs/history/todo/corpus.md, CORPUS-01.\n' >&2
   fi
   exit 2
 fi
@@ -118,7 +118,7 @@ fi
 #
 # ⚠ It is not hypothetical here: this check ran inside the gate on both CI jobs
 # from the day it was written, under the default checkout depth, and its git leg
-# verified nothing on either. TODO/ci.md, CI-01.
+# verified nothing on either. docs/history/todo/ci.md, CI-01.
 #
 # ⛔ EXIT 2, NOT 0. The corpus may be fine and this run cannot say so. The fix is
 # `fetch-depth: 0` on the checkout step, and --strict turns this skip into a

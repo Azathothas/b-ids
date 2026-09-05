@@ -7,7 +7,7 @@ Every local change to a vendored tree, one section each.
 `scripts/common/vendor-diff.mjs`, and editing a patch changes nothing about what
 is built. [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md)
 carries the reasoning and
-[`../TODO/vendor.md`](../TODO/vendor.md) is the work.
+[`../docs/history/todo/vendor.md`](../docs/history/todo/vendor.md) is the work.
 
 ⚠ **A section here is not derived and it does not regenerate.** The generator
 knows what changed; only a person can say why, and why it cannot be done outside
@@ -99,7 +99,7 @@ across two browsers, three majors and two platforms. A client that omits it
 carries a zero in one field of four in a widely-read fingerprint.
 
 ⛔ **Upstream will not take it, and the reason is stated rather than guessed at.**
-[`../TODO/emitters.md`](../TODO/emitters.md), `EMIT-03`, owns that sentence.
+[`../docs/history/todo/emitters.md`](../docs/history/todo/emitters.md), `EMIT-03`, owns that sentence.
 ⚠ What it means HERE is that these patches are permanent rather than pending, and
 [`../docs/methodology/vendoring.md`](../docs/methodology/vendoring.md) settles
 that upstreaming is not a topic either way.

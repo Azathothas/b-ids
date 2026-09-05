@@ -3,7 +3,7 @@
 # would it refuse to overwrite a tag somebody has already pinned?
 #
 # ⛔ A CONSUMER THAT PINS A RELEASE AND GETS DIFFERENT BYTES LATER HAS BEEN
-# BROKEN SILENTLY. TODO/publish.md, PUB-01.
+# BROKEN SILENTLY. docs/history/todo/publish.md, PUB-01.
 #
 # -- ⛔ WHAT IT ASSERTS -------------------------------------------------------
 #
@@ -61,7 +61,7 @@ cd "$REPO_ROOT" || { printf 'check-release: cannot enter %s\n' "$REPO_ROOT" >&2;
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED. It is the working tree for
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.sh is the one answer to the question and this
-# check does not carry a second one. TODO/publish.md, PUB-11.
+# check does not carry a second one. docs/history/todo/publish.md, PUB-11.
 CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
   printf 'check-release: no corpus is reachable, so nothing was checked\n' >&2
   exit 2
@@ -107,7 +107,8 @@ cargo build -q -p b-ids-corpus || {
   printf 'check-release: the corpus crate did not build\n' >&2
   exit 2
 }
-BIN="$REPO_ROOT/target/debug/b-ids-corpus"
+TARGET_DIR=${CARGO_TARGET_DIR:-"$REPO_ROOT/target"}
+BIN="$TARGET_DIR/debug/b-ids-corpus"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 [ -x "$BIN" ] || { printf 'check-release: %s is not executable\n' "$BIN" >&2; exit 2; }
 
@@ -222,5 +223,5 @@ fi
 printf 'release check failed, %s problem(s):\n\n' "$COUNT" >&2
 printf '%s\n' "$PROBLEMS" >&2
 printf 'A consumer that pins a release and gets different bytes later has been\n' >&2
-printf 'broken silently. TODO/publish.md, PUB-01.\n' >&2
+printf 'broken silently. docs/history/todo/publish.md, PUB-01.\n' >&2
 exit 1

@@ -125,7 +125,7 @@ fn notes_two_outputs_generated_from_different_inputs_do_not_agree() {
 fn notes_the_release_body_states_the_licence() {
     // ⛔ A RELEASE ASSET THAT TRAVELS ALONE still has to say what it is, and the
     // identifier is read from b_ids_schema::LICENSE rather than typed here, so
-    // a re-licence moves both in one change. TODO/publish.md, PUB-07.
+    // a re-licence moves both in one change. docs/history/todo/publish.md, PUB-07.
     let before = vec![at("151.0.7922.76", 151)];
     let after = vec![at("152.0.7977.75", 152)];
     let change = model(&before, &after);

@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-# ⛔ Nothing here is released. TODO/publish.md, PUB-05, is the entry that
+# ⛔ Nothing here is released. docs/history/todo/publish.md, PUB-05, is the entry that
 # decides what a package registry ever sees.
 publish = false
 
@@ -22,7 +22,7 @@ b-ids-schema = { path = "../b-ids-schema", features = ["fixtures"] }
 # ⛔ A DEV DEPENDENCY, and that is the design rather than an accident. The
 # validator is pure logic over the model and takes the reachable list as an
 # argument; only `reachable_dimensions` needs to know what THIS project can
-# resolve, and it is a test. TODO/validator.md, VALID-03.
+# resolve, and it is a test. docs/history/todo/validator.md, VALID-03.
 b-ids-driver = { path = "../b-ids-driver" }
 # ⚠ A DEV DEPENDENCY, for VALID-04 alone. The JA4 lists are rendered by the
 # model and hashed by the harness, which is where SHA-256 has its one home; this
