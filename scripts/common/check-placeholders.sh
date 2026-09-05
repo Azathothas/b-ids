@@ -52,27 +52,6 @@ cd "$REPO_ROOT" || { printf '%s: cannot enter %s\n' "$SELF" "$REPO_ROOT" >&2; ex
 # likely to carry a defect and exactly what the next `git add -A` will take.
 # Ignored files stay out: they are ignored on purpose.
 
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND ONLY FROM THIS CHECK'S SUBJECT ----
-#
-# `references/` holds other projects' trees, at named commits, as the evidence
-# behind docs/reference-sweeps/findings.md. docs/methodology/references.md is
-# why it is tracked rather than deleted.
-#
-# ⛔ It is somebody else's writing, so this project's rules about how a document
-# is written cannot apply to it. Their links point into subtrees this sweep
-# trimmed, their pages are orphaned relative to this tree, and their templates
-# hold placeholders on purpose. None of that is a defect here, and a check that
-# fails on a correct tree gets switched off within a week.
-#
-# ⭐ EVERY CHECK EXEMPTS IT, AND EACH EXEMPTION WAS PAID FOR SEPARATELY. The
-# prose checks, because it is somebody else's writing. check-control-bytes,
-# because .gitattributes declares `references/** -text` so the corpus is stored
-# byte-exact as evidence, and a finding there could only be fixed by editing the
-# bytes a citation points at. check-no-secrets, after every hit it produced over
-# the corpus was read once and recorded; its own header carries the counts.
-# ⚠ A check whose findings cannot be acted on is a check that gets switched off,
-# and an exemption taken without reading first is one nobody can defend.
-
 # -- ⛔ THE VENDORED TREES ARE EXEMPT, AND THE MANIFEST BESIDE THEM IS NOT ---
 #
 # vendor/NAME/ holds third-party source this tree compiles and patches, at the
@@ -89,7 +68,7 @@ list_files() {
   {
     git ls-files -- "$@" 2>/dev/null
     git ls-files --others --exclude-standard -- "$@" 2>/dev/null
-  } | sort -u | grep -vE '^(references|vendor/[^/]+)/'
+  } | sort -u | grep -vE '^vendor/[^/]+/'
 }
 
 

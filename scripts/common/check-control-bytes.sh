@@ -76,27 +76,11 @@ cd "$REPO_ROOT" || { printf 'check-control-bytes: cannot enter %s\n' "$REPO_ROOT
 TEXT_RE='\.(ts|tsx|js|mjs|cjs|jsx|json|md|sql|css|scss|html|toml|yaml|yml|sh|ps1|py|rs|go|c|h|cpp|hpp|java|rb|php|txt|cfg|ini|conf|env\.example)$'
 
 
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND THE REASON IS NOT CONVENIENCE ------
-#
-# `references/` holds other projects' trees at named commits, as the evidence
-# behind docs/reference-sweeps/findings.md. .gitattributes declares
-# `references/** -text`, so those bytes are stored exactly as upstream has them
-# and every line citation is against them.
-#
-# ⛔ SO A FINDING THERE COULD ONLY BE FIXED BY EDITING THE BYTES A CITATION
-# POINTS AT, which would make the corpus disagree with the upstream it claims to
-# quote. That is not a fix, and a check whose findings cannot be acted on is a
-# check somebody switches off.
-#
-# ⚠ The rule this check exists for is unchanged for everything this project
-# writes: a literal control byte makes a file invisible to grep and to diff, and
-# that is exactly why it survives unnoticed.
-
 FILES=$(
   {
     git ls-files 2>/dev/null
     git ls-files --others --exclude-standard 2>/dev/null
-  } | sort -u | grep -E "$TEXT_RE" | grep -v '^references/' || true
+  } | sort -u | grep -E "$TEXT_RE" || true
 )
 if [ -z "$FILES" ]; then
   printf 'check-control-bytes: no text files in scope\n' >&2

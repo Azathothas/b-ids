@@ -93,6 +93,41 @@ for script in $SCRIPTS; do
   fi
 done
 
+# PowerShell-only operations are part of the same script surface. Exercise
+# them through pwsh so both halves cover the same set of unique operations.
+PS_SCRIPTS=$({ git ls-files -- 'scripts/*.ps1'; git ls-files --others --exclude-standard -- 'scripts/*.ps1'; } | LC_ALL=C sort -u)
+PS_ONLY=""
+for script in $PS_SCRIPTS; do
+  counterpart=${script%.ps1}.sh
+  case "
+$SCRIPTS
+" in
+    *"
+$counterpart
+"*) ;;
+    *) PS_ONLY="$PS_ONLY$script
+" ;;
+  esac
+done
+if [ -n "$PS_ONLY" ]; then
+  command -v pwsh >/dev/null 2>&1 || {
+    printf 'check-exit-codes: pwsh not found for PowerShell-only operations\n' >&2
+    exit 2
+  }
+fi
+PS_UNKNOWN='-BIdsCheckExitCodesNotARealArgument'
+for script in $PS_ONLY; do
+  [ -n "$script" ] || continue
+  CHECKED=$((CHECKED + 1))
+  pwsh -NoProfile -File "$script" "$PS_UNKNOWN" >/dev/null 2>&1
+  rc=$?
+  if [ "$rc" != 2 ]; then
+    PROBLEMS="$PROBLEMS  $script: exit $rc, and could-not-run is 2
+"
+    COUNT=$((COUNT + 1))
+  fi
+done
+
 # ⭐ THE FIXTURE LEG, so this check has been seen to refuse. A guard whose test
 # has never failed is theatre, and this one is cheap to plant: a script that
 # exits 1 for an unknown argument is the exact defect, written into a scratch

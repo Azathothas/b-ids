@@ -84,10 +84,9 @@
 # somebody's machine can open an issue on a stranger's repository, and once did.
 #
 # Usage:
-#   sh scripts/common/mine-repo.sh OWNER/NAME
-#   sh scripts/common/mine-repo.sh OWNER/NAME --out references
-#   sh scripts/common/mine-repo.sh OWNER/NAME --route proxy --no-clone
-#   sh scripts/common/mine-repo.sh OWNER/NAME --json
+#   sh scripts/common/mine-repo.sh OWNER/NAME --out PATH
+#   sh scripts/common/mine-repo.sh OWNER/NAME --out PATH --route proxy --no-clone
+#   sh scripts/common/mine-repo.sh OWNER/NAME --out PATH --json
 #   sh scripts/common/mine-repo.sh --selftest      prove the page joiner, offline
 #
 # Exit codes: 0 the subject was fetched, 1 it was not, 2 could not run.
@@ -97,7 +96,7 @@
 set -u
 
 TARGET=""
-OUT="references"
+OUT=""
 ROUTE="auto"
 CLONE=1
 JSON=0
@@ -107,7 +106,7 @@ CONTROL="pkgforge-dev/reverse-proxies"
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --out)      shift; OUT="${1:-references}" ;;
+    --out)      shift; OUT="${1:-}" ;;
     --route)    shift; ROUTE="${1:-auto}" ;;
     --no-clone) CLONE=0 ;;
     --json)     JSON=1 ;;
@@ -358,6 +357,7 @@ case "$TARGET" in
   */*) ;;
   *) printf 'mine-repo: give a target as OWNER/NAME\n' >&2; exit 2 ;;
 esac
+[ -n "$OUT" ] || { printf 'mine-repo: --out PATH is required\n' >&2; exit 2; }
 
 command -v curl >/dev/null 2>&1 || { printf 'mine-repo: curl not found\n' >&2; exit 2; }
 command -v git  >/dev/null 2>&1 || { printf 'mine-repo: git not found\n' >&2; exit 2; }
@@ -370,8 +370,8 @@ mkdir -p "$DEST/api" || { printf 'mine-repo: cannot write to %s\n' "$DEST" >&2; 
 # ⛔ REFUSE TO WRITE INTO A DIRECTORY THIS REPOSITORY'S OWN IGNORE RULES WOULD
 # SWALLOW. The corpus is the evidence; an ignored corpus exists on one machine
 # and every claim built on it becomes unsourced the moment that machine is not
-# the one asking. That is not hypothetical: a `references/` ignore rule shipped
-# in this template's own dotfiles for exactly the reasoning this refuses.
+# the one asking. That is not hypothetical: an ignore rule once shipped for
+# imported evidence for exactly the reasoning this refuses.
 #
 # ⚠ It fires late enough to have created the directory and early enough to have
 # fetched nothing, so the failure costs no network and leaves an empty tree the

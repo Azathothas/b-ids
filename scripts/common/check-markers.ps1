@@ -130,21 +130,9 @@ finally { Pop-Location }
 # case-INSENSITIVE, and this exact trap once made an exclusion swallow every
 # real finding in a sibling check here: `[a-z]` matched an upper-case letter
 # and the check reported clean over a file that was not.
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND ONLY FROM THIS CHECK'S SUBJECT ----
-#
-# `references/` holds other projects' trees, at named commits, as the evidence
-# behind docs/reference-sweeps/findings.md. It is somebody else's writing, so
-# this project's rules about how a document is written cannot apply to it, and a
-# check that fails on a correct tree gets switched off within a week.
-#
-# ⭐ Every check exempts it, and each exemption was paid for separately: the
-# prose checks because it is somebody else's writing, check-control-bytes because
-# .gitattributes stores the corpus byte-exact as evidence, and check-no-secrets
-# after every hit over the corpus was read once and recorded.
-# ⛔ Keep this identical to the sh twin.
 $files = @($tracked + $untracked |
     ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -match $textRe -and $_ -cnotmatch '^(references|vendor/[^/]+)/' } |
+    Where-Object { $_ -and $_ -match $textRe -and $_ -cnotmatch '^vendor/[^/]+/' } |
     Sort-Object -Unique)
 
 if ($files.Count -eq 0) {

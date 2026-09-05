@@ -144,8 +144,8 @@ foreach ($file in (Get-ChildItem -LiteralPath $configs -Recurse -File | Sort-Obj
         if ($body -notmatch 'NO SNIPPET IS GENERATED') {
             Add-Problem "$stack's refusal does not say it is one: $relative"
         }
-        if ($body -notmatch 'read at references/[^:]+:[0-9]+') {
-            Add-Problem "$stack's refusal names no file and line: $relative"
+        if ($body -notmatch 'source: https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/blob/[0-9a-f]{40}/.+#L[1-9][0-9]*') {
+            Add-Problem "$stack's refusal names no immutable upstream line permalink: $relative"
         }
     } elseif ($stack -eq $runnable) {
         $snippets++

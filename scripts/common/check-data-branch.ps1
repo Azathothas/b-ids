@@ -252,11 +252,18 @@ $matched = $false
 $pending = 0
 if ($ref) {
     $indexFile = Join-Path $out 'compare.index'
+    $objectDir = Join-Path $out 'compare-objects'
     if (Test-Path -LiteralPath $indexFile) { Remove-Item -LiteralPath $indexFile -Force }
+    New-Item -ItemType Directory -Force -Path $objectDir | Out-Null
     $here = Get-Location
+    $oldIndex = $env:GIT_INDEX_FILE
+    $oldObjects = $env:GIT_OBJECT_DIRECTORY
+    $oldAlternates = $env:GIT_ALTERNATE_OBJECT_DIRECTORIES
     try {
         Set-Location -LiteralPath (Join-Path $out 'a')
         $env:GIT_INDEX_FILE = $indexFile
+        $env:GIT_OBJECT_DIRECTORY = $objectDir
+        $env:GIT_ALTERNATE_OBJECT_DIRECTORIES = Join-Path $root '.git/objects'
         # ⛔ THE ARGUMENT IS BUILT AS ONE STRING FIRST. `--git-dir=(Join-Path
         # ...)` is not an interpolation: PowerShell passes `--git-dir=` and the
         # path as TWO arguments, so git gets an empty directory, warns about
@@ -270,12 +277,17 @@ if ($ref) {
         $localTree = (& git write-tree 2>$null | Select-Object -First 1)
     }
     finally {
-        Remove-Item Env:GIT_INDEX_FILE -ErrorAction SilentlyContinue
+        if ($null -eq $oldIndex) { Remove-Item Env:GIT_INDEX_FILE -ErrorAction SilentlyContinue }
+        else { $env:GIT_INDEX_FILE = $oldIndex }
+        if ($null -eq $oldObjects) { Remove-Item Env:GIT_OBJECT_DIRECTORY -ErrorAction SilentlyContinue }
+        else { $env:GIT_OBJECT_DIRECTORY = $oldObjects }
+        if ($null -eq $oldAlternates) { Remove-Item Env:GIT_ALTERNATE_OBJECT_DIRECTORIES -ErrorAction SilentlyContinue }
+        else { $env:GIT_ALTERNATE_OBJECT_DIRECTORIES = $oldAlternates }
         Set-Location -LiteralPath $here
     }
     $publishedTree = (& git rev-parse -q --verify ($ref + '^{tree}') 2>$null | Select-Object -First 1)
     if (-not $localTree -or -not $publishedTree) {
-        [void]$problems.Add("  the $branch branch is $published and neither tree could be read, so nothing was compared")
+        [void]$problems.Add("  the regenerated or $published $branch tree could not be read, so nothing was compared")
     }
     elseif ($localTree.Trim() -eq $publishedTree.Trim()) {
         $matched = $true

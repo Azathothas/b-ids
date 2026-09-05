@@ -2,7 +2,7 @@
 //!
 //! ⛔ Every test name starts with `modes`, because
 //! `cargo test -p b-ids-harness modes` is the suite half of this entry. The
-//! other half is `experiments/20-compare-capture-modes.sh`, which drives a real
+//! other half is `docs/history/experiments/20-compare-capture-modes.sh`, which drives a real
 //! browser twice; this half proves the comparison can tell a per-connection
 //! draw from a mode effect, which is the one thing the driven run cannot
 //! establish about itself.

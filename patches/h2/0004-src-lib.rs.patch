@@ -5,7 +5,7 @@
 # the vendored tree is the truth and this is derived from it. What the change
 # is for, and how to tell whether a release retires it, is patches/README.md.
 diff --git a/src/lib.rs b/src/lib.rs
-index c04742d..47d37a5 100644
+index c04742d..bb51212 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
 @@ -110,8 +110,21 @@ macro_rules! ready {
@@ -19,7 +19,7 @@ index c04742d..47d37a5 100644
 +// this project's emitter needs was reachable in name and not in use.
 +// ⚠ Nothing about the gate changes: it is still `unstable`, which upstream
 +// documents as an API with no backwards-compatibility promise.
-+// TODO/emitters.md, EMIT-03.
++// docs/history/todo/emitters.md, EMIT-03.
 +#[cfg(not(feature = "unstable"))]
  mod hpack;
  

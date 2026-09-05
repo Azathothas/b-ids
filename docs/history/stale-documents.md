@@ -27,7 +27,7 @@ this page records.
 | [`../../README.md`](../../README.md) | running the checks and reading is all this repository can do | it captures, validates, emits, publishes and hands a program a profile |
 | [`../conventions/docs.md`](../conventions/docs.md) | three roles are deliberately empty, one of them the technical reference | two are, and the technical reference is written |
 | [`../inherited-claims.md`](../inherited-claims.md) | there is no corpus | there is, and the row that was measured here is published in it |
-| [`../../experiments/README.md`](../../experiments/README.md) | what a real trust anchor would do is unmeasured | `50-` measured it on one platform |
+| [`../../docs/history/experiments/README.md`](../../docs/history/experiments/README.md) | what a real trust anchor would do is unmeasured | `50-` measured it on one platform |
 | [`../../scripts/README.md`](../../scripts/README.md) | thirteen checks had no section at all, and two rows named closed entries as open | every check has a section, and both rows are corrected |
 | [`../agent-tooling.md`](../agent-tooling.md) | fourteen of the tools this repository ships | all of them |
 | [`../methodology/work-todo.md`](../methodology/work-todo.md) | a session boundary owes a prompt for the next one | this project refuses one, and section 10 of the rules says why |
@@ -140,7 +140,7 @@ corpus, because there is no corpus: `CORPUS-01` is the entry that builds one.
 was written the day before the corpus existed and the section under it was
 updated when it did.
 
-### `experiments/README.md`, the trust configuration
+### `docs/history/experiments/README.md`, the trust configuration
 
 ```text
 ⭐ `20-` measured the capture SURFACE and found it changes nothing a raw

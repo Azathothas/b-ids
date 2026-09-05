@@ -79,9 +79,10 @@ refuse hosts that do not present both CI and explicit disposable-runner guards.
 
 | branch | authority |
 | --- | --- |
-| `main` | implementation, tests, workflows, documentation, reference evidence, and vendored code |
+| `main` | implementation, self-contained tests, workflows, documentation, and vendored build inputs |
 | `source` | canonical reviewed profiles, raw captures, vectors, and license |
 | `data` | generated consumer tree derived from `source` |
+| `reference` | byte-preserved upstream research archive; provenance only |
 
 `main` deliberately carries no profile corpus. All readers resolve the corpus
 root through the shared shell/PowerShell helpers or the Rust root resolver.
@@ -124,11 +125,11 @@ commit.
 
 ## External source boundaries
 
-`references/` contains pinned evidence and conformance vectors. Tests read the
-NSS and HPACK reference trees directly, so the directory is an operational
-input as well as review evidence. `vendor/` contains code compiled by the
-workspace, and `patches/` records local modifications. Each retains its
-upstream license and provenance.
+The [`reference` branch](https://github.com/Azathothas/b-ids/tree/reference)
+preserves pinned upstream evidence without placing it in ordinary clones.
+Builds, tests, scripts, and workflows do not read it. `vendor/` contains the
+third-party code compiled by the workspace, and `patches/` records local
+modifications. Each retains its upstream license and provenance.
 
 See [`inherited-claims.md`](inherited-claims.md) for facts not measured by this
 project, [`trust-anchors.md`](trust-anchors.md) for the inferred-name boundary,

@@ -64,17 +64,13 @@ $root = ($root | Select-Object -First 1).Trim()
 # the same rule and the same reason.
 Set-Location -LiteralPath $root
 
-# ⛔ THE REFERENCE CORPUS IS OUT OF SCOPE. `references/` is other projects'
-# source, kept as the evidence behind docs/reference-sweeps/findings.md. A parse
-# failure in somebody else's script is not this project's defect, and a gate that
-# reports one is a gate nobody reads.
 # ⚠ TRACKED PLUS UNTRACKED-NOT-IGNORED, not tracked alone. A .ps1 that has
 # never been staged is exactly when one is likeliest not to parse, and it is
 # what the next `git add -A` would take.
 $tracked = @(& git ls-files '*.ps1')
 $untracked = @(& git ls-files --others --exclude-standard '*.ps1')
 $files = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -cnotmatch '^references/' } | Sort-Object -Unique)
+    Where-Object { $_ } | Sort-Object -Unique)
 if ($files.Count -eq 0) { Exit-With 2 'no tracked .ps1 files; nothing to check' }
 
 # -- every tracked .ps1 parses ----------------------------------------------

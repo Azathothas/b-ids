@@ -36,7 +36,7 @@ exit codes:
 
 The observed side is a file rather than a live capture. Capturing a client
 means standing up the harness and pointing the client at it, which
-experiments/10-first-profile.sh already does for a browser. Run the capture
+scripts/capture/profile.sh already does for a browser. Run the capture
 once and this as often as you like.
 
 A not-checkable field is not a passing one. It is a field one side does not

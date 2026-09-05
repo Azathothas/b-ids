@@ -13,7 +13,7 @@
 //!
 //! ⚠ **THE OBSERVED SIDE IS A FILE, NOT A LIVE CAPTURE, AND THAT IS A LIMIT
 //! RATHER THAN A DESIGN.** Capturing a client means standing up the harness and
-//! pointing the client at it, which `experiments/10-first-profile.sh` already
+//! pointing the client at it, which `scripts/capture/profile.sh` already
 //! does for a browser. This command compares what that produces. A client
 //! author runs the capture once and this as often as they like.
 //!

@@ -1375,7 +1375,7 @@ brings one. `Azathothas/bit-cli`'s carries `/bench/*.json`, so **92 files** of
 that corpus sat on disk and in no commit.
 
 ⛔ **One of them is
-[`bench/browser-fingerprint-cft-152.json`](../../../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json),
+[`bench/browser-fingerprint-cft-152.json`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json),
 the Chrome 152 capture**: one of the two primary artefacts every inherited value
 in [`../docs/inherited-claims.md`](../../inherited-claims.md) is cited against,
 and it is cited by name twice in

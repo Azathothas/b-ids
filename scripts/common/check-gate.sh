@@ -300,20 +300,13 @@ fi
 compared_directly 'check-line-endings' || check_skippable 'check-line-endings' 'git tracks no file in this repository' \
   sh "$HERE/check-line-endings.sh"
 
-# ⛔ THE REFERENCE CORPUS IS OUT OF SCOPE FOR THE LINTERS, for the same reason
-# the prose checks exempt it: `references/` is other projects' source, kept as
-# the evidence behind docs/reference-sweeps/findings.md. Their style is not this
-# project's defect, their scripts are not this project's to fix, and a gate that
-# reports 37 findings in somebody else's tree is a gate nobody reads.
-# ⚠ Its FILES are still checked for control bytes, because that defect makes a
-# file invisible to review whoever wrote it.
 # ⚠ TRACKED PLUS UNTRACKED-NOT-IGNORED, not tracked alone. A file that has
 # never been staged is exactly when a new script is likeliest to be broken, and
 # it is what the next `git add -A` would take. check-control-bytes.sh carries
 # the same rule and the incident that produced it.
 own_shell_files() {
   { git ls-files '*.sh'; git ls-files --others --exclude-standard '*.sh'; } \
-    | sort -u | grep -v '^references/'
+    | sort -u
 }
 # ⚠ There is no `own_ps_files` here on purpose. This half does not enumerate
 # `.ps1` files: check-powershell.ps1 does that, in the host that can parse them,

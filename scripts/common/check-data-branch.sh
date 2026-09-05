@@ -235,13 +235,19 @@ MATCHES=""
 PENDING=0
 if [ -n "$REF" ]; then
   IDX="$OUT/compare.index"
+  OBJECTS="$OUT/compare-objects"
   rm -f "$IDX"
-  if ( cd "$OUT/a" && GIT_INDEX_FILE="$IDX" git --git-dir="$REPO_ROOT/.git" --work-tree=. \
+  mkdir -p "$OBJECTS"
+  if ( cd "$OUT/a" && GIT_INDEX_FILE="$IDX" GIT_OBJECT_DIRECTORY="$OBJECTS" \
+    GIT_ALTERNATE_OBJECT_DIRECTORIES="$REPO_ROOT/.git/objects" \
+    git --git-dir="$REPO_ROOT/.git" --work-tree=. \
     add --all --force -- . ) >/dev/null 2>&1; then
-    LOCAL_TREE=$(GIT_INDEX_FILE="$IDX" git write-tree 2>/dev/null || true)
+    LOCAL_TREE=$(GIT_INDEX_FILE="$IDX" GIT_OBJECT_DIRECTORY="$OBJECTS" \
+      GIT_ALTERNATE_OBJECT_DIRECTORIES="$REPO_ROOT/.git/objects" \
+      git --git-dir="$REPO_ROOT/.git" write-tree 2>/dev/null || true)
     PUBLISHED_TREE=$(git rev-parse -q --verify "$REF^{tree}" 2>/dev/null || true)
     if [ -z "${LOCAL_TREE:-}" ] || [ -z "${PUBLISHED_TREE:-}" ]; then
-      note "the $BRANCH branch is $PUBLISHED and neither tree could be read, so nothing was compared"
+      note "the regenerated or $PUBLISHED $BRANCH tree could not be read, so nothing was compared"
     elif [ "$LOCAL_TREE" = "$PUBLISHED_TREE" ]; then
       MATCHES="$LOCAL_TREE"
     else

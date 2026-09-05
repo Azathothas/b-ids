@@ -33,7 +33,7 @@
 //!
 //! [`compare`] takes two slices and compares exactly what it is given. ⚠ **It
 //! must be given connections of one KIND.** The first run of
-//! `experiments/20-compare-capture-modes.sh` handed it every connection of each
+//! `docs/history/experiments/20-compare-capture-modes.sh` handed it every connection of each
 //! run and reported the extension SET as not comparable, because the
 //! terminating run had two distinct sets in it. That was not a mode effect on a
 //! hello: it was resumption. A completed handshake leaves a session to resume,
@@ -385,7 +385,7 @@ pub fn comparable(captures: &[Capture]) -> Vec<&Capture> {
 /// ⛔ **Both runs must be of the same browser and build**, and nothing here can
 /// check that: a comparison across two builds would report a version bump as a
 /// mode effect. The caller establishes it, and
-/// `experiments/20-compare-capture-modes.sh` does so by driving one resolved
+/// `docs/history/experiments/20-compare-capture-modes.sh` does so by driving one resolved
 /// browser twice in one run.
 #[must_use]
 pub fn compare(raw: &[Capture], terminated: &[Capture]) -> Comparison {

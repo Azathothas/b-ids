@@ -15,6 +15,7 @@ technical behavior is described by [`../architecture.md`](../architecture.md).
 | [`RESUME.md`](RESUME.md) | handoff for an unfinished multi-session change |
 | [`pre-release-incidents.md`](pre-release-incidents.md) | withdrawn claims and incidents discovered before the initial release |
 | [`stale-documents.md`](stale-documents.md) | documentation defects corrected before the initial release |
+| [`experiments/README.md`](experiments/README.md) | retired one-off experiment instruments and their supported replacements |
 | [`todo/README.md`](todo/README.md) | completed 107-item implementation record |
 | `2026-09-05-publication-review.md` | final pre-release peer review and validation record |
 

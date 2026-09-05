@@ -216,7 +216,7 @@ and the project has no publishable result at all until a capture exists.
 ⭐ **Measured by reading, and the violations are already located.**
 [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md)
 section 7 names three, at file and line, in
-[`../references/`](../../../references/):
+[`../references/`](https://github.com/Azathothas/b-ids/tree/reference):
 
 - five entries of one reference database return another version's TLS and
   HTTP/2 wholesale beside their own User-Agent and brand list, which is check 4;
@@ -798,7 +798,7 @@ and asserts the report names that field and nothing else, and the suite.
 
 ⛔ **It does not capture.** The observed side is a file. Standing up the harness
 and pointing a client at it is what
-[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh)
+[`../scripts/capture/profile.sh`](../../../scripts/capture/profile.sh)
 already does for a browser, and a client author runs that once and this as often
 as they like. ⚠ Wiring the two into one command is worth doing and is not this
 entry.

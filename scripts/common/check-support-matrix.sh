@@ -13,10 +13,8 @@
 #      reading a committed file. There is no committed matrix to go stale;
 #   2. ⛔ EVERY CELL IS EVIDENCE `run`, and carries the command that reproduces
 #      it. A cell filled any other way is a hole wearing a cell's clothes;
-#   3. ⛔ EVERY HOLE IS EVIDENCE `read`, names a path under references/ and a
-#      line, AND THAT PATH AND LINE STILL RESOLVE. A citation nobody resolves is
-#      the defect TOOL-10 exists for, and a reference tree moves when it is
-#      re-mined;
+#   3. every hole is evidence `read` and carries an immutable upstream line
+#      permalink;
 #   4. every published profile has a cell, so a profile the generator quietly
 #      skipped is a finding rather than an absence nobody counted;
 #   5. ⭐ THERE IS AT LEAST ONE HOLE. "Let it have holes" is the entry's rule,
@@ -107,7 +105,7 @@ jq -e . "$OUT/matrix.json" > /dev/null 2>&1 ||
   { printf 'check-support-matrix: the generator did not emit json\n' >&2; exit 1; }
 
 SCHEMA=$(jq -r '.schema' "$OUT/matrix.json")
-[ "$SCHEMA" = "emit-support-matrix/1" ] ||
+[ "$SCHEMA" = "emit-support-matrix/2" ] ||
   note "the matrix names schema $SCHEMA"
 
 CELLS=$(jq '.cells | length' "$OUT/matrix.json")
@@ -121,32 +119,20 @@ NOCMD=$(jq '[.cells[] | select((.reproduce // "") == "")] | length' "$OUT/matrix
 [ "$NOCMD" = 0 ] ||
   note "$NOCMD cell(s) name no command that reproduces them"
 
-# -- 3: every hole is a reading whose citation still resolves ----------------
-#
-# ⛔ THE PATH AND THE LINE, both. A file that shrank below the line it is cited
-# at is a citation that has stopped pointing at anything.
+# -- 3: every hole has an immutable upstream citation ------------------------
 [ "$HOLES" -ge 1 ] ||
   note "the matrix declares no hole at all, and a matrix with none is one nobody filled honestly"
-RESOLVED=0
-jq -r '.holes[] | [.stack, .evidence, .file, (.line|tostring)] | @tsv' "$OUT/matrix.json" > "$OUT/holes.tsv"
-while IFS="$(printf '\t')" read -r stack evidence file line; do
+IMMUTABLE=0
+jq -r '.holes[] | [.stack, .evidence, .source] | @tsv' "$OUT/matrix.json" > "$OUT/holes.tsv"
+while IFS="$(printf '\t')" read -r stack evidence source; do
   [ -n "${stack:-}" ] || continue
   [ "$evidence" = read ] ||
     note "$stack: a hole is evidence $evidence, and a hole is a reading"
-  case "$file" in
-    references/*) ;;
-    *) note "$stack: $file is not under references/, so nothing holds it at a named commit" ;;
-  esac
-  if [ ! -f "$file" ]; then
-    note "$stack: $file does not exist, so the evidence for this hole no longer resolves"
-    continue
+  if printf '%s\n' "$source" | grep -Eq '^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/blob/[0-9a-f]{40}/.+#L[1-9][0-9]*$'; then
+    IMMUTABLE=$((IMMUTABLE + 1))
+  else
+    note "$stack: source is not an immutable GitHub line permalink: $source"
   fi
-  have=$(wc -l < "$file" | tr -d ' ')
-  if [ "$have" -lt "$line" ]; then
-    note "$stack: $file has $have line(s) and the hole cites line $line"
-    continue
-  fi
-  RESOLVED=$((RESOLVED + 1))
 done < "$OUT/holes.tsv"
 
 # -- 4: every published profile has a cell -----------------------------------
@@ -155,8 +141,8 @@ PROFILES=$(find "$CORPUS_ROOT/corpus/v1" -name '*.json' ! -name index.json ! -na
   note "the matrix carries $CELLS cell(s) over $PROFILES published profile(s)"
 
 if [ "$JSON" = 1 ]; then
-  printf '{"schema":"check-support-matrix/1","cells":%s,"holes":%s,"resolved":%s,"profiles":%s,"problems":%s}\n' \
-    "$CELLS" "$HOLES" "$RESOLVED" "$PROFILES" "$COUNT"
+  printf '{"schema":"check-support-matrix/1","cells":%s,"holes":%s,"immutable":%s,"profiles":%s,"problems":%s}\n' \
+    "$CELLS" "$HOLES" "$IMMUTABLE" "$PROFILES" "$COUNT"
   [ "$COUNT" = 0 ] || exit 1
   exit 0
 fi
@@ -164,8 +150,8 @@ fi
 if [ "$COUNT" = 0 ]; then
   printf 'support matrix ok: %s cell(s) over %s profile(s), every one produced by a run,\n' \
     "$CELLS" "$PROFILES"
-  printf '  and %s of %s hole(s) still resolving to a file and a line under references/.\n' \
-    "$RESOLVED" "$HOLES"
+  printf '  and %s of %s hole(s) carry immutable upstream line permalinks.\n' \
+    "$IMMUTABLE" "$HOLES"
   printf '  ⛔ A cell is a run and a hole is a reading, and this check keeps them apart.\n'
   exit 0
 fi

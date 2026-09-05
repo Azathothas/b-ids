@@ -105,7 +105,7 @@ jobs:
           echo "lanes=$lanes" >> "$GITHUB_OUTPUT"
 
   lane:
-    # manual: sh experiments/10-first-profile.sh --headless --browser chrome
+    # manual: sh scripts/capture/profile.sh --headless --browser chrome
     name: ${{ matrix.browser }} ${{ matrix.channel }} ${{ matrix.platform }}
     needs: [plan]
     runs-on: ${{ matrix.os }}
@@ -200,10 +200,10 @@ jobs:
       - name: capture
         if: steps.resolve.outputs.rc == '0'
         shell: bash
-        run: sh experiments/10-first-profile.sh --headless --browser "${{ matrix.browser }}"
+        run: sh scripts/capture/profile.sh --headless --browser "${{ matrix.browser }}"
 
       # ⛔ THE LANE ADDS THE PROFILE, AND UNTIL 2026-09-04 NOTHING DID.
-      # experiments/10-first-profile.sh deliberately writes nothing into the
+      # scripts/capture/profile.sh deliberately writes nothing into the
       # corpus: the corpus is append-only and a profile in it is permanent, so
       # the write is a deliberate act rather than a side effect of measuring.
       # ⛔ That rule was applied to the script and never to this lane, so every
@@ -258,7 +258,7 @@ jobs:
             exit "$rc"
           fi
 
-      # ⭐ THE CAPTURE PATH IS THE ONE A PERSON RUNS. experiments/10-first-profile.sh
+      # ⭐ THE CAPTURE PATH IS THE ONE A PERSON RUNS. scripts/capture/profile.sh
       # is the manual equivalent CI-08 requires, so the lane runs it rather than
       # a second pipeline written here. Two pipelines is two things to keep
       # correct and one of them stops being run.
@@ -460,7 +460,7 @@ jobs:
             '{workflow: "capture.yml", run_id: $run_id,
               images: [["collect", $image]],
               harness: "b-ids-harness 0.0.0",
-              command: "sh experiments/10-first-profile.sh --headless --browser BROWSER",
+              command: "sh scripts/capture/profile.sh --headless --browser BROWSER",
               unavailable: $unavailable, validator_output: $validator,
               validator_findings: $findings, formats_round_trip: $formats}' \
             > .tmp/collect/run.json

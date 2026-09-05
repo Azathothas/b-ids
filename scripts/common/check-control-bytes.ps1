@@ -82,17 +82,9 @@ try {
 }
 finally { Pop-Location }
 
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND THE REASON IS NOT CONVENIENCE ------
-#
-# .gitattributes declares `references/** -text`, so those bytes are stored
-# exactly as upstream has them and every line citation in
-# docs/reference-sweeps/findings.md is against them. ⛔ A finding there could
-# only be fixed by editing the bytes a citation points at, which is not a fix.
-# ⚠ The rule is unchanged for everything this project writes.
-# ⛔ Keep this identical to the sh twin.
 $files = @($tracked + $untracked |
     ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -match $textRe -and $_ -cnotmatch '^references/' } |
+    Where-Object { $_ -and $_ -match $textRe } |
     Sort-Object -Unique)
 
 if ($files.Count -eq 0) {

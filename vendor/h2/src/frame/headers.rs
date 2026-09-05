@@ -281,7 +281,7 @@ impl Headers {
     /// with no flag is five bytes of header block that decodes as garbage.
     /// Exposing two setters would make the pair somebody's to remember.
     ///
-    /// `TODO/emitters.md`, `EMIT-03`.
+    /// `docs/history/todo/emitters.md`, `EMIT-03`.
     pub fn set_stream_priority(&mut self, dependency: StreamDependency) {
         self.stream_dep = Some(dependency);
         self.flags.set_priority();
@@ -809,7 +809,8 @@ impl HeadersFlag {
 
     /// ⭐ PATCHED HERE. `is_priority` had no setter, so nothing could produce a
     /// head carrying the flag. `Headers::set_stream_priority` is the one caller
-    /// and it sets the payload in the same call. TODO/emitters.md, EMIT-03.
+    /// and it sets the payload in the same call. See
+    /// `docs/history/todo/emitters.md`, `EMIT-03`.
     pub fn set_priority(&mut self) {
         self.0 |= PRIORITY;
     }

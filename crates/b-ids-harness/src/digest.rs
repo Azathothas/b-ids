@@ -7,8 +7,7 @@
 //! second implementation of it for one digest is what that home exists to
 //! prevent.
 //!
-//! ⛔ **Implemented from the published specification** at
-//! `references/FoxIO-LLC__ja4/tree/technical_details/JA4.md`, never by copying
+//! ⛔ **Implemented from the [published specification](https://github.com/FoxIO-LLC/ja4/blob/02e78ba3ebac1f5c38bd3eb1a91b4a82e919e5fc/technical_details/JA4.md)**, never by copying
 //! source. JA4 is BSD-3 and FoxIO states no patent claim over it;
 //! `docs/reference-sweeps/findings.md` finding 5 has the split, and ⛔ **no
 //! member of the JA4+ family is computed anywhere in this tree** because that

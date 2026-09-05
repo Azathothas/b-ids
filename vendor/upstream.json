@@ -11,7 +11,7 @@
     "the tree contains: the tree is ours and carries patches. That is the whole",
     "point of recording it. See patches/README.md.",
     "",
-    "docs/methodology/vendoring.md is the rule and TODO/vendor.md is the work."
+    "docs/methodology/vendoring.md is the rule; docs/history/todo/vendor.md records the completed work."
   ],
   "schema_version": 1,
   "upstreams": [
@@ -23,7 +23,7 @@
       "base": "fcf61cdbba30913cfd5b40aefa83989c6233812d",
       "vendored_at": "2026-09-01T09:45:00Z",
       "ref_reason": "Upstream's own tag for the newest release. 0.24.0-dev.1 is published on the registry and is a development version rather than a release, so a tree pinned to it would be reconciled against a moving branch.",
-      "why_vendored": "HARNESS-13 terminates a browser's TLS handshake so the HTTP/2 half of a fingerprint can be read. The seam this needs is a server that completes a handshake whose ClientHello has already been read off the socket by this tree's own parser, and patching it here is the ruling recorded in TODO/RULES.md.",
+      "why_vendored": "HARNESS-13 terminates a browser's TLS handshake so the HTTP/2 half of a fingerprint can be read. The seam this needs is a server that completes a handshake whose ClientHello has already been read off the socket by this tree's own parser, and patching it here is the ruling recorded in docs/history/todo/RULES.md.",
       "exclude": [
         ".git",
         ".github",
@@ -82,7 +82,7 @@
       "ref": "v0.4.19",
       "base": "d57d1b852fec9dda6d42d3454502006d52104da8",
       "vendored_at": "2026-09-04T14:30:00Z",
-      "ref_reason": "Upstream's newest release tag. \u26a0 The reference sweep read this tree at commit cb9574bb2c18, abbreviated because this project's secret scan refuses a 40-character hex run in prose and references/hyperium__h2/PROVENANCE.md carries it in full. That is a trunk commit rather than a release, so the seam is RE-READ at this tag rather than carried from the sweep's line numbers. TODO/RULES.md rule 3: a document is checked against the tree it describes.",
+      "ref_reason": "Upstream's newest release tag. The reference sweep read commit cb9574bb2c18 from the reference branch. That is a trunk commit rather than a release, so the seam is re-read at this tag instead of carrying forward old line numbers.",
       "why_vendored": "EMIT-03. A client that omits the HTTP/2 PRIORITY block carries a zero in one field of four in a widely-read fingerprint, and every profile in this corpus carries the block: six of six, two browsers, two majors, two platforms, one value. \u26d4 Upstream will not take the patch for a stated reason rather than by neglect: RFC 9113 deprecates stream priority, so a release adding a way to send one would add a way to do what the specification tells clients not to do. Ruled by the operator 2026-09-04, against the recommendation attached to the question.",
       "exclude": [
         ".git",
@@ -107,7 +107,7 @@
         "benches": "Upstream's criterion benchmarks, which nothing here runs.",
         "ci": "Upstream's own CI scripts.",
         "examples": "Upstream's example binaries, which pull a runtime and a logger this tree does not need.",
-        "fixtures": "The HPACK test-case corpus, one directory per implementation of the same cases. \u2b50 It is http2jp/hpack-test-case, which this project already mines separately at references/http2jp__hpack-test-case, so vendoring a second copy would be the same corpus in two places.",
+        "fixtures": "The upstream HPACK fixtures are not a build input. The harness keeps focused first-party decoder tests, so vendoring a second corpus would duplicate test authority.",
         "fuzz": "cargo-fuzz targets, which need a nightly toolchain.",
         "tests": "Upstream's integration suite, which needs h2-support and a full tokio test rig. \u26a0 What this project asserts about the patch is its OWN test, because the patch is this project's and upstream's suite does not know about it.",
         "util": "Upstream's test-support helpers, which only its own tests use."

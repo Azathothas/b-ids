@@ -154,6 +154,27 @@ impl Engine {
             vec![self.profile.to_owned(), profile.display().to_string()]
         }
     }
+
+    /// The complete ordered argument list for one launch.
+    fn switches(self, profile: &Path, launch: &Launch) -> Vec<String> {
+        let mut switches = self.profile_switches(profile);
+        switches.extend(self.quiet.iter().map(|switch| (*switch).to_owned()));
+        if launch.headless {
+            switches.push(self.headless.to_owned());
+        }
+        if let Some(pin) = &launch.spki_pin {
+            switches.push(format!("--ignore-certificate-errors-spki-list={pin}"));
+        }
+        if launch.disable_verification {
+            // Both flags are required. Chromium ignores the first on a
+            // branded build unless the run is marked as a test run.
+            switches.push("--ignore-certificate-errors".to_owned());
+            switches.push("--test-type".to_owned());
+        }
+        // The URL is positional and must remain last.
+        switches.push(launch.url.clone());
+        switches
+    }
 }
 
 /// How often a bounded wait looks again.
@@ -369,11 +390,7 @@ pub fn drive(browser: &Resolved, launch: &Launch) -> Result<Driven, String> {
         path: profile.clone(),
     };
 
-    let mut switches = engine.profile_switches(&profile);
-    switches.extend(engine.quiet.iter().map(|s| (*s).to_owned()));
-    if launch.headless {
-        switches.push(engine.headless.to_owned());
-    }
+    let switches = engine.switches(&profile, launch);
     // ⛔ SEEDED BEFORE THE LAUNCH AND INTO THE DIRECTORY CREATED ABOVE. NSS
     // reads the certificate database when the profile is opened, so a database
     // written after the browser started is one the browser has already decided
@@ -381,22 +398,6 @@ pub fn drive(browser: &Resolved, launch: &Launch) -> Result<Driven, String> {
     if let Some(pem) = &launch.ca_pem {
         crate::nssdb::seed(&profile, pem, AUTHORITY_NICKNAME)?;
     }
-    if let Some(pin) = &launch.spki_pin {
-        switches.push(format!("--ignore-certificate-errors-spki-list={pin}"));
-    }
-    if launch.disable_verification {
-        // ⚠ BOTH FLAGS, and the second is not decoration. Chromium ignores
-        // the first on a branded build unless the run is marked as a test run,
-        // which is the shape of the measurement in
-        // `docs/inherited-claims.md` section 8.
-        switches.push("--ignore-certificate-errors".to_owned());
-        switches.push("--test-type".to_owned());
-    }
-    // ⛔ The URL is LAST and it is a positional argument. A switch that takes
-    // the URL as its value is a mode, and passing one is how a launch ends up
-    // navigating and then sitting there.
-    switches.push(launch.url.clone());
-
     // ⛔ OPENED BEFORE THE SPAWN, so a path that cannot be written is a refusal
     // rather than a launch whose output went nowhere while a caller believed it
     // was being recorded.
@@ -492,5 +493,41 @@ fn wait_within(child: &mut Child, timeout: Duration) -> Result<bool, String> {
             }
             Err(err) => return Err(format!("waiting on the browser: {err}")),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Engine, GECKO, Launch};
+    use std::path::Path;
+
+    #[test]
+    fn gecko_launch_uses_only_gecko_switches() {
+        // Measured from `firefox --help` on 154.0.1, 2026-09-04.
+        let profile = Path::new("gecko-profile");
+        let launch = Launch {
+            url: "https://127.0.0.1:1/".to_owned(),
+            headless: true,
+            ..Launch::default()
+        };
+
+        let switches = Engine::switches(GECKO, profile, &launch);
+        assert_eq!(
+            switches,
+            [
+                "--profile",
+                &profile.display().to_string(),
+                "--new-instance",
+                "--headless",
+                "https://127.0.0.1:1/",
+            ]
+        );
+        assert!(
+            switches
+                .iter()
+                .all(|switch| !switch.starts_with("--user-data-dir")
+                    && switch != "--no-first-run"
+                    && switch != "--headless=new")
+        );
     }
 }

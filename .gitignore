@@ -58,22 +58,6 @@ CLAUDE.local.md
 .aider*
 .cursorignore
 
-# -- reference material cloned for study ------------------------------------
-# ⛔ NOT IGNORED, AND THAT IS A CORRECTION. These rules used to read
-# `references/`, on the reasoning that a tree is re-clonable from the URL its
-# write-up records and only the derived file needs tracking.
-#
-# That reasoning was wrong twice over, and both were paid for. A sweep that
-# kept only its conclusions left the next session re-cloning eleven trees to
-# check one citation. A sweep that kept its data in an ignored directory lost
-# it entirely, along with the tools it had written to gather it, because
-# nothing untracked survives a session. ⭐ A conclusion nobody can re-check is
-# an opinion. docs/methodology/references.md section 4 is the rule.
-#
-# ⚠ Where a corpus is genuinely too large for every clone, put it on its own
-# BRANCH and say so in the write-up. That is still tracked. An ignore rule is
-# not a size decision, it is a deletion nobody notices.
-#
 # ⚠ scripts/common/mine-repo.sh refuses to finish when its output directory is
 # one this file would swallow, so a project that re-adds a rule here finds out
 # on the next sweep rather than after losing one.

@@ -93,17 +93,3 @@ Cargo.lock          linguist-generated=true
 go.sum              linguist-generated=true
 poetry.lock         linguist-generated=true
 uv.lock             linguist-generated=true
-
-# ⛔ THE REFERENCE CORPUS IS STORED BYTE-EXACT, WITH NO NORMALISATION AT ALL.
-#
-# `references/` holds other projects' trees at named commits, as the evidence
-# behind docs/reference-sweeps/findings.md. Every line citation in that document
-# is against those bytes, so a working-tree or index conversion would silently
-# make the corpus disagree with the upstream it claims to quote, and the
-# citations would be against content this repository invented.
-#
-# ⚠ It is also a real corruption risk rather than only a provenance one: the
-# corpus carries packet captures, binary fuzz corpora and other files whose exact
-# bytes are their content, and `text=auto` decides per file by a heuristic.
-# ⛔ `-text` turns the heuristic off rather than trusting it.
-references/** -text

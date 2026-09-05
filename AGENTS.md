@@ -51,11 +51,13 @@ contradiction in the same change.
   as measurements.
 - Preserve raw capture bytes beside normalized profiles. Parser changes must be
   recoverable from those bytes.
-- `main` contains code, tests, documentation, vendored source, and evidence;
-  it contains no published corpus.
+- `main` contains code, tests, documentation, vendored source, and review
+  records; it contains no published corpus or imported reference tree.
 - `source` contains the canonical reviewed profiles, raw captures, vectors,
   and license.
 - `data` is generated from `source`; do not edit it by hand or force-push it.
+- `reference` contains the byte-preserved upstream research archive. Nothing
+  on `main`, `source`, or `data` may depend on that branch at build or run time.
 - `latest` selects stable profiles only. Pre-release channels remain explicit.
 - Published packages embed data and must work without network access.
 - Preserve measured values, failures, samples, conditions, and provenance.
@@ -67,21 +69,20 @@ contradiction in the same change.
 - Use the Rust version pinned by `rust-toolchain.toml`, keep the lockfile
   reproducible, and deny compiler and linter warnings.
 - Third-party workflow actions use immutable commit SHAs.
-- Keep imported evidence under `references/` byte-preserved and vendored
-  build inputs under `vendor/`; neither inherits this project's license.
+- Keep imported evidence byte-preserved on `reference` and vendored build
+  inputs under `vendor/`; neither inherits this project's license.
 
 ## Layout
 
 | path | purpose |
 | --- | --- |
 | `crates/` | Rust schema, capture, validation, generation, library, and CLI code |
-| `experiments/` | live capture and identification instruments used by workflows |
-| `references/` | pinned upstream evidence and external conformance vectors |
+| `scripts/capture/` | supported capture and trust-anchor entry points used by workflows |
 | `vendor/` | third-party source compiled by this workspace |
 | `patches/` | local changes applied to vendored source |
 | `scripts/common/` | checks, generators, provisioning, and repository operations |
 | `scripts/doctor/` | read-only host capability probe |
-| `docs/history/` | retired plans, reviews, and superseded documentation |
+| `docs/history/` | retired plans, reviews, experiments, and superseded documentation |
 | `.github/workflows/` | CI, capture, publication, provisioning, and staleness jobs |
 
 ## Documentation routes

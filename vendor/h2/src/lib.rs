@@ -117,7 +117,7 @@ mod error;
 // this project's emitter needs was reachable in name and not in use.
 // ⚠ Nothing about the gate changes: it is still `unstable`, which upstream
 // documents as an API with no backwards-compatibility promise.
-// TODO/emitters.md, EMIT-03.
+// docs/history/todo/emitters.md, EMIT-03.
 #[cfg(not(feature = "unstable"))]
 mod hpack;
 

@@ -31,12 +31,10 @@ use b_ids_schema::{Os, Profile, ProvenanceKind};
 
 pub mod diff;
 mod headers;
-pub mod import;
 pub mod reachable;
 
 pub use diff::{Change, Diff, Uncontrolled, diff, render as render_diff};
 pub use headers::{BrandEntry, parse_brand_list};
-pub use import::{Exhibit, read as import_references, render as render_report};
 pub use reachable::{Reachable, Unreachable, unreachable_dimensions};
 
 /// One of the eight checks.

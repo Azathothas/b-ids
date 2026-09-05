@@ -27,12 +27,8 @@
 #   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1
 #   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1 -Public
 #   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1 -Json
-#   pwsh -NoProfile -File scripts/common/check-no-secrets.ps1 -Scope references
 #
-# -Scope PATH scans ONLY that path, including one the default scope exempts.
-# ⛔ It is how the reference corpus exemption below is re-checked when a tree is
-# added, and the exemption's own instruction named it for one session before it
-# existed. A guard's re-check procedure that cannot be run is not a procedure.
+# -Scope PATH scans only that path.
 #
 # Exit codes: 0 nothing found, 1 something found, 2 could not run.
 #
@@ -78,20 +74,7 @@ try {
 }
 finally { Pop-Location }
 
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND THIS ONE WAS DECIDED BY READING ---
-#
-# Every tree under `references/` is a PUBLIC repository at a named commit, so
-# nothing there is exposed by this tree that its author has not published, and
-# this check protects against THIS project leaking something of its own.
-#
-# ⭐ The exemption was taken after reading every hit rather than instead of
-# reading them. The sh twin's header carries the counts and the categories, and
-# docs/reference-sweeps/findings.md records the reading.
-# ⛔ Keep this identical to the sh twin.
 if ($Scope) {
-    # ⛔ Under -Scope the corpus exemption does NOT apply, which is the whole
-    # point of the parameter: it exists to read the thing the default scope
-    # skips.
     $prefix = $Scope.TrimEnd('/', '\') + '/'
     $files = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
         Where-Object { $_ -and ($_ -eq $Scope -or $_.StartsWith($prefix)) } |
@@ -99,7 +82,7 @@ if ($Scope) {
 }
 else {
     $files = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
-        Where-Object { $_ -and $_ -cnotmatch '^(references|vendor/[^/]+|patches/[^/]+)/' } | Sort-Object -Unique)
+        Where-Object { $_ -and $_ -cnotmatch '^(vendor/[^/]+|patches/[^/]+)/' } | Sort-Object -Unique)
 }
 
 $script:found = 0
@@ -218,6 +201,9 @@ if ($Public) {
         # other 40-hex run in that file is still reported.
         # ⛔ Keep this identical to the sh twin. docs/history/todo/vendor.md.
         Where-Object { $_ -cnotmatch '"base":\s*"[0-9a-f]{40}"' } |
+        # An immutable GitHub source permalink names a public commit explicitly.
+        # Exclude only canonical /blob|tree/<40 lower-case hex>/ URL shapes.
+        Where-Object { $_ -cnotmatch 'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(blob|tree)/[0-9a-f]{40}/' } |
         # A content-addressed OCI image names its immutable digest explicitly.
         # Exclude only the canonical @sha256:<64 lower-case hex> shape.
         Where-Object { $_ -cnotmatch '@sha256:[0-9a-f]{64}\b' } |

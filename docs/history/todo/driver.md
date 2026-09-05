@@ -473,7 +473,7 @@ route.
 ### Prove
 
 ```bash
-sh experiments/40-trust-paths.sh
+sh docs/history/experiments/40-trust-paths.sh
 ```
 
 Passing means: the script reports, per platform available on this host, which
@@ -483,11 +483,11 @@ each capture.
 ### ⚠ The acceptance names `40-` rather than `10-`, and the reason is a rule
 
 ⛔ **A number is never reused and `10-` was taken** by
-[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh),
+[`../scripts/capture/profile.sh`](../../../scripts/capture/profile.sh),
 which was written after this entry was authored.
 [`../docs/methodology/experiments.md`](../../methodology/experiments.md) says
 a citation of `10-` has to keep meaning what it meant, so this entry's script is
-[`../experiments/40-trust-paths.sh`](../../../experiments/40-trust-paths.sh) and the
+[`../docs/history/experiments/40-trust-paths.sh`](../../../docs/history/experiments/40-trust-paths.sh) and the
 Prove block above is corrected rather than the file being misnumbered to match
 it.
 
@@ -498,7 +498,7 @@ browser completed a handshake and reached HTTP/2 on the platform it ran on, and
 names the one route it deliberately does not run.
 
 ```text
-$ sh experiments/40-trust-paths.sh --headless
+$ sh docs/history/experiments/40-trust-paths.sh --headless
 
 resolving a browser
 {"family":"chrome","name":"Chrome","path":"C:\\Program Files\\Google/Chrome/Application/chrome.exe","version":"151.0.7922.76","answers":[["sibling-directory","151.0.7922.76"]],"disagreement":false}
@@ -1204,7 +1204,7 @@ ruling.
 
 ⭐ **`captured.acquisition` is populated from what the tool wrote**, which was
 the last of the six items. `provision-browser` writes
-`.tmp/provision-browser/acquisition.json`; `experiments/10-first-profile.sh`
+`.tmp/provision-browser/acquisition.json`; `scripts/capture/profile.sh`
 reads it into the identity; `b_ids_corpus::capture` copies it onto the profile.
 ⚠ Absent stays absent: a build already on the machine was not fetched by this
 project and has no route or digest, which is a different fact from a fetch that
@@ -1760,7 +1760,7 @@ operator then ruled again during the work: **do not vendor a niche third-party
 tree, write it in Rust here, and mine `mozilla/nss` as the reference.** That is
 what was done, and the vendoring was backed out before anything was committed.
 
-⭐ **`mozilla/nss` is in [`../references/mozilla__nss/`](../../../references/mozilla__nss/)
+⭐ **`mozilla/nss` is in [`../references/mozilla__nss/`](https://github.com/Azathothas/b-ids/tree/reference/mozilla__nss)
 at commit `7db8de42431841b214b49fd2cb7122a07aa631b8`**, trimmed by deletion, and
 every constant below is cited against it at file and line.
 

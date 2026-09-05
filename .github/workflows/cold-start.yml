@@ -151,7 +151,7 @@ jobs:
         id: capture
         if: steps.browser.outputs.rc == '0'
         shell: bash
-        run: sh experiments/10-first-profile.sh --headless --browser chrome
+        run: sh scripts/capture/profile.sh --headless --browser chrome
 
       # ⛔ THE PUBLISH HALF, OVER THE CORPUS THE RESOLVER FINDS. It assembles and
       # checks and publishes nothing: PUB-10's workflow is the only thing that

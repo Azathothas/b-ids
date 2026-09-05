@@ -45,20 +45,8 @@ try {
 finally { Pop-Location }
 
 
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND ONLY FROM THIS CHECK'S SUBJECT ----
-#
-# `references/` holds other projects' trees, at named commits, as the evidence
-# behind docs/reference-sweeps/findings.md. It is somebody else's writing, so
-# this project's rules about how a document is written cannot apply to it, and a
-# check that fails on a correct tree gets switched off within a week.
-#
-# ⭐ Every check exempts it, and each exemption was paid for separately: the
-# prose checks because it is somebody else's writing, check-control-bytes because
-# .gitattributes stores the corpus byte-exact as evidence, and check-no-secrets
-# after every hit over the corpus was read once and recorded.
-# ⛔ Keep this identical to the sh twin.
 $all = @($tracked + $untracked | ForEach-Object { $_.Trim() } |
-    Where-Object { $_ -and $_ -cnotmatch '^(references|vendor/[^/]+)/' -and
+    Where-Object { $_ -and $_ -cnotmatch '^vendor/[^/]+/' -and
         (Test-Path -LiteralPath $_ -PathType Leaf) } | Sort-Object -Unique)
 $files = @($all | Where-Object { $_ -match '\.md$' })
 if ($Path) {

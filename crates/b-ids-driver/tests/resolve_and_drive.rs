@@ -291,7 +291,7 @@ fn resolve_and_drive_browser_with_no_value_is_refused() {
 #[test]
 fn resolve_and_drive_browser_reports_only_the_family_it_names() {
     // ⭐ THE ONE PROPERTY THE CAPTURE MATRIX NEEDS. Every lane passes its own
-    // `browser` column, and `experiments/10-first-profile.sh` takes the FIRST
+    // `browser` column, and `scripts/capture/profile.sh` takes the FIRST
     // line of this output to describe what it drove, so a run that reported a
     // second family would label the capture with the wrong one.
     let Some(found) = browsers() else { return };
@@ -760,29 +760,8 @@ fn resolve_and_drive_gecko_is_given_its_own_switches_and_none_of_chromium_s() {
     // `--no-first-run` as a file to open, so a Chromium switch passed here
     // navigates somewhere nobody asked for and the capture is of the wrong
     // thing. docs/history/todo/driver.md, DRIVER-11.
-    let exe = layout_dir("gecko-switches").join("firefox.exe");
-    std::fs::write(&exe, b"not a browser").expect("write the stand-in");
-    let browser = b_ids_driver::Resolved {
-        family: Family::Firefox,
-        name: "Firefox",
-        path: exe.clone(),
-        version: "154.0.1".to_owned(),
-        answers: vec![(Source::ApplicationIni, "154.0.1".to_owned())],
-        disagreement: false,
-    };
-    let launch = Launch {
-        url: "https://127.0.0.1:1/".to_owned(),
-        headless: true,
-        timeout: Duration::from_millis(200),
-        ca_pem: Some(AUTHORITY_PEM.to_owned()),
-        ..Launch::default()
-    };
-    // ⚠ The stand-in is not an executable, so the spawn fails and the switch
-    // list is unreachable through the result. It is asserted through the same
-    // table the launch builds from instead, which is what the launch reads.
-    let driven = drive(&browser, &launch);
-    assert!(driven.is_err(), "a file that is not a browser launched");
-
+    // The exact argument list is asserted next to the private engine table in
+    // `drive.rs`; this integration test verifies its public family routing.
     assert_eq!(
         b_ids_driver::trust_route(Family::Firefox),
         b_ids_driver::TrustRoute::ProfileDatabase,
@@ -796,7 +775,6 @@ fn resolve_and_drive_gecko_is_given_its_own_switches_and_none_of_chromium_s() {
             assert_eq!(route, b_ids_driver::TrustRoute::ProfileDatabase, "{family}");
         }
     }
-    let _ = std::fs::remove_dir_all(exe.parent().expect("a parent"));
 }
 
 #[test]
@@ -861,7 +839,8 @@ fn resolve_and_drive_a_seeded_profile_carries_the_authority_and_its_trust_record
     // ⛔ THE TRUST RECORD IS THE POINT. A certificate object alone is a
     // certificate the browser knows and does not trust, and NSS discards a
     // delegator record whose certificate hash is absent or wrong without
-    // saying so. references/mozilla__nss/tree/lib/pki/certificate.c:1022.
+    // saying so. See `nssTrust_Create` at
+    // https://github.com/mozilla/nss/blob/7db8de42431841b214b49fd2cb7122a07aa631b8/lib/pki/certificate.c#L1022.
     let dir = layout_dir("seeded-profile");
     let seeded = b_ids_driver::seed(&dir, AUTHORITY_PEM, "b-ids capture authority")
         .expect("the authority seeds");

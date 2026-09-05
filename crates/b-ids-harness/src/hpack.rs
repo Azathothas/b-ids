@@ -10,12 +10,6 @@
 //! the kind of thing that cannot be added later because the capture is gone.
 //! The same goes for which of the four indexing forms the encoder picked.
 //!
-//! ⚠ **This decoder is checked against a fetched vector corpus rather than
-//! against itself.** A Huffman decoder that is subtly wrong produces plausible
-//! header names, which is the failure that survives review. The corpus is
-//! `references/http2jp__hpack-test-case/` at the commit its `PROVENANCE.md`
-//! names.
-//!
 //! ⛔ **Nothing here filters a credential, and that is deliberate.** The
 //! dynamic table has to see every field the encoder inserted or every later
 //! index is wrong, so a decoder that dropped `cookie` would decode the rest of

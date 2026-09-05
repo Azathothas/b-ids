@@ -124,7 +124,7 @@ What landed:
   throwaway profile carrying the run's own authority and a trust record for it.
   `crates/b-ids-driver/src/nssdb/` is a SQLite writer, a DER field reader and a
   SHA-1, each cited against `mozilla/nss` at a named commit in
-  [`references/mozilla__nss/`](references/mozilla__nss/).
+  [`mozilla/nss` archive](https://github.com/Azathothas/b-ids/tree/reference/mozilla__nss).
 - ⛔ **A trust record without the certificate's SHA-1 is discarded in silence.**
   That is NSS's rule and it is why this tree carries a SHA-1 at all. A
   certificate object alone is a certificate the browser knows and does not
@@ -658,7 +658,7 @@ What landed:
 
 What landed:
 
-- ⭐ **`experiments/50-trust-anchor.sh` and `trust-anchor.yml`.** The script
+- ⭐ **`scripts/capture/trust-anchor.sh` and `trust-anchor.yml`.** The script
   refuses to install a root unless `B_IDS_DISPOSABLE=1` says the machine is
   thrown away afterwards, and the workflow is the only place that is set. The
   removal is read back rather than assumed, and a root left behind fails the
@@ -751,7 +751,7 @@ What landed:
 - ⭐ **`VALID-03`: `unreachable_dimensions`**, which walks every browser,
   channel and platform the corpus carries and reports each one no resolver
   branch can select. It reads `Family::all` rather than a list of its own.
-- ⭐ **`DRIVER-04`: `experiments/40-trust-paths.sh`**, which reports which
+- ⭐ **`DRIVER-04`: `docs/history/experiments/40-trust-paths.sh`**, which reports which
   trust route completes a handshake on the platform it ran on. ⛔ The negative
   control is the finding: with no flag at all, four connections completed zero
   handshakes.
@@ -820,7 +820,7 @@ What landed:
   absent rather than defaulted on a profile written before the field existed,
   and read back from what the harness reported rather than typed beside the
   capture.
-- ⭐ **`experiments/30-resumption-control.sh`**, the control that says the switch
+- ⭐ **`docs/history/experiments/30-resumption-control.sh`**, the control that says the switch
   is safe: 19 TLS fields compared across three rounds, 0 differing, 2 not
   comparable because they carry a per-connection draw.
 - **`compare-modes --labels A,B`**, because a driver that called a terminating
@@ -1008,7 +1008,7 @@ What landed:
 - **`b_ids_harness::modes`**, which measures each field's stability inside a run
   before comparing across runs, so a per-connection draw is reported as not
   comparable rather than as a difference.
-- ⭐ **`experiments/20-compare-capture-modes.sh`**, which drives one resolved
+- ⭐ **`docs/history/experiments/20-compare-capture-modes.sh`**, which drives one resolved
   browser at both surfaces over several rounds.
 
 ⚠ **A second finding, which is a mode effect and is not a field.** Only a
@@ -1042,7 +1042,7 @@ What landed:
 - **`check-corpus`, in both halves and in the gate.** Its git leg asks whether
   a published file was ever modified, deleted or renamed after its first
   commit, which is the one question the working tree cannot answer.
-- ⭐ **`experiments/`**, and the script that took the capture, so the run is
+- ⭐ **`docs/history/experiments/`**, and the script that took the capture, so the run is
   repeatable rather than a transcript.
 
 ⚠ **The capture record moved to `harness-capture/4`**: a capture now carries the
@@ -1243,7 +1243,7 @@ What landed:
   code, and both halves of the runner say so in a comment rather than reporting
   green over an absence.
 - ⭐ **A sweep of eighteen repositories**, at named commits. The trees are in
-  [`references/`](references/) and the write-up is in
+  the [`reference` branch](https://github.com/Azathothas/b-ids/tree/reference), and the write-up is in
   [`docs/reference-sweeps/`](docs/reference-sweeps/). ⭐ One of the eighteen,
   `Azathothas/bit-cli`, is the origin every inherited value was measured in,
   rather than prior art.

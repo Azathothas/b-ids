@@ -504,7 +504,7 @@ choice the encoder made and it is part of the fingerprint.
 
 ⚠ **Test vectors exist and are not in this tree.** The reference corpus of HPACK
 test cases is a separate upstream project, and it was deliberately deleted from
-[`../references/hyperium__h2/`](../../../references/hyperium__h2/) during the sweep;
+[`../references/hyperium__h2/`](https://github.com/Azathothas/b-ids/tree/reference/hyperium__h2) during the sweep;
 that project's `PROVENANCE.md` records where it came from. Fetching it is part
 of this entry.
 
@@ -556,7 +556,7 @@ exit=0
 sh scripts/common/mine-repo.sh http2jp/hpack-test-case --out references
 ```
 
-[`../references/http2jp__hpack-test-case/`](../../../references/http2jp__hpack-test-case/)
+[`../references/http2jp__hpack-test-case/`](https://github.com/Azathothas/b-ids/tree/reference/http2jp__hpack-test-case)
 at commit `8a1406e7d14bfcb6c046021f13cc15cfb162726d`, fetched 2026-09-01 through
 `gh`, with no gaps reported. ⭐ **47,142 cases across 446 story files**, and
 every one decodes.
@@ -1398,7 +1398,7 @@ Must not: publish a field measured in a mode that changes it, without saying so.
 ### Prove
 
 ```bash
-sh experiments/20-compare-capture-modes.sh
+sh docs/history/experiments/20-compare-capture-modes.sh
 ```
 
 Passing means: the script captures the same browser in raw and terminating modes
@@ -1413,7 +1413,7 @@ across the two surfaces; none differ; two carry a per-connection draw and are
 reported as not comparable rather than as findings.
 
 ```text
-$ sh experiments/20-compare-capture-modes.sh
+$ sh docs/history/experiments/20-compare-capture-modes.sh
 raw:        0 cold, 0 resumed, 18 abandoned
 terminated: 4 cold, 11 resumed, 3 abandoned
 ⚠ the two surfaces produced different numbers of resumed connections, which is a mode effect on the RUN even where every field of the cold hello agrees
@@ -2068,7 +2068,7 @@ not a switch flip.
 ### Prove
 
 ```bash
-sh experiments/50-trust-anchor.sh --json
+sh scripts/capture/trust-anchor.sh --json
 ```
 
 Passing means: the script reports which trust route each capture used, the count
@@ -2079,10 +2079,10 @@ handshake.
 ### ⚠ The acceptance names `50-` rather than `30-`
 
 ⛔ **`30-` was taken** by
-[`../experiments/30-resumption-control.sh`](../../../experiments/30-resumption-control.sh).
+[`../docs/history/experiments/30-resumption-control.sh`](../../../docs/history/experiments/30-resumption-control.sh).
 [`corpus.md`](corpus.md), `CORPUS-05`, states the renumbering rule and why the
 Prove block is corrected rather than the file renamed; the script here is
-[`../experiments/50-trust-anchor.sh`](../../../experiments/50-trust-anchor.sh).
+[`../scripts/capture/trust-anchor.sh`](../../../scripts/capture/trust-anchor.sh).
 
 ### Closing
 
@@ -2091,7 +2091,7 @@ away, and the pin and a real trust anchor produced hellos that agree on every
 comparable TLS field.
 
 ```text
-$ sh experiments/50-trust-anchor.sh --headless --browser chrome --rounds 2
+$ sh scripts/capture/trust-anchor.sh --headless --browser chrome --rounds 2
    (.github/workflows/trust-anchor.yml, run 33592736694, ubuntu-latest)
 
 == round 1 of 2 ==
@@ -2267,7 +2267,7 @@ and a reader who cannot tell cannot reason about a field that spans them.
 ⭐ **This removes the need to suppress session tickets during a capture.** The
 browser then behaves exactly as it does in the wild: it resumes when it can, and
 the project reads the cold hello it sent before it could. ⚠ `--no-resumption`
-stays as a **control** for the comparison `experiments/30-resumption-control.sh`
+stays as a **control** for the comparison `docs/history/experiments/30-resumption-control.sh`
 runs; it stops being a condition every published profile is taken under.
 
 ⛔ **`Kind::Abandoned` stops meaning "useless".** It means "reached no HTTP/2",
@@ -2368,7 +2368,7 @@ of 2026-09-02 recorded and which this entry does not fix.
 
 #### The switch left the capture path
 
-⭐ **`experiments/10-first-profile.sh` no longer passes `--no-resumption`.** The
+⭐ **`scripts/capture/profile.sh` no longer passes `--no-resumption`.** The
 subject resumes when it can, which is what it does in the wild, and the cold
 hello it sent before it could is the one that is read. ⚠ The switch stays where
 a comparison needs both configurations: `30-resumption-control.sh` is the
@@ -2443,7 +2443,7 @@ measuring against the wrong store gives a confident wrong answer.
 Must not: install a root on a machine that is not disposable.
 `B_IDS_DISPOSABLE` is the guard and it does not move.
 
-Must not: report a comparison from one side. `experiments/50-trust-anchor.sh`
+Must not: report a comparison from one side. `scripts/capture/trust-anchor.sh`
 already refuses to and that refusal is what produced this entry.
 
 ### Consumers
@@ -2454,7 +2454,7 @@ None: no published route carries a trust-store result. It reaches
 ### Prove
 
 ```bash
-sh experiments/50-trust-anchor.sh --json
+sh scripts/capture/trust-anchor.sh --json
 ```
 
 Passing means: on a disposable Windows machine the script either reports a

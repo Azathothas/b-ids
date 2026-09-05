@@ -528,7 +528,7 @@ publishing what the lanes managed.
 | --- | --- |
 | ⭐ the plan lives in the tree | [`../.github/capture-matrix.json`](../../../.github/capture-matrix.json). The `plan` job reads it and the lanes fan out from `fromJSON`, and `check-coverage` reads the same file to say what landed. ⛔ A matrix written into the workflow and a report written from somewhere else is a value in two places with no check that they agree. |
 | ⭐ a lane with no browser is exit 2 | "this runner has no browser" and "the capture failed" are different facts. The lane records the resolver's code and skips the capture on 2 rather than failing. `CI-07`. |
-| ⭐ the capture path is the one a person runs | the lane runs `experiments/10-first-profile.sh`, which is also `CI-08`'s manual equivalent. Two pipelines is two things to keep correct and one of them stops being run. |
+| ⭐ the capture path is the one a person runs | the lane runs `scripts/capture/profile.sh`, which is also `CI-08`'s manual equivalent. Two pipelines is two things to keep correct and one of them stops being run. |
 | ⛔ no lane writes to the repository | every job keeps `contents: read`. A lane runs a browser it downloaded, and that is the last thing that should hold a write token. `CI-04` is where a write belongs, on the collect job alone. |
 | ⛔ the fuzz lane overrides the toolchain | `RUSTUP_TOOLCHAIN: nightly`, explicitly. `rust-toolchain.toml` pins an exact stable and applies to `fuzz/` too, so a nightly image is not enough. [`../fuzz/README.md`](../../../fuzz/README.md) carries the measurement that cost a run. |
 
@@ -1291,13 +1291,13 @@ fixture written to make it fail.
 | job | the one command a person runs |
 | --- | --- |
 | `capture.yml` `plan` | `jq -c '[.cells[] \| select(.enabled)]' .github/capture-matrix.json` |
-| `capture.yml` `lane` | `sh experiments/10-first-profile.sh --headless --browser chrome` |
+| `capture.yml` `lane` | `sh scripts/capture/profile.sh --headless --browser chrome` |
 | `capture.yml` `fuzz` | `cargo fuzz run parsers -- -runs=100000` |
 | `capture.yml` `collect` | `sh scripts/common/check-coverage.sh` |
 | `ci.yml` `checks` | `sh scripts/common/check-gate.sh --strict` |
 | `ci.yml` `windows` | `pwsh -NoProfile -File scripts/common/check-gate.ps1` |
 | `staleness.yml` `ask` | `sh scripts/common/check-staleness.sh` |
-| `trust-anchor.yml` `compare` | `sh experiments/50-trust-anchor.sh --headless --browser chrome` |
+| `trust-anchor.yml` `compare` | `sh scripts/capture/trust-anchor.sh --headless --browser chrome` |
 | `provision.yml` `provision` | `sh scripts/common/check-provisioning.sh` |
 | `validate.yml` `corpus` | `sh scripts/common/check-corpus.sh` |
 

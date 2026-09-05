@@ -59,7 +59,7 @@ indexmap = { version = "2", features = ["std"] }
 # ⛔ PATCHED HERE: THE DEV-DEPENDENCIES ARE GONE, and every one of them served a
 # directory vendor/upstream.json excludes. quickcheck and rand are the fuzz
 # target's; hex, walkdir, serde and serde_json read the HPACK fixture corpus,
-# which this project mines separately at references/http2jp__hpack-test-case;
+# which the harness tests independently; duplicating them here would test
 # tokio's rt/macros/sync/net features, env_logger, tokio-rustls and webpki-roots
 # are the examples'. ⚠ Keeping them would make this tree's build fetch four
 # crates and a root store to compile tests that are not here.

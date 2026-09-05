@@ -23,11 +23,6 @@
 # 5.1 mis-parses a here-string whose terminator arrives with a bare LF.
 # docs/conventions/shell.md section 8.
 #
-# ⚠ A rule matching `*.ps1` here would be a second answer to a question git
-# already answers, and it would be wrong: the reference corpus carries its own
-# `.gitattributes` files, so a `.ps1` under `references/` resolves through the
-# nested one rather than through this repository's.
-#
 # What is out of scope, and why each is:
 #
 #   attr/-text      the bytes ARE the content, so no translation may apply

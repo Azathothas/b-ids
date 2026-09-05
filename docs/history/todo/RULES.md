@@ -98,7 +98,7 @@ committed in a file one command away.
 lists what changed.
 
 ⛔ **So: a claim about a repository is not written until that repository is in
-[`../references/`](../../../references/) at a named commit.**
+[`../references/`](https://github.com/Azathothas/b-ids/tree/reference) at a named commit.**
 [`../docs/methodology/references.md`](../../methodology/references.md) is the
 procedure and `scripts/common/mine-repo.sh` is the one tool for it.
 
@@ -120,7 +120,7 @@ reason nobody can read. ⛔ An exemption or a row is deleted, never emptied.
 
 ## 5. The reference corpus is tracked, and it is not this project's code
 
-⭐ [`../references/`](../../../references/) holds twenty repositories' trees at
+⭐ [`../references/`](https://github.com/Azathothas/b-ids/tree/reference) holds twenty repositories' trees at
 named commits, one of which is the origin every inherited value came from. It is the evidence behind
 [`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md),
 and a conclusion nobody can re-check is an opinion.
@@ -128,12 +128,12 @@ and a conclusion nobody can re-check is an opinion.
 ⚠ **Eighteen were swept and two were not, and the three are different
 things.** A swept reference was read in passes and carries a verdict.
 
-- [`../references/http2jp__hpack-test-case/`](../../../references/http2jp__hpack-test-case/)
+- [`../references/http2jp__hpack-test-case/`](https://github.com/Azathothas/b-ids/tree/reference/http2jp__hpack-test-case)
   is a corpus of test VECTORS that a check in this tree runs against, fetched by
   `HARNESS-04` because a decoder written without them is a decoder checked
   against its own misreading. It has no verdict because nothing was concluded
   from reading it.
-- ⭐ [`../references/mozilla__nss/`](../../../references/mozilla__nss/) was fetched by
+- ⭐ [`../references/mozilla__nss/`](https://github.com/Azathothas/b-ids/tree/reference/mozilla__nss) was fetched by
   `DRIVER-11` on 2026-09-04 as the AUTHORITY for a format rather than as prior
   art: every constant in this tree's certificate-database writer is cited
   against it at file and line. ⚠ It is trimmed harder than any other tree here,

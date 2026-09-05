@@ -11,8 +11,7 @@
 #
 #   1. the matrix is GENERATED here rather than read from a committed file;
 #   2. ⛔ EVERY CELL IS EVIDENCE `run` and names the command that reproduces it;
-#   3. ⛔ EVERY HOLE IS EVIDENCE `read`, cites a path under references/ and a
-#      line, and that path and line still resolve;
+#   3. ⛔ EVERY HOLE cites an immutable upstream source line;
 #   4. every published profile has a cell;
 #   5. ⭐ there is at least one hole.
 #
@@ -110,7 +109,7 @@ catch {
     exit 1
 }
 
-if ($built.schema -ne 'emit-support-matrix/1') {
+if ($built.schema -ne 'emit-support-matrix/2') {
     [void]$problems.Add("  the matrix names schema $($built.schema)")
 }
 
@@ -127,28 +126,21 @@ if ($noCommand -ne 0) {
     [void]$problems.Add("  $noCommand cell(s) name no command that reproduces them")
 }
 
-# -- 3: every hole is a reading whose citation still resolves ----------------
+# -- 3: every hole has an immutable upstream citation ------------------------
 if ($holes.Count -lt 1) {
     [void]$problems.Add('  the matrix declares no hole at all, and a matrix with none is one nobody filled honestly')
 }
-$resolved = 0
+$immutable = 0
 foreach ($hole in $holes) {
     if ($hole.evidence -ne 'read') {
         [void]$problems.Add("  $($hole.stack): a hole is evidence $($hole.evidence), and a hole is a reading")
     }
-    if ($hole.file -notlike 'references/*') {
-        [void]$problems.Add("  $($hole.stack): $($hole.file) is not under references/, so nothing holds it at a named commit")
+    if ($hole.source -cmatch '^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/blob/[0-9a-f]{40}/.+#L[1-9][0-9]*$') {
+        $immutable++
     }
-    if (-not (Test-Path -LiteralPath $hole.file -PathType Leaf)) {
-        [void]$problems.Add("  $($hole.stack): $($hole.file) does not exist, so the evidence for this hole no longer resolves")
-        continue
+    else {
+        [void]$problems.Add("  $($hole.stack): source is not an immutable GitHub line permalink: $($hole.source)")
     }
-    $have = @(Get-Content -LiteralPath $hole.file).Count
-    if ($have -lt $hole.line) {
-        [void]$problems.Add("  $($hole.stack): $($hole.file) has $have line(s) and the hole cites line $($hole.line)")
-        continue
-    }
-    $resolved++
 }
 
 # -- 4: every published profile has a cell -----------------------------------
@@ -162,7 +154,7 @@ $count = $problems.Count
 
 if ($Json) {
     Write-Output ('{"schema":"check-support-matrix/1","cells":' + $cells.Count +
-                  ',"holes":' + $holes.Count + ',"resolved":' + $resolved +
+                  ',"holes":' + $holes.Count + ',"immutable":' + $immutable +
                   ',"profiles":' + $profileCount + ',"problems":' + $count + '}')
     if ($count -gt 0) { exit 1 }
     exit 0
@@ -170,7 +162,7 @@ if ($Json) {
 
 if ($count -eq 0) {
     Write-Output "support matrix ok: $($cells.Count) cell(s) over $profileCount profile(s), every one produced by a run,"
-    Write-Output "  and $resolved of $($holes.Count) hole(s) still resolving to a file and a line under references/."
+    Write-Output "  and $immutable of $($holes.Count) hole(s) carry immutable upstream line permalinks."
     Write-Output "  `u{26D4} A cell is a run and a hole is a reading, and this check keeps them apart."
     exit 0
 }

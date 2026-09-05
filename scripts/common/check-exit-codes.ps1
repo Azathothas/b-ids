@@ -96,6 +96,32 @@ foreach ($script in ($scripts | Sort-Object)) {
     }
 }
 
+# POSIX-only operations are also used on Windows runners through Git Bash.
+# Exercise them here rather than creating an unused PowerShell implementation
+# of the capture pipeline merely to make the inventories symmetrical.
+$trackedShell = & git ls-files -- 'scripts/*.sh'
+$untrackedShell = & git ls-files --others --exclude-standard -- 'scripts/*.sh'
+$shellScripts = @($trackedShell) + @($untrackedShell) |
+    Where-Object { $_ } | Sort-Object -Unique
+$powerShellSet = @{}
+foreach ($script in $scripts) { $powerShellSet[$script] = $true }
+$shellOnly = @($shellScripts | Where-Object {
+        $counterpart = [System.IO.Path]::ChangeExtension($_, '.ps1')
+        -not $powerShellSet.ContainsKey($counterpart)
+    })
+if ($shellOnly.Count -gt 0 -and -not (Get-Command sh -ErrorAction SilentlyContinue)) {
+    [Console]::Error.WriteLine('check-exit-codes: sh not found for POSIX-only operations')
+    exit 2
+}
+$shellUnknown = '--b-ids-check-exit-codes-not-a-real-argument'
+foreach ($script in $shellOnly) {
+    $checked++
+    $null = & sh $script $shellUnknown 2>&1
+    if ($LASTEXITCODE -ne 2) {
+        $problems += ('  {0}: exit {1}, and could-not-run is 2' -f $script, $LASTEXITCODE)
+    }
+}
+
 # ⭐ THE FIXTURE LEG, so this check has been seen to refuse.
 $fixtureDir = Join-Path $root '.tmp/check-exit-codes'
 $null = New-Item -ItemType Directory -Force -Path $fixtureDir

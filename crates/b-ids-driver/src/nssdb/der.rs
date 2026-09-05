@@ -34,7 +34,7 @@ pub struct Fields {
     ///
     /// ⚠ **The rule is the algorithm's, and this follows it for the two
     /// families that reach it.** `PK11_GetPubIndexKeyID` in
-    /// `references/mozilla__nss/tree/lib/pk11wrap/pk11cert.c:1121` takes the
+    /// [`PK11_GetPubIndexKeyID`](https://github.com/mozilla/nss/blob/7db8de42431841b214b49fd2cb7122a07aa631b8/lib/pk11wrap/pk11cert.c#L1121) takes the
     /// public value: for an elliptic-curve key that is the point, and for RSA
     /// it is the modulus alone rather than the encoded key. Anything else
     /// falls back to the whole public key bit string, ⛔ **which is not what

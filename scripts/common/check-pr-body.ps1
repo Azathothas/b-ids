@@ -145,7 +145,7 @@ $runJson = @'
   "run_id": "a fixture run",
   "images": [["linux64", "a fixture image"]],
   "harness": "a fixture harness",
-  "command": "sh experiments/10-first-profile.sh --headless --browser chrome",
+  "command": "sh scripts/capture/profile.sh --headless --browser chrome",
   "unavailable": ["the macos lane has no runner in this plan"],
   "validator_output": "a fixture validator line",
   "validator_findings": 0,

@@ -6,7 +6,7 @@
 //!
 //! ⛔ **It concludes nothing about a browser on its own.** It answers one
 //! question: does the terminating capture surface change any TLS field the raw
-//! surface can also see. `experiments/20-compare-capture-modes.sh` is what
+//! surface can also see. `docs/history/experiments/20-compare-capture-modes.sh` is what
 //! produces the two files, off one resolved browser, in one run.
 //!
 //! ```text
@@ -54,7 +54,7 @@ fn describe(stability: &Stability) -> String {
 fn main() -> ExitCode {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
     // ⭐ THE LABELS ARE THE CALLER'S, because this driver is not only about the raw
-    // and terminating surfaces. `experiments/30-resumption-control.sh` compares two
+    // and terminating surfaces. `docs/history/experiments/30-resumption-control.sh` compares two
     // TERMINATING runs whose ticket policy differs, and a report calling one of them
     // `raw` would be the "display that lies" row of
     // docs/conventions/forbidden-patterns.md.

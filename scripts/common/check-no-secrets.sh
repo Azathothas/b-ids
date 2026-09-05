@@ -23,12 +23,8 @@
 #   sh scripts/common/check-no-secrets.sh --public     also the fingerprint rules
 #   sh scripts/common/check-no-secrets.sh --json
 #   sh scripts/common/check-no-secrets.sh --all-history   ⚠ slow; scans every blob
-#   sh scripts/common/check-no-secrets.sh --scope references   the exempt corpus
 #
-# --scope PATH scans ONLY that path, including one the default scope exempts.
-# ⛔ It is how the reference corpus exemption below is re-checked when a tree is
-# added, and the exemption's own instruction named it for one session before it
-# existed. A guard's re-check procedure that cannot be run is not a procedure.
+# --scope PATH scans only that path.
 #
 # --public adds the rules that only matter for a repository that is or will be
 # public: emails, absolute home paths, long hex identifiers. In a private
@@ -81,59 +77,6 @@ cd "$REPO_ROOT" || { printf '%s: cannot enter %s\n' "$SELF" "$REPO_ROOT" >&2; ex
 # It takes optional pathspecs. Every caller here wants the whole tree, so none
 # passes any; the parameter exists so a scoped caller can be added without
 # changing the function.
-
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND THIS ONE WAS DECIDED BY READING ---
-#
-# `references/` holds other projects' trees at named commits. Every one of them
-# is a PUBLIC repository, so nothing in it is exposed by this tree that its own
-# author has not already published, and this check protects against THIS project
-# leaking something of its own.
-#
-# ⭐ THE EXEMPTION WAS TAKEN AFTER READING EVERY HIT, NOT INSTEAD OF READING
-# THEM. Measured on 2026-08-30, `--public`, over the corpus as trimmed:
-#
-#   a private key block   6 hits: 4 doc comments naming the PEM header as text,
-#                         2 test keys in one project's own example file
-#   an aws access key id  1 hit, inside a base64 pixel blob in a canvas test
-#                         record. A false positive on random base64.
-#   a password in a url   the rest: proxy documentation of the form
-#                         user-colon-password-at-host, test fixtures using the
-#                         same shape, and the pattern matching inside fetched
-#                         API JSON
-#
-# ⛔ Not one is a live credential.
-#
-# ⭐ RE-READ ON 2026-09-01, over the tree HARNESS-04 added, with
-# `--public --scope references/http2jp__hpack-test-case`. 52,396 hits in three
-# categories and every one was read:
-#
-#   a long hex identifier 52,330 hits: the `wire` field of every test case,
-#                         which is the HPACK-coded bytes the corpus exists to
-#                         carry.
-#   an absolute home path 62 hits: `:path` header VALUES in the recorded
-#                         requests, each a home directory prefix followed by a
-#                         year and an image name. They are URL paths on
-#                         2012-era websites and not filesystem paths at all. A
-#                         false positive on the shape.
-#   an email address      4 hits: the upstream author's own published address
-#                         in their CI configuration, a token VARIABLE
-#                         interpolated into a code-hosting URL, and an ssh
-#                         remote form.
-#
-# ⚠ Those two rows describe their hits rather than quoting them, because a
-# guard that carries a specimen of what it refuses refuses itself. Widening the
-# rule so it can read its own comment would be widening a credential rule to
-# make a comment legal.
-#
-# ⚠ That CI file also carries a `secure:` blob, which is a value the CI service
-# encrypted to its own key, published by its author in a public repository, for
-# a service that no longer runs. It is named here because it is the closest
-# thing in the tree to a credential shape and an unmentioned one reads like an
-# unnoticed one.
-#
-# ⚠ A future sweep adds trees these readings did not cover, so re-run with
-# `--scope references` and READ the hits before trusting this exemption again.
-# docs/reference-sweeps/findings.md records it.
 
 # -- ⛔ THE VENDORED TREES ARE EXEMPT, AND THIS ONE WAS DECIDED BY READING ---
 #
@@ -190,7 +133,7 @@ list_files() {
   {
     git ls-files -- "$@" 2>/dev/null
     git ls-files --others --exclude-standard -- "$@" 2>/dev/null
-  } | sort -u | grep -vE '^(references|vendor/[^/]+|patches/[^/]+)/'
+  } | sort -u | grep -vE '^(vendor/[^/]+|patches/[^/]+)/'
 }
 
 
@@ -279,6 +222,10 @@ if [ "$PUBLIC" = "1" ]; then
   # `base` is excluded, so any other 40-hex run in that file is still
   # reported. ⛔ Keep this identical to the ps1 twin. docs/history/todo/vendor.md.
   _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '"base":[[:space:]]*"[0-9a-f]{40}"' || true)
+  # An immutable GitHub source permalink names a public commit explicitly.
+  # Exclude only canonical /blob|tree/<40 lower-case hex>/ URL shapes.
+  _hex_out=$(printf '%s\n' "$_hex_out" \
+    | grep -vE 'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(blob|tree)/[0-9a-f]{40}/' || true)
   # A content-addressed OCI image names its immutable digest explicitly.
   # Exclude only the canonical @sha256:<64 lower-case hex> reference shape.
   _hex_out=$(printf '%s\n' "$_hex_out" | grep -vE '@sha256:[0-9a-f]{64}\b' || true)

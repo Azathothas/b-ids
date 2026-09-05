@@ -17,24 +17,18 @@ time somebody wants it.** The number is quoted, the conditions are not, and
 nobody can tell whether the difference between two runs is the change or the
 machine.
 
-So every measurement worth quoting is taken by a **script in the tree**:
+Every current measurement is taken by a supported script in the tree:
 
 ```
-experiments/
-  10-probe-the-host.sh
-  20-build-the-thing.sh
-  30-measure-it.sh
-  README.md
+scripts/capture/
+  profile.sh
+  trust-anchor.sh
 ```
 
-⭐ **Numbered, in the order they were run.** The number is the sequence, not a
-priority. A reader landing on `30-` knows two things ran first and can find
-them. Two projects built from this template arrived at exactly this layout
-independently.
-
-⚠ **A number is not reused when an experiment is replaced.** The old script
-stays and the new one gets the next number, because a citation of `30-` in a
-write-up has to keep meaning what it meant.
+Retired one-off instruments remain under
+[`docs/history/experiments/`](../history/experiments/README.md) so historical
+measurements keep their provenance. They are records, not workflow entry
+points.
 
 ---
 
@@ -100,7 +94,8 @@ built on it, and everything downstream having to be withdrawn together.
 | --- | --- |
 | **the number a reader needs today** | the page that answers that question, once. One fact, one home. |
 | **the run that produced it** | the history directory. [`history.md`](history.md). |
-| **the script** | `experiments/`, tracked, forever |
+| **the current script** | `scripts/capture/`, tracked and exercised by the gate |
+| **a retired script** | `docs/history/experiments/`, retained with its result and status |
 | **a withdrawn explanation** | ⛔ the history directory, in its original wording, with the measurement that took it away underneath |
 
 ⚠ **Do not write the story into the reference page.** "The allocator takes a

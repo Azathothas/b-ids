@@ -243,8 +243,7 @@ pub struct Ja4Lists {
 impl TlsHalf {
     /// The lists a JA4 fingerprint is built from.
     ///
-    /// ⛔ **Implemented from the published specification**, at
-    /// `references/FoxIO-LLC__ja4/tree/technical_details/JA4.md`, and never by
+    /// ⛔ **Implemented from the [published specification](https://github.com/FoxIO-LLC/ja4/blob/02e78ba3ebac1f5c38bd3eb1a91b4a82e919e5fc/technical_details/JA4.md)**, and never by
     /// copying source. JA4 itself is BSD-3 with no patent claim;
     /// `docs/reference-sweeps/findings.md` finding 5 is the split, and ⛔ no
     /// member of the JA4+ family is computed anywhere in this tree.
@@ -388,8 +387,9 @@ impl TlsHalf {
     ///
     /// ⚠ **`supported_versions` wins where it exists, and the fallback is the
     /// HANDSHAKE version rather than the record layer's.** The specification's
-    /// wording is ambiguous about which; the reference implementation resolves
-    /// it at `references/FoxIO-LLC__ja4/tree/rust/ja4/src/tls.rs:573`, whose
+    /// wording is ambiguous about which; the
+    /// [reference implementation](https://github.com/FoxIO-LLC/ja4/blob/02e78ba3ebac1f5c38bd3eb1a91b4a82e919e5fc/rust/ja4/src/tls.rs#L573) resolves
+    /// it, and its
     /// own comment says the field is not to be confused with the record
     /// version. ⛔ Read to settle an ambiguity, never copied.
     #[must_use]

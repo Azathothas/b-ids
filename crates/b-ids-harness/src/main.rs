@@ -264,7 +264,7 @@ fn main() -> ExitCode {
         // changed, and that is a condition of whatever is captured through it.
         eprintln!("pin: {}", authority.spki_pin());
         // ⭐ REPORTED, so a caller records the condition it actually ran under
-        // rather than the one it meant to ask for. `experiments/10-first-profile.sh`
+        // rather than the one it meant to ask for. `scripts/capture/profile.sh`
         // reads this line back into the profile's `captured.resumption`, the
         // same way it reads the browser's switches back out of the driver.
         eprintln!("resumption: {}", args.resumption);

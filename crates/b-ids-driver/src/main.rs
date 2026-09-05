@@ -422,7 +422,7 @@ fn main() -> ExitCode {
 
     // ⛔ THE FILTER IS APPLIED ONCE, for both commands. A `drive` that chose a
     // family and a `resolve` that reported every one would be two answers to
-    // "which browser is this run about", and `experiments/10-first-profile.sh`
+    // "which browser is this run about", and `scripts/capture/profile.sh`
     // reads the second to describe what the first captured.
     // ⚠ 2, not 1: a machine without the named family has no browser, which is
     // not a failure of this tree. The capture lane distinguishes them.

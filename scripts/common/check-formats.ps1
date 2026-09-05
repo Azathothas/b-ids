@@ -236,25 +236,60 @@ if ($RequireRows) {
 # ⚠ `.read` RATHER THAN A PIPE. PowerShell's native-command pipe is not
 # byte-exact: it appends a trailing CRLF, which scripts/common/write-file.mjs
 # measured and which would arrive inside the SQL.
+function Invoke-Sqlite([string]$Executable, [string[]]$Arguments) {
+    $start = [System.Diagnostics.ProcessStartInfo]::new()
+    $start.FileName = $Executable
+    $start.UseShellExecute = $false
+    $start.RedirectStandardOutput = $true
+    $start.RedirectStandardError = $true
+    foreach ($argument in $Arguments) { [void]$start.ArgumentList.Add($argument) }
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $start
+    [void]$process.Start()
+    $stdout = $process.StandardOutput.ReadToEnd()
+    $stderr = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+    $result = [pscustomobject]@{
+        Stdout = $stdout
+        Stderr = $stderr
+        ExitCode = $process.ExitCode
+    }
+    $process.Dispose()
+    return $result
+}
+
 $sqlite = 'skipped'
 # ⚠ The column the dump promises, named once here so the message below and the
 # query above cannot drift apart.
 $canonical = 'canonical_json'
 $sqlite3 = Get-Command sqlite3 -ErrorAction SilentlyContinue
 if ($sqlite3) {
+    try {
+        $sqliteProbe = Invoke-Sqlite $sqlite3.Source @('--version')
+        if ($sqliteProbe.ExitCode -ne 0) { $sqlite3 = $null }
+    }
+    catch {
+        $sqlite3 = $null
+    }
+}
+if ($sqlite3) {
     $db = Join-Path $out 'corpus.db'
     if (Test-Path -LiteralPath $db) { Remove-Item -Force -LiteralPath $db }
     $sqlPath = (Join-Path $out 'a' | Join-Path -ChildPath 'corpus.sql') -replace '\\', '/'
     $sqliteLog = Join-Path $out 'sqlite.log'
-    & $sqlite3.Source $db (".read '" + $sqlPath + "'") > $sqliteLog 2>&1
-    $rcS = $LASTEXITCODE
+    $load = Invoke-Sqlite $sqlite3.Source @($db, (".read '" + $sqlPath + "'"))
+    [System.IO.File]::WriteAllText($sqliteLog, $load.Stdout + $load.Stderr)
+    $rcS = $load.ExitCode
     if ($rcS -ne 0) {
         $sqlite = 'failed'
         $problems += ('  the dump did not load into sqlite3, exit ' + $rcS + '. Its output is in .tmp/check-formats-ps/sqlite.log')
     }
     else {
-        $rows = & $sqlite3.Source $db 'select count(*) from profile;'
-        $rcQ = $LASTEXITCODE
+        $rowResult = Invoke-Sqlite $sqlite3.Source @($db, 'select count(*) from profile;')
+        [System.IO.File]::AppendAllText($sqliteLog, $rowResult.Stderr)
+        $rows = $rowResult.Stdout.Trim()
+        $rcQ = $rowResult.ExitCode
         if ($rcQ -ne 0) {
             $sqlite = 'failed'
             $problems += ('  the loaded database did not answer a query, exit ' + $rcQ)
@@ -276,10 +311,13 @@ if ($sqlite3) {
             # second is a broken dump. Measured 2026-09-02: a planted dump whose
             # CREATE TABLE renamed canonical_json PASSED this check while it was
             # one query.
-            & $sqlite3.Source $db "select json_valid('{}');" > $null 2>> $sqliteLog
-            $rcJ = $LASTEXITCODE
-            $valid = & $sqlite3.Source $db 'select count(*) from profile where json_valid(canonical_json);' 2>> $sqliteLog
-            $rcV = $LASTEXITCODE
+            $jsonResult = Invoke-Sqlite $sqlite3.Source @($db, "select json_valid('{}');")
+            [System.IO.File]::AppendAllText($sqliteLog, $jsonResult.Stderr)
+            $rcJ = $jsonResult.ExitCode
+            $validResult = Invoke-Sqlite $sqlite3.Source @($db, 'select count(*) from profile where json_valid(canonical_json);')
+            [System.IO.File]::AppendAllText($sqliteLog, $validResult.Stderr)
+            $valid = $validResult.Stdout.Trim()
+            $rcV = $validResult.ExitCode
             if ($rcJ -ne 0) {
                 # ⚠ NOT A FAILURE. A sqlite3 built without JSON1 cannot ask the
                 # question, which is a fact about the host rather than about the

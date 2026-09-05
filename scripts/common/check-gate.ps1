@@ -476,14 +476,10 @@ if (-not $sh) {
     Add-Skip 'check-twins'         'no POSIX shell on this host; it runs both halves of every pair'
 }
 else {
-    # Every tracked .sh parses.
-    # ⛔ THE REFERENCE CORPUS IS OUT OF SCOPE FOR THE LINTERS. `references/` is
-    # other projects' source, kept as evidence; their style is not this
-    # project's defect. ⛔ Keep this identical to the sh twin.
-    # ⚠ Tracked plus untracked-not-ignored, matching the sh twin.
+    # Every tracked and untracked-not-ignored .sh parses, matching the sh twin.
     $shFiles = @(@(& git ls-files '*.sh') + @(& git ls-files --others --exclude-standard '*.sh') |
         ForEach-Object { $_.Trim() } |
-        Where-Object { $_ -and $_ -cnotmatch '^references/' } | Sort-Object -Unique)
+        Where-Object { $_ } | Sort-Object -Unique)
     $bad = @()
     foreach ($f in $shFiles) {
         $prev = $ErrorActionPreference

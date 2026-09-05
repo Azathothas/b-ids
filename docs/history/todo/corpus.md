@@ -103,7 +103,7 @@ raw/v1/chrome/stable/win64/151.0.7922.76.hello.hex
 
 #### ⭐ The first profile, and the conditions it was taken under
 
-[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh) is
+[`../scripts/capture/profile.sh`](../../../scripts/capture/profile.sh) is
 the script that took it, so the run is repeatable rather than a transcript.
 What it reported:
 
@@ -445,15 +445,15 @@ exit 101.
 #### ⭐ The fix, and the control that says it is safe
 
 `b-ids-harness --no-resumption` issues no session tickets, so the subject cannot
-resume and every hello is a cold one. ⚠ **`experiments/10-first-profile.sh`
+resume and every hello is a cold one. ⚠ **`scripts/capture/profile.sh`
 stopped passing it on 2026-09-02**, when `HARNESS-15` made the two halves
 selectable independently: the switch is a CONTROL for
-`experiments/30-resumption-control.sh` and it is no longer a condition every
+`docs/history/experiments/30-resumption-control.sh` and it is no longer a condition every
 published profile is taken under. The harness still **reports** the
 configuration on stderr and the script still reads that line back into
 `captured.resumption` rather than typing it.
 
-⭐ **Measured, not argued.** `experiments/30-resumption-control.sh`, three
+⭐ **Measured, not argued.** `docs/history/experiments/30-resumption-control.sh`, three
 rounds on this Windows host against Chrome `151.0.7922.76`, headless:
 
 ```text
@@ -691,7 +691,7 @@ corpus=pull-request requests:0 auto:0
 ```
 
 ⛔ **The cause: nothing ever ran `b-ids-corpus add`.**
-[`../experiments/10-first-profile.sh`](../../../experiments/10-first-profile.sh)
+[`../scripts/capture/profile.sh`](../../../scripts/capture/profile.sh)
 deliberately writes nothing into the corpus, because the corpus is append-only
 and a profile in it is permanent, so the write is a deliberate act rather than a
 side effect of measuring. ⭐ That rule was applied to the SCRIPT on 2026-09-02
@@ -1289,7 +1289,7 @@ carry as inferred: its body is measured and its name is not.
 ### Prove
 
 ```bash
-sh experiments/60-identify-extension.sh
+sh docs/history/experiments/60-identify-extension.sh
 ```
 
 Passing means: the script records what was searched and what it found, and
@@ -1299,11 +1299,11 @@ exhausted with a list of what was ruled out.
 ### ⚠ The acceptance names `60-` rather than `30-`, and the reason is a rule
 
 ⛔ **A number is never reused and `30-` was taken** by
-[`../experiments/30-resumption-control.sh`](../../../experiments/30-resumption-control.sh),
+[`../docs/history/experiments/30-resumption-control.sh`](../../../docs/history/experiments/30-resumption-control.sh),
 written after this entry was authored.
 [`../docs/methodology/experiments.md`](../../methodology/experiments.md) says a
 citation has to keep meaning what it meant, so the script is
-[`../experiments/60-identify-extension.sh`](../../../experiments/60-identify-extension.sh)
+[`../docs/history/experiments/60-identify-extension.sh`](../../../docs/history/experiments/60-identify-extension.sh)
 and the Prove block above is corrected rather than the file misnumbered to match.
 
 ### Closing
@@ -1313,7 +1313,7 @@ and the Prove block above is corrected rather than the file misnumbered to match
 next attempt does not repeat it.
 
 ```text
-$ sh experiments/60-identify-extension.sh
+$ sh docs/history/experiments/60-identify-extension.sh
 searching for extension 0x12e0 (4832 decimal)
 
 -- what this project measured itself --
@@ -1337,7 +1337,7 @@ exit=0
 profiles this project has captured.** The origin's capture of Chrome
 `152.0.7977.64` on `linux64` does: its `ja4_r` extension list reads
 `...,0033,12e0,44cd,ca34,fe0d,ff01`, at
-[`../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json`](../../../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json).
+[`../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json).
 
 ⭐ **So it is a codepoint Chrome added between 151 and 152**, which narrows the
 search from "somewhere in an engine" to "a change in one release". ⚠ The same is
@@ -1369,7 +1369,7 @@ be narrowing it to get the answer that fits.
 ### ⛔ Why the engine source was not searched
 
 **A claim about a repository is not written until that repository is in
-[`../references/`](../../../references/) at a named commit**, and a browser engine
+[`../references/`](https://github.com/Azathothas/b-ids/tree/reference) at a named commit**, and a browser engine
 checkout is not a tree this project keeps.
 [`RULES.md`](RULES.md) section 3 is the rule and it cost this repository its most
 expensive defect. ⭐ So the verdict names what would settle it: the engine source

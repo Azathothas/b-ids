@@ -807,7 +807,7 @@ if [ -f "$ARCHIVE" ]; then
   # ⭐ WRITTEN WHERE A CAPTURE CAN READ IT, not only printed. Every profile this
   # project has published carries `captured.acquisition: null`, which is the
   # weakest provenance the artefact half can have in a project whose product is
-  # provenance. experiments/10-first-profile.sh reads this file into the
+  # provenance. scripts/capture/profile.sh reads this file into the
   # identity, and b_ids_corpus::capture copies it onto the profile.
   # docs/history/todo/driver.md, DRIVER-08.
   #

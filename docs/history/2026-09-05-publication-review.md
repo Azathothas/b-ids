@@ -29,35 +29,45 @@ the generic template.
 | dependency automation covered Actions but not Cargo | weekly grouped Actions and Cargo updates were added |
 | the public secret sweep classified a pinned OCI SHA-256 digest as a credential | the twins exclude only canonical `@sha256:<64 lowercase hex>` references; an unlabeled 64-hex mutation still fails |
 | the Windows doctor aborted on an inaccessible executable candidate | fallback discovery now skips inaccessible candidates and continues |
+| the validator still exposed an importer whose only inputs lived in the retired archive | the importer and CLI route were removed; validation now consumes only supported source-branch data |
+| a Firefox argument test launched a fake executable and could wait forever | argument construction is pure and the unit test asserts the exact Gecko switch set without starting a process |
+| the POSIX and PowerShell exit-code inventories covered different script sets | each twin now exercises the same 48 operations, including platform-only scripts through the matching interpreter |
+| the Windows version fallback reported only a major version | the fallback now reports `major.minor.build.UBR`, matching the POSIX doctor |
 
-## Retained evidence and instruments
+## Archived evidence and instruments
 
-`references/` remains live: NSS invariant tests compile its source, HPACK tests
-read its vectors, and generated support evidence cites imported trees. No
-reference or vendored source byte changed during this review.
+The former `references/` tree was proven independent of code, builds, tests,
+scripts, workflows, generated output, and current documentation before removal
+from `main`. Its 5,725 files are preserved byte-for-byte on the parentless
+`reference` commit `3d496df1a45a790f7e4126acb55942cca23d3db2`.
+The archived tree `a9e709c1f7939c6e7090e668fc25c3b1f30b3b43` exactly matches the
+former `HEAD:references` tree.
 
-`experiments/` also remains live. Capture, cold-start, provisioning, and
-trust-anchor workflows execute these scripts. They are operational instruments,
-not obsolete plans.
+The supported capture and trust-anchor entry points moved to
+`scripts/capture/`. Four one-off comparison and identification instruments,
+their status, and their provenance moved to `docs/history/experiments/`.
+Workflows invoke only the supported entry points; nothing executes the history
+archive.
 
 ## Data integrity
 
 | branch | baseline commit | tree | files | bytes |
 | --- | --- | --- | ---: | ---: |
-| `source` | `03cf7755967f24bafcd3e035711bbca07d63b693` | `64839e87a0ebc75fb9b68ce9ba26608dd7d1f83a` | 32 | 301277 |
-| `data` | `2aef9ef132aaab3b01d994e847224aaaaa0ba6dd` | `aa4d0ac899190d0c13219be0cdbe6327c4a1f6d6` | 496 | 2131768 |
+| `source` before | `03cf7755967f24bafcd3e035711bbca07d63b693` | `64839e87a0ebc75fb9b68ce9ba26608dd7d1f83a` | 32 | 301277 |
+| `source` after | `34e8b61dc264d572793be3913d3701265d9dc25e` | `ab6b626b98632aeff2b42c84515762e3bce1c7f7` | 32 | 301196 |
+| `data` before publication | `81a70deee7c903f596de54b9da5273bc1d5d8e3d` | `21de8933be3e6b4e969642dfb2b47cc486453740` | 496 | 2131794 |
 
-The source inventory contains 17 JSON files and 14 hexadecimal captures. The
-data inventory contains 29 JSON files, 398 text routes, aggregate formats, 14
-packet captures, 14 Rust snippets, and the remaining manifests, packages,
-configs, and metadata.
+Both source inventories contain 14 profiles, 14 raw captures, and one vector.
+Only `vectors/ja4/v1.json` changed: its two provenance fields now use one
+immutable upstream URL instead of a path on the removed archive. A semantic
+comparison that normalized exactly those two fields found no other difference.
 
 Regeneration produced 496 paths and checksummed 494 immutable artefacts. No
-path was removed and every immutable artefact was byte-identical. The only
-pending publication delta is `packages/js/index.mjs` (two normalized source-path
-comments) plus its derived `MANIFEST.json` and `SHA256SUMS`. Profiles, raw
-captures, measurements, samples, failure records, conditions, and provenance
-are unchanged.
+existing immutable artefact changed, no path disappeared, and the pre-release
+data branch is behind only by 59 derived outputs caused by repository-path and
+metadata normalization. Profiles, raw captures, measurements, samples, failure
+records, conditions, and provenance values are unchanged. The final data tree
+and inventory are recorded after the publisher completes.
 
 ## Validation
 
@@ -81,13 +91,12 @@ script syntax, line endings, and shell/PowerShell twin self-tests.
 
 GitHub read-back confirmed private vulnerability reporting and vulnerability
 alerts enabled, automated security fixes enabled and unpaused, and zero open
-secret-scanning alerts. After the first push, dependency-graph indexing found
-202 Dependabot alerts, all in immutable third-party manifests under
-`references/`; no first-party manifest is affected. Those imported trees are
-not installed or executed by this project and remain byte- and path-exact for
-provenance. Their final `not used` classification requires an explicit
-repository-owner decision. The `dependencies` label exists for the weekly
-grouped update configuration.
+secret-scanning alerts. Dependency-graph indexing found 202 Dependabot alerts,
+all in unused third-party manifests from the former imported archive; no
+first-party manifest was affected. After explicit repository-owner
+authorization, each was classified `not_used` before the archive left `main`.
+The final alert read-back is recorded after publication. The `dependencies`
+label exists for the weekly grouped update configuration.
 
 `main` requires current `gate (ubuntu)` and `gate (windows)` checks with strict
 status-check freshness. It requires linear history and conversation resolution,

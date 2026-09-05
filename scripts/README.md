@@ -71,6 +71,13 @@ pwsh -NoProfile -File scripts/common/check-gate.ps1 -Strict
 | `check-vendor` | vendored trees, patches, and upstream metadata agree |
 | `check-workflows` | workflow metadata and fail-fast policy satisfy the CI contract |
 
+## Capture operations
+
+| command | purpose |
+| --- | --- |
+| `capture/profile` | capture a browser network profile on a guarded disposable host |
+| `capture/trust-anchor` | capture trust-anchor extension behavior on a guarded disposable host |
+
 ## Helpers and operations
 
 | command | purpose |

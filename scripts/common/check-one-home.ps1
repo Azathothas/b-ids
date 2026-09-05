@@ -51,23 +51,11 @@ finally { Pop-Location }
 # ⛔ NO QUOTED PATHSPEC HANDED TO GIT. The filter is applied here. See header.
 # ⚠ -cnotmatch: PowerShell's default comparison is case-INSENSITIVE, and this
 # trap has already made an exclusion in a sibling check swallow every finding.
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND ONLY FROM THIS CHECK'S SUBJECT ----
-#
-# `references/` holds other projects' trees, at named commits, as the evidence
-# behind docs/reference-sweeps/findings.md. It is somebody else's writing, so
-# this project's rules about how a document is written cannot apply to it, and a
-# check that fails on a correct tree gets switched off within a week.
-#
-# ⭐ Every check exempts it, and each exemption was paid for separately: the
-# prose checks because it is somebody else's writing, check-control-bytes because
-# .gitattributes stores the corpus byte-exact as evidence, and check-no-secrets
-# after every hit over the corpus was read once and recorded.
-# ⛔ Keep this identical to the sh twin.
 $files = @($tracked + $untracked |
     ForEach-Object { $_.Trim() } |
     Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) -and
         $_ -cmatch '\.md$' -and $_ -notmatch '^docs/history/' -and
-        $_ -cnotmatch '^(references|vendor/[^/]+)/' } |
+        $_ -cnotmatch '^vendor/[^/]+/' } |
     Sort-Object -Unique)
 
 if ($files.Count -lt 2) {

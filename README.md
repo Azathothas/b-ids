@@ -59,9 +59,10 @@ silently substituted.
 
 | branch | contents | authority |
 | --- | --- | --- |
-| `main` | code, tests, documentation, workflows, vendored source, and pinned evidence | implementation |
+| `main` | code, tests, documentation, workflows, and vendored source | implementation |
 | `source` | reviewed profiles, raw captures, vectors, and license | canonical measurements |
 | `data` | deterministic publication output derived from `source` | consumer surface |
+| `reference` | byte-preserved upstream research archive | provenance only |
 
 ⛔ Do not edit `data` directly or force-push `source` or `data`. A capture
 changes `source`; the publication workflow regenerates `data`.
@@ -115,7 +116,7 @@ aggregate regeneration, and check self-tests. See
 
 ## Capture and validation
 
-`experiments/10-first-profile.sh` is the workflow-backed capture entry point.
+`scripts/capture/profile.sh` is the workflow-backed capture entry point.
 It launches a browser in a new disposable profile and records only the network
 traffic sent to the local harness. It does not inspect a user's browser profile
 or capture unrelated traffic.
@@ -156,6 +157,6 @@ This project measures browser network identity. It does not:
 
 ## License
 
-Project code and generated data are released under
-[`0BSD`](LICENSE). Imported material under `references/` and compiled third-party
-source under `vendor/` retain their own licenses.
+Project code and generated data are released under [`0BSD`](LICENSE). The
+imported archive on the [`reference` branch](https://github.com/Azathothas/b-ids/tree/reference)
+and compiled third-party source under `vendor/` retain their own licenses.

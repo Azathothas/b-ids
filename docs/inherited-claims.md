@@ -44,9 +44,9 @@ about what a browser puts on a socket.
 
 | tag | what it is |
 | --- | --- |
-| ⭐ `ORIGIN` | [`Azathothas/bit-cli`](../references/Azathothas__bit-cli/) at commit `cce8131231abe8b232054f3f27b3feeac19dd411`, fetched 2026-08-31. ⭐ **Every value the founding brief carried was measured there, off a socket, with a committed instrument.** Each row below cites the file. ⚠ Its licence is MIT: this project cites it and copies no source out of it. |
+| ⭐ `ORIGIN` | [`Azathothas/bit-cli`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli) at commit `cce8131231abe8b232054f3f27b3feeac19dd411`, fetched 2026-08-31. ⭐ **Every value the founding brief carried was measured there, off a socket, with a committed instrument.** Each row below cites the file. ⚠ Its licence is MIT: this project cites it and copies no source out of it. |
 | `SWEEP` | [`reference-sweeps/findings.md`](reference-sweeps/findings.md), this project's own reading of eighteen repositories. Source-level, never a wire. |
-| `TRACKER` | An issue or comment on a third-party repository, fetched into [`../references/`](../references/). ⛔ Evidence of what somebody believed. |
+| `TRACKER` | An issue or comment from the upstream archive on the [`reference` branch](https://github.com/Azathothas/b-ids/tree/reference). ⛔ Evidence of what somebody believed. |
 | `BRIEF` | ⚠ **The founding brief**, defined below. A row tagged `BRIEF` alone is one the origin tree does not carry, so nothing can check it. |
 
 ### ⚠ The founding brief
@@ -70,7 +70,7 @@ they did.
 
 ⭐ **Two captures, both from `ORIGIN`, both with a capture instant and a named
 instrument.** The instrument is
-[`loopback-tlsprobe`](../references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/);
+[`loopback-tlsprobe`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe);
 [`reference-sweeps/usable.md`](reference-sweeps/usable.md) section 14 is its
 shape.
 
@@ -366,7 +366,7 @@ compressed bytes to a parser that cannot read them. `VALID-01` check 6.
 ## 7. Version discovery, and the endpoint that misleads
 
 **The defect, from `ORIGIN`,
-[`scripts/check-browser-version.ps1:25-37`](../references/Azathothas__bit-cli/tree/scripts/check-browser-version.ps1),
+[`scripts/check-browser-version.ps1:25-37`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/scripts/check-browser-version.ps1),
 `inherited`.** A version-history endpoint queried for the highest version on a
 channel answers with the highest version **known**, which during a staged
 rollout is a build almost nobody has. Measured 2026-08-29:

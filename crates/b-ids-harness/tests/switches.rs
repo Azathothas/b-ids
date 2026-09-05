@@ -384,7 +384,7 @@ fn switches_raw_is_the_default_surface() {
 #[test]
 fn switches_no_resumption_is_reported_so_a_caller_can_record_it() {
     // ⭐ THE CONDITION IS PRINTED, and that is the point of the switch rather
-    // than a convenience. `experiments/10-first-profile.sh` reads this line back
+    // than a convenience. `scripts/capture/profile.sh` reads this line back
     // into `captured.resumption`, so a profile records the configuration the run
     // actually had rather than the one the script asked for. A cold hello looks
     // the same under either policy, so nothing in the bytes could contradict a

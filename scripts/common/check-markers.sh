@@ -122,27 +122,6 @@ done
 
 command -v git >/dev/null 2>&1 || { printf 'check-markers: git not found\n' >&2; exit 2; }
 
-# -- ⛔ THE REFERENCE CORPUS IS EXEMPT, AND ONLY FROM THIS CHECK'S SUBJECT ----
-#
-# `references/` holds other projects' trees, at named commits, as the evidence
-# behind docs/reference-sweeps/findings.md. docs/methodology/references.md is
-# why it is tracked rather than deleted: a conclusion nobody can re-check is an
-# opinion.
-#
-# ⛔ It is somebody else's writing, so this project's PROSE rules cannot apply
-# to it. Their em dashes, their duplicated licence paragraphs and their links
-# into subtrees this sweep trimmed are all correct for them and none of them is
-# a defect here. A check that fails on a correct tree gets switched off.
-#
-# ⭐ EVERY CHECK EXEMPTS IT, AND EACH EXEMPTION WAS PAID FOR SEPARATELY. The
-# prose checks, because it is somebody else's writing. check-control-bytes,
-# because .gitattributes declares `references/** -text` so the corpus is stored
-# byte-exact as evidence, and a finding there could only be fixed by editing the
-# bytes a citation points at. check-no-secrets, after every hit it produced over
-# the corpus was read once and recorded; its own header carries the counts.
-# ⚠ A check whose findings cannot be acted on is a check that gets switched off,
-# and an exemption taken without reading first is one nobody can defend.
-
 command -v awk >/dev/null 2>&1 || { printf 'check-markers: awk not found\n' >&2; exit 2; }
 git rev-parse --show-toplevel >/dev/null 2>&1 || { printf 'check-markers: not a git repository\n' >&2; exit 2; }
 

@@ -389,7 +389,7 @@ one of them was wrong.
 carries the corrections.
 
 Measured, on 2026-08-31: the origin repository is fetched at a named commit into
-[`../references/Azathothas__bit-cli/`](../../../references/Azathothas__bit-cli/),
+[`../references/Azathothas__bit-cli/`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli),
 every measured claim is cited against a file in it, and the brief's own sections
 were read against those files rather than against the brief.
 
@@ -401,7 +401,7 @@ Where each part of it went:
 | --- | --- |
 | the governing rule, and the three consequences | [`../README.md`](../../../README.md), and absolute 1 in [`../AGENTS.md`](../../../AGENTS.md) |
 | the prior-art table | [`../docs/reference-sweeps/findings.md`](../../reference-sweeps/findings.md), re-derived from the trees rather than inherited |
-| ⭐ the repository every measurement was taken in | [`../references/Azathothas__bit-cli/`](../../../references/Azathothas__bit-cli/), tracked, at the commit its `PROVENANCE.md` names |
+| ⭐ the repository every measurement was taken in | [`../references/Azathothas__bit-cli/`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli), tracked, at the commit its `PROVENANCE.md` names |
 | the data model, sections 2.1 to 2.6 | `SCHEMA-01` through `SCHEMA-07` |
 | the architecture and the capture harness | `HARNESS-01` through `HARNESS-04`, `DRIVER-01`, and [`../docs/reference-sweeps/usable.md`](../../reference-sweeps/usable.md) sections 14 and 15 |
 | every measured fingerprint, codepoint and constant | [`../docs/inherited-claims.md`](../../inherited-claims.md), each cited at a file in the origin tree |

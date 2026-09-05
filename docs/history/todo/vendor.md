@@ -44,7 +44,7 @@ That is `HARNESS-13`, and it is a separate entry for that reason.
 
 Follow the practice the operator named, which is `Azathothas/bit-cli`'s and is
 in the reference corpus at
-[`../references/Azathothas__bit-cli/`](../../../references/Azathothas__bit-cli/). Its
+[`../references/Azathothas__bit-cli/`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli). Its
 shape is a manifest, a record of every local change, a derived patch series,
 and a scan. Four deliverables, in that order.
 
@@ -53,7 +53,7 @@ versioned, one object per vendored upstream carrying its name, its repository,
 its directory, the ref it was taken at, the commit that ref resolved to, the
 instant it was vendored, and an exclude list where every exclusion carries its
 own reason. bit-cli's file is the model and it is readable at
-[`../references/Azathothas__bit-cli/tree/vendor/upstream.json`](../../../references/Azathothas__bit-cli/tree/vendor/upstream.json).
+[`../references/Azathothas__bit-cli/tree/vendor/upstream.json`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/vendor/upstream.json).
 
 **2. The tree.** Upstream `rustls/rustls` at tag `v/0.23.43`, which resolves to
 commit `fcf61cdbba30913cfd5b40aefa83989c6233812d`, read from the GitHub refs

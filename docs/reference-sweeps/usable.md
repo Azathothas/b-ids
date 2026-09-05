@@ -8,7 +8,7 @@ with what the sweep did not establish. ⛔ Read that first. Nothing on this page
 was measured on a wire **by this project**, and the rows taken from
 `Azathothas/bit-cli` were measured on a wire by somebody else.
 
-Every path below is under [`../../references/`](../../references/) at the commit
+Every path below is under [`reference:`](https://github.com/Azathothas/b-ids/tree/reference) at the commit
 its `PROVENANCE.md` names.
 
 ---
@@ -18,8 +18,8 @@ its `PROVENANCE.md` names.
 ⭐ **Take `utls`'s shape, not `impit`'s or `rustls`'s.**
 
 ```text
-references/refraction-networking__utls/tree/u_common.go:184
-references/refraction-networking__utls/tree/u_tls_extensions.go:875
+reference:refraction-networking__utls/tree/u_common.go:184
+reference:refraction-networking__utls/tree/u_tls_extensions.go:875
 ```
 
 ```go
@@ -101,7 +101,7 @@ capture reads and a profile records what the wire carried.
 project's profile. Read one whole before designing the schema:
 
 ```text
-references/lexiforest__curl-impersonate/tree/tests/signatures/chrome_116.0.5845.180_win10.yaml
+reference:lexiforest__curl-impersonate/tree/tests/signatures/chrome_116.0.5845.180_win10.yaml
 ```
 
 ⭐ **Adopt directly:**
@@ -139,7 +139,7 @@ already justified by somebody's absence of it.
 
 ## 4. The PRIORITY block: the seam in `h2`, and the patch that already exists
 
-**The seam.** `references/hyperium__h2/tree/src/frame/headers.rs`:
+**The seam.** `reference:hyperium__h2/tree/src/frame/headers.rs`:
 
 | line | what is there |
 | --- | --- |
@@ -159,7 +159,7 @@ frame length and any CONTINUATION split follow for free.
 from a seam.**
 
 ```text
-references/Azathothas__bit-cli/tree/patches/h2/0004-src-frame-headers.rs.patch
+reference:Azathothas__bit-cli/tree/patches/h2/0004-src-frame-headers.rs.patch
 ```
 
 It adds `StreamDependency::encode`, which is the half `load` never had, and
@@ -167,7 +167,7 @@ It adds `StreamDependency::encode`, which is the half `load` never had, and
 call: ⛔ a head carrying the flag with no block is a frame a peer cannot parse,
 and a block with no flag is five bytes of header block. The rationale, the
 files it touches and the upstream verdict are under `## h2: a client cannot open
-a stream with the PRIORITY block a browser sends` in `references/Azathothas__bit-cli/tree/patches/UPSTREAM.md`.
+a stream with the PRIORITY block a browser sends` in `reference:Azathothas__bit-cli/tree/patches/UPSTREAM.md`.
 
 ⚠ **Read it, do not copy it.** That tree is MIT and this one's output is 0BSD.
 The mechanism is four sentences; the diff is somebody else's file.
@@ -183,7 +183,7 @@ to emit a block. [`findings.md`](findings.md) finding 1 has the table.
 
 ## 5. Reproducing an extension order, and the ceiling on doing so
 
-`references/apify__rustls/tree/rustls/src/msgs/client_hello.rs:337-355`:
+`reference:apify__rustls/tree/rustls/src/msgs/client_hello.rs:337-355`:
 
 ```rust
 order.sort_by_cached_key(|new_ext| {
@@ -267,9 +267,9 @@ will eventually believe.
 
 ### ⭐ Read by a tool on 2026-09-01, and it found two the eye had not
 
-`VALID-02` implemented a reader for both trees. It agrees with the three rows
-above and adds two, which is the argument for reading a table with a tool
-rather than by eye:
+`VALID-02` used a reader for both trees. It agreed with the three rows above
+and added two, which is the argument for reading a table with a tool rather
+than by eye:
 
 | what the reader added | where |
 | --- | --- |
@@ -281,9 +281,10 @@ cipher tables were cited at 57 and 80 and the comments naming their versions
 are at 59 and 78. ⭐ A citation nobody re-opened is exactly what this project's
 third rule is about, and here the tool re-opened it.
 
-```bash
-cargo run -p b-ids-validator -- import references --report
-```
+The completed report remains in `docs/history/todo/validator.md`. Its reader
+was retired when the byte-preserved inputs moved to the
+[`reference` branch](https://github.com/Azathothas/b-ids/tree/reference), so
+current builds and tests have no dependency on that archive.
 
 ⭐ **Check 1 has a working implementation to read**, in the origin tree's own
 test suite. `page.rs:1618-1632`, `the_header_list_and_the_user_agent_agree_
@@ -369,7 +370,7 @@ argued about.
 
 ## 12. Version discovery: read the fraction, not the top of the list
 
-`references/Azathothas__bit-cli/tree/scripts/check-browser-version.ps1`
+`reference:Azathothas__bit-cli/tree/scripts/check-browser-version.ps1`
 
 ⛔ **The highest version a channel knows is not the version anybody runs.** The
 one-page `.../versions?pageSize=1` form answers with the highest **known**
@@ -399,7 +400,7 @@ and the endpoints.
 
 ## 13. One file holds a whole profile, and that is the shape to take
 
-`references/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs`
+`reference:Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs`
 
 ⭐ **Every value a client puts on the wire lives in one file that repository
 owns**: `BROWSER_MAJOR`, `BROWSER_BUILD`, `BROWSER_USER_AGENT`,
@@ -436,7 +437,7 @@ there.
 
 ## 14. The capture harness, as a working shape
 
-`references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/`
+`reference:Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/`
 
 ⭐ **Four files, and the split is the one `HARNESS-01` should take:**
 
@@ -479,9 +480,9 @@ a rewrite.
 
 ## 15. Driving a browser: what a navigation actually does
 
-`references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/browser-capture.rs`,
+`reference:Azathothas__bit-cli/tree/crates/bit-cli-core/examples/browser-capture.rs`,
 with the resolver at
-`references/Azathothas__bit-cli/tree/crates/bit-cli-core/src/browser.rs`. Two jobs kept
+`reference:Azathothas__bit-cli/tree/crates/bit-cli-core/src/browser.rs`. Two jobs kept
 separate: **resolve** a browser on this machine, and **drive** it at a URL.
 `DRIVER-01` is that split.
 

@@ -4,16 +4,14 @@
 //! The one caller writes `CKA_NSS_CERT_SHA1_HASH` into a certificate trust
 //! object, and NSS compares that field against its own digest of the
 //! certificate before it will believe the record at all:
-//! `nssTrust_Create` in
-//! `references/mozilla__nss/tree/lib/pki/certificate.c:1022` discards a trust
+//! [`nssTrust_Create`](https://github.com/mozilla/nss/blob/7db8de42431841b214b49fd2cb7122a07aa631b8/lib/pki/certificate.c#L1022) discards a trust
 //! object whose hash does not match, and
 //! `nssTrust_IsSafeToIgnoreCertHash` at line 916 lets the hash be absent only
 //! for records that trust nothing. So a delegator record with no hash is
 //! silently ignored, which is the failure this module exists to prevent.
 //!
 //! ⚠ **The algorithm is chosen by the reader, not by this project.**
-//! `nssCryptokiTrust_GetAttributes` in
-//! `references/mozilla__nss/tree/lib/dev/ckhelper.c:441` sets the mechanism to
+//! [`nssCryptokiTrust_GetAttributes`](https://github.com/mozilla/nss/blob/7db8de42431841b214b49fd2cb7122a07aa631b8/lib/dev/ckhelper.c#L441) sets the mechanism to
 //! `CKM_SHA_1` for a `CKO_NSS_TRUST` object, so nothing else is read.
 //!
 //! ⭐ **Nothing here says what its own answer should be.** Four of the vectors

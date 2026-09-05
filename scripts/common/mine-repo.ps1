@@ -49,9 +49,8 @@
 # ⛔ READS ONLY. No write verb reaches either route. docs/security/remote-ops.md.
 #
 # Usage:
-#   pwsh -NoProfile -File scripts/common/mine-repo.ps1 OWNER/NAME
-#   pwsh -NoProfile -File scripts/common/mine-repo.ps1 OWNER/NAME -Out references
-#   pwsh -NoProfile -File scripts/common/mine-repo.ps1 OWNER/NAME -Route proxy -NoClone
+#   pwsh -NoProfile -File scripts/common/mine-repo.ps1 OWNER/NAME -Out PATH
+#   pwsh -NoProfile -File scripts/common/mine-repo.ps1 OWNER/NAME -Out PATH -Route proxy -NoClone
 #   pwsh -NoProfile -File scripts/common/mine-repo.ps1 -SelfTest   the joiner, offline
 #
 # Exit codes: 0 the subject was fetched, 1 it was not, 2 could not run.
@@ -69,7 +68,7 @@
 param(
     [Parameter(Position = 0)]
     [string]$Target = '',
-    [string]$Out = 'references',
+    [string]$Out = '',
     [ValidateSet('auto', 'gh', 'proxy')]
     [string]$Route = 'auto',
     [switch]$NoClone,
@@ -286,6 +285,10 @@ if ($Target -notmatch '^[^/]+/[^/]+$') {
     [Console]::Error.WriteLine('mine-repo: give a target as OWNER/NAME')
     exit 2
 }
+if ([string]::IsNullOrWhiteSpace($Out)) {
+    [Console]::Error.WriteLine('mine-repo: -Out PATH is required')
+    exit 2
+}
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     [Console]::Error.WriteLine('mine-repo: git not found')
     exit 2
@@ -299,8 +302,8 @@ New-Item -ItemType Directory -Force -Path $apiDir | Out-Null
 # ⛔ REFUSE TO WRITE INTO A DIRECTORY THIS REPOSITORY'S OWN IGNORE RULES WOULD
 # SWALLOW. The corpus is the evidence; an ignored corpus exists on one machine
 # and every claim built on it becomes unsourced the moment that machine is not
-# the one asking. A `references/` ignore rule shipped in this template's own
-# dotfiles for exactly the reasoning this refuses.
+# the one asking. An ignore rule once shipped for imported evidence for exactly
+# the reasoning this refuses.
 & git check-ignore -q -- $dest 2>$null
 if ($LASTEXITCODE -eq 0) {
     [Console]::Error.WriteLine("mine-repo: $dest is ignored by this repository.")

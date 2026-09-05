@@ -157,10 +157,10 @@ for file in $(find "$CONFIGS" -type f | sort); do
     fi
     grep -q 'NO SNIPPET IS GENERATED' "$file" ||
       note "$stack's refusal does not say it is one: ${file#"$CONFIGS"/}"
-    # ⛔ The file and the line, because a refusal a reader cannot check is one
-    # they will assume is out of date.
-    grep -qE 'read at references/[^:]+:[0-9]+' "$file" ||
-      note "$stack's refusal names no file and line: ${file#"$CONFIGS"/}"
+    # ⛔ An immutable source line, because an unsupported claim a reader cannot
+    # check is one they will assume is out of date.
+    grep -qE 'source: https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/blob/[0-9a-f]{40}/.+#L[1-9][0-9]*' "$file" ||
+      note "$stack's refusal names no immutable upstream line permalink: ${file#"$CONFIGS"/}"
   elif [ "$stack" = "$RUNNABLE" ]; then
     SNIPPETS=$((SNIPPETS + 1))
     # ⛔ THE PAIR, NOT THE STACK. A cell for one profile does not license a

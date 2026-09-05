@@ -1,6 +1,7 @@
 use crate::frame::*;
 
-// ⭐ PATCHED HERE, for StreamDependency::encode. TODO/emitters.md, EMIT-03.
+// PATCHED HERE for StreamDependency::encode. See
+// docs/history/todo/emitters.md, EMIT-03.
 use bytes::BufMut;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -83,7 +84,7 @@ impl StreamDependency {
     /// is one less than the [1, 256] the specification defines; that offset is
     /// upstream's own convention and this does not re-apply it.
     ///
-    /// `patches/README.md` and `TODO/emitters.md`, `EMIT-03`.
+    /// `patches/README.md` and `docs/history/todo/emitters.md`, `EMIT-03`.
     pub fn encode<B: BufMut>(&self, dst: &mut B) {
         const EXCLUSIVE: u32 = 1 << 31;
         let mut id: u32 = self.dependency_id.into();

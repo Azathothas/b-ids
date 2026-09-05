@@ -75,4 +75,4 @@ never derived from a digest, and nothing round-trips through one.
 | **the gate** | The three parts a unit of work passes. [`methodology/gate.md`](methodology/gate.md). |
 | **MSRV** | Minimum supported Rust version. Measured from what the dependency graph requires, never chosen. |
 | **the founding brief** | The design document this repository was created from, written in `Azathothas/bit-cli` and retired once its content was in this tree. ⛔ Provenance, not a file: it is not tracked and nothing here depends on it. [`inherited-claims.md`](inherited-claims.md) is where its measurements live and where the term is defined. |
-| **the origin repository** | `Azathothas/bit-cli`, kept at a named commit in [`../references/`](../references/). Every value this project inherited was measured there, and none of it was measured here. |
+| **the origin repository** | `Azathothas/bit-cli`, kept at a named commit on the [`reference` branch](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli). Every value this project inherited was measured there, and none of it was measured here. |

@@ -194,7 +194,7 @@ pub struct Resolved {
     /// The vendor's own spelling of the name, which is what a profile records.
     ///
     /// ⛔ **Reported rather than left for a caller to map.**
-    /// `experiments/10-first-profile.sh` writes the identity file this ends up
+    /// `scripts/capture/profile.sh` writes the identity file this ends up
     /// in, and a shell script carrying its own family-to-name table would be
     /// the same value in two places with no check that they agree.
     pub name: &'static str,

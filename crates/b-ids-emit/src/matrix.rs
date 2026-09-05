@@ -20,7 +20,7 @@ use b_ids_schema::Profile;
 use crate::hello::{client_hello, unnamed_codepoints};
 
 /// The matrix's own schema identifier.
-pub const MATRIX_SCHEMA: &str = "emit-support-matrix/1";
+pub const MATRIX_SCHEMA: &str = "emit-support-matrix/2";
 
 /// A stack this tree can actually run, so its cells come from a run.
 pub const RUNNABLE_STACK: &str = "b-ids-emit";
@@ -65,10 +65,8 @@ pub struct Hole {
     pub stack: String,
     /// What it cannot emit.
     pub cannot: String,
-    /// Where that was read, as a path under `references/` and a line.
-    pub file: String,
-    /// The line.
-    pub line: u32,
+    /// Immutable upstream permalink supporting the reading.
+    pub source: String,
     /// Whether this project could patch it in its own tree.
     pub patchable_here: bool,
     /// ⛔ Always `read` for a hole. It is not a run and must not read as one.
@@ -93,11 +91,10 @@ pub struct Matrix {
 /// a citation nobody resolves is the defect `TOOL-10` exists for.
 #[must_use]
 pub fn holes() -> Vec<Hole> {
-    let hole = |stack: &str, cannot: &str, file: &str, line: u32, patchable: bool| Hole {
+    let hole = |stack: &str, cannot: &str, source: &str, patchable: bool| Hole {
         stack: stack.to_owned(),
         cannot: cannot.to_owned(),
-        file: file.to_owned(),
-        line,
+        source: source.to_owned(),
         patchable_here: patchable,
         evidence: "read".to_owned(),
     };
@@ -106,8 +103,7 @@ pub fn holes() -> Vec<Hole> {
             "rustls",
             "an extension whose codepoint was learned at run time: the parser's own doc comment \
              says unknown extensions are dropped, and the extension struct is crate-private",
-            "references/apify__rustls/tree/rustls/src/msgs/client_hello.rs",
-            147,
+            "https://github.com/apify/rustls/blob/61ab1bc8349d35bfb9a9f1a2a983cb404a79159e/rustls/src/msgs/client_hello.rs#L147",
             // ⭐ This tree already vendors rustls, so this one IS patchable here.
             true,
         ),
@@ -115,16 +111,14 @@ pub fn holes() -> Vec<Hole> {
             "rustls",
             "an arbitrary captured extension order: the order is drawn from a sixteen-bit seed, \
              so at most 65,536 orders are reachable out of the factorial of the extension count",
-            "references/apify__rustls/tree/rustls/src/msgs/client_hello.rs",
-            337,
+            "https://github.com/apify/rustls/blob/61ab1bc8349d35bfb9a9f1a2a983cb404a79159e/rustls/src/msgs/client_hello.rs#L337",
             true,
         ),
         hole(
             "h2",
             "the priority block inside a headers frame: both send-path constructors hardcode no \
              dependency, and the closure that would carry it is passed empty",
-            "references/hyperium__h2/tree/src/frame/headers.rs",
-            123,
+            "https://github.com/hyperium/h2/blob/cb9574bb2c18d1904eca74e98b31c8986b0d8b32/src/frame/headers.rs#L123",
             // ⭐ PATCHED HERE SINCE 2026-09-04, so this flipped from false.
             // vendor/h2 is the tree and patches/h2/ is what changed:
             // StreamDependency::encode, the half `load` never had, and
@@ -138,8 +132,7 @@ pub fn holes() -> Vec<Hole> {
             "impit",
             "any unenumerated codepoint at all: its extension set is a boolean per extension \
              beside a closed enum",
-            "references/apify__impit/tree/impit/src/fingerprint/types.rs",
-            87,
+            "https://github.com/apify/impit/blob/863ddd026aa9285727240f7ef73bc80783d820ec/impit/src/fingerprint/types.rs#L87",
             false,
         ),
         hole(
@@ -147,8 +140,7 @@ pub fn holes() -> Vec<Hole> {
             "⭐ no known hole for the extension model. It carries an ordered list of \
              codepoint-and-body pairs and refuses an unknown codepoint by default rather than \
              dropping it",
-            "references/refraction-networking__utls/tree/u_common.go",
-            184,
+            "https://github.com/refraction-networking/utls/blob/23b1dac19c06c51e278468e29ac329eec605a31f/u_common.go#L184",
             false,
         ),
     ]

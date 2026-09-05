@@ -10,8 +10,7 @@
 //! ⛔ **The reader is NSS's own bundled SQLite**, so the format is theirs
 //! rather than a choice made here. Every field below is the one named in
 //! `https://sqlite.org/fileformat2.html`, and
-//! `references/mozilla__nss/tree/lib/sqlite/` at commit
-//! `7db8de42431841b214b49fd2cb7122a07aa631b8` is the copy that will read what
+//! [`mozilla/nss/lib/sqlite`](https://github.com/mozilla/nss/tree/7db8de42431841b214b49fd2cb7122a07aa631b8/lib/sqlite) is the copy that will read what
 //! this writes.
 //!
 //! ⚠ **A row that would need an overflow page is REFUSED**, not truncated and
@@ -70,8 +69,7 @@ pub struct Table {
     pub name: String,
     /// The columns after the row id, in order.
     ///
-    /// ⛔ **NSS reads these back.** `sdb_update_column` in
-    /// `references/mozilla__nss/tree/lib/softoken/sdb.c:2001` asks SQLite for
+    /// ⛔ **NSS reads these back.** [`sdb_update_column`](https://github.com/mozilla/nss/blob/7db8de42431841b214b49fd2cb7122a07aa631b8/lib/softoken/sdb.c#L2001) asks SQLite for
     /// the column names of the table it opened and adds every attribute column
     /// it does not find, so this list decides what NSS has to add rather than
     /// what it will accept.

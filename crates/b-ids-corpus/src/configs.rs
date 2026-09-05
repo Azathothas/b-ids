@@ -149,14 +149,14 @@ fn hole_refusal(profile: &Profile, holes: &[&Hole]) -> String {
          # client that is almost right, which is more distinguishing than an\n\
          # honestly old one.\n\
          #\n\
-         # What it cannot do, each read at a file and a line in a tree this\n\
-         # project holds at a named commit:\n#\n",
+         # What it cannot do, each supported by an immutable upstream\n\
+         # source:\n#\n",
         stack = holes.first().map_or("unknown", |h| h.stack.as_str()),
         id = profile.id,
     );
     for hole in holes {
         out.push_str(&format!("#   {}\n", hole.cannot));
-        out.push_str(&format!("#     read at {}:{}\n", hole.file, hole.line));
+        out.push_str(&format!("#     source: {}\n", hole.source));
         out.push_str(&format!(
             "#     patchable in this tree: {}\n#\n",
             if hole.patchable_here { "yes" } else { "no" }

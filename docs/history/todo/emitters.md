@@ -46,7 +46,7 @@ that says "approximately", and an emitter that approximates silently is the
 defect the whole project is about.
 
 Each hole carries: what cannot be emitted, at file and line in
-[`../references/`](../../../references/) at its captured commit, and whether it is
+[`../references/`](https://github.com/Azathothas/b-ids/tree/reference) at its captured commit, and whether it is
 patchable in this tree.
 
 Must not: fill a cell from a project's documentation. Fill it from a
@@ -92,7 +92,7 @@ the matrix has two kinds rather than one kind with two colours:
 | kind | how many | where it comes from |
 | --- | --- | --- |
 | ⭐ `cell`, evidence `run` | 6, one per published profile | `b_ids_emit::client_hello` was actually called on each, and each cell carries the command that reproduces it |
-| ⛔ `hole`, evidence `read` | 5 | a file and a line in [`../references/`](../../../references/) at the commit its `PROVENANCE.md` names |
+| ⛔ `hole`, evidence `read` | 5 | a file and a line in [`../references/`](https://github.com/Azathothas/b-ids/tree/reference) at the commit its `PROVENANCE.md` names |
 
 ⛔ **A stack this tree cannot run gets a hole and NO CELL.** Writing a cell for
 it would be filling the matrix from somebody else's documentation, which the

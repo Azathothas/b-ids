@@ -258,7 +258,13 @@ if ($os -eq 'windows') {
     } catch {
         try {
             $cv = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
-            $distroVer = ('{0}.{1}' -f $cv.CurrentMajorVersionNumber, $cv.CurrentBuildNumber)
+            $versionParts = @(
+                $cv.CurrentMajorVersionNumber,
+                $cv.CurrentMinorVersionNumber,
+                $cv.CurrentBuildNumber
+            )
+            if ($null -ne $cv.UBR) { $versionParts += $cv.UBR }
+            $distroVer = $versionParts -join '.'
             $kernel = $cv.ProductName
         } catch {
             $distroVer = [System.Environment]::OSVersion.Version.ToString()

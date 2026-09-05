@@ -2,7 +2,7 @@
 
 What eighteen repositories were read for, what was true in them, and what this
 project takes from each. The corpus is in
-[`../../references/`](../../references/), tracked, one directory per repository,
+[`reference:`](https://github.com/Azathothas/b-ids/tree/reference), tracked, one directory per repository,
 each with a `PROVENANCE.md` naming its commit.
 
 ⭐ **One of the eighteen is not prior art.** `Azathothas/bit-cli` is the
@@ -44,7 +44,7 @@ how many are still wrong. ⛔ Assume more remain.
 | two minutes | the provenance table, then "The five findings that change the plan" |
 | ten minutes | those, then "Where the prior art actually stands" |
 | the implementation to do | [`usable.md`](usable.md), which is written for that |
-| a reason to distrust this | the per-repository sections, each of which cites a file and a line you can open in `references/` |
+| a reason to distrust this | the per-repository sections, each of which cites a file and a line you can open in `reference:` |
 
 ---
 
@@ -55,24 +55,24 @@ taken from it: a path alone is not a citation once upstream moves.
 
 | repository | commit | passes | why it was read |
 | --- | --- | --- | --- |
-| ⭐ [`Azathothas/bit-cli`](../../references/Azathothas__bit-cli/) | `cce8131231abe8b232054f3f27b3feeac19dd411` | 4 | the origin. Every value this project inherited was measured here |
-| [`apify/impit`](../../references/apify__impit/) | `863ddd026aa9285727240f7ef73bc80783d820ec` | 4 | the worked example the founding brief uses throughout |
-| [`apify/rustls`](../../references/apify__rustls/) | `61ab1bc8349d35bfb9a9f1a2a983cb404a79159e` | 3 | the fork that is supposed to emit a chosen `ClientHello` |
-| [`hyperium/h2`](../../references/hyperium__h2/) | `cb9574bb2c18d1904eca74e98b31c8986b0d8b32` | 3 | whether a client can open a stream with a browser's PRIORITY block |
-| [`lexiforest/curl-impersonate`](../../references/lexiforest__curl-impersonate/) | `8d0c2c904c4f3751705d0ede8c28873116309fd2` | 4 | the claim that nobody publishes a machine-readable corpus |
-| [`FoxIO-LLC/ja4`](../../references/FoxIO-LLC__ja4/) | `02e78ba3ebac1f5c38bd3eb1a91b4a82e919e5fc` | 3 | the JA4 specification, its test vectors, and its licence |
-| [`salesforce/ja3`](../../references/salesforce__ja3/) | `502cc6395811c54743b0561419d61900a6df3ff7` | 2 | whether JA3 strips GREASE |
-| [`refraction-networking/utls`](../../references/refraction-networking__utls/) | `23b1dac19c06c51e278468e29ac329eec605a31f` | 4 | the arbitrary-codepoint escape hatch and the raw-hello parser |
-| [`damianobarbati/get-browser-fingerprint`](../../references/damianobarbati__get-browser-fingerprint/) | `9d347ee8aa548c5f90d934c7782b4038340a46e6` | 1 | where the scope boundary of this project actually is |
-| [`microlinkhq/top-user-agents`](../../references/microlinkhq__top-user-agents/) | `84a7a7110d5cb212271869004e4f4a9671a445b3` | 2 | a working publishing surface for flat, fetchable data |
-| [`EIGHTFINITE/top-user-agents`](../../references/EIGHTFINITE__top-user-agents/) | `e4b56da9acbd4f051da817c0013b2a919beff44b` | 2 | what two copies of one dataset do to each other |
-| [`Kikobeats/https-tls`](../../references/Kikobeats__https-tls/) | `b096cb866bdebd5e81d8265631a9b86ff01e0e5f` | 3 | deriving TLS parameters from a User-Agent string |
-| [`pkgforge-security/Wordlists`](../../references/pkgforge-security__Wordlists/) | `06f537fd60ef45337af52224d743cc359c2d31ee` | 2 | the flat route the operator named as the model |
-| [`daijro/camoufox`](../../references/daijro__camoufox/) | `1a67b4a16630d350e00a375542298875046935e0` | 2 | whether it touches the network layer at all |
-| [`daijro/browserforge`](../../references/daijro__browserforge/) | `a8b798f37460d1dd02aea33f80c83647913a1bbd` | 2 | generated fingerprints against measured ones |
-| [`adryfish/fingerprint-chromium`](../../references/adryfish__fingerprint-chromium/) | `3f61b0dfa665e883da8824b1450601fc529dd006` | 1 | what its repository actually contains |
-| [`botswin/BotBrowser`](../../references/botswin__BotBrowser/) | `83471e4a055de9698f5f18eb605be623789e38e1` | 2 | what an open licence over closed data looks like |
-| [`CloakHQ/CloakBrowser`](../../references/CloakHQ__CloakBrowser/) | `f04c23da285b3b3d3cf10c8f9d282e7adc1d52ce` | 2 | the same question, in its other shape |
+| ⭐ [`Azathothas/bit-cli`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli) | `cce8131231abe8b232054f3f27b3feeac19dd411` | 4 | the origin. Every value this project inherited was measured here |
+| [`apify/impit`](https://github.com/Azathothas/b-ids/tree/reference/apify__impit) | `863ddd026aa9285727240f7ef73bc80783d820ec` | 4 | the worked example the founding brief uses throughout |
+| [`apify/rustls`](https://github.com/Azathothas/b-ids/tree/reference/apify__rustls) | `61ab1bc8349d35bfb9a9f1a2a983cb404a79159e` | 3 | the fork that is supposed to emit a chosen `ClientHello` |
+| [`hyperium/h2`](https://github.com/Azathothas/b-ids/tree/reference/hyperium__h2) | `cb9574bb2c18d1904eca74e98b31c8986b0d8b32` | 3 | whether a client can open a stream with a browser's PRIORITY block |
+| [`lexiforest/curl-impersonate`](https://github.com/Azathothas/b-ids/tree/reference/lexiforest__curl-impersonate) | `8d0c2c904c4f3751705d0ede8c28873116309fd2` | 4 | the claim that nobody publishes a machine-readable corpus |
+| [`FoxIO-LLC/ja4`](https://github.com/Azathothas/b-ids/tree/reference/FoxIO-LLC__ja4) | `02e78ba3ebac1f5c38bd3eb1a91b4a82e919e5fc` | 3 | the JA4 specification, its test vectors, and its licence |
+| [`salesforce/ja3`](https://github.com/Azathothas/b-ids/tree/reference/salesforce__ja3) | `502cc6395811c54743b0561419d61900a6df3ff7` | 2 | whether JA3 strips GREASE |
+| [`refraction-networking/utls`](https://github.com/Azathothas/b-ids/tree/reference/refraction-networking__utls) | `23b1dac19c06c51e278468e29ac329eec605a31f` | 4 | the arbitrary-codepoint escape hatch and the raw-hello parser |
+| [`damianobarbati/get-browser-fingerprint`](https://github.com/Azathothas/b-ids/tree/reference/damianobarbati__get-browser-fingerprint) | `9d347ee8aa548c5f90d934c7782b4038340a46e6` | 1 | where the scope boundary of this project actually is |
+| [`microlinkhq/top-user-agents`](https://github.com/Azathothas/b-ids/tree/reference/microlinkhq__top-user-agents) | `84a7a7110d5cb212271869004e4f4a9671a445b3` | 2 | a working publishing surface for flat, fetchable data |
+| [`EIGHTFINITE/top-user-agents`](https://github.com/Azathothas/b-ids/tree/reference/EIGHTFINITE__top-user-agents) | `e4b56da9acbd4f051da817c0013b2a919beff44b` | 2 | what two copies of one dataset do to each other |
+| [`Kikobeats/https-tls`](https://github.com/Azathothas/b-ids/tree/reference/Kikobeats__https-tls) | `b096cb866bdebd5e81d8265631a9b86ff01e0e5f` | 3 | deriving TLS parameters from a User-Agent string |
+| [`pkgforge-security/Wordlists`](https://github.com/Azathothas/b-ids/tree/reference/pkgforge-security__Wordlists) | `06f537fd60ef45337af52224d743cc359c2d31ee` | 2 | the flat route the operator named as the model |
+| [`daijro/camoufox`](https://github.com/Azathothas/b-ids/tree/reference/daijro__camoufox) | `1a67b4a16630d350e00a375542298875046935e0` | 2 | whether it touches the network layer at all |
+| [`daijro/browserforge`](https://github.com/Azathothas/b-ids/tree/reference/daijro__browserforge) | `a8b798f37460d1dd02aea33f80c83647913a1bbd` | 2 | generated fingerprints against measured ones |
+| [`adryfish/fingerprint-chromium`](https://github.com/Azathothas/b-ids/tree/reference/adryfish__fingerprint-chromium) | `3f61b0dfa665e883da8824b1450601fc529dd006` | 1 | what its repository actually contains |
+| [`botswin/BotBrowser`](https://github.com/Azathothas/b-ids/tree/reference/botswin__BotBrowser) | `83471e4a055de9698f5f18eb605be623789e38e1` | 2 | what an open licence over closed data looks like |
+| [`CloakHQ/CloakBrowser`](https://github.com/Azathothas/b-ids/tree/reference/CloakHQ__CloakBrowser) | `f04c23da285b3b3d3cf10c8f9d282e7adc1d52ce` | 2 | the same question, in its other shape |
 
 ⚠ **`refraction-networking/utls` was not on the reading list and was added.** It
 is the only project in the set that already solves the design problem this one
@@ -98,7 +98,7 @@ other two are rendered strings.**
 
 `bit-cli`'s probe reads the HEADERS frame's flags byte for `0x20` and, when it
 is set, decodes the five bytes after the frame head, at
-[`h2fp.rs:219-223`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/h2fp.rs):
+[`h2fp.rs:219-223`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/h2fp.rs):
 the exclusive bit is `b[0] >> 7`, the dependency is the remaining 31 bits, and
 the weight is `b[4]`. That is exactly the measurement this sweep's first
 revision said would settle it.
@@ -112,7 +112,7 @@ revision said would settle it.
 ⚠ **And the fourth source explains the two zeros rather than contradicting
 them.** `bit-cli`'s own client emitted `0` in that field until it patched `h2`,
 and the before-and-after is recorded at
-[`patches/UPSTREAM.md:1751-1757`](../../references/Azathothas__bit-cli/tree/patches/UPSTREAM.md).
+[`patches/UPSTREAM.md:1751-1757`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/patches/UPSTREAM.md).
 A `0` is what a stack that cannot write the block produces. Two of the three
 sources reporting `0` are reading a tool, not a browser.
 
@@ -124,7 +124,7 @@ control, not an open three-way question.
 
 ⭐ **The units trap is settled with it.** `bit-cli` names the field for the wire
 and says so in the type's own comment at
-[`page.rs:293-299`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs):
+[`page.rs:293-299`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs):
 the wire weight is one less than the weight the specification talks in, so a
 browser asking for 256 puts 255 on the wire. `curl-impersonate`'s
 `--http2-stream-weight 256` and `bit-cli`'s `255` are one quantity in two units.
@@ -135,10 +135,10 @@ browser asking for 256 puts 255 on the wire. `curl-impersonate`'s
 itself.**
 
 `lexiforest/curl-impersonate` ships **43 signature files** under
-[`tests/signatures/`](../../references/lexiforest__curl-impersonate/tree/tests/signatures/),
+[`tests/signatures/`](https://github.com/Azathothas/b-ids/tree/reference/lexiforest__curl-impersonate/tree/tests/signatures),
 one per exact build, covering Chrome, Edge, Firefox, Safari on macOS and iOS,
 and Tor. Each carries, per
-[`chrome_116.0.5845.180_win10.yaml`](../../references/lexiforest__curl-impersonate/tree/tests/signatures/chrome_116.0.5845.180_win10.yaml):
+[`chrome_116.0.5845.180_win10.yaml`](https://github.com/Azathothas/b-ids/blob/reference/lexiforest__curl-impersonate/tree/tests/signatures/chrome_116.0.5845.180_win10.yaml):
 
 - cipher suites **in wire order, GREASE included**;
 - an ordered `extensions` list with per-extension length and body, including
@@ -174,7 +174,7 @@ contract.** [`../../README.md`](../../README.md) claims that one. Claiming the
 wider gap is a claim a reader can disprove in one clone.
 
 ⚠ **A second documentation defect, found while checking the first.**
-[`tests/signatures/README.md`](../../references/lexiforest__curl-impersonate/tree/tests/signatures/README.md)
+[`tests/signatures/README.md`](https://github.com/Azathothas/b-ids/blob/reference/lexiforest__curl-impersonate/tree/tests/signatures/README.md)
 states that "Profiles with HTTP/3 support also include normalized QUIC transport
 parameters and QUIC TLS fields under `http3`". Grep finds `http3` in zero of the
 43 signature files. The documented field does not exist in the data.
@@ -182,7 +182,7 @@ parameters and QUIC TLS fields under `http3`". Grep finds `http3` in zero of the
 ### 3. JA3 strips GREASE, and the founding brief says it does not
 
 ⛔ **Refuted at the reference implementation.**
-[`salesforce/ja3`](../../references/salesforce__ja3/tree/) defines
+[`salesforce/ja3`](https://github.com/Azathothas/b-ids/tree/reference/salesforce__ja3/tree) defines
 `GREASE_TABLE` at `python/ja3.py:22-26` with all sixteen RFC 8701 values and
 filters them out of both the cipher list (`:98`) and the extension list
 (`:119`). `README.md:97` states the intent in as many words: "JA3 ignores these
@@ -197,20 +197,20 @@ given for it was half wrong, and a session that inherited the reason would have
 looked for GREASE in a JA3 string and not found it.
 
 Independent corroboration in the corpus:
-[`chrome_118.0.5993.117_linux.yaml`](../../references/lexiforest__curl-impersonate/tree/tests/signatures/chrome_118.0.5993.117_linux.yaml)
+[`chrome_118.0.5993.117_linux.yaml`](https://github.com/Azathothas/b-ids/blob/reference/lexiforest__curl-impersonate/tree/tests/signatures/chrome_118.0.5993.117_linux.yaml)
 carries a `ja3_text` whose cipher and extension lists contain no GREASE value,
 beside a `ciphersuites:` block that lists `GREASE` first. The two are consistent
 only if JA3 strips.
 
 ⭐ **And the origin repository already had it right in code.**
-[`tlsfp.rs:226`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/tlsfp.rs)
+[`tlsfp.rs:226`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/tlsfp.rs)
 takes `filter_grease` as a parameter, so its JA3 is computed both ways
 deliberately. The brief's prose and the tree it was written in disagreed, and
 the tree was right.
 
 ### 4. JA4_ro also strips GREASE, so no digest can see a GREASE question
 
-[`FoxIO-LLC/ja4/technical_details/JA4.md:208`](../../references/FoxIO-LLC__ja4/tree/technical_details/JA4.md):
+[`FoxIO-LLC/ja4/technical_details/JA4.md:208`](https://github.com/Azathothas/b-ids/blob/reference/FoxIO-LLC__ja4/tree/technical_details/JA4.md):
 "The 'o' option includes the original values in the original order, **less
 GREASE values**."
 
@@ -226,7 +226,7 @@ than from a fear of parser rot.
 ### 5. FoxIO's licensing splits JA4 from JA4+, and only one half is free
 
 ⛔ **This affects what a 0BSD project may publish.** From
-[`LICENSE-JA4`](../../references/FoxIO-LLC__ja4/tree/LICENSE-JA4) and the
+[`LICENSE-JA4`](https://github.com/Azathothas/b-ids/blob/reference/FoxIO-LLC__ja4/tree/LICENSE-JA4) and the
 licensing answers beside it, in the file whose name carries a space and
 therefore cannot be linked from here, `License FAQ.md` in the same directory:
 
@@ -257,7 +257,7 @@ in this project should emit a JA4+ variant until it is.
 
 ⚠ **It is not a fingerprinting project.** Its own description is a
 command-line BitTorrent client, and its
-[`README.md:1-12`](../../references/Azathothas__bit-cli/tree/README.md) opens on
+[`README.md:1-12`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/README.md) opens on
 attaching web seeds to a torrent. The browser work exists because the client
 fetches from HTTP origins that fingerprint their callers, and the entry that
 produced all of it is `T-244`, "a web page is not a source". ⭐ **That is why the
@@ -278,7 +278,7 @@ of them dependency-bump pull requests, zero review comments, zero releases, zero
 tags, and an empty discussions list.
 
 ⭐ **The decisions are in the origin repository's
-[`TODO/cli-surface.md`](../../references/Azathothas__bit-cli/tree/TODO/cli-surface.md),
+[`TODO/cli-surface.md`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/TODO/cli-surface.md),
 6861 lines of them**, one entry
 per unit of work with its measurement, its acceptance command and the command's
 real output. Three entries carry everything this project inherited:
@@ -297,7 +297,7 @@ project and is checked rather than assumed.
 
 ⭐ **The instrument is committed and runnable**, which is what makes every number
 below re-derivable rather than quotable.
-[`crates/bit-cli-core/examples/loopback-tlsprobe/`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/)
+[`crates/bit-cli-core/examples/loopback-tlsprobe/`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe)
 is a listener a browser is pointed at: `main.rs` is the server, the throwaway
 certificate authority and the JSON contract; `tlsfp.rs` parses the
 `ClientHello` and computes JA3, JA4, JA4_r and JA4_ro; `h2fp.rs` reads SETTINGS,
@@ -306,7 +306,7 @@ WINDOW_UPDATE and the PRIORITY block and renders the Akamai string;
 
 ⭐ **It takes `--expect-ja4`, `--expect-ja3`, `--expect-akamai` and
 `--expect-file`, and exits 1 on a mismatch**
-([`main.rs:123-127`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/main.rs)).
+([`main.rs:123-127`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/main.rs)).
 That is the property [`../methodology/references.md`](../methodology/references.md)
 calls the difference between research that decays and research that holds: the
 same binary is the measuring device and the regression check.
@@ -316,8 +316,8 @@ inherited about Chrome:
 
 | artefact | what it holds |
 | --- | --- |
-| [`fingerprints/bit-cli-browser.json`](../../references/Azathothas__bit-cli/tree/fingerprints/bit-cli-browser.json) | Chrome 151 on Windows, captured `2026-08-30T02:29:47.449Z`, with the note saying which probe mode produced which field |
-| [`bench/browser-fingerprint-cft-152.json`](../../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json) | Chrome for Testing 152.0.7977.64 in a throwaway `debian:bookworm-slim` distro, generated `2026-08-30T02:08:35.149Z`, with the header values and the container's own record |
+| [`fingerprints/bit-cli-browser.json`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/fingerprints/bit-cli-browser.json) | Chrome 151 on Windows, captured `2026-08-30T02:29:47.449Z`, with the note saying which probe mode produced which field |
+| [`bench/browser-fingerprint-cft-152.json`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json) | Chrome for Testing 152.0.7977.64 in a throwaway `debian:bookworm-slim` distro, generated `2026-08-30T02:08:35.149Z`, with the header values and the container's own record |
 
 ⚠ **Neither is a profile in this project's sense.** Both are single-purpose
 goldens for one client's assertions: no per-field provenance, no channel, no
@@ -331,7 +331,7 @@ project's contribution, stated against the closest thing to it that exists.**
 own capture does not.** The brief lists fourteen header fields with
 `cache-control` first and then spends a paragraph on why it might be there. The
 committed capture,
-[`bench/browser-fingerprint-cft-152.json`](../../references/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json)
+[`bench/browser-fingerprint-cft-152.json`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/bench/browser-fingerprint-cft-152.json)
 `observed.headers`, is **thirteen header fields with no `cache-control` at
 all**, and `grep` over the whole tree finds `max-age=0` nowhere. `T-264` states the header
 change as `accept-language` moving from twelfth to fourth, which is the
@@ -346,18 +346,18 @@ for the reason `SCHEMA-04` gives; it is no longer owed an explanation of this.
 
 - the brief writes the Chrome 151 build as `151.0.7922.7x`. The profile the
   golden was captured from is
-  [`page.rs:110`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs),
+  [`page.rs:110`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs),
   `151.0.7922.72`, and `T-264` separately records the capture host at
   `151.0.7922.76` and a hosted Ubuntu runner at `151.0.7922.173`. Three builds
   of one major, and the brief's `7x` hid which one produced which number.
 - the brief cross-references its own JA3 stability figure to a section number
   that does not exist in it. The figure's real home is a doc comment,
-  [`main.rs:32-34`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/main.rs),
+  [`main.rs:32-34`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/examples/loopback-tlsprobe/main.rs),
   which attributes it to a survey of one impersonating client. It is
   second-hand in the origin tree too.
 - the brief says the patch series is "55 patches across eight upstreams". There
   are 55 patch files and eight directories under
-  [`patches/`](../../references/Azathothas__bit-cli/tree/patches/), but one of
+  [`patches/`](https://github.com/Azathothas/b-ids/tree/reference/Azathothas__bit-cli/tree/patches), but one of
   the eight holds a scan artefact and no patch. Seven upstreams are patched.
 
 ### What the origin tree adds that the brief did not carry
@@ -385,7 +385,7 @@ not have. [`../inherited-claims.md`](../inherited-claims.md) carries the values;
 - **Why eight handshakes.** The check that missed that defect made one, so it
   sampled one draw in sixteen. It makes eight now and every one must reach
   HTTP/2, at
-  [`check-fingerprint.ps1:69`](../../references/Azathothas__bit-cli/tree/scripts/check-fingerprint.ps1).
+  [`check-fingerprint.ps1:69`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/scripts/check-fingerprint.ps1).
   The brief's "default it to something like 8" is that number with its reason.
 - **Resumption, counted.** Over eleven captures of one binary, eight offered
   `session_ticket` and three offered `pre_shared_key`, and the two produce
@@ -397,7 +397,7 @@ not have. [`../inherited-claims.md`](../inherited-claims.md) carries the values;
   rewritten by the headless normalisation, in a `headless_rewritten` field, so
   the rewrite is reported rather than silent.
 - ⭐ **A one-file home for a whole profile.**
-  [`page.rs`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs)
+  [`page.rs`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs)
   holds the ciphers, groups, signature algorithms, extension order, ALPN, the
   four HTTP/2 settings, the priority block, the pseudo-header order and the
   headers, and constructs the vendored client's type from them. A version bump
@@ -438,25 +438,25 @@ and states the trade-offs in [`../trust-anchors.md`](../trust-anchors.md).
 **Verdict: anti-pattern exhibit, kept on purpose, and partly confirms.**
 
 The database model is a boolean per extension.
-[`impit/src/fingerprint/mod.rs:106-135`](../../references/apify__impit/tree/impit/src/fingerprint/mod.rs)
+[`impit/src/fingerprint/mod.rs:106-135`](https://github.com/Azathothas/b-ids/blob/reference/apify__impit/tree/impit/src/fingerprint/mod.rs)
 declares `TlsExtensions { server_name: bool, status_request: bool, ... }` with
 an `extension_order: Vec<ExtensionType>` over the closed enum at
-[`types.rs:87-118`](../../references/apify__impit/tree/impit/src/fingerprint/types.rs).
+[`types.rs:87-118`](https://github.com/Azathothas/b-ids/blob/reference/apify__impit/tree/impit/src/fingerprint/types.rs).
 ⛔ There is no variant for a codepoint learned at runtime, so an extension
 nobody has enumerated cannot be represented at all.
 
 `Http2Fingerprint`
-([`mod.rs:100-105`](../../references/apify__impit/tree/impit/src/fingerprint/mod.rs))
+([`mod.rs:100-105`](https://github.com/Azathothas/b-ids/blob/reference/apify__impit/tree/impit/src/fingerprint/mod.rs))
 holds four fields. **`header_table_size` does not appear anywhere in the crate**
 (grep, whole tree, zero hits), so `SETTINGS_HEADER_TABLE_SIZE` is not
 expressible. Only three settings reach the client, at
-[`impit/src/impit.rs:250-261`](../../references/apify__impit/tree/impit/src/impit.rs),
+[`impit/src/impit.rs:250-261`](https://github.com/Azathothas/b-ids/blob/reference/apify__impit/tree/impit/src/impit.rs),
 and `None` there means "do not override" rather than "do not send", so an
 absent setting is emitted at the underlying stack's default.
 
 ⭐ **The connection-window field carries two different quantities in one file.**
 Audited by reading
-[`database/chrome.rs`](../../references/apify__impit/tree/impit/src/fingerprint/database/chrome.rs):
+[`database/chrome.rs`](https://github.com/Azathothas/b-ids/blob/reference/apify__impit/tree/impit/src/fingerprint/database/chrome.rs):
 
 | entry | line | value |
 | --- | --- | --- |
@@ -470,7 +470,7 @@ the increment subtracted twice.
 
 ⭐ **Five of the thirteen Chrome modules carry only their own headers and reuse
 another module's TLS and HTTP/2 wholesale.**
-[`chrome.rs:985-996`](../../references/apify__impit/tree/impit/src/fingerprint/database/chrome.rs)
+[`chrome.rs:985-996`](https://github.com/Azathothas/b-ids/blob/reference/apify__impit/tree/impit/src/fingerprint/database/chrome.rs)
 is the pattern: `chrome_101` returns `chrome_100::tls_fingerprint()` and
 `chrome_100::http2_fingerprint()` beside a Chrome 101 User-Agent. **That is a
 new User-Agent over an old hello, shipped, in the reference database**: the
@@ -478,7 +478,7 @@ exact combination a coherence checker exists to refuse.
 
 ⚠ **The origin repository vendors this crate and stopped reading its data.**
 `T-264` moved every value into
-[`page.rs`](../../references/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs)
+[`page.rs`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/crates/bit-cli-core/src/page.rs)
 and left the vendored database carrying nothing that ships, on the reasoning
 that a starting point does not get to be the home of the answer. ⭐ That is an
 independent arrival at this project's first rule, by somebody who had shipped
@@ -507,7 +507,7 @@ against the alternative.
   a plain `fetch`; switching to the Firefox profile moved it. Third-party,
   measured, and it is what a corpus consumer actually cares about.
 - **432, closed**: the multipart boundary is browser-specific.
-  [`mod.rs:41-58`](../../references/apify__impit/tree/impit/src/fingerprint/mod.rs)
+  [`mod.rs:41-58`](https://github.com/Azathothas/b-ids/blob/reference/apify__impit/tree/impit/src/fingerprint/mod.rs)
   implements `----WebKitFormBoundary` plus 16 alphanumerics for Chrome and
   `----geckoformboundary` plus 32 hex for Firefox. ⭐ **A fingerprint surface the
   founding brief does not mention at all.**
@@ -520,14 +520,14 @@ against the alternative.
 **Verdict: confirms, and gives a number the brief did not have.**
 
 ⛔ The doc comment on
-[`rustls/src/msgs/client_hello.rs:141-148`](../../references/apify__rustls/tree/rustls/src/msgs/client_hello.rs)
+[`rustls/src/msgs/client_hello.rs:141-148`](https://github.com/Azathothas/b-ids/blob/reference/apify__rustls/tree/rustls/src/msgs/client_hello.rs)
 states the constraint outright: "Unknown extensions are dropped during
 parsing." The struct is one `Option<T>` field per `ExtensionType`, and it is
 `pub(crate)`, so it is not reachable from outside the crate at all.
 
 ⭐ **The extension shuffle is a pure function of a `u16` seed.**
 `order_insensitive_extensions_in_random_order`
-([`client_hello.rs:337-355`](../../references/apify__rustls/tree/rustls/src/msgs/client_hello.rs))
+([`client_hello.rs:337-355`](https://github.com/Azathothas/b-ids/blob/reference/apify__rustls/tree/rustls/src/msgs/client_hello.rs))
 sorts by `low_quality_integer_hash((order_seed << 16) | ext_type)`, after
 removing `PreSharedKey`, the two ECH extensions and anything in
 `contiguous_extensions`. PSK and ECH are forced last.
@@ -563,7 +563,7 @@ three: **any field on a GREASE codepoint takes an arbitrary body.**
 **Verdict: confirms, exactly, including the seam, and the patch already exists.**
 
 - Both HEADERS constructors set `stream_dep: None`
-  ([`src/frame/headers.rs:120`](../../references/hyperium__h2/tree/src/frame/headers.rs)
+  ([`src/frame/headers.rs:120`](https://github.com/Azathothas/b-ids/blob/reference/hyperium__h2/tree/src/frame/headers.rs)
   and `:141`) and nothing on the send path sets it. The `PRIORITY` flag constant
   exists at `:113` and the field **is** parsed on receive at `:180`.
 - ⭐ `EncodingHeaderBlock::encode` (`:650-660`) takes `f: FnOnce(&mut
@@ -579,12 +579,12 @@ closure that is already there.** The seam is real and the arithmetic is
 somebody else's.
 
 ⭐ **It has been done, and the diff is in the corpus.**
-[`patches/h2/0004-src-frame-headers.rs.patch`](../../references/Azathothas__bit-cli/tree/patches/h2/0004-src-frame-headers.rs.patch)
+[`patches/h2/0004-src-frame-headers.rs.patch`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/patches/h2/0004-src-frame-headers.rs.patch)
 adds `StreamDependency::encode` and `Headers::set_stream_priority`, which sets
 the payload and the flag in one call because a head with the flag and no block
 is a frame a peer cannot parse. Its rationale, and what it unblocks, is under
 `## h2: a client cannot open a stream with the PRIORITY block a browser sends`
-in [`references/Azathothas__bit-cli/tree/patches/UPSTREAM.md`](../../references/Azathothas__bit-cli/tree/patches/UPSTREAM.md).
+in [`reference:Azathothas__bit-cli/tree/patches/UPSTREAM.md`](https://github.com/Azathothas/b-ids/blob/reference/Azathothas__bit-cli/tree/patches/UPSTREAM.md).
 Two tests there assert the wire bytes directly: `80 00 00 00 ff` after a nine
 byte head with the PRIORITY flag set, and no flag and no block when no priority
 is given.
@@ -601,10 +601,10 @@ carry, not to upstream.
 
 ⭐ **The escape hatch the brief says must be designed for already exists here.**
 `GenericExtension { Id uint16; Data []byte }`
-([`u_tls_extensions.go:875-878`](../../references/refraction-networking__utls/tree/u_tls_extensions.go))
+([`u_tls_extensions.go:875-878`](https://github.com/Azathothas/b-ids/blob/reference/refraction-networking__utls/tree/u_tls_extensions.go))
 inside `ClientHelloSpec { CipherSuites []uint16; CompressionMethods []uint8;
 Extensions []TLSExtension; ... }`
-([`u_common.go:184-196`](../../references/refraction-networking__utls/tree/u_common.go)).
+([`u_common.go:184-196`](https://github.com/Azathothas/b-ids/blob/reference/refraction-networking__utls/tree/u_common.go)).
 Ordered, codepoint-keyed, arbitrary body.
 
 ⭐ **The default refuses rather than dropping.** `ClientHelloSpec.FromRaw`
@@ -612,7 +612,7 @@ returns `unsupported extension %d` for an unknown codepoint unless
 `allowBluntMimicry` is set, in which case it keeps the codepoint **and its
 bytes** (`u_common.go:258-265`). Refusing beats a silent drop, and the flag is
 documented as a mimicry-versus-safety trade at
-[`u_fingerprinter.go:8-22`](../../references/refraction-networking__utls/tree/u_fingerprinter.go).
+[`u_fingerprinter.go:8-22`](https://github.com/Azathothas/b-ids/blob/reference/refraction-networking__utls/tree/u_fingerprinter.go).
 
 ⚠ **And there is a dead branch worth learning from.** In the JSON path,
 `u_common.go:335-341` returns an error when the type assertion fails, then tests
@@ -622,7 +622,7 @@ conditions imply the early return above it. ⭐ **The unknown-is-not-absent rule
 needs a test, not a branch.** Here the branch exists and cannot fire.
 
 `Fingerprinter.RawClientHello`
-([`u_fingerprinter.go:44-58`](../../references/refraction-networking__utls/tree/u_fingerprinter.go))
+([`u_fingerprinter.go:44-58`](https://github.com/Azathothas/b-ids/blob/reference/refraction-networking__utls/tree/u_fingerprinter.go))
 takes the full TLS record including both headers and returns a spec. That is the
 normaliser shape this project needs, with a stated input contract.
 
@@ -634,18 +634,18 @@ It maps a User-Agent string to Node TLS options. Three defects, all at file and
 line, all in 388 lines:
 
 1. ⛔ **One table per family, dated by comment.**
-   [`src/index.js:57`](../../references/Kikobeats__https-tls/tree/src/index.js)
+   [`src/index.js:57`](https://github.com/Azathothas/b-ids/blob/reference/Kikobeats__https-tls/tree/src/index.js)
    labels the Chrome cipher list "Chrome v92" and `:80` labels Firefox "Firefox
    v91". A Chrome 152 User-Agent gets Chrome 92's ciphers. That is a new User-
    Agent over an old hello, by construction rather than by neglect.
 2. ⛔ **The classifier cannot produce a family the data has.**
-   [`src/browser.js`](../../references/Kikobeats__https-tls/tree/src/browser.js)
+   [`src/browser.js`](https://github.com/Azathothas/b-ids/blob/reference/Kikobeats__https-tls/tree/src/browser.js)
    returns `firefox`, `chrome` or `safari`, and **anything unrecognised is
    safari**. `src/headers-order.json:119` carries an `edge` key that nothing can
    reach.
 3. ⛔ **The header ordering silently does nothing on the input a modern client
    produces.** `sortHeaders`
-   ([`src/headers.js:20-45`](../../references/Kikobeats__https-tls/tree/src/headers.js))
+   ([`src/headers.js:20-45`](https://github.com/Azathothas/b-ids/blob/reference/Kikobeats__https-tls/tree/src/headers.js))
    matches with `key in headers` against a capitalised list (`Host`,
    `User-Agent`), while `getHeader` lowercases. A caller passing lowercase names,
    which is the HTTP/2 shape, gets every header in insertion order and no error.
@@ -686,7 +686,7 @@ this project's.
 
 **Verdict: adopt the naming; ⛔ do not adopt the trailing newline.**
 
-[`Misc/User-Agents/`](../../references/pkgforge-security__Wordlists/tree/Misc/User-Agents/)
+[`Misc/User-Agents/`](https://github.com/Azathothas/b-ids/tree/reference/pkgforge-security__Wordlists/tree/Misc/User-Agents)
 uses `ua_<browser>_<platform>_<latest|all>.txt`: flat, guessable, no index
 needed, one value per `_latest` file.
 
@@ -725,9 +725,9 @@ worth copying.
 **Verdict: anti-pattern exhibit, and the purest one.**
 
 A Python reimplementation of Apify's `fingerprint-suite`
-([`README.md:39`](../../references/daijro__browserforge/tree/README.md)) that
+([`README.md:39`](https://github.com/Azathothas/b-ids/blob/reference/daijro__browserforge/tree/README.md)) that
 **generates** header sets and fingerprints by sampling a Bayesian network
-([`browserforge/bayesian_network.py`](../../references/daijro__browserforge/tree/browserforge/bayesian_network.py)).
+([`browserforge/bayesian_network.py`](https://github.com/Azathothas/b-ids/blob/reference/daijro__browserforge/tree/browserforge/bayesian_network.py)).
 
 ⛔ A sample from a conditional distribution is **plausible**, not **observed**.
 It is the derived value this project's first rule refuses, and a combination it
@@ -742,10 +742,10 @@ settings, so it is not a competitor on the network layer either.
 **Verdict: confirms the consumer story, and its scope is narrower than its name.**
 
 39 patches under
-[`patches/`](../../references/daijro__camoufox/tree/patches/). Grep for `nss`,
+[`patches/`](https://github.com/Azathothas/b-ids/tree/reference/daijro__camoufox/tree/patches). Grep for `nss`,
 `ssl` or `tls` across all of them matches one file, and that file is the
 Playwright patch. ⛔ **Nothing in this project patches the TLS stack.**
-[`network-patches.patch`](../../references/daijro__camoufox/tree/patches/network-patches.patch)
+[`network-patches.patch`](https://github.com/Azathothas/b-ids/blob/reference/daijro__camoufox/tree/patches/network-patches.patch)
 touches `netwerk/protocol/http/nsHttpHandler.cpp` and `moz.build` only, for
 Accept-Language, User-Agent and request urgency.
 
