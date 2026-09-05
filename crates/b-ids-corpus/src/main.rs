@@ -34,7 +34,7 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
        b-ids-corpus publish --out DIR [--root DIR]
        b-ids-corpus data-branch --head COMMIT|none --parent COMMIT|none
        b-ids-corpus release --tree DIR --tag TAG [--existing FILE] [--notes FILE]
-                            [--before DIR] [--root DIR]
+                            [--before DIR]
        b-ids-corpus pull-request --before DIR --after DIR --run FILE --out DIR
 
   add              turn the cold connection of a navigation into a profile and
@@ -725,7 +725,6 @@ fn data_branch_command(head: &str, parent: &str) -> ExitCode {
 /// is planned once; a later tag is parsed, planned, and rebuilt from its own
 /// parts, so a tag the dated rule would not have produced fails the round trip.
 fn release_command(
-    root: &str,
     tree: &str,
     wanted: &str,
     existing_file: Option<&str>,
@@ -823,7 +822,10 @@ fn release_command(
     // before and the after were the same set and the body of the FIRST release
     // came out empty. Found by running it.
     let was = before.map_or_else(|| Ok(Vec::new()), load);
-    let (was, now) = match (was, load(root)) {
+    // The assembled tree is the released corpus. `main` deliberately contains
+    // no corpus, so loading the command's general repository root would render
+    // an empty first-release body while every asset still carried profiles.
+    let (was, now) = match (was, load(tree)) {
         (Ok(was), Ok(now)) => (was, now),
         (Err(why), _) | (_, Err(why)) => {
             eprintln!("b-ids-corpus: {why}");
@@ -1155,7 +1157,6 @@ fn main() -> ExitCode {
                 return fail("release needs --tree, an assembled tree, and --tag");
             };
             release_command(
-                &root,
                 &tree,
                 &wanted_tag,
                 existing.as_deref(),

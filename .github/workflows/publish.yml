@@ -363,19 +363,26 @@ jobs:
           n=$(grep -c . SHA256SUMS)
           echo "$n file(s) verified against their published checksums"
 
-      # ⚠ THE CORPUS THIS TAG SUPERSEDES, so the body says what MOVED rather
-      # than listing everything every time. A first release has no previous tag
-      # and every route is then new, which is the honest answer rather than an
-      # empty one.
+      # ⚠ THE CORPUS THIS TAG SUPERSEDES comes from that release's immutable
+      # archive, not its code tag: `main` contains no corpus. The extracted tree
+      # is checked against its own SHA256SUMS before it can inform release notes.
+      # A first release has no previous archive and every route is then new.
       - name: the corpus this tag supersedes
         id: previous
         shell: bash
         env:
           TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           prev=$(git tag --list 'v1.*' --sort=-version:refname | grep -vxF "$TAG" | head -1 || true)
           if [ -n "$prev" ]; then
-            git worktree add --detach "$RUNNER_TEMP/before" "$prev"
+            mkdir -p "$RUNNER_TEMP/before"
+            gh release download "$prev" \
+              --pattern "b-ids-corpus-$prev.tar.gz" \
+              --dir "$RUNNER_TEMP"
+            tar -xzf "$RUNNER_TEMP/b-ids-corpus-$prev.tar.gz" \
+              -C "$RUNNER_TEMP/before"
+            ( cd "$RUNNER_TEMP/before" && sha256sum -c SHA256SUMS > /dev/null )
             echo "before=$RUNNER_TEMP/before" >> "$GITHUB_OUTPUT"
           fi
           echo "previous tag: ${prev:-none}"

@@ -33,6 +33,7 @@ the generic template.
 | a Firefox argument test launched a fake executable and could wait forever | argument construction is pure and the unit test asserts the exact Gecko switch set without starting a process |
 | the POSIX and PowerShell exit-code inventories covered different script sets | each twin now exercises the same 48 operations, including platform-only scripts through the matching interpreter |
 | the Windows version fallback reported only a major version | the fallback now reports `major.minor.build.UBR`, matching the POSIX doctor |
+| the first release produced an empty body because the planner read corpus-free `main`, and later comparisons would have read corpus-free code tags | current notes read the assembled tree; later notes extract and checksum-verify the prior release archive; an end-to-end CLI test covers the bootstrap case |
 
 ## Archived evidence and instruments
 

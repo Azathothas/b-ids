@@ -3,8 +3,13 @@
 //! ⛔ Every test name starts with `notes`, because
 //! `cargo test -p b-ids-corpus notes` is what runs this file alone.
 
+mod support;
+
 use b_ids_corpus::notes::{Movement, changelog_entry, facts, model, release_body};
+use b_ids_corpus::{Store, profile_from};
 use b_ids_schema::Profile;
+
+use support::{Throwaway, cold_capture, identity};
 
 fn at(version: &str, major: u32) -> Profile {
     let mut profile = b_ids_schema::fixture::profile();
@@ -139,4 +144,61 @@ fn notes_the_release_body_states_the_licence() {
     // unconditionally would break the silence rule the entry above it holds.
     let quiet = model(&before, &before);
     assert_eq!(release_body(&quiet), "");
+}
+
+#[test]
+fn notes_the_first_release_cli_reads_the_assembled_tree() {
+    // The code checkout contains no corpus by design. Exercise the CLI from
+    // that checkout and require it to read the assembled --tree instead.
+    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .canonicalize()
+        .expect("the workspace root");
+    let throwaway = Throwaway::new("first-release-notes");
+    let store = Store::at(&throwaway.root);
+    let mut profile =
+        profile_from(&cold_capture(), &cold_capture(), &identity()).expect("the fixture converts");
+    let anchor = profile
+        .tls
+        .extensions
+        .iter_mut()
+        .find(|extension| extension.codepoint == b_ids_corpus::TRUST_ANCHORS)
+        .expect("the fixture carries the trust-anchor extension");
+    anchor.length = 2;
+    anchor.body_hex = "0000".to_owned();
+    store.add(&profile).expect("the profile is stored");
+    store.write_index().expect("the index is written");
+    std::fs::write(
+        throwaway.root.join("LICENSE"),
+        include_bytes!("../../../LICENSE"),
+    )
+    .expect("the license is written");
+    let tree = throwaway.root.join("assembled");
+    let notes = throwaway.root.join("NOTES.md");
+    b_ids_corpus::build(throwaway.root.to_str().expect("a UTF-8 source path"), &tree)
+        .expect("the release tree assembles");
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_b-ids-corpus"))
+        .current_dir(&workspace)
+        .args([
+            "release",
+            "--tree",
+            tree.to_str().expect("a UTF-8 release-tree path"),
+            "--tag",
+            b_ids_corpus::INITIAL_RELEASE_TAG,
+            "--notes",
+            notes.to_str().expect("a UTF-8 notes path"),
+        ])
+        .output()
+        .expect("the release planner runs");
+    assert!(
+        output.status.success(),
+        "release planning failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let body = std::fs::read_to_string(&notes).expect("the release body");
+    assert!(body.starts_with("## What changed\n"), "{body:?}");
+    assert!(body.contains("new:"), "{body:?}");
+    assert!(body.contains(b_ids_schema::LICENSE), "{body:?}");
 }
