@@ -2,7 +2,7 @@
 //
 // ⛔ THE CORPUS IS EMBEDDED AND NOTHING IS FETCHED. A package that needed the
 // network to answer would fail in the environment its consumers care most
-// about. TODO/publish.md, PUB-05.
+// about. docs/history/todo/publish.md, PUB-05.
 //
 // ⭐ GENERATED FROM THE CORPUS by b_ids_corpus::packages. Do not edit: an edit
 // here is a second copy of the corpus that drifts from the first, and the drift
@@ -64,7 +64,7 @@ export function select({ browser, channel, platform } = {}) {
 /// The newest STABLE build for a browser on a platform, or undefined.
 ///
 /// ⛔ `latest` means stable and nothing else. A consumer following one must
-/// never be handed a pre-release build. TODO/corpus.md, CORPUS-03.
+/// never be handed a pre-release build. docs/history/todo/corpus.md, CORPUS-03.
 export function latestStable(browser, platform) {
   // ⛔ THE POINTER FILE ANSWERS THIS, and nothing here compares version numbers.
   // `latest` means the newest STABLE build, which is the corpus's rule rather

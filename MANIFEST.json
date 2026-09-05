@@ -727,8 +727,8 @@
     },
     {
       "path": "packages/js/index.mjs",
-      "sha256": "bccd205717ca00cc80bb6ee2176d83073c55abd92b41c053173728e177a062b4",
-      "bytes": 4023,
+      "sha256": "5419b1177193c576e50feca45e057d3b6cbbfa76450ac7fc7ae571f2d6e2e5f7",
+      "bytes": 4049,
       "derived": true
     },
     {
