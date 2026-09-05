@@ -6,11 +6,11 @@
 # client that is almost right, which is more distinguishing than an
 # honestly old one.
 #
-# What it cannot do, each read at a file and a line in a tree this
-# project holds at a named commit:
+# What it cannot do, each supported by an immutable upstream
+# source:
 #
 #   ⭐ no known hole for the extension model. It carries an ordered list of codepoint-and-body pairs and refuses an unknown codepoint by default rather than dropping it
-#     read at references/refraction-networking__utls/tree/u_common.go:184
+#     source: https://github.com/refraction-networking/utls/blob/23b1dac19c06c51e278468e29ac329eec605a31f/u_common.go#L184
 #     patchable in this tree: no
 #
 # A hole that closes upstream is a hole this project re-reads. It is not

@@ -2,9 +2,9 @@
   "schema": "ja4-vectors/1",
   "license": "0BSD",
   "specification": {
-    "document": "references/FoxIO-LLC__ja4/tree/technical_details/JA4.md",
+    "document": "https://github.com/FoxIO-LLC/ja4/blob/02e78ba3ebac1f5c38bd3eb1a91b4a82e919e5fc/technical_details/JA4.md",
     "commit": "02e78ba3ebac",
-    "commit_note": "abbreviated: written out it is a 40-character hex run in a tracked file, which this project secret scan refuses under --public. references/FoxIO-LLC__ja4/PROVENANCE.md carries it in full.",
+    "commit_note": "the full commit is embedded in the immutable document URL.",
     "licence": "BSD-3-Clause over JA4 itself. No JA4+ member is computed anywhere in this tree."
   },
   "derivation": {
