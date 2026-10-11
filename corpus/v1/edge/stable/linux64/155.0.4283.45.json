@@ -1,0 +1,358 @@
+{
+  "schema": "browser-profile/1",
+  "license": "0BSD",
+  "id": "edge-155.0.4283.45-linux64-stable",
+  "browser": {
+    "name": "Edge",
+    "version": "155.0.4283.45",
+    "major": 155,
+    "channel": "stable",
+    "branded": true
+  },
+  "platform": {
+    "os": "linux",
+    "arch": "x86_64",
+    "distribution": null
+  },
+  "captured": {
+    "at": "2026-10-11T04:21:11Z",
+    "method": "vm",
+    "harness": "b-ids-harness 0.0.0",
+    "operator": "capture.yml run 38111228825",
+    "trust": "spki-pin",
+    "resumption": "offered",
+    "switches": [
+      "--user-data-dir=(throwaway)",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-search-engine-choice-screen",
+      "--disable-background-networking",
+      "--disable-component-update",
+      "--headless=new",
+      "--ignore-certificate-errors-spki-list=EbvME8EnV/3bLx1/mcLA1CJuSgSZs4gqBBdXGHHbPqo="
+    ],
+    "acquisition": {
+      "route": "edge-enterprise",
+      "url": "https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-stable/microsoft-edge-stable_155.0.4283.45-1_amd64.deb",
+      "sha256": "35ac88189ed91b60cff446fb6020ca60513ce20f985010d3c5b996115e3ec4a4",
+      "bytes": 194372662
+    },
+    "connections": {
+      "tls": 1,
+      "http2": 4
+    }
+  },
+  "tls": {
+    "record_version": 769,
+    "legacy_version": 771,
+    "session_id_len": 32,
+    "session_id_hex": "554eaeca11cf403a653a70b5f4bd5f105d6c51bd7cb96c679af80ce60358ac6f",
+    "cipher_suites": [
+      31354,
+      4865,
+      4866,
+      4867,
+      49195,
+      49199,
+      49196,
+      49200,
+      52393,
+      52392,
+      49171,
+      49172,
+      156,
+      157,
+      47,
+      53
+    ],
+    "compression_methods": [
+      0
+    ],
+    "extensions": [
+      {
+        "codepoint": 39578,
+        "length": 0,
+        "body_hex": ""
+      },
+      {
+        "codepoint": 5,
+        "length": 5,
+        "body_hex": "0100000000"
+      },
+      {
+        "codepoint": 13,
+        "length": 26,
+        "body_hex": "00183a3a09040905090604030804040105030805050108060601"
+      },
+      {
+        "codepoint": 23,
+        "length": 0,
+        "body_hex": ""
+      },
+      {
+        "codepoint": 35,
+        "length": 0,
+        "body_hex": ""
+      },
+      {
+        "codepoint": 17613,
+        "length": 5,
+        "body_hex": "0003026832"
+      },
+      {
+        "codepoint": 65037,
+        "length": 218,
+        "body_hex": "00000100013600200d83f139974ddea4b3fc8a436359e09be5e2782930904c1a8bf7de220d7ee45000b03b28df0e4ed368671317e3e9a866f473c972019da9a36bb9a677e8ebf9be697def6d967fddcb314b1f375e32505568ff5f2f7d0a731689b5ee3258f773c6096f9347e98378dbe820703d3a5af216bc2fd7614102ba11e46e5859dad0508f4541611db1f97b9c503b73fd092f93e4809d402289369e9ca9ba3c6633351bb16fee45144144f0e2f93f489f21f85c5811c1e734f8505cf20c667f046e923a320074b85803cb96158f04ae91031f37eff573"
+      },
+      {
+        "codepoint": 10,
+        "length": 12,
+        "body_hex": "000a6a6a11ec001d00170018"
+      },
+      {
+        "codepoint": 18,
+        "length": 0,
+        "body_hex": ""
+      },
+      {
+        "codepoint": 45,
+        "length": 2,
+        "body_hex": "0101"
+      },
+      {
+        "codepoint": 65281,
+        "length": 1,
+        "body_hex": "00"
+      },
+      {
+        "codepoint": 51,
+        "length": 1263,
+        "body_hex": "04ed6a6a00010011ec04c0af97114a996170c80084b09f57495e146aad4508085a10b4dae121dd1c1109961805888501f74474689c485248c891a845f03cd185ca5fe86ab7561b49b5cedc3672d7f82e21e4c21baba9500b5327960bdc1476d7da68af52b425d3c9e76bba68b4c27d0a269d877da72bc40d1a8fe0346f63174408577b399a5ed763c3a195692dc4cbcf841b9f186aed47775fe48cd6b233c6f01e340a645235032811b708561f486545d496af13eac1de89a913630ae62c480d9c82ec16110c339d9cc1293b0a47d52c6c81eb3b20b580eac7535130bc52f69185e3ccd4395255c96d557a0ffe06cce506617db37c335bc819a7cf84fb5772783235dc5e0d5700f3e0a6fbf4abf0052a208b2565341c97099597fc5a4dca58cf318d67888b93d764f65b30142b088b976df7a65d33fc9b37f73d9ad95de1e2c295f18f14634fb71280f4a33ec502b023dcb61c488d322b8189fcceb47b3362fa90c9f20ac32a1e050b59493a6e7f435ccd58850b0c4f187049add38d33b0a77579071ea307633569ba689ab7170edadb999e97a902b7b452b83dc2f4a7cd232af3715a9b159d2374989b8124d682084334876ae14147e2659a9ba71af99df21c3bb34300f6b4cd8ba01df36446727071cf7802ad7897adb5bc12e1269f10aff3a87e484b8889994a3d8062ab9a0c945027f5b9904c534a99c932f8d40cb9b85c08700c60bc60ae784029b999afb3522ac95d048051fa69895470656e56cfa856a67253c66a99ba43080b0ff2a90a381a0415777dc02287617e581c77878c3624fa905f1c6b40d99053f82a3a5b7afdc6a9210079754c2c5f942147a65fa5821cdf639c957b62f8fa5832f05a956b5de110b9be4471959bbb56b6679d2c77327cccf0447cdc1bb6bda54a16e335c1a5243bd7a64fb3453b582727657da3eab71246a161a7341381c78950681a267a31d08a1ef8c7d70c5763f51f88f150b0dcbbfe448090344b02988e440664dd18c7732a0896700540575f5a086297d92b0eb574639b3e51bb8dfdbc795fa1c2984c290d410ef030398a755c5bd33994d07f12aaaa6ed9858ab1abfb70c7fa3b3c241430fb551c31bc1b3995606b721ae8947807c20fcab96263055375eacc2a73868f79b7045c4b70b1cea5b6a5fdf1b431425799a6b193287df845b65ea91a7966882cc91dbdaa0d20f2275689883ab436047b0fcd98498d70484acc128bc42f3e242132779ca62b058b860cecd33505b5a29990beb44513f2a193976897953abfba0c1ef9d52e3f3884994718be832851778328018add6a5e6bd80495d96c0df715f932cc15967c6475412a23cf4e9c83d9a3cbd7448a12c7b29b27292b5b28d8c0609e18c5c5b40f763356843308249c3a62b5c6717a407192336d1954b237879c68c57c19c2e2e88ef8f88d8a27286931b8928b904b5698d8335b62b33b48c4345f8a7543c79e5bf1c320ab15a7d97e55cc3fd040a65743a6b90008cc96280f1c0dfd9884f3f82c35fba8f7c29af2b343600b526d3bc7f2102934a30a836c2008f7695fb38bd09911722a0546139160140b1e895ea8069e7f751520f337b440b0b1ac0612f1ad898381229472fc9c704c6bb216506eb96315313c32b629035fc756b7d95154f2eeb6389a22e9986c30870a8b267a268f842f236ab6e11deed8e79d2e86173a1f6853fabdf2370c09e220fdbcb946e368dd2de63469001d00203c9a9272e48633d13e874d42a0e540043c72abd93aa28c6ed7d1221ad9356e54"
+      },
+      {
+        "codepoint": 43,
+        "length": 7,
+        "body_hex": "06eaea03040303"
+      },
+      {
+        "codepoint": 11,
+        "length": 2,
+        "body_hex": "0100"
+      },
+      {
+        "codepoint": 27,
+        "length": 3,
+        "body_hex": "020002"
+      },
+      {
+        "codepoint": 16,
+        "length": 14,
+        "body_hex": "000c02683208687474702f312e31"
+      },
+      {
+        "codepoint": 35466,
+        "length": 1,
+        "body_hex": "00"
+      }
+    ],
+    "key_exchange_groups": [
+      27242,
+      4588,
+      29,
+      23,
+      24
+    ],
+    "key_shares": [
+      {
+        "group": 27242,
+        "entry_len": 1
+      },
+      {
+        "group": 4588,
+        "entry_len": 1216
+      },
+      {
+        "group": 29,
+        "entry_len": 32
+      }
+    ],
+    "signature_algorithms": [
+      14906,
+      2308,
+      2309,
+      2310,
+      1027,
+      2052,
+      1025,
+      1283,
+      2053,
+      1281,
+      2054,
+      1537
+    ],
+    "signature_algorithms_cert": null,
+    "alpn": [
+      "h2",
+      "http/1.1"
+    ],
+    "ech": {
+      "mode": 0,
+      "kem_id": 1
+    },
+    "padding_len": null,
+    "shuffled": {
+      "state": "unknown"
+    },
+    "grease": {
+      "extension_positions": [
+        0,
+        16
+      ],
+      "values": [
+        39578,
+        35466
+      ],
+      "distinct": true,
+      "bodies_hex": [
+        "",
+        "00"
+      ]
+    }
+  },
+  "http2": {
+    "frames": [
+      {
+        "frame": "settings",
+        "entries": [
+          {
+            "id": 1,
+            "value": 65536
+          },
+          {
+            "id": 2,
+            "value": 0
+          },
+          {
+            "id": 4,
+            "value": 6291456
+          },
+          {
+            "id": 6,
+            "value": 262144
+          }
+        ]
+      },
+      {
+        "frame": "window_update",
+        "window_size_increment": 15663105
+      },
+      {
+        "frame": "headers",
+        "stream_id": 1,
+        "has_priority_block": true
+      }
+    ],
+    "stream_priority": {
+      "exclusive": true,
+      "stream_dependency": 0,
+      "weight_wire": 255
+    },
+    "priority_frames": [],
+    "pseudo_header_order": [
+      ":method",
+      ":authority",
+      ":scheme",
+      ":path"
+    ],
+    "connection_window": null
+  },
+  "http": {
+    "variants": [
+      {
+        "variant": "navigate",
+        "headers": [
+          {
+            "name": "sec-ch-ua",
+            "value": "\"Microsoft Edge\";v=\"155\", \"Chromium\";v=\"155\", \"Not(A:Brand\";v=\"24\""
+          },
+          {
+            "name": "sec-ch-ua-mobile",
+            "value": "?0"
+          },
+          {
+            "name": "sec-ch-ua-platform",
+            "value": "\"Linux\""
+          },
+          {
+            "name": "upgrade-insecure-requests",
+            "value": "1"
+          },
+          {
+            "name": "user-agent",
+            "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0"
+          },
+          {
+            "name": "accept",
+            "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+          },
+          {
+            "name": "sec-fetch-site",
+            "value": "none"
+          },
+          {
+            "name": "sec-fetch-mode",
+            "value": "navigate"
+          },
+          {
+            "name": "sec-fetch-user",
+            "value": "?1"
+          },
+          {
+            "name": "sec-fetch-dest",
+            "value": "document"
+          },
+          {
+            "name": "accept-encoding",
+            "value": "gzip, deflate, br, zstd"
+          },
+          {
+            "name": "accept-language",
+            "value": "en-US,en;q=0.9"
+          },
+          {
+            "name": "priority",
+            "value": "u=0, i"
+          }
+        ]
+      }
+    ]
+  },
+  "digests": {
+    "ja3": null,
+    "ja4": null,
+    "ja4_r": null,
+    "ja4_ro": null,
+    "akamai": null
+  },
+  "raw": {
+    "client_hello_hex": "16030106c8010006c40303ef90ca06308c9fe41e79c92c28c4960f54f8da18a6d6ca79222e3d13782e8ba520554eaeca11cf403a653a70b5f4bd5f105d6c51bd7cb96c679af80ce60358ac6f00207a7a130113021303c02bc02fc02cc030cca9cca8c013c014009c009d002f00350100065b9a9a0000000500050100000000000d001a00183a3a09040905090604030804040105030805050108060601001700000023000044cd00050003026832fe0d00da00000100013600200d83f139974ddea4b3fc8a436359e09be5e2782930904c1a8bf7de220d7ee45000b03b28df0e4ed368671317e3e9a866f473c972019da9a36bb9a677e8ebf9be697def6d967fddcb314b1f375e32505568ff5f2f7d0a731689b5ee3258f773c6096f9347e98378dbe820703d3a5af216bc2fd7614102ba11e46e5859dad0508f4541611db1f97b9c503b73fd092f93e4809d402289369e9ca9ba3c6633351bb16fee45144144f0e2f93f489f21f85c5811c1e734f8505cf20c667f046e923a320074b85803cb96158f04ae91031f37eff573000a000c000a6a6a11ec001d0017001800120000002d00020101ff01000100003304ef04ed6a6a00010011ec04c0af97114a996170c80084b09f57495e146aad4508085a10b4dae121dd1c1109961805888501f74474689c485248c891a845f03cd185ca5fe86ab7561b49b5cedc3672d7f82e21e4c21baba9500b5327960bdc1476d7da68af52b425d3c9e76bba68b4c27d0a269d877da72bc40d1a8fe0346f63174408577b399a5ed763c3a195692dc4cbcf841b9f186aed47775fe48cd6b233c6f01e340a645235032811b708561f486545d496af13eac1de89a913630ae62c480d9c82ec16110c339d9cc1293b0a47d52c6c81eb3b20b580eac7535130bc52f69185e3ccd4395255c96d557a0ffe06cce506617db37c335bc819a7cf84fb5772783235dc5e0d5700f3e0a6fbf4abf0052a208b2565341c97099597fc5a4dca58cf318d67888b93d764f65b30142b088b976df7a65d33fc9b37f73d9ad95de1e2c295f18f14634fb71280f4a33ec502b023dcb61c488d322b8189fcceb47b3362fa90c9f20ac32a1e050b59493a6e7f435ccd58850b0c4f187049add38d33b0a77579071ea307633569ba689ab7170edadb999e97a902b7b452b83dc2f4a7cd232af3715a9b159d2374989b8124d682084334876ae14147e2659a9ba71af99df21c3bb34300f6b4cd8ba01df36446727071cf7802ad7897adb5bc12e1269f10aff3a87e484b8889994a3d8062ab9a0c945027f5b9904c534a99c932f8d40cb9b85c08700c60bc60ae784029b999afb3522ac95d048051fa69895470656e56cfa856a67253c66a99ba43080b0ff2a90a381a0415777dc02287617e581c77878c3624fa905f1c6b40d99053f82a3a5b7afdc6a9210079754c2c5f942147a65fa5821cdf639c957b62f8fa5832f05a956b5de110b9be4471959bbb56b6679d2c77327cccf0447cdc1bb6bda54a16e335c1a5243bd7a64fb3453b582727657da3eab71246a161a7341381c78950681a267a31d08a1ef8c7d70c5763f51f88f150b0dcbbfe448090344b02988e440664dd18c7732a0896700540575f5a086297d92b0eb574639b3e51bb8dfdbc795fa1c2984c290d410ef030398a755c5bd33994d07f12aaaa6ed9858ab1abfb70c7fa3b3c241430fb551c31bc1b3995606b721ae8947807c20fcab96263055375eacc2a73868f79b7045c4b70b1cea5b6a5fdf1b431425799a6b193287df845b65ea91a7966882cc91dbdaa0d20f2275689883ab436047b0fcd98498d70484acc128bc42f3e242132779ca62b058b860cecd33505b5a29990beb44513f2a193976897953abfba0c1ef9d52e3f3884994718be832851778328018add6a5e6bd80495d96c0df715f932cc15967c6475412a23cf4e9c83d9a3cbd7448a12c7b29b27292b5b28d8c0609e18c5c5b40f763356843308249c3a62b5c6717a407192336d1954b237879c68c57c19c2e2e88ef8f88d8a27286931b8928b904b5698d8335b62b33b48c4345f8a7543c79e5bf1c320ab15a7d97e55cc3fd040a65743a6b90008cc96280f1c0dfd9884f3f82c35fba8f7c29af2b343600b526d3bc7f2102934a30a836c2008f7695fb38bd09911722a0546139160140b1e895ea8069e7f751520f337b440b0b1ac0612f1ad898381229472fc9c704c6bb216506eb96315313c32b629035fc756b7d95154f2eeb6389a22e9986c30870a8b267a268f842f236ab6e11deed8e79d2e86173a1f6853fabdf2370c09e220fdbcb946e368dd2de63469001d00203c9a9272e48633d13e874d42a0e540043c72abd93aa28c6ed7d1221ad9356e54002b000706eaea03040303000b00020100001b00030200020010000e000c02683208687474702f312e318a8a000100",
+    "settings_frame_hex": "000018040000000000000100010000000200000000000400600000000600040000",
+    "http2_frames_hex": [
+      "000018040000000000000100010000000200000000000400600000000600040000",
+      "00000408000000000000ef0001",
+      "0001d001250000000180000000ff82418b089d5c0b8170dc69c001df878440874148b1275ad1ffb9fe7418961d07952a609262ff3f7de0fe42db7fcfd29fcde9ec3d26b69fe7efbc1fc85b6ff9fa53f9d274ff50dcbb60ea93f9fbef07f226bf9f408b4148b1275ad1ad49e33505023f30408d4148b1275ad1ad5d034ca7b29f07224c696e7578224092b6b9ac1c8558d520a4b6c2ad617b5a54251f01317aded07f66a281b0dae053fafc087ed4ce6aadf2a7979c89c6bfb521aeba0bc8b1e632586d975765c53facd8f7e8cff4a506ea5531149d4ffda98ca39282a117a7b0f49580b6dae05c0b814dc394761986d975765c5304933016db5c0b81707f53e5497ca589d34d1f43aeba0c41a4c7a98f33a69a3fdf9a68fa1d75d0620d263d4c79a68fbed00177fe8d48e62b03ee697e8d48e62b1e0b1d7f46a4731581d754df5f2c7cfdf6800bbdf43aeba0c41a4c7a9841a6a8b22c5f249c754c5fbef046cfdf6800bbbf408a4148b4a549275906497f83a8f517408a4148b4a549275a93c85f86a87dcd30d25f408a4148b4a549275ad416cf023f31408a4148b4a549275a42a13f8690e4b692d49f50929bd9abfa5242cb40d25fa523b3e94f684c9f518b2d4b70ddf45abefb4005df4086aec31ec327d785b6007d286f"
+    ],
+    "request_line_hex": null,
+    "connection_hex": "505249202a20485454502f322e300d0a0d0a534d0d0a0d0a00001804000000000000010001000000020000000000040060000000060004000000000408000000000000ef00010001d001250000000180000000ff82418b089d5c0b8170dc69c001df878440874148b1275ad1ffb9fe7418961d07952a609262ff3f7de0fe42db7fcfd29fcde9ec3d26b69fe7efbc1fc85b6ff9fa53f9d274ff50dcbb60ea93f9fbef07f226bf9f408b4148b1275ad1ad49e33505023f30408d4148b1275ad1ad5d034ca7b29f07224c696e7578224092b6b9ac1c8558d520a4b6c2ad617b5a54251f01317aded07f66a281b0dae053fafc087ed4ce6aadf2a7979c89c6bfb521aeba0bc8b1e632586d975765c53facd8f7e8cff4a506ea5531149d4ffda98ca39282a117a7b0f49580b6dae05c0b814dc394761986d975765c5304933016db5c0b81707f53e5497ca589d34d1f43aeba0c41a4c7a98f33a69a3fdf9a68fa1d75d0620d263d4c79a68fbed00177fe8d48e62b03ee697e8d48e62b1e0b1d7f46a4731581d754df5f2c7cfdf6800bbdf43aeba0c41a4c7a9841a6a8b22c5f249c754c5fbef046cfdf6800bbbf408a4148b4a549275906497f83a8f517408a4148b4a549275a93c85f86a87dcd30d25f408a4148b4a549275ad416cf023f31408a4148b4a549275a42a13f8690e4b692d49f50929bd9abfa5242cb40d25fa523b3e94f684c9f518b2d4b70ddf45abefb4005df4086aec31ec327d785b6007d286f",
+    "record_layer": null
+  },
+  "provenance": {
+    "captured.switches": "substituted:throwaway-profile-path",
+    "http": "wire",
+    "http.headers.user-agent": "substituted:headless-product-token",
+    "http2": "wire",
+    "raw": "wire",
+    "tls": "wire"
+  },
+  "supersedes": null
+}
