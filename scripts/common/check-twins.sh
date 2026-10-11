@@ -1,5 +1,5 @@
 #!/bin/sh
-# check-twins.sh - do the two probe implementations still answer the same way?
+# check-twins.sh - do the POSIX and PowerShell halves still answer the same way?
 #
 # The defect this exists to catch is DRIFT between two scripts that are supposed
 # to do the same job. One gets a fix, a field, a flag; the other does not; and
@@ -7,36 +7,19 @@
 # noticed had fallen behind. The failure is silent, because each one works fine
 # on its own host and nobody runs both.
 #
-# -- ⭐ WHY ONLY THE PROBE HAS A TWIN, AND WHY THAT IS NOT AN OVERSIGHT -------
+# -- ⭐ WHICH PAIRS, AND WHY EVERY CHECK HAS ONE -----------------------------
 #
-# Every other check here is POSIX sh alone, deliberately. Two implementations
-# of one rule is two places for that rule to be wrong, so a twin has to earn
-# itself. The probe earns it and nothing else does:
+# The probe and nearly every check and helper under scripts/common/ have a
+# POSIX half and a PowerShell half, because a native Windows session may have no
+# POSIX layer at all and the gate must still run there. ⚠ The exceptions are
+# deliberate: this file, which needs both interpreters anyway, and the capture
+# scripts under scripts/capture/, which run only on hosted runners under bash. AGENTS.md states the rule: keep the
+# twins behaviourally equivalent, and run this after changing either half.
 #
-#   scripts/doctor/  RUNS BEFORE YOU KNOW WHAT IS INSTALLED. That is its whole
-#                    job. It cannot require a POSIX layer, because "is there a
-#                    POSIX layer" is one of the questions it answers. So it
-#                    needs a native implementation per host family.
-#
-#   scripts/common/  check-gate EARNS ONE TOO, and for the same reason as the
-#   check-gate       probe rather than a different one. It is the command a
-#                    session runs FIRST, before anything has established that a
-#                    POSIX shell is reachable, and on a native PowerShell
-#                    session with no Git Bash on PATH an sh-only runner is a
-#                    runner that cannot start. Its two halves delegate to the
-#                    same underlying checks, so the drift surface is the LIST
-#                    and not the rules, and the row below is what holds the list
-#                    in step.
-#
-#   everything else  runs AFTER the probe has reported. By then sh is known to
-#                    be present or known to be absent, and on Windows that means
-#                    Git Bash, WSL or msys, all of which the probe reports. A
-#                    second implementation would add a drift surface and buy
-#                    nothing.
-#
-# ⛔ So the rule is: a twin exists only where a single implementation cannot
-# run, and wherever a twin exists, THIS CHECK covers it. Adding a twin without
-# adding it here is how drift starts.
+# ⛔ Each `compare_pair` row below runs both halves with the same arguments and
+# compares their JSON. A twin added without a row here is a twin nothing
+# compares, which is how drift starts. ⚠ The probe is compared separately and
+# first, because what it reports describes the machine both halves run on.
 #
 # -- WHAT DIFFERENCE IS CORRECT ----------------------------------------------
 #

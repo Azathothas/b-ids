@@ -5,7 +5,7 @@
 //! alone.
 
 use b_ids_corpus::notes::facts;
-use b_ids_corpus::pull_request::{Run, batch, requests, required_lines};
+use b_ids_corpus::pull_request::{Run, batch, mergeable_routes, requests, required_lines};
 use b_ids_schema::{Os, Profile, ProvenanceEntry, ProvenanceKind};
 
 /// A profile at one build, on the platform the fixture already carries.
@@ -359,4 +359,49 @@ fn pull_request_a_new_route_says_it_has_nothing_to_diff_against() {
         "{}",
         opened[0].body
     );
+}
+
+#[test]
+fn pull_request_a_route_that_meets_every_condition_lands_without_the_ones_that_do_not() {
+    // ⛔ MEASURED ON THIS CORPUS. The batch answers for the whole run, so a
+    // route captured on one platform, which can never show two independent
+    // sources, held every other route back with it. Per route, the two-source
+    // route is landable and the one-source route is not.
+    let mut other = at("151.0.4129.101", 151);
+    other.browser.name = "Edge".to_owned();
+    other.id = b_ids_schema::ProfileId::derive(
+        &other.browser.name,
+        &other.browser.version,
+        &other.platform_token(),
+        other.browser.channel,
+    );
+    let before = vec![at("151.0.7922.76", 151)];
+    let after = vec![
+        at("152.0.7977.75", 152),
+        on_second_platform("152.0.7977.75", 152),
+        other,
+    ];
+    let run = clean_run();
+
+    let whole = batch(&before, &after, &run).expect("three routes moved");
+    assert!(
+        !whole.conditions.met(),
+        "the one-source route holds the whole run back"
+    );
+
+    let landable = mergeable_routes(&before, &after, &run);
+    assert_eq!(landable.len(), 2, "{landable:?}");
+    assert!(
+        landable.iter().all(|route| !route.starts_with("edge/")),
+        "{landable:?}"
+    );
+
+    // ⚠ And the run-level conditions still bind every route: a validator
+    // finding lands nothing.
+    let mut findings = clean_run();
+    findings.validator_findings = 1;
+    assert!(mergeable_routes(&before, &after, &findings).is_empty());
+
+    // ⛔ A no-op lands nothing.
+    assert!(mergeable_routes(&before, &before, &run).is_empty());
 }

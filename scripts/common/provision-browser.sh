@@ -55,6 +55,7 @@
 # Usage:
 #   B_IDS_DISPOSABLE=1 sh scripts/common/provision-browser.sh --browser chrome --route vendor
 #   B_IDS_DISPOSABLE=1 sh scripts/common/provision-browser.sh --browser chrome --route for-testing --version 151.0.7922.76
+#   B_IDS_DISPOSABLE=1 sh scripts/common/provision-browser.sh --browser edge --route for-testing --version newest
 #   sh scripts/common/provision-browser.sh --plan --browser chrome --route vendor
 #
 # Exit codes: 0 provisioned and confirmed,
@@ -266,6 +267,10 @@ plan_for() {
       "$(sandbox_for "$BROWSER")"
   fi
   printf 'confirm resolve exits 2 after the purge, and reports the version after the install\n'
+  if [ "$VERSION" = newest ]; then
+    printf 'version newest: asked of the document b-ids-driver acquire --newest --index-url\n'
+    printf '        names, BEFORE the purge, so a lookup that fails leaves the machine as it was\n'
+  fi
 }
 
 # ⚠ One sentence, per platform, naming what the purge actually removes for the
@@ -330,6 +335,47 @@ TARGET_DIR=${CARGO_TARGET_DIR:-"$ROOT/target"}
 DRIVER="$TARGET_DIR/debug/b-ids-driver"
 [ -x "$DRIVER" ] || DRIVER="$DRIVER.exe"
 [ -x "$DRIVER" ] || { printf 'provision-browser: %s is not executable\n' "$DRIVER" >&2; exit 2; }
+
+# -- `--version newest`: the build the stable channel serves TODAY ------------
+#
+# ⭐ WHAT LETS A MATRIX CELL TRACK A CHANNEL RATHER THAN FREEZE ON A BUILD. A
+# cell naming an exact build captures that build forever, and a rolling archive
+# drops it: the Chromium archive carried 152.0.7977.75 on 2026-09-04 and only
+# 154.0.8037.92 on 2026-10-07, and the cell pinned to the first failed every
+# scheduled run in between. ⛔ The driver names the document and reads the
+# answer; this only fetches it. ⚠ BEFORE the purge, so a lookup that fails
+# leaves the machine with whatever it had.
+if [ "$VERSION" = newest ]; then
+  command -v curl >/dev/null 2>&1 || {
+    printf 'provision-browser: curl not found, and the newest build has to be asked for\n' >&2
+    exit 2
+  }
+  if ! newest_url=$("$DRIVER" acquire --newest --index-url --browser "$BROWSER") ||
+    [ -z "$newest_url" ]; then
+    printf 'provision-browser: the driver names nothing that answers the newest %s\n' "$BROWSER" >&2
+    exit 2
+  fi
+  printf 'newest  %s\n' "$newest_url"
+  curl -fsSL -o "$OUT/newest.raw" "$newest_url" || {
+    printf 'provision-browser: %s did not fetch\n' "$newest_url" >&2
+    exit 1
+  }
+  case "$newest_url" in
+    *.gz) gzip -dc "$OUT/newest.raw" > "$OUT/newest.txt" || {
+            printf 'provision-browser: %s did not decompress\n' "$newest_url" >&2
+            exit 1
+          } ;;
+    *) mv "$OUT/newest.raw" "$OUT/newest.txt" || exit 2 ;;
+  esac
+  VERSION=$("$DRIVER" acquire --newest --browser "$BROWSER" --index "$OUT/newest.txt")
+  rc=$?
+  if [ "$rc" != 0 ] || [ -z "$VERSION" ]; then
+    printf 'provision-browser: no newest %s could be read from %s\n' "$BROWSER" "$newest_url" >&2
+    [ "$rc" != 0 ] || rc=1
+    exit "$rc"
+  fi
+  printf 'newest  %s is the build its stable channel serves today\n' "$VERSION"
+fi
 
 # ⛔ ONE READER OF "WHAT IS INSTALLED", and it is the driver rather than a second
 # search written here. A script that looked for a browser its own way would be a

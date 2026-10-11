@@ -56,6 +56,7 @@
 # Usage:
 #   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Browser chrome -Route vendor
 #   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Browser chrome -Route for-testing -Version 151.0.7922.76
+#   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Browser edge -Route for-testing -Version newest
 #   pwsh -NoProfile -File scripts/common/provision-browser.ps1 -Plan -Browser chrome -Route vendor
 #
 # Exit codes: 0 provisioned and confirmed,
@@ -136,6 +137,7 @@ $familyRoutes = @{
         paths          = @('/opt/google/chrome', '/opt/google/chrome-beta', '/opt/google/chrome-unstable')
         links          = @('/usr/bin/google-chrome', '/usr/bin/google-chrome-stable')
         sandbox        = '/opt/google/chrome/chrome-sandbox'
+        snaps          = @()
         uninstallMatch = '^Google Chrome'
         vendorDir      = 'Google\Chrome'
     }
@@ -148,6 +150,7 @@ $familyRoutes = @{
         # 33615327503: the edge lane exited after 2.4 seconds having opened no
         # connection, and its own log named this file and the mode it needs.
         sandbox        = '/opt/microsoft/msedge/msedge-sandbox'
+        snaps          = @()
         uninstallMatch = '^Microsoft Edge$'
         vendorDir      = 'Microsoft\Edge'
     }
@@ -164,6 +167,10 @@ $familyRoutes = @{
         # ⚠ Under /usr/lib rather than /opt, which is where a Debian-policy
         # package puts it.
         sandbox        = '/usr/lib/chromium/chrome-sandbox'
+        # ⛔ SNAPS ARE A SECOND PACKAGE MANAGER AND apt CANNOT SEE THEM. On
+        # ubuntu-24.04 chromium-browser is a shim for a snap, and removing the
+        # shim leaves the snap mounted and /usr/bin/chromium resolving to it.
+        snaps          = @('chromium')
         # ⛔ Chromium is not a product with an installer entry on Windows, and
         # an empty pattern would match every uninstall entry on the machine.
         # ^$ matches nothing, which is the correct answer for a family this
@@ -184,7 +191,8 @@ function Write-Plan {
     # edge request is a plan nobody could act on, and -Plan is what a person
     # reads before letting this near a machine. docs/history/todo/driver.md, DRIVER-10.
     if ($os -eq 'linux') {
-        Write-Output ('purge   apt-get remove --purge of ' + ($routes.packages -join ' ') + ', then ' + ($routes.paths -join ' ') + ' and the /usr/bin links')
+        $snapPart = if ($routes.snaps.Count -gt 0) { 'snap remove --purge of ' + ($routes.snaps -join ' ') + ', ' } else { '' }
+        Write-Output ('purge   apt-get remove --purge of ' + ($routes.packages -join ' ') + ', ' + $snapPart + 'then ' + ($routes.paths -join ' ') + ' and the /usr/bin links')
     } else {
         Write-Output ('purge   the vendor uninstaller for every install matching ' + $routes.uninstallMatch + ', then the program directories')
     }
@@ -248,6 +256,10 @@ function Write-Plan {
         Write-Output ('sandbox ' + $routes.sandbox + ', which is set to root ownership and mode 4755 after the install')
     }
     Write-Output 'confirm resolve exits 2 after the purge, and reports the version after the install'
+    if ($Version -eq 'newest') {
+        Write-Output 'version newest: asked of the document b-ids-driver acquire --newest --index-url'
+        Write-Output '        names, BEFORE the purge, so a lookup that fails leaves the machine as it was'
+    }
 }
 
 if ($Plan) {
@@ -311,6 +323,59 @@ if (-not (Test-Path -LiteralPath $driver)) {
     exit 2
 }
 
+# ⛔ AN INDEX SERVED GZIPPED IS DECOMPRESSED, decided by the URL the driver
+# named rather than by the family. The APT archive this project reads for
+# Chromium serves Packages.gz and no uncompressed Packages.
+function Expand-IfGzip([string]$url, [string]$raw, [string]$dest) {
+    if ($url -like '*.gz') {
+        $in = [System.IO.File]::OpenRead($raw)
+        try {
+            $gz = [System.IO.Compression.GZipStream]::new($in, [System.IO.Compression.CompressionMode]::Decompress)
+            $outStream = [System.IO.File]::Create($dest)
+            try { $gz.CopyTo($outStream) } finally { $outStream.Dispose(); $gz.Dispose() }
+        } finally { $in.Dispose() }
+    } else {
+        Move-Item -Force -LiteralPath $raw -Destination $dest
+    }
+}
+
+# -- `-Version newest`: the build the stable channel serves TODAY -------------
+#
+# ⭐ WHAT LETS A MATRIX CELL TRACK A CHANNEL RATHER THAN FREEZE ON A BUILD. A
+# cell naming an exact build captures that build forever, and a rolling archive
+# drops it: the Chromium archive carried 152.0.7977.75 on 2026-09-04 and only
+# 154.0.8037.92 on 2026-10-07. ⚠ BEFORE the purge, so a lookup that fails
+# leaves the machine with whatever it had.
+if ($Version -eq 'newest') {
+    $newestLines = & $driver acquire --newest --index-url --browser $Browser 2>$null
+    $newestRc = $LASTEXITCODE
+    $newestUrl = if ($newestLines) { [string]@($newestLines)[0] } else { '' }
+    if ($newestRc -ne 0 -or -not $newestUrl) {
+        [Console]::Error.WriteLine('provision-browser: the driver names nothing that answers the newest ' + $Browser)
+        exit 2
+    }
+    Write-Output ('newest  ' + $newestUrl)
+    $newestRaw = Join-Path $out 'newest.raw'
+    $newestPath = Join-Path $out 'newest.txt'
+    try { Invoke-WebRequest -Uri $newestUrl -OutFile $newestRaw -UseBasicParsing } catch {
+        [Console]::Error.WriteLine('provision-browser: ' + $newestUrl + ' did not fetch')
+        exit 1
+    }
+    try { Expand-IfGzip $newestUrl $newestRaw $newestPath } catch {
+        [Console]::Error.WriteLine('provision-browser: ' + $newestUrl + ' did not decompress')
+        exit 1
+    }
+    $versionLines = & $driver acquire --newest --browser $Browser --index $newestPath
+    $versionRc = $LASTEXITCODE
+    $Version = if ($versionLines) { [string]@($versionLines)[0] } else { '' }
+    if ($versionRc -ne 0 -or -not $Version) {
+        [Console]::Error.WriteLine('provision-browser: no newest ' + $Browser + ' could be read from ' + $newestUrl)
+        if ($versionRc -eq 0) { exit 1 }
+        exit $versionRc
+    }
+    Write-Output ('newest  ' + $Version + ' is the build its stable channel serves today')
+}
+
 # ⛔ ONE READER OF "WHAT IS INSTALLED", and it is the driver rather than a second
 # search written here. A script that looked for a browser its own way would be a
 # second answer to the question `resolve` exists to answer, and the two would
@@ -367,6 +432,9 @@ function Invoke-PurgeWindows {
 function Invoke-PurgeLinux {
     foreach ($pkg in $routes.packages) {
         & sudo apt-get remove --purge -y $pkg > $null 2>&1
+    }
+    foreach ($snap in $routes.snaps) {
+        & sudo snap remove --purge $snap > $null 2>&1
     }
     foreach ($path in $routes.paths) { & sudo rm -rf $path > $null 2>&1 }
     foreach ($link in $routes.links) { & sudo rm -f $link > $null 2>&1 }
@@ -463,9 +531,14 @@ if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
         exit 2
     }
     Write-Output ('index   ' + $indexUrl)
+    $indexRaw = Join-Path $out 'index.raw'
     $indexPath = Join-Path $out 'index.json'
-    try { Invoke-WebRequest -Uri $indexUrl -OutFile $indexPath -UseBasicParsing } catch {
+    try { Invoke-WebRequest -Uri $indexUrl -OutFile $indexRaw -UseBasicParsing } catch {
         [Console]::Error.WriteLine('provision-browser: the index did not fetch')
+        exit 1
+    }
+    try { Expand-IfGzip $indexUrl $indexRaw $indexPath } catch {
+        [Console]::Error.WriteLine('provision-browser: the index did not decompress')
         exit 1
     }
 
@@ -523,13 +596,38 @@ if ($Browser -eq 'edge' -and $Route -eq 'vendor') {
         Write-Output 'verified no, this index publishes no digest to compare against'
     }
 
+    # ⛔ THE SIBLINGS THE INDEX NAMES, which an archive-per-build index has
+    # none of. An APT archive splits one build across binary packages, and the
+    # one carrying the browser depends on a sibling at the same exact version.
+    $companions = @()
+    if ($acquiredLine) {
+        foreach ($extra in @((ConvertFrom-Json $acquiredLine).PSObject.Properties |
+                Where-Object { $_.Name -eq 'companions' } |
+                ForEach-Object { $_.Value })) {
+            if (-not $extra) { continue }
+            $dest = Join-Path $out ([System.IO.Path]::GetFileName([string]$extra))
+            try { Invoke-WebRequest -Uri ([string]$extra) -OutFile $dest -UseBasicParsing } catch {
+                [Console]::Error.WriteLine('provision-browser: a companion artefact did not fetch from ' + $extra)
+                exit 1
+            }
+            $companions += $dest
+            Write-Output ('sibling ' + [System.IO.Path]::GetFileName($dest))
+        }
+    }
+
     # ⚠ ONLY THE ZIP ROUTE UNPACKS. A deb and an msi are installed by the
     # platform's own tool rather than unpacked into a directory.
-    if ($Browser -eq 'edge') {
+    if ($Browser -eq 'chromium' -and $os -ne 'linux') {
+        [Console]::Error.WriteLine('provision-browser: the archive this project reads for chromium serves linux64 only')
+        exit 2
+    }
+    if ($Browser -eq 'edge' -or $Browser -eq 'chromium') {
         if ($os -eq 'linux') {
-            & sudo apt-get install -y $archive > $null 2>&1
+            # ⛔ EVERY ARTEFACT IN ONE apt INVOCATION: a sibling pinned to an
+            # exact version is on no configured apt source.
+            & sudo apt-get install -y $archive @companions > $null 2>&1
             if ($LASTEXITCODE -ne 0) {
-                & sudo dpkg -i $archive > $null 2>&1
+                & sudo dpkg -i $archive @companions > $null 2>&1
                 & sudo apt-get -f install -y > $null 2>&1
             }
             Confirm-SandboxLinux

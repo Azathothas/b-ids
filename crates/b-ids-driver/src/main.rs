@@ -9,7 +9,7 @@
 use std::process::ExitCode;
 use std::time::Duration;
 
-use b_ids_driver::acquire::{Platform, download, index_route, index_url};
+use b_ids_driver::acquire::{Platform, download, index_route, index_url, newest, newest_url};
 use b_ids_driver::{Family, Launch, drive, plan, resolve, trust_route};
 
 const USAGE: &str = "\
@@ -21,6 +21,8 @@ usage: b-ids-driver resolve [--browser NAME] [--json]
        b-ids-driver versions [--channel CH] [--json]
        b-ids-driver acquire --browser NAME --version V --index PATH
                             [--platform P] [--json]
+       b-ids-driver acquire --browser NAME --newest --index PATH [--platform P]
+       b-ids-driver acquire --browser NAME [--newest] --index-url
 
   resolve          find a browser on this machine and report its build, with
                    what each source answered and whether they disagreed
@@ -48,8 +50,15 @@ usage: b-ids-driver resolve [--browser NAME] [--json]
                    can fetch it with whatever tool the platform has. ⛔ IT IS
                    ASKED FOR RATHER THAN SPELLED TWICE: a fetcher carrying its
                    own copy is a value in two places with no check.
-  --version V      the exact build to look up. Required: the index is keyed
-                   by build and there is no nearest-match.
+  --version V      the exact build to look up. Required unless --newest: the
+                   index is keyed by build and there is no nearest-match.
+  --newest         ask which build the family's STABLE channel serves today
+                   instead of looking one up. With --index-url it prints the
+                   document that answers that, which for Chrome is the
+                   channel pointer rather than the build list; with --index
+                   it prints the version, which a caller then acquires like
+                   any other. ⭐ What lets a capture cell track a channel
+                   rather than freeze on a build a rolling archive drops.
   --platform P     which archive: linux64, win64, win32, mac-arm64, mac-x64.
                    The host's own platform by default. ⚠ These are the
                    INDEX's spellings and the corpus spells one of them
@@ -161,6 +170,7 @@ fn acquire(
     platform: Option<Platform>,
     index: Option<&std::path::Path>,
     want_index_url: bool,
+    want_newest: bool,
     json: bool,
 ) -> ExitCode {
     let Some(family) = family else {
@@ -169,6 +179,9 @@ fn acquire(
             Family::names()
         ));
     };
+    if want_newest {
+        return acquire_newest(family, platform, index, want_index_url);
+    }
     // ⛔ ASKED FOR RATHER THAN SPELLED TWICE. A caller has to FETCH the index
     // before it can be read, and a fetcher that carried its own copy of the URL
     // would be a value in two places with no check that they agree. The version
@@ -274,6 +287,61 @@ fn acquire(
     }
 }
 
+/// Name the build a family's stable channel serves today, from a document on
+/// disk, or name where that document is served.
+///
+/// ⛔ **The same split as [`acquire`]**: it reads and does not fetch, exit 1 is
+/// the document answering no and exit 2 is not being able to ask.
+fn acquire_newest(
+    family: Family,
+    platform: Option<Platform>,
+    index: Option<&std::path::Path>,
+    want_index_url: bool,
+) -> ExitCode {
+    if want_index_url {
+        return match newest_url(family) {
+            Some(url) => {
+                println!("{url}");
+                ExitCode::SUCCESS
+            }
+            None => {
+                eprintln!(
+                    "b-ids-driver: there is no first-party index for {family}, so nothing \
+                     names its newest build."
+                );
+                ExitCode::from(2)
+            }
+        };
+    }
+    let Some(index) = index else {
+        return fail("acquire --newest needs --index, the document --index-url names, on disk");
+    };
+    let Some(platform) = platform.or_else(Platform::host) else {
+        return fail(&format!(
+            "acquire could not name this host's platform, so --platform is needed. \
+             The index publishes {}",
+            Platform::names()
+        ));
+    };
+    let text = match std::fs::read_to_string(index) {
+        Ok(text) => text,
+        Err(err) => {
+            eprintln!("b-ids-driver: could not read {}: {err}", index.display());
+            return ExitCode::from(2);
+        }
+    };
+    match newest(family, &text, platform) {
+        Ok(version) => {
+            println!("{version}");
+            ExitCode::SUCCESS
+        }
+        Err(refusal) => {
+            eprintln!("b-ids-driver: {refusal}");
+            ExitCode::from(1)
+        }
+    }
+}
+
 fn main() -> ExitCode {
     let mut argv = std::env::args().skip(1);
     let Some(command) = argv.next() else {
@@ -288,6 +356,7 @@ fn main() -> ExitCode {
     let mut version: Option<String> = None;
     let mut index: Option<std::path::PathBuf> = None;
     let mut index_url = false;
+    let mut want_newest = false;
     // ⛔ NONE IS "this host's platform", resolved at the point of use rather
     // than here, so a host the index does not publish for is refused with a
     // message instead of silently taking the nearest.
@@ -323,6 +392,7 @@ fn main() -> ExitCode {
                 version = Some(value);
             }
             "--index-url" => index_url = true,
+            "--newest" => want_newest = true,
             "--index" => {
                 let Some(value) = argv.next() else {
                     return fail("--index needs a path");
@@ -407,6 +477,7 @@ fn main() -> ExitCode {
             platform,
             index.as_deref(),
             index_url,
+            want_newest,
             json,
         );
     }

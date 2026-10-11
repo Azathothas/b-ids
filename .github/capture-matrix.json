@@ -26,10 +26,15 @@
     "installs an exact build from the automation index, which is UNBRANDED.",
     "scripts/common/provision-browser.sh is the tool and --route is the flag.",
     "",
-    "build names the exact build a for-testing cell wants. The automation index",
-    "publishes a SUBSET of builds: measured 2026-09-02 it carried 67 builds of",
-    "Chrome 151 and neither of the two the runner images served, so a build here",
-    "is one the index was checked to have."
+    "build names the exact build a for-testing cell wants, or \"newest\": the build",
+    "the family's stable channel serves on the day the lane runs, read from the",
+    "document b-ids-driver acquire --newest --index-url names. A cell that tracks",
+    "its channel is what lets the corpus follow a release without anybody editing",
+    "this file. An exact build stays possible, and the index then has to carry it:",
+    "the automation index publishes a SUBSET of builds, and the Chromium archive",
+    "keeps only its newest one. Measured: the chromium cell was pinned to",
+    "152.0.7977.75, the archive dropped it for 154.0.8037.92, and every scheduled",
+    "capture from 2026-09-09 failed at provisioning."
   ],
   "schema_version": 2,
   "cells": [
@@ -64,10 +69,10 @@
       "os": "ubuntu-latest",
       "route": "for-testing",
       "branded": true,
-      "build": "151.0.4129.101",
+      "build": "newest",
       "enabled": true,
       "required": true,
-      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. \u2b50 Provisioned from the vendor enterprise index as of 2026-09-02 rather than taken from the image: the index publishes a SHA-256 per artefact, so this is the first cell whose acquisition can be checked against the publisher. \u26a0 branded stays true: the enterprise index serves the vendor own product, unlike the Chrome automation index. The image Edge could not capture at all, because its SUID sandbox helper was not configured, which capture.yml run 33615327503 recorded and DRIVER-10 fixes."
+      "why": "The same engine with a different brand list and User-Agent, so it isolates branding from engine at almost no cost. \u2b50 Provisioned from the vendor enterprise index as of 2026-09-02 rather than taken from the image: the index publishes a SHA-256 per artefact, so this is the first cell whose acquisition can be checked against the publisher. \u26a0 branded stays true: the enterprise index serves the vendor own product, unlike the Chrome automation index. The image Edge could not capture at all, because its SUID sandbox helper was not configured, which capture.yml run 33615327503 recorded and DRIVER-10 fixes. \u2b50 Tracks its channel since 2026-10-11: build is newest, so the lane installs whatever the enterprise index lists as the highest Stable release for linux64 on the day it runs. It was pinned to 151.0.4129.101, which every later run captured again and refused as already published."
     },
     {
       "browser": "chrome",
@@ -76,10 +81,10 @@
       "os": "ubuntu-latest",
       "route": "for-testing",
       "branded": false,
-      "build": "151.0.7922.76",
+      "build": "newest",
       "enabled": true,
       "required": false,
-      "why": "The unbranded build of the version the corpus already holds from a laptop, so one build across two platforms and two brands becomes comparable. \u2b50 Enabled 2026-09-03, by the operator's ruling: Channel::ForTesting landed, so the row publishes at its own route and no branded build shares a path with it. \u26a0 NOTHING HAS EXERCISED THIS LANE'S CAPTURE PATH. capture.yml allows every lane to fail alone, so the first attempt reports rather than breaking the run, and DRIVER-06 owns the difference the lane exists to measure."
+      "why": "The unbranded build of the version the corpus already holds from a laptop, so one build across two platforms and two brands becomes comparable. \u2b50 Enabled 2026-09-03, by the operator's ruling: Channel::ForTesting landed, so the row publishes at its own route and no branded build shares a path with it. \u26a0 NOTHING HAS EXERCISED THIS LANE'S CAPTURE PATH. capture.yml allows every lane to fail alone, so the first attempt reports rather than breaking the run, and DRIVER-06 owns the difference the lane exists to measure. \u2b50 Tracks its channel since 2026-10-11: build is newest, which for Chrome is the Stable build the automation index's channel pointer names. It was pinned to 151.0.7922.76, so the cell kept measuring a build two majors behind what the branded cells captured."
     },
     {
       "browser": "chrome",
@@ -88,10 +93,10 @@
       "os": "windows-latest",
       "route": "for-testing",
       "branded": false,
-      "build": "151.0.7922.76",
+      "build": "newest",
       "enabled": true,
       "required": false,
-      "why": "The other half of the pair above, and the one that measures whether the TLS half is platform-independent at a build both platforms genuinely run. \u2b50 Enabled 2026-09-03 with it, and for the same reason. \u26a0 Its capture path is equally unexercised."
+      "why": "The other half of the pair above, and the one that measures whether the TLS half is platform-independent at a build both platforms genuinely run. \u2b50 Enabled 2026-09-03 with it, and for the same reason. \u26a0 Its capture path is equally unexercised. \u2b50 Tracks its channel since 2026-10-11: build is newest, which for Chrome is the Stable build the automation index's channel pointer names. It was pinned to 151.0.7922.76, so the cell kept measuring a build two majors behind what the branded cells captured."
     },
     {
       "browser": "chrome",
@@ -148,10 +153,10 @@
       "os": "ubuntu-latest",
       "route": "for-testing",
       "branded": false,
-      "build": "152.0.7977.75",
+      "build": "newest",
       "enabled": true,
       "required": true,
-      "why": "\u2b50 THE CONTROL THAT SEPARATES BRANDING FROM ENGINE, and since 2026-09-04 it can be taken at the SAME BUILD as the branded Chrome beside it. \u26d4 THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02 acceptance names chromium as a required row. \u26a0 THREE ROUTES WERE MEASURED AND TWO ARE SHUT. Ubuntu own chromium on noble is a shim for a snap: capture.yml run 33854002345 resolved /usr/bin/chromium at 151.0.7922.0 and the launch aborted on signal 6 inside content::ZygoteHostImpl::Init, which is the snap sandbox refusing to start a zygote on that image. Google chromium-browser-snapshots bucket answers 200 and serves a real unpatched Chromium, measured at revision 1692381, but it is keyed by a trunk revision rather than by a version a profile records and a continuous trunk build belongs to no channel anybody runs. \u2b50 THE THIRD ANSWERS BY VERSION AND PUBLISHES A DIGEST: an APT archive serving Chromium 152.0.7977.75 for noble with a SHA-256 and a Size per artefact, which is the exact build of branded Chrome this corpus already holds at chrome/stable/linux64. So the pair is same-build rather than same-major. \u26d4 WHAT THIS PAIR DOES NOT SEPARATE: the archive is a distributor repackaging, which may build against system libraries and disable features, so what differs between the two is branding OR packaging. That is a smaller confound than the major and it is not none, and it is recorded here rather than discovered later. \u26d4 WHAT MUST NOT BE DONE: pass --no-sandbox. That captures a browser in a configuration nobody runs."
+      "why": "\u2b50 THE CONTROL THAT SEPARATES BRANDING FROM ENGINE, and since 2026-09-04 it can be taken at the SAME BUILD as the branded Chrome beside it. \u26d4 THE PLAN DID NOT LIST THIS CELL AT ALL until 2026-09-04, while CORPUS-02 acceptance names chromium as a required row. \u26a0 THREE ROUTES WERE MEASURED AND TWO ARE SHUT. Ubuntu own chromium on noble is a shim for a snap: capture.yml run 33854002345 resolved /usr/bin/chromium at 151.0.7922.0 and the launch aborted on signal 6 inside content::ZygoteHostImpl::Init, which is the snap sandbox refusing to start a zygote on that image. Google chromium-browser-snapshots bucket answers 200 and serves a real unpatched Chromium, measured at revision 1692381, but it is keyed by a trunk revision rather than by a version a profile records and a continuous trunk build belongs to no channel anybody runs. \u2b50 THE THIRD ANSWERS BY VERSION AND PUBLISHES A DIGEST: an APT archive serving Chromium 152.0.7977.75 for noble with a SHA-256 and a Size per artefact, which is the exact build of branded Chrome this corpus already holds at chrome/stable/linux64. So the pair is same-build rather than same-major. \u26d4 WHAT THIS PAIR DOES NOT SEPARATE: the archive is a distributor repackaging, which may build against system libraries and disable features, so what differs between the two is branding OR packaging. That is a smaller confound than the major and it is not none, and it is recorded here rather than discovered later. \u26d4 WHAT MUST NOT BE DONE: pass --no-sandbox. That captures a browser in a configuration nobody runs. \u2b50 Tracks its channel since 2026-10-11: build is newest, the highest chromium version the archive carries. \u26d4 MEASURED: it was pinned to 152.0.7977.75 and the archive keeps only its newest build, so from 2026-09-09 every scheduled run failed at provisioning with 'the index does not publish 152.0.7977.75 ... Nearest: 154.0.8037.92'. \u26a0 The same-build pairing above therefore holds only on days the archive and the vendor channel agree; the profiles record which builds were taken, and the comparison reads them rather than this sentence."
     }
   ]
 }

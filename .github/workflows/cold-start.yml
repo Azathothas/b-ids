@@ -102,6 +102,36 @@ jobs:
           cargo --version
           rustc --version
 
+      # ⛔ THE CORPUS ROOT, RESOLVED BEFORE ANYTHING IS BUILT. crates/b-ids
+      # embeds the corpus at build time, and since PUB-13 corpus/ lives on the
+      # source branch rather than in the default branch's tree, so a plain
+      # `cargo build --workspace` in a fresh clone panics with `b-ids: no corpus
+      # above crates/b-ids`. ⚠ MEASURED: every scheduled run of this workflow
+      # from 2026-09-07 broke at `build` for exactly that reason, which is the
+      # finding this job exists to make and nobody read. The resolver
+      # materialises the branch under .tmp from the clone itself, so this stays
+      # a cold start: nothing is fetched that the clone did not bring.
+      - name: the corpus root, resolved from the clone
+        id: corpus
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          root=$(sh scripts/common/corpus-root.sh)
+          echo "the corpus resolved to $root ($(sh scripts/common/corpus-root.sh --source))"
+          echo "B_IDS_CORPUS_ROOT=$root" >> "$GITHUB_ENV"
+
+      # ⚠ THE POWERSHELL HALF ON WINDOWS, because the sh half would print a
+      # POSIX path a native cargo cannot open.
+      - name: the corpus root, resolved from the clone
+        id: corpus_ps
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $root = (pwsh -NoProfile -File scripts\common\corpus-root.ps1 | Select-Object -First 1)
+          if ($LASTEXITCODE -ne 0 -or -not $root) { exit 1 }
+          Write-Output ('the corpus resolved to ' + $root)
+          ('B_IDS_CORPUS_ROOT=' + $root) | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       # ⚠ THE FETCH IS ITS OWN STAGE because it is the one that reaches the
       # network for every dependency in the lock file. A registry outage or a
       # yanked crate shows here and nowhere else.
@@ -115,19 +145,42 @@ jobs:
         shell: bash
         run: cargo build --locked --workspace
 
+      # ⛔ INSTALLED, NOT SKIPPED, exactly as ci.yml does it. The gate refuses a
+      # skip under --strict, and neither runner image carries the analyzer;
+      # windows-latest carries no shellcheck either.
+      - name: the gate's lint tools
+        id: lint
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -ErrorAction Stop
+          if ($IsWindows) {
+              choco install shellcheck --no-progress -y
+              if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+          shellcheck --version
+
       - name: the gate
         id: gate
         if: runner.os != 'Windows'
         shell: bash
         run: sh scripts/common/check-gate.sh --strict
 
+      # ⛔ -Fast WITHOUT -Strict, AND THE SKIPS ARE COUNTED, which is ci.yml's
+      # Windows assertion. -Fast skips the twin comparison by design, so
+      # `-Fast -Strict` refused every run of this step before it started.
       - name: the gate
         id: gate_ps
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          pwsh -NoProfile -File scripts\common\check-gate.ps1 -Fast -Strict
+          pwsh -NoProfile -File scripts\common\check-gate.ps1 -Fast
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          $j = pwsh -NoProfile -File scripts\common\check-gate.ps1 -Fast -Json | ConvertFrom-Json
+          if ($j.failed -ne 0) { Write-Output "the json reports $($j.failed) failure(s)"; exit 1 }
+          if ($j.skipped -gt 1) {
+              Write-Output "$($j.skipped) check(s) skipped; only check-twins may be"
+              exit 1
+          }
 
       # ⛔ RESOLVED, NOT ASSUMED, AND NO BROWSER IS EXIT 2. "This runner has no
       # browser" and "the capture failed" are different facts. CI-07.
@@ -182,17 +235,20 @@ jobs:
         shell: bash
         env:
           RESOLVE: ${{ steps.resolve.outcome }}${{ steps.resolve_ps.outcome }}
+          CORPUS: ${{ steps.corpus.outcome }}${{ steps.corpus_ps.outcome }}
           TOOLCHAIN: ${{ steps.toolchain.outcome }}
           FETCH: ${{ steps.fetch.outcome }}
           BUILD: ${{ steps.build.outcome }}
+          LINT: ${{ steps.lint.outcome }}
           GATE: ${{ steps.gate.outcome }}${{ steps.gate_ps.outcome }}
           BROWSER: ${{ steps.browser.outcome }}
           CAPTURE: ${{ steps.capture.outcome }}
           PUBLISH: ${{ steps.publish.outcome }}
         run: |
           first=''
-          for stage in resolve:"$RESOLVE" toolchain:"$TOOLCHAIN" fetch:"$FETCH" \
-            build:"$BUILD" gate:"$GATE" browser:"$BROWSER" capture:"$CAPTURE" \
+          for stage in resolve:"$RESOLVE" corpus:"$CORPUS" toolchain:"$TOOLCHAIN" \
+            fetch:"$FETCH" build:"$BUILD" lint:"$LINT" gate:"$GATE" \
+            browser:"$BROWSER" capture:"$CAPTURE" \
             publish:"$PUBLISH"; do
             name=${stage%%:*}
             outcome=${stage#*:}

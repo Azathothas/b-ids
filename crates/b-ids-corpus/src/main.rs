@@ -122,7 +122,11 @@ usage: b-ids-corpus add --captures FILE --identity FILE [--root DIR]
                    browser that did not change. It opens nothing itself; the
                    workflow does. Its LAST line is a fixed
                    `corpus=pull-request requests:N auto:N routes:N`, where
-                   requests is 0 or 1 and routes is how many moved.
+                   requests is 0 or 1 and routes is how many moved. ⭐ It
+                   also writes DIR/auto-routes, one route per line, naming
+                   every route whose own movements meet all five conditions,
+                   so a run can land those and ask review only for the rest.
+                   Absent when there is none.
   --before DIR     the corpus root as it is published today.
   --after DIR      the corpus root with this run's captures merged in.
   --run FILE       what the run knows and the corpus cannot say, as JSON: the
@@ -942,6 +946,21 @@ fn pull_request_command(before: &str, after: &str, run_file: &str, out_dir: &str
             auto += 1;
         }
         println!("{} -> {}", request.branch, dir.display());
+    }
+
+    // ⭐ THE ROUTES THAT MAY LAND WITHOUT A HUMAN, one per line. ⚠ Per route,
+    // unlike `mergeable` above, which answers for the whole run: the collect
+    // job lands these and opens the request for the rest. ⛔ Written only when
+    // there is one, because a no-op change writes NOTHING, which
+    // check-pr-body asserts; an absent file and an empty list mean the same.
+    let landable = b_ids_corpus::mergeable_routes(&before, &after, &run);
+    if !landable.is_empty() {
+        let landable_path = std::path::Path::new(out_dir).join("auto-routes");
+        let landable_text = format!("{}\n", landable.join("\n"));
+        if let Err(why) = std::fs::write(&landable_path, landable_text.as_bytes()) {
+            eprintln!("b-ids-corpus: {}: {why}", landable_path.display());
+            return ExitCode::from(1);
+        }
     }
 
     println!(

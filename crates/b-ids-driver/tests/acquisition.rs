@@ -10,7 +10,7 @@
 
 use b_ids_driver::acquire::{
     Candidate, IndexRefusal, Platform, Route, acquire_with, download, download_url, index_route,
-    index_url, plan,
+    index_url, newest, newest_url, plan,
 };
 use b_ids_driver::resolve::Family;
 
@@ -482,5 +482,108 @@ fn the_route_table_names_an_index_and_a_route_for_every_family_it_knows() {
             .map(|c| c.route)
             .collect();
         assert!(offered.contains(&route), "{family}: {offered:?}");
+    }
+}
+
+// -- the newest build on a stable channel -----------------------------------
+//
+// ⛔ THE CHANNEL POINTER IS THE REAL DOCUMENT, read 2026-10-11 from the URL
+// `newest_url(Family::Chrome)` names, verbatim. Its Stable build is not the
+// newest build the list carries, which is the reason it is read at all.
+const CHROME_CHANNELS: &str = r#"{"timestamp":"2026-10-10T20:20:06.705Z","channels":{"Stable":{"channel":"Stable","version":"155.0.8059.39","revision":"1697595"},"Beta":{"channel":"Beta","version":"156.0.8078.12","revision":"1706539"},"Dev":{"channel":"Dev","version":"157.0.8081.0","revision":"1708524"},"Canary":{"channel":"Canary","version":"157.0.8097.0","revision":"1716323"}}}"#;
+
+// ⛔ TWO STANZAS OF THE REAL ARCHIVE, read 2026-10-11, trimmed to the fields a
+// reader looks at, plus an older `chromium` stanza so "highest" is a choice
+// rather than the only answer. The sibling package is there so a reader that
+// matched on a prefix would pick it.
+const CHROMIUM_PACKAGES: &str = "Package: chromium-common
+Version: 160.0.0.1-1xtradeb1.2404.1
+Filename: pool/main/c/chromium/chromium-common_160.0.0.1-1xtradeb1.2404.1_amd64.deb
+
+Package: chromium
+Version: 152.0.7977.75-1xtradeb1.2404.1
+Filename: pool/main/c/chromium/chromium_152.0.7977.75-1xtradeb1.2404.1_amd64.deb
+
+Package: chromium
+Version: 154.0.8037.92-1xtradeb1.2404.1
+Filename: pool/main/c/chromium/chromium_154.0.8037.92-1xtradeb1.2404.1_amd64.deb
+";
+
+#[test]
+fn newest_reads_the_stable_channel_rather_than_the_highest_build_anywhere() {
+    // ⭐ The Stable build, not the Canary one the same document also names.
+    assert_eq!(
+        newest(Family::Chrome, CHROME_CHANNELS, Platform::Linux64).as_deref(),
+        Ok("155.0.8059.39")
+    );
+    // ⚠ Edge: the highest Stable release for THIS platform and architecture.
+    assert_eq!(
+        newest(Family::Edge, EDGE_INDEX, Platform::Linux64).as_deref(),
+        Ok("151.0.4129.101")
+    );
+    assert_eq!(
+        newest(Family::Edge, EDGE_INDEX, Platform::Win64).as_deref(),
+        Ok("152.0.4191.53")
+    );
+    // ⚠ Chromium: the highest UPSTREAM version of the `chromium` package
+    // exactly, never a sibling whose name it is a prefix of.
+    assert_eq!(
+        newest(Family::Chromium, CHROMIUM_PACKAGES, Platform::Linux64).as_deref(),
+        Ok("154.0.8037.92")
+    );
+}
+
+#[test]
+fn newest_is_acquirable_through_the_same_reader_as_an_exact_build() {
+    // ⛔ The answer is a version the exact-build reader then finds, so a cell
+    // tracking a channel goes through the one acquisition path there is.
+    let version = newest(Family::Chromium, CHROMIUM_PACKAGES, Platform::Linux64).expect("named");
+    let found = download(
+        Family::Chromium,
+        CHROMIUM_PACKAGES,
+        &version,
+        Platform::Linux64,
+    )
+    .expect("the archive serves the build it names as newest");
+    assert!(
+        found
+            .url
+            .ends_with("chromium_154.0.8037.92-1xtradeb1.2404.1_amd64.deb")
+    );
+}
+
+#[test]
+fn newest_refuses_rather_than_guesses() {
+    // ⛔ A family with no index, a platform an index does not serve, and bytes
+    // that are not the document are each refused by name.
+    assert!(matches!(
+        newest(Family::Firefox, "", Platform::Linux64),
+        Err(IndexRefusal::NoIndexForFamily(_))
+    ));
+    assert!(newest_url(Family::Firefox).is_none());
+    assert!(matches!(
+        newest(Family::Chromium, CHROMIUM_PACKAGES, Platform::Win64),
+        Err(IndexRefusal::NoDownloadForPlatform { .. })
+    ));
+    assert!(matches!(
+        newest(Family::Edge, EDGE_INDEX, Platform::MacArm64),
+        Err(IndexRefusal::NoDownloadForPlatform { .. })
+    ));
+    assert!(matches!(
+        newest(Family::Chrome, "{\"channels\":{}}", Platform::Linux64),
+        Err(IndexRefusal::Unparsable(_))
+    ));
+    assert!(matches!(
+        newest(Family::Chromium, "not an archive", Platform::Linux64),
+        Err(IndexRefusal::Unparsable(_))
+    ));
+    // ⚠ And every family that names an index also names where its newest
+    // build is answered.
+    for family in Family::all() {
+        assert_eq!(
+            index_url(family).is_some(),
+            newest_url(family).is_some(),
+            "{family}"
+        );
     }
 }

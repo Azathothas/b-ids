@@ -100,12 +100,15 @@ jobs:
       # nobody is reading.
       # ⚠ EMPTY IS A VALID ANSWER and it means the exact-build leg is skipped
       # rather than run against a build nobody chose.
+      # ⛔ A CHROME CELL, because check-provisioning's exact-build leg provisions
+      # CHROME. Selecting the first for-testing cell of any family handed it
+      # the Edge build on linux64, which the Chrome index can never serve.
       - name: the build the matrix names for this platform
         id: cell
         shell: bash
         run: |
           build=$(jq -r --arg p "${{ matrix.platform }}" \
-            '[.cells[] | select(.route == "for-testing" and .platform == $p)][0].build // ""' \
+            '[.cells[] | select(.browser == "chrome" and .route == "for-testing" and .platform == $p)][0].build // ""' \
             .github/capture-matrix.json)
           echo "the matrix names build: ${build:-none}"
           echo "build=$build" >> "$GITHUB_OUTPUT"

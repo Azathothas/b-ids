@@ -1,4 +1,4 @@
-﻿# check-workflows.ps1 - does every workflow declare the four things that decide
+﻿# check-workflows.ps1 - does every workflow declare the things that decide
 # whether a run produces data or nothing?
 #
 # ⭐ THE TWIN OF check-workflows.sh. Same schema, same exit codes, same rules.
@@ -14,6 +14,12 @@
 # every `uses:` pinned to a 40-character commit rather than a tag. Plus a
 # top-level `permissions:`, without which a lane inherits whatever the
 # repository grants.
+#
+# ⛔ And every `.tmp/NAME` a workflow names outside a comment must be written by
+# something: a tracked, non-comment line under scripts/ or crates/ naming the
+# same `.tmp/NAME`, or a line of the same workflow that creates it. capture.yml
+# read `.tmp/10-first-profile/` for a month after the capture script moved to
+# `.tmp/capture-profile/`, and every scheduled capture published nothing.
 #
 # ⚠ WHY THIS PARSES RATHER THAN GREPS. `fail-fast: false` appearing anywhere in a
 # file says nothing about WHICH job carries it. And the always() rule needs to
@@ -165,6 +171,34 @@ try {
         }
         if (-not $permissions) {
             $problems.Add("${file}: declares no top-level permissions. The default is whatever the repository grants.")
+        }
+
+        # -- every .tmp path a workflow reads has a writer --------------------
+        $tmpNames = [System.Collections.Generic.SortedSet[string]]::new([System.StringComparer]::Ordinal)
+        foreach ($line in $lines) {
+            if ($line -match '^\s*#') { continue }
+            foreach ($m in [regex]::Matches($line, '\.tmp/([A-Za-z0-9_.-]+)')) {
+                $name = $m.Groups[1].Value -replace '\.+$', ''
+                if ($name -ne '') { [void]$tmpNames.Add($name) }
+            }
+        }
+        foreach ($name in $tmpNames) {
+            $pattern = '[.]tmp/' + ($name -replace '[.]', '[.]') + '([^A-Za-z0-9_.-]|$)'
+            # ⚠ A COMMENT IS NOT A WRITER, so comment lines are dropped before
+            # the match counts.
+            $hits = @(& git grep -hE $pattern -- scripts crates 2>$null |
+                Where-Object { $_ -notmatch '^\s*(#|//|<#)' })
+            if ($hits.Count -gt 0) { continue }
+            $created = $false
+            foreach ($line in $lines) {
+                if ($line -match '^\s*#') { continue }
+                if ($line -match $pattern -and $line -match '(mkdir|--out|>|tee |cp |mv |rm -rf)') {
+                    $created = $true
+                    break
+                }
+            }
+            if ($created) { continue }
+            $problems.Add("${file}: reads .tmp/$name, which nothing in scripts/ or crates/ writes and this workflow does not create. A step reading a path its producer stopped writing fails, or uploads nothing, on every run.")
         }
     }
 

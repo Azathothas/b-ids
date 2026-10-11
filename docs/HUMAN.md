@@ -118,7 +118,8 @@ things a session will report and never do.
 | setting | why | state |
 | --- | --- | --- |
 | private vulnerability reporting | [`../SECURITY.md`](../SECURITY.md) points at it | ⭐ **on**, measured 2026-09-04 |
-| Actions may create pull requests | the capture lane opens one per run | ⚠ read it from the forge; the lane reports the refusal rather than failing silently |
+| Actions may create pull requests | the capture lane opens one per run for the routes that need review | ⭐ **on**: the bot opened requests 1 to 6. ⛔ A refusal now fails the capture run, which `health.yml` turns into an issue |
+| Issues enabled | `health.yml` reports a failing scheduled workflow as an issue | ⭐ **on**, read 2026-10-11 |
 
 ```bash
 gh api repos/OWNER/REPO/private-vulnerability-reporting
@@ -127,6 +128,11 @@ gh api repos/OWNER/REPO/private-vulnerability-reporting
 ---
 
 ## 5. When a capture fails at three in the morning
+
+⭐ **You hear about it from an issue.** `health.yml` opens `pipeline: WORKFLOW is
+failing` on the first red scheduled run, comments on it for every further one,
+and closes it when that workflow next succeeds. An open issue always means it
+is still broken.
 
 ⭐ **Every lane fails alone**, so a red lane is one cell rather than the run, and
 the collect job publishes what worked. ⚠ Read the coverage report first: it says
@@ -142,6 +148,9 @@ sh scripts/common/check-coverage.sh
 | `corpus=pull-request requests:0` over lanes that captured | nothing was added to the corpus | ⛔ the lane's `b-ids-corpus add` step. That exact shape ran green for a week in 2026-09 |
 | a lane resolved a browser and the launch aborted | the build is packaged in a sandbox the runner will not start | ⛔ **do not pass `--no-sandbox`.** It captures a configuration nobody runs. Find an acquisition route that serves a real build |
 | `digest_vectors_...` red after a capture | a published profile has no JA4 vector | `sh scripts/common/derive-ja4-vector.sh --fill ROOT`. ⚠ The collect job does this now, so seeing it means the job did not run |
+| `the capture wrote no identity at ...` | the add step reads a directory the capture did not write | ⛔ the lane's `CAPTURE_OUT` and `profile.sh --out` disagree. `check-workflows` refuses a workflow `.tmp/` path nothing writes, so this should not reach a run |
+| `the index does not publish VERSION ... Nearest: ...` | a cell pins a build its archive has dropped | set the cell's `build` to `newest` in `.github/capture-matrix.json`, or to a build the refusal names |
+| `staleness` red: behind for more than 14 days | captures run and nothing lands | read the latest `capture.yml` run, and review the open `capture/run-*` pull request |
 | the Windows job fails at the toolchain step | ⛔ **not the runner's.** `RULES.md` section 8.5 | read it as a real failure. Do not rerun it to see whether it goes away |
 | a red `check-data-branch` | what is published is not what the corpus derives to | read which of `GONE`, `CHANGED` or `MISSING` it named. ⛔ Behind is not wrong, and the check distinguishes them |
 

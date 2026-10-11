@@ -90,6 +90,9 @@ This prevents a validator from accidentally comparing generated output with a
 second copy of itself.
 
 The `source` branch is append-only for versioned profile and raw-capture paths.
+A capture reaches it in one of two ways. A route lands directly when every
+`CI-04` merge condition holds for that route. Otherwise a person merges the
+pull request the run opened for the remaining routes.
 Derived indexes may be regenerated. The `data` branch is replaced only by a
 successful deterministic assembly and is never force-pushed.
 

@@ -71,6 +71,13 @@
 #   sh scripts/capture/profile.sh
 #   sh scripts/capture/profile.sh --headless
 #   sh scripts/capture/profile.sh --browser edge
+#   sh scripts/capture/profile.sh --out .tmp/capture-profile
+#
+# --out DIR is where the evidence is left, relative to the repository root
+# unless absolute. ⛔ A CALLER THAT READS THE EVIDENCE PASSES IT rather than
+# assuming the default: capture.yml read a directory this script stopped
+# writing when it moved here from an experiment, and every scheduled capture
+# from 2026-09-09 failed with "the capture wrote no identity".
 #
 # Exit codes: 0 the measurement ran and the evidence is on disk,
 #             1 it ran and something refused,
@@ -82,10 +89,12 @@ HEADLESS=""
 # ⛔ EMPTY MEANS "the first family that resolved", never "chrome". A default
 # spelled here would be a second place the resolver's order is decided.
 BROWSER=""
+OUT_ARG=".tmp/capture-profile"
 while [ $# -gt 0 ]; do
   case "$1" in
     --headless) HEADLESS="--headless" ;;
     --browser) shift; BROWSER="${1:-}" ;;
+    --out) shift; OUT_ARG="${1:-}" ;;
     -h|--help) awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print } else exit }' "$0"; exit 0 ;;
     *) printf 'capture-profile: unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -108,7 +117,11 @@ if [ -n "$BROWSER" ]; then
   BROWSER_FLAG="--browser $BROWSER"
 fi
 
-OUT="$ROOT/.tmp/capture-profile"
+[ -n "$OUT_ARG" ] || { printf 'capture-profile: --out needs a directory\n' >&2; exit 2; }
+case "$OUT_ARG" in
+  /*) OUT="$OUT_ARG" ;;
+  *) OUT="$ROOT/$OUT_ARG" ;;
+esac
 mkdir -p "$OUT" || exit 2
 
 printf 'building the three commands\n'

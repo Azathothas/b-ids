@@ -262,6 +262,20 @@ fn classify(movement: &Movement) -> ChangeClass {
     }
 }
 
+/// The build a version names, without the per-platform patch respin.
+///
+/// ⚠ **`major.minor.build`, the first three components.** A vendor ships one
+/// build to every platform under per-platform patch numbers: measured on this
+/// corpus, Chrome's own channel served `152.0.7977.75` on Linux and `.76` on
+/// Windows on 2026-09-02, and `.82` and `.83` on 2026-09-04. A version with
+/// fewer than three components is its own build.
+fn build_of(version: &str) -> &str {
+    match version.match_indices('.').nth(2) {
+        Some((at, _)) => &version[..at],
+        None => version,
+    }
+}
+
 /// How many independent sources captured this build.
 ///
 /// ⛔ **Computed from the published profiles rather than claimed.** `CI-04`
@@ -270,21 +284,43 @@ fn classify(movement: &Movement) -> ChangeClass {
 ///
 /// ⚠ **A source is a platform and an operator together.** Two profiles of one
 /// build on one platform taken by one operator are one source measured twice.
+///
+/// ⛔ **One build is matched by [`build_of`], not by the exact version.**
+/// Matching the exact string made this condition unsatisfiable for the vendor
+/// channel, which never serves two platforms the same patch number, so no
+/// Chrome stable capture could ever land without a human. Each source names the
+/// exact version it holds, so the respin is in front of whoever reads it.
 fn sources(profile: &Profile, after: &[Profile]) -> BTreeSet<String> {
-    after
+    let build = build_of(&profile.browser.version);
+    // ⛔ KEYED ON THE PLATFORM AND THE OPERATOR ALONE. The versions annotate a
+    // source; they do not make one, or two channels captured on one platform in
+    // one run would count as two sources.
+    let mut keyed: std::collections::BTreeMap<String, BTreeSet<&str>> =
+        std::collections::BTreeMap::new();
+    for p in after
         .iter()
-        .filter(|p| {
-            p.browser.name == profile.browser.name && p.browser.version == profile.browser.version
-        })
-        .map(|p| {
+        .filter(|p| p.browser.name == profile.browser.name && build_of(&p.browser.version) == build)
+    {
+        let key = format!(
+            "{} via {}",
+            p.platform_token().as_str(),
+            if p.captured.operator.is_empty() {
+                "an operator nobody recorded"
+            } else {
+                p.captured.operator.as_str()
+            }
+        );
+        keyed
+            .entry(key)
+            .or_default()
+            .insert(p.browser.version.as_str());
+    }
+    keyed
+        .into_iter()
+        .map(|(key, versions)| {
             format!(
-                "{} via {}",
-                p.platform_token().as_str(),
-                if p.captured.operator.is_empty() {
-                    "an operator nobody recorded"
-                } else {
-                    p.captured.operator.as_str()
-                }
+                "{key} ({})",
+                versions.into_iter().collect::<Vec<_>>().join(", ")
             )
         })
         .collect()
@@ -532,6 +568,36 @@ pub fn requests(before: &[Profile], after: &[Profile], run: &Run) -> Vec<Request
         });
     }
     out
+}
+
+/// The routes whose own movements meet every merge condition.
+///
+/// ⭐ **What lets a run land what it may without waiting on what it may not.**
+/// [`batch`] answers for the whole run, so one route that cannot meet a
+/// condition holds every other route back with it. Measured on this corpus:
+/// the Edge and Chromium cells are captured on one platform each, so condition
+/// 2, two independent sources, can never hold for them, and every run that
+/// moved either of them needed a human for ALL of its routes. Since nobody
+/// merged, the corpus stopped moving.
+///
+/// ⛔ **The conditions are [`requests`]' own, unchanged and per route.** A
+/// route is listed only when EVERY movement on it meets EVERY condition, and
+/// the caller lands those and opens the request for the rest.
+#[must_use]
+pub fn mergeable_routes(before: &[Profile], after: &[Profile], run: &Run) -> Vec<String> {
+    let change = model(before, after);
+    let mut held: std::collections::BTreeMap<String, bool> = std::collections::BTreeMap::new();
+    for movement in &change.movements {
+        let Some(route) = movement_route(movement, after) else {
+            continue;
+        };
+        let met = conditions(movement, classify(movement), before, after, run).met();
+        let entry = held.entry(route).or_insert(true);
+        *entry = *entry && met;
+    }
+    held.into_iter()
+        .filter_map(|(route, met)| met.then_some(route))
+        .collect()
 }
 
 /// A run identifier, reduced to what a git branch name may carry.

@@ -54,7 +54,9 @@ contradiction in the same change.
 - `main` contains code, tests, documentation, vendored source, and review
   records; it contains no published corpus or imported reference tree.
 - `source` contains the canonical reviewed profiles, raw captures, vectors,
-  and license.
+  and license. A capture is reviewed either by a person merging its pull
+  request or, per route, by every CI-04 merge condition holding; nothing else
+  lands on `source`.
 - `data` is generated from `source`; do not edit it by hand or force-push it.
 - `reference` contains the byte-preserved upstream research archive. Nothing
   on `main`, `source`, or `data` may depend on that branch at build or run time.

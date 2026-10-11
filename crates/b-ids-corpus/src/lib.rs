@@ -53,7 +53,9 @@ pub use publish::{
     Artefact, Built, INITIAL_RELEASE_TAG, build, parse_tag, plan_initial_release, plan_release,
     would_rewrite,
 };
-pub use pull_request::{ChangeClass, Condition, Conditions, Request, Run, batch, requests};
+pub use pull_request::{
+    ChangeClass, Condition, Conditions, Request, Run, batch, mergeable_routes, requests,
+};
 pub use route::{CORPUS_DIR, LAYOUT, NoRoute, RAW_DIR, Route, route};
 pub use routes::{Manifest, Property, indexes, manifest, routes};
 pub use store::{Added, Index, IndexEntry, Pointers, Published, STABLE, Store};

@@ -114,6 +114,15 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.lanes) }}
+    # ⛔ THE CAPTURE DIRECTORY IS NAMED ONCE, HERE, AND PASSED TO THE SCRIPT.
+    # The add step and the upload read the directory the capture step was
+    # TOLD to write, never one they assume it writes. Every scheduled run from
+    # 2026-09-09 to 2026-10-07 captured six browsers and published nothing
+    # because this file still read `.tmp/10-first-profile/` after the script
+    # moved to `.tmp/capture-profile/`. check-workflows refuses a workflow
+    # `.tmp/` path that nothing in the tree writes.
+    env:
+      CAPTURE_OUT: .tmp/capture-profile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -200,7 +209,7 @@ jobs:
       - name: capture
         if: steps.resolve.outputs.rc == '0'
         shell: bash
-        run: sh scripts/capture/profile.sh --headless --browser "${{ matrix.browser }}"
+        run: sh scripts/capture/profile.sh --headless --browser "${{ matrix.browser }}" --out "$CAPTURE_OUT"
 
       # ⛔ THE LANE ADDS THE PROFILE, AND UNTIL 2026-09-04 NOTHING DID.
       # scripts/capture/profile.sh deliberately writes nothing into the
@@ -232,8 +241,8 @@ jobs:
         if: steps.resolve.outputs.rc == '0'
         shell: bash
         run: |
-          ident=.tmp/10-first-profile/identity.json
-          [ -f "$ident" ] || { echo "the capture wrote no identity"; exit 1; }
+          ident="$CAPTURE_OUT/identity.json"
+          [ -f "$ident" ] || { echo "the capture wrote no identity at $ident"; exit 1; }
           jq --arg channel "${{ matrix.channel }}" \
              --argjson branded ${{ matrix.branded }} \
              --arg operator "capture.yml run ${{ github.run_id }}" \
@@ -244,7 +253,7 @@ jobs:
           cat "$ident"
           set +e
           cargo run -q -p b-ids-corpus -- add \
-            --captures .tmp/10-first-profile/captures.jsonl \
+            --captures "$CAPTURE_OUT/captures.jsonl" \
             --identity "$ident" --root . > add.log 2>&1
           rc=$?
           set -e
@@ -273,7 +282,7 @@ jobs:
           path: |
             corpus/
             raw/
-            .tmp/10-first-profile/
+            ${{ env.CAPTURE_OUT }}/
             .tmp/provision-browser/acquisition.json
           if-no-files-found: warn
           retention-days: 14
@@ -328,10 +337,14 @@ jobs:
     #
     # ⚠ IT ALSO NEEDS A REPOSITORY SETTING THIS FILE CANNOT GRANT: Actions must
     # be allowed to create pull requests. That is the operator's to enable, and
-    # the step below reports the refusal rather than failing the run silently.
+    # a refusal fails the run, so health.yml reports it as an issue.
+    # ⚠ `actions: write` IS FOR ONE CALL: dispatching publish.yml after a
+    # route lands, because a push made with the run's own token triggers no
+    # workflow and the data branch would otherwise wait for an unrelated push.
     permissions:
       contents: write
       pull-requests: write
+      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -343,6 +356,7 @@ jobs:
       # generator treats an absent corpus as an empty one, deliberately, because
       # the first run on a fresh tree has nothing to compare against.
       - name: the canonical corpus, from the source branch
+        id: source
         shell: bash
         run: |
           git fetch --no-tags origin '+refs/heads/source:refs/remotes/origin/source'
@@ -350,6 +364,7 @@ jobs:
           n=$(find corpus/v1 -name '*.json' ! -name index.json ! -name latest.json | wc -l)
           echo "the source branch carries $n profile(s)"
           [ "$n" -ge 1 ]
+          echo "sha=$(git rev-parse refs/remotes/origin/source)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -366,14 +381,23 @@ jobs:
             echo "no lane produced an artefact at all"
             exit 0
           fi
+          # ⚠ A LANE UPLOADS THE WHOLE CORPUS IT STARTED FROM, so what it
+          # CONTRIBUTED is the profiles the source branch does not already
+          # hold. Counting every JSON file reported fourteen per lane whether
+          # the lane added one or none.
           found=0
           for d in lanes/*/; do
             [ -d "$d" ] || continue
-            n=$(find "$d" -name '*.json' -path '*/corpus/*' | wc -l)
-            echo "  $(basename "$d"): $n profile file(s)"
+            n=0
+            if [ -d "$d/corpus/v1" ]; then
+              for f in $(cd "$d" && find corpus/v1 -name '*.json' ! -name index.json ! -name latest.json); do
+                [ -e "$f" ] || n=$((n + 1))
+              done
+            fi
+            echo "  $(basename "$d"): $n new profile(s)"
             found=$((found + n))
           done
-          echo "profiles collected: $found"
+          echo "new profiles collected: $found"
 
       # ⭐ THE COVERAGE REPORT, WHICH IS WHAT SAYS WHAT THE MATRIX DID NOT DO.
       # CORPUS-02 owns the check; this is where its answer is published.
@@ -436,15 +460,27 @@ jobs:
       # a run identifier belongs.
       # ⚠ WHAT THE RUN COULD NOT DO IS NAMED, and a lane result that is not
       # `success` is exactly that.
+      # ⛔ THE VERDICT IS OVER THE MERGED TREE AND IT CANNOT READ AS CLEAN BY
+      # ACCIDENT. The formats are checked against `.tmp/collect/after`, not
+      # whatever corpus the checker would resolve by itself, and a validator
+      # that printed no fixed last line is a refusal rather than "0 findings":
+      # the verdict below decides whether a route lands without a human.
       - name: what this run would open
         id: requests
         shell: bash
         run: |
+          after="$PWD/.tmp/collect/after"
           set +e
-          sh scripts/common/check-formats.sh > .tmp/collect/formats.log 2>&1
+          B_IDS_CORPUS_ROOT="$after" sh scripts/common/check-formats.sh > .tmp/collect/formats.log 2>&1
           formats_rc=$?
-          cargo run -q -p b-ids-corpus -- validate --root .tmp/collect/after > .tmp/collect/validate.log 2>&1
+          cargo run -q -p b-ids-corpus -- validate --root "$after" > .tmp/collect/validate.log 2>&1
           set -e
+          cat .tmp/collect/formats.log
+          cat .tmp/collect/validate.log
+          grep -q '^corpus=validate ' .tmp/collect/validate.log || {
+            echo "⛔ the validator printed no verdict over the merged tree"
+            exit 1
+          }
           findings=$(awk -F'findings:' '/^corpus=validate /{ split($2, a, / /); n = a[1] } END { print n + 0 }' .tmp/collect/validate.log)
           unavailable='[]'
           if [ "${{ needs.lane.result }}" != "success" ]; then
@@ -469,6 +505,127 @@ jobs:
             --run .tmp/collect/run.json --out .tmp/collect/requests | tee .tmp/collect/requests.log
           n=$(awk -F'requests:' '/^corpus=pull-request /{ split($2, a, / /); r = a[1] } END { print r + 0 }' .tmp/collect/requests.log)
           echo "requests=$n" >> "$GITHUB_OUTPUT"
+          if [ -s .tmp/collect/requests/auto-routes ]; then
+            echo "routes that meet every merge condition:"
+            sed 's/^/  /' .tmp/collect/requests/auto-routes
+          fi
+
+      # ⭐ WHAT MAY LAND WITHOUT A HUMAN, LANDS. CI-04 allows a merge with no
+      # human when all five of its conditions hold, and until 2026-10-11 nothing
+      # acted on that verdict: every capture waited on a person, and the corpus
+      # stopped moving the first month nobody merged. ⛔ THE CONDITIONS ARE THE
+      # GENERATOR'S, PER ROUTE, UNCHANGED: a route captured on one platform can
+      # never show two independent sources, and it no longer holds back the
+      # routes that can. The rest still go to review in the one request below.
+      #
+      # ⛔ APPEND-ONLY BY CONSTRUCTION. The landed tree is the published one plus
+      # the NEW files of the landable routes; a file that already exists is never
+      # copied over. It is re-indexed, its vectors derived, and it must pass
+      # verify, validate with zero findings, and the stable-pointer assertion
+      # before anything is pushed.
+      # ⛔ NO FORCE. The push is a fast-forward of the source branch or the
+      # remote refuses it.
+      # ⚠ A push made with the run's own token triggers no workflow, so the
+      # publication of the data branch is dispatched explicitly.
+      - name: land the routes that meet every condition
+        id: land
+        shell: bash
+        run: |
+          rest_dir=.tmp/collect/requests
+          rest_tree=.tmp/collect/after
+          rest_n="${{ steps.requests.outputs.requests }}"
+          landed=0
+          if [ -s .tmp/collect/requests/auto-routes ]; then
+            land=.tmp/collect/land
+            rm -rf "$land"
+            mkdir -p "$land"
+            cp -r .tmp/collect/before/corpus .tmp/collect/before/raw .tmp/collect/before/vectors "$land"/
+            while read -r route; do
+              [ -n "$route" ] || continue
+              for kind in corpus raw; do
+                src=".tmp/collect/after/$kind/v1/$route"
+                [ -d "$src" ] || continue
+                mkdir -p "$land/$kind/v1/$route"
+                for f in "$src"/*; do
+                  dest="$land/$kind/v1/$route/$(basename "$f")"
+                  [ -e "$dest" ] || cp "$f" "$dest"
+                done
+              done
+            done < .tmp/collect/requests/auto-routes
+            cargo run -q -p b-ids-corpus -- index --write --root "$land"
+            sh scripts/common/derive-ja4-vector.sh --fill "$land"
+            cargo run -q -p b-ids-corpus -- verify --root "$land" | tee .tmp/collect/land-verify.log
+            grep -q '^corpus=profiles:[0-9]* problems:0$' .tmp/collect/land-verify.log
+            cargo run -q -p b-ids-corpus -- validate --root "$land" | tee .tmp/collect/land-validate.log
+            grep -q '^corpus=validate .* findings:0 ' .tmp/collect/land-validate.log
+            cargo run -q -p b-ids-corpus -- latest --assert-stable --root "$land"
+
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git fetch --no-tags origin '+refs/heads/source:refs/remotes/origin/source'
+            # ⛔ THE BASE THE LANDED TREE WAS BUILT FROM MUST STILL BE THE HEAD.
+            # A source branch that moved during this run would have its newer
+            # index overwritten by one derived without it.
+            if [ "$(git rev-parse refs/remotes/origin/source)" != "${{ steps.source.outputs.sha }}" ]; then
+              echo "⛔ the source branch moved during this run, so nothing is landed; the next run lands it"
+              exit 1
+            fi
+            rm -rf .tmp/collect/source-worktree
+            git worktree add --detach .tmp/collect/source-worktree origin/source
+            cp -r "$land/corpus" "$land/raw" "$land/vectors" .tmp/collect/source-worktree/
+            routes=$(paste -sd ' ' .tmp/collect/requests/auto-routes)
+            (
+              cd .tmp/collect/source-worktree
+              git add corpus raw vectors
+              if git diff --cached --quiet; then
+                echo "the source branch already holds these routes"
+              else
+                git commit -q \
+                  -m "corpus: landed by capture.yml run ${{ github.run_id }}: $routes" \
+                  -m "Every CI-04 merge condition held for each route: the validator found nothing, two independent sources agree, no field regressed, the diff touches only the fields its change class predicts, and every format round-trips. ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                git push origin HEAD:refs/heads/source
+                echo "landed: $routes"
+              fi
+            )
+            landed=$(grep -c . .tmp/collect/requests/auto-routes)
+
+            # ⭐ WHAT IS LEFT FOR REVIEW is the merged tree over what just
+            # landed. The new files of every other route are added to the
+            # landed tree, re-indexed and their vectors filled, so the request
+            # diffs only what a human still has to decide.
+            rest=.tmp/collect/rest
+            rm -rf "$rest"
+            cp -r "$land" "$rest"
+            for kind in corpus raw; do
+              ( cd ".tmp/collect/after/$kind" && find . -type f ) | while read -r f; do
+                [ -e "$rest/$kind/$f" ] || { mkdir -p "$(dirname "$rest/$kind/$f")"; cp ".tmp/collect/after/$kind/$f" "$rest/$kind/$f"; }
+              done
+            done
+            cargo run -q -p b-ids-corpus -- index --write --root "$rest"
+            sh scripts/common/derive-ja4-vector.sh --fill "$rest"
+            rm -rf .tmp/collect/rest-requests
+            cargo run -q -p b-ids-corpus -- pull-request \
+              --before "$land" --after "$rest" \
+              --run .tmp/collect/run.json --out .tmp/collect/rest-requests | tee .tmp/collect/rest-requests.log
+            rest_n=$(awk -F'requests:' '/^corpus=pull-request /{ split($2, a, / /); r = a[1] } END { print r + 0 }' .tmp/collect/rest-requests.log)
+            rest_dir=.tmp/collect/rest-requests
+            rest_tree="$rest"
+          else
+            echo "no route meets every merge condition, so nothing lands without review"
+          fi
+          {
+            echo "landed=$landed"
+            echo "requests=$rest_n"
+            echo "dir=$rest_dir"
+            echo "tree=$rest_tree"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: publish what landed
+        if: steps.land.outputs.landed != '0'
+        shell: bash
+        run: gh workflow run publish.yml --ref "${{ github.event.repository.default_branch }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       # ⭐ A NO-OP RUN OPENS NOTHING AND COMMENTS NOTHING. Silence is the correct
       # output for a browser that did not change, and a bot that writes on a
@@ -478,7 +635,8 @@ jobs:
       # branch is checked for a commit whose author is not the platform's own
       # actor, and a lane that finds one stops with a message rather than
       # destroying somebody's work.
-      # ⛔ ONE PULL REQUEST FOR THE RUN, AGAINST THE SOURCE BRANCH.
+      # ⛔ ONE PULL REQUEST FOR THE RUN, AGAINST THE SOURCE BRANCH, carrying
+      # only what did not land above.
       #
       # ⚠ IT USED TO BE ONE PER ROUTE and every branch carried the SAME tree.
       # Measured on run 33851238648: five branches opened, all five resolving to
@@ -492,15 +650,21 @@ jobs:
       # ⛔ AND THE BASE IS THE SOURCE BRANCH, NOT THE DEFAULT ONE. The default
       # branch carries no corpus/ since PUB-13, so a pull request adding one
       # there would put back exactly what that entry removed.
+      # ⛔ A REQUEST THAT COULD NOT BE OPENED FAILS THE RUN. It used to print a
+      # line and exit 0, which is a capture nobody would ever see.
       - name: open or update this run's one pull request
-        if: steps.requests.outputs.requests != '0'
+        if: steps.land.outputs.requests != '0'
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTS: ${{ steps.land.outputs.dir }}
+          TREE: ${{ steps.land.outputs.tree }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           base=source
           git fetch --no-tags origin "+refs/heads/$base:refs/remotes/origin/$base"
-          for dir in .tmp/collect/requests/*/; do
+          for dir in "$REQUESTS"/*/; do
             [ -d "$dir" ] || continue
             branch=$(cat "$dir/branch")
             title=$(cat "$dir/title")
@@ -519,8 +683,7 @@ jobs:
             # ⛔ THE VECTORS GO WITH THE PROFILES. A profile whose capture vector
             # is on another branch leaves the gate red until both land, and there
             # is no order of two merges that avoids it.
-            cp -r .tmp/collect/after/corpus .tmp/collect/after/raw \
-                  .tmp/collect/after/vectors .
+            cp -r "$TREE/corpus" "$TREE/raw" "$TREE/vectors" .
             git add corpus raw vectors
             if git diff --cached --quiet; then
               echo "nothing to commit on $branch"
@@ -534,13 +697,13 @@ jobs:
               # ⚠ A refusal here is usually the repository setting that lets
               # Actions create pull requests, which this file cannot grant.
               gh pr create --base "$base" --head "$branch" --title "$title" \
-                --body-file "$dir/body.md" \
-                || echo "⛔ could not open a pull request. Allow GitHub Actions to create pull requests in the repository settings"
+                --body-file "$dir/body.md" || {
+                echo "⛔ could not open a pull request. Allow GitHub Actions to create pull requests in the repository settings"
+                exit 1
+              }
             fi
             while read -r label; do
               [ -n "$label" ] || continue
               gh pr edit "$branch" --add-label "$label" || echo "no label $label"
             done < "$dir/labels"
           done
-        env:
-          GH_TOKEN: ${{ github.token }}

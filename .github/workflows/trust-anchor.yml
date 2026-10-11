@@ -106,6 +106,6 @@ jobs:
             report.txt
             exit-code.txt
             resolved.jsonl
-            .tmp/50-trust-anchor/
+            .tmp/trust-anchor/
           if-no-files-found: warn
           retention-days: 14

@@ -16,13 +16,22 @@
 # the route, the build it holds, the build that is serving, the rollout fraction
 # and every source that answered.
 #
-# ⛔ A RED RUN HERE IS THE SIGNAL, NOT A DEFECT IN THE TREE. Exit 1 means the
-# corpus is behind and somebody should capture the new build; exit 2 means no
-# source answered, which is a fact about the vendor's endpoints rather than
-# about this repository, and it is reported without failing the job.
+# ⭐ IT HEALS BEFORE IT ALARMS. A corpus that is behind dispatches capture.yml,
+# which captures, lands what meets every merge condition and opens one request
+# for the rest. A browser shipping on Tuesday is not a fault.
 #
-# ⛔ READ-ONLY. CI-04 is the entry that opens a pull request from this, and the
-# write it needs belongs to that job and to no other. Nothing here writes.
+# ⛔ AND IT GOES RED WHEN THE PIPELINE IS STUCK, which is the signal this file
+# promised and, until 2026-10-11, never gave: every step ended `exit 0`, so it
+# reported green for five weeks while it printed "2 of 2 route(s) are behind"
+# and the corpus held Chrome 152 against a serving 155. Stuck means BEHIND and
+# the newest capture on a stale route older than STUCK_AFTER_DAYS: a capture
+# that ran in that window and landed nothing is a capture that is broken or a
+# request nobody reviewed, and either needs a person. health.yml turns the red
+# run into an issue.
+#
+# ⚠ Exit 2 means no source answered, which is a fact about the vendor's
+# endpoints rather than about this repository. It is annotated as a warning
+# and does not fail the job. CI-07.
 #
 # ⛔ THIRD-PARTY ACTIONS ARE PINNED TO A COMMIT, NOT A TAG. The checkout pin is
 # the one ci.yml and capture.yml already carry.
@@ -49,14 +58,16 @@ jobs:
     name: what is serving, and what does the corpus hold
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: write
+    env:
+      STUCK_AFTER_DAYS: '14'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      # ⛔ BOTH HALVES, ON THE HOST THAT HAS BOTH. The pair is compared by
-      # check-twins on a developer machine; this asserts that the one a schedule
-      # actually runs works where it runs.
       - name: the corpus against what is serving
         id: staleness
         shell: bash
@@ -67,20 +78,50 @@ jobs:
           set -e
           cat staleness.json || true
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
-          # 2 is "no source answered", which is a fact about the vendor rather
-          # than about this tree, and it must not read as a stale corpus.
-          # CI-07 is the rule.
-          [ "$rc" != 2 ] || echo "no source answered; nothing was compared"
-          exit 0
+          if [ "$rc" = 2 ]; then
+            echo "::warning title=staleness::no version source answered, so nothing was compared"
+          fi
+          [ "$rc" = 0 ] || [ "$rc" = 1 ] || [ "$rc" = 2 ]
 
       # ⭐ THE HUMAN FORM IS WHAT CARRIES THE REPLACEMENT VALUES, and it is
-      # printed only when there is something to report, so a run that found
-      # nothing is one line rather than a page.
+      # printed only when there is something to report.
       - name: what would replace it
         if: steps.staleness.outputs.rc == '1'
         shell: bash
         run: |
           set +e
-          sh scripts/common/check-staleness.sh
-          echo "the corpus is behind. CI-04 is the entry that opens a pull request from this."
-          exit 0
+          sh scripts/common/check-staleness.sh | tee staleness.txt
+          set -e
+          {
+            echo '## The corpus is behind'
+            echo
+            echo '```text'
+            cat staleness.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: capture the serving build
+        if: steps.staleness.outputs.rc == '1'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run capture.yml --ref "${{ github.event.repository.default_branch }}"
+          echo "dispatched capture.yml on ${{ github.event.repository.default_branch }}"
+
+      # ⛔ BEHIND AND OLD IS STUCK. The newest capture on any stale route is read
+      # from the profile itself, never from a commit date, and a route behind
+      # for longer than the window fails this job.
+      - name: the pipeline is not stuck
+        if: steps.staleness.outputs.rc == '1'
+        shell: bash
+        run: |
+          root=$(sh scripts/common/corpus-root.sh)
+          newest=$(find "$root/corpus/v1/chrome/stable" -name '*.json' -exec jq -r '.captured.at' {} + | sort | tail -1)
+          [ -n "$newest" ] || { echo "no chrome stable capture to date"; exit 1; }
+          age=$(( ( $(date -u +%s) - $(date -u -d "$newest" +%s) ) / 86400 ))
+          echo "the newest chrome stable capture is from $newest, $age day(s) ago"
+          if [ "$age" -gt "$STUCK_AFTER_DAYS" ]; then
+            echo "::error title=staleness::the corpus has been behind the serving build for more than $STUCK_AFTER_DAYS days: capture is not landing. Read the latest capture.yml run and any open capture/run-* pull request."
+            exit 1
+          fi

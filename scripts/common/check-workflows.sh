@@ -1,5 +1,5 @@
 #!/bin/sh
-# check-workflows.sh - does every workflow declare the four things that decide
+# check-workflows.sh - does every workflow declare the the things that decide
 # whether a run produces data or nothing?
 #
 # The defect this exists to catch is a matrix that cancels every lane when one
@@ -27,6 +27,14 @@
 # Plus one that is not about matrices: a workflow with no top-level
 # `permissions:` inherits whatever the repository grants, which is how a lane
 # that downloads a browser ends up holding a write token.
+#
+# And one about what a step READS: every `.tmp/NAME` a workflow names outside a
+# comment must be written by something. That is a tracked file under scripts/
+# or crates/ naming the same `.tmp/NAME`, or a line of the same workflow that
+# creates it (mkdir, --out, a redirect, tee, cp, mv, rm -rf before a rebuild).
+# ⛔ MEASURED, NOT PREDICTED: capture.yml read `.tmp/10-first-profile/` for a
+# month after the capture script moved to `.tmp/capture-profile/`, and every
+# scheduled capture captured six browsers and published nothing.
 #
 # -- WHY THIS PARSES RATHER THAN GREPS --------------------------------------
 #
@@ -182,6 +190,44 @@ REPORT=$(for wf in $FILES; do
     }
   ' "$wf"
 done)
+
+# -- every .tmp path a workflow reads has a writer ---------------------------
+# ⚠ The writers are searched for in the REPOSITORY'S scripts and crates even
+# when --fixtures names another directory, because that is where a fixture's
+# steps would find them too.
+TMP_REPORT=$(for wf in $FILES; do
+  names=$(awk '
+    /^[ \t]*#/ { next }
+    {
+      line = $0
+      while (match(line, /\.tmp\/[A-Za-z0-9_.-]+/)) {
+        name = substr(line, RSTART + 5, RLENGTH - 5)
+        sub(/\.+$/, "", name)
+        if (name != "") print name
+        line = substr(line, RSTART + RLENGTH)
+      }
+    }
+  ' "$wf" | LC_ALL=C sort -u)
+  for name in $names; do
+    pattern=$(printf '%s' "$name" | sed 's/[.]/[.]/g')
+    pattern="[.]tmp/$pattern([^A-Za-z0-9_.-]|\$)"
+    # ⚠ A COMMENT IS NOT A WRITER, and this file's own header names the path
+    # that went stale, so comment lines are dropped before the match counts.
+    if git grep -hE "$pattern" -- scripts crates 2>/dev/null |
+      grep -vE '^[[:space:]]*(#|//|<#)' | grep -q .; then
+      continue
+    fi
+    if awk -v re="$pattern" '
+      /^[ \t]*#/ { next }
+      $0 ~ re && $0 ~ /(mkdir|--out|>|tee |cp |mv |rm -rf)/ { found = 1 }
+      END { exit found ? 0 : 1 }
+    ' "$wf"; then
+      continue
+    fi
+    printf 'P%s: reads .tmp/%s, which nothing in scripts/ or crates/ writes and this workflow does not create. A step reading a path its producer stopped writing fails, or uploads nothing, on every run.\n' "$wf" "$name"
+  done
+done)
+REPORT=$(printf '%s\n%s\n' "$REPORT" "$TMP_REPORT")
 
 NJOBS=$(printf '%s\n' "$REPORT" | awk '/^J/ { n += substr($0, 2) } END { print n + 0 }')
 DETAIL=$(printf '%s\n' "$REPORT" | awk '/^P/ { print substr($0, 2) }')

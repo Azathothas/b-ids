@@ -2,6 +2,43 @@
 
 What shipped, when, and where the evidence is. Newest first.
 
+## Unreleased
+
+### 2026-10-11 - the scheduled pipeline lands data again, and says when it cannot
+
+**Record:** [`docs/HUMAN.md`](docs/HUMAN.md) section 5, and the workflow headers
+of `capture.yml`, `staleness.yml`, `cold-start.yml` and `health.yml`.
+**Deployed:** no tag. The workflows take effect on the default branch.
+
+- fixed every scheduled capture failing since 2026-09-09: `capture.yml` read
+  `.tmp/10-first-profile/` after the capture script moved to
+  `.tmp/capture-profile/`. The directory is now passed with `--out`, and
+  `check-workflows` refuses any workflow `.tmp/` path that nothing writes;
+- fixed `trust-anchor.yml` uploading a directory its script no longer writes;
+- capture cells can track their channel with `build: newest`, read through
+  `b-ids-driver acquire --newest`. The Chromium cell had pinned a build its
+  archive dropped, and the Edge and Chrome-for-Testing cells re-captured
+  builds months old;
+- fixed every scheduled cold start failing at `build`, because the corpus
+  root was never resolved. Its Windows gate also refused itself under
+  `-Fast -Strict`, and its Ubuntu gate lacked PSScriptAnalyzer;
+- routes whose own changes meet every `CI-04` merge condition now land on
+  `source` without review, and `publish.yml` is dispatched to regenerate
+  `data`. Only the remaining routes go into one pull request. Two
+  independent sources now match on `major.minor.build`, because the vendor
+  channel never serves two platforms the same patch number;
+- the capture verdict refuses a validator that printed no result and checks
+  formats against the merged tree. A pull request that cannot be opened now
+  fails the run;
+- `staleness.yml` dispatches a capture when the corpus is behind, and fails
+  when it has been behind for more than 14 days. It had reported green while
+  the corpus held Chrome 152 against a serving 155;
+- added `health.yml`, which keeps one issue open per failing scheduled
+  workflow and closes it on the next success;
+- fixed `provision.yml` handing the Edge build to the Chrome index, and gave
+  the PowerShell provisioning twin the Chromium, gzip, snap and companion
+  handling its POSIX half already had.
+
 ## v0.0.1
 
 ### 2026-09-05 - initial public release

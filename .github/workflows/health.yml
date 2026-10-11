@@ -1,0 +1,90 @@
+# The alarm. One open issue per workflow while it is failing, closed by its
+# next success.
+#
+# ⛔ WHY THIS EXISTS, MEASURED. Every scheduled capture from 2026-09-09 to
+# 2026-10-07 failed, every scheduled cold start from 2026-09-07 failed, and
+# staleness reported the corpus three majors behind while finishing green. Five
+# weeks passed and nothing reached a person: a red scheduled run is a line on the
+# Actions page, and nobody reads that page on a project meant to run itself.
+#
+# ⭐ AN ISSUE IS WHAT A PERSON SEES. It lands in the repository's own list and
+# in the owner's notifications, it says which workflow, which run and how it
+# ended, and a second failure comments on the same issue rather than opening
+# another. The workflow's next success closes it with a link, so an open issue
+# always means "still broken".
+#
+# ⚠ ONLY RUNS ON THE DEFAULT BRANCH, and only those a schedule, a dispatch or
+# a push started. A pull request's red check is already in front of its
+# author, and an issue for it would be noise.
+#
+# ⛔ A CANCELLED OR SKIPPED RUN DECIDES NOTHING, so it neither opens nor
+# closes an issue.
+#
+# ⛔ THIRD-PARTY ACTIONS: none. Everything here is the platform's own `gh`.
+#
+# ⚠ NOTHING HERE NAMES AN OWNER OR A REPOSITORY.
+
+name: health
+
+on:
+  workflow_run:
+    workflows: [capture, cold-start, staleness, publish, ci, validate, trust-anchor, provision]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: health-${{ github.event.workflow_run.name }}
+  cancel-in-progress: false
+
+jobs:
+  alarm:
+    # manual: sh scripts/common/check-staleness.sh
+    name: the alarm for ${{ github.event.workflow_run.name }}
+    if: >-
+      github.event.workflow_run.head_branch == github.event.repository.default_branch
+      && contains(fromJSON('["schedule","workflow_dispatch","push"]'), github.event.workflow_run.event)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: open, update or close the issue
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          WORKFLOW: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          EVENT: ${{ github.event.workflow_run.event }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          title="pipeline: $WORKFLOW is failing"
+          open=$(gh issue list --state open --search "\"$title\" in:title" \
+            --json number,title --jq "map(select(.title == \"$title\")) | .[0].number // empty")
+          echo "workflow $WORKFLOW ended $CONCLUSION on $EVENT; open issue: ${open:-none}"
+          case "$CONCLUSION" in
+            failure|timed_out|startup_failure|action_required)
+              body=$(printf '%s\n\n%s\n%s\n%s\n\n%s\n' \
+                "\`$WORKFLOW\` ended **$CONCLUSION** on a \`$EVENT\` run of the default branch." \
+                "- run: $RUN_URL" \
+                "- commit: $SHA" \
+                "- opened by health.yml, and closed by it when \`$WORKFLOW\` next succeeds" \
+                "docs/HUMAN.md section 5 is the runbook.")
+              if [ -n "$open" ]; then
+                gh issue comment "$open" --body "$body"
+              else
+                gh issue create --title "$title" --body "$body"
+              fi
+              ;;
+            success)
+              if [ -n "$open" ]; then
+                gh issue close "$open" --comment "\`$WORKFLOW\` succeeded again: $RUN_URL"
+              fi
+              ;;
+            *)
+              echo "a $CONCLUSION run decides nothing"
+              ;;
+          esac

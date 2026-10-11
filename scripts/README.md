@@ -69,13 +69,13 @@ pwsh -NoProfile -File scripts/common/check-gate.ps1 -Strict
 | `check-twins` | POSIX and PowerShell check pairs return equivalent results |
 | `check-validate` | profiles validate and deterministic generation repeats byte-for-byte |
 | `check-vendor` | vendored trees, patches, and upstream metadata agree |
-| `check-workflows` | workflow metadata and fail-fast policy satisfy the CI contract |
+| `check-workflows` | workflow metadata and fail-fast policy satisfy the CI contract, and every `.tmp/` path a workflow reads has a writer |
 
 ## Capture operations
 
 | command | purpose |
 | --- | --- |
-| `capture/profile` | capture a browser network profile on a guarded disposable host |
+| `capture/profile` | capture a browser network profile on a guarded disposable host; `--out DIR` names where the evidence is left |
 | `capture/trust-anchor` | capture trust-anchor extension behavior on a guarded disposable host |
 
 ## Helpers and operations
@@ -88,7 +88,7 @@ pwsh -NoProfile -File scripts/common/check-gate.ps1 -Strict
 | `doctor` | report host, toolchain, repository, shell, network, WSL, and container capabilities |
 | `git-sync` | validate, commit with configured identity, push, and verify the remote SHA |
 | `mine-repo` | fetch a pinned upstream repository and provenance for reference review |
-| `provision-browser` | remove and install a browser build on a disposable CI host |
+| `provision-browser` | remove and install a browser build on a disposable CI host; `--version newest` installs what the family's stable channel serves today |
 | `set-record` | update the archived record format when validating historical fixtures |
 | `vendor-diff` | compare a vendored tree with its recorded upstream source |
 | `vendor-sync` | reconstruct vendored source and apply the patch series |

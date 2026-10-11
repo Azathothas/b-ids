@@ -67,6 +67,28 @@ silently substituted.
 ⛔ Do not edit `data` directly or force-push `source` or `data`. A capture
 changes `source`; the publication workflow regenerates `data`.
 
+## How the data stays current
+
+The repository maintains itself on a schedule, without credentials:
+
+1. `capture.yml` runs weekly. It installs the build each matrix cell names, or
+   the newest build on that cell's stable channel, and captures it on a hosted
+   runner.
+2. A route lands on `source` without a person only when every merge condition
+   holds for it: no validator finding, agreement across two independent
+   sources, no provenance regression, a diff limited to the fields its change
+   class predicts, and formats that round-trip. Every other route goes into
+   one pull request for review.
+3. A landing dispatches `publish.yml`, which regenerates `data`.
+4. `staleness.yml` compares the corpus with the build the vendor is serving.
+   When the corpus is behind, it dispatches a capture. When the corpus has
+   been behind for more than 14 days, the run fails.
+5. `health.yml` opens one issue per failing scheduled workflow and closes it
+   when that workflow next succeeds.
+
+⚠ Routes captured on a single platform, currently Edge and Chromium, cannot
+show two independent sources, so their updates always wait for review.
+
 ## Verify a release
 
 Release archives are checksummed and receive GitHub build-provenance

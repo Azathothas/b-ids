@@ -30,6 +30,16 @@ use crate::resolve::Family;
 const FOR_TESTING_INDEX: &str =
     "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json";
 
+/// The automation index's per-channel pointer, which names the build each
+/// channel is on today.
+///
+/// ⚠ **A different document from [`FOR_TESTING_INDEX`]**, because that one is
+/// a flat list of builds with no channel attached, and its highest entry is a
+/// Canary build. Measured 2026-10-11: this pointer named `155.0.8059.39` for
+/// Stable while the list's newest entry was a `157` Canary.
+const FOR_TESTING_CHANNELS: &str =
+    "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json";
+
 /// Where a build was obtained, in the order the routes are tried.
 ///
 /// ⛔ **The order is the design.** A route that answers with the exact build
@@ -977,4 +987,138 @@ fn edge_download(
             .and_then(serde_json::Value::as_u64),
         companions: Vec::new(),
     })
+}
+
+/// Where to ask which build is newest on a family's stable channel.
+///
+/// ⭐ **This is what lets a capture cell track a channel instead of freezing on
+/// a build.** A cell that names an exact build keeps capturing that build after
+/// every newer one ships, and a rolling archive drops it altogether: the
+/// Chromium archive this project reads carried `152.0.7977.75` on 2026-09-04
+/// and only `154.0.8037.92` on 2026-10-07, so the cell pinned to the first
+/// failed every scheduled run.
+///
+/// ⚠ **The same URL as [`index_url`] where the index itself says which builds
+/// are stable**, which the Edge enterprise index and the APT archive do. Chrome's
+/// build list does not, so its channel pointer is asked instead.
+#[must_use]
+pub fn newest_url(family: Family) -> Option<&'static str> {
+    match family {
+        Family::Chrome => Some(FOR_TESTING_CHANNELS),
+        Family::Edge | Family::Chromium => index_url(family),
+        Family::Firefox => None,
+    }
+}
+
+/// The newest build a family's stable channel serves on one platform, read
+/// from the document [`newest_url`] names.
+///
+/// ⛔ **The version is read, never inferred.** Chrome's pointer names the
+/// Stable build outright; Edge's index lists the Stable product's releases and
+/// the highest one for this platform and architecture is taken; the APT archive
+/// lists the `chromium` package and the highest upstream version is taken.
+///
+/// # Errors
+///
+/// [`IndexRefusal`]: bytes that are not the expected document, a family with no
+/// index, or no build at all for this platform.
+pub fn newest(family: Family, text: &str, platform: Platform) -> Result<String, IndexRefusal> {
+    match family {
+        Family::Chrome => {
+            let parsed: serde_json::Value = serde_json::from_str(text)
+                .map_err(|err| IndexRefusal::Unparsable(err.to_string()))?;
+            parsed
+                .get("channels")
+                .and_then(|c| c.get("Stable"))
+                .and_then(|s| s.get("version"))
+                .and_then(serde_json::Value::as_str)
+                .filter(|v| !v.is_empty())
+                .map(str::to_owned)
+                .ok_or_else(|| {
+                    IndexRefusal::Unparsable("no `channels.Stable.version` string".to_owned())
+                })
+        }
+        Family::Edge => {
+            let (want_platform, want_arch) = match platform {
+                Platform::Linux64 => ("Linux", "x64"),
+                Platform::Win64 => ("Windows", "x64"),
+                other => {
+                    return Err(IndexRefusal::NoDownloadForPlatform {
+                        version: "newest".to_owned(),
+                        platform: other,
+                        had: vec!["linux64".to_owned(), "win64".to_owned()],
+                    });
+                }
+            };
+            let parsed: serde_json::Value = serde_json::from_str(text)
+                .map_err(|err| IndexRefusal::Unparsable(err.to_string()))?;
+            let releases = parsed
+                .as_array()
+                .and_then(|products| {
+                    products.iter().find(|p| {
+                        p.get("Product").and_then(serde_json::Value::as_str) == Some("Stable")
+                    })
+                })
+                .and_then(|stable| stable.get("Releases"))
+                .and_then(serde_json::Value::as_array)
+                .ok_or_else(|| {
+                    IndexRefusal::Unparsable("no Stable product with a Releases array".to_owned())
+                })?;
+            releases
+                .iter()
+                .filter(|r| {
+                    r.get("Platform").and_then(serde_json::Value::as_str) == Some(want_platform)
+                        && r.get("Architecture").and_then(serde_json::Value::as_str)
+                            == Some(want_arch)
+                })
+                .filter_map(|r| r.get("ProductVersion").and_then(serde_json::Value::as_str))
+                .max_by_key(|v| b_ids_schema::version_order(v))
+                .map(str::to_owned)
+                .ok_or_else(|| IndexRefusal::NoSuchBuild {
+                    version: "newest".to_owned(),
+                    known: 0,
+                    nearest: Vec::new(),
+                })
+        }
+        Family::Chromium => {
+            if platform != Platform::Linux64 {
+                return Err(IndexRefusal::NoDownloadForPlatform {
+                    version: "newest".to_owned(),
+                    platform,
+                    had: vec!["linux64".to_owned()],
+                });
+            }
+            let stanzas: Vec<&str> = text
+                .split("\n\n")
+                .filter(|s| s.contains("Package:"))
+                .collect();
+            if stanzas.is_empty() {
+                return Err(IndexRefusal::Unparsable(
+                    "no Packages stanza with a Package field".to_owned(),
+                ));
+            }
+            let field = |stanza: &str, name: &str| -> Option<String> {
+                stanza.lines().find_map(|line| {
+                    let rest = line.strip_prefix(name)?.strip_prefix(':')?;
+                    Some(rest.trim().to_owned())
+                })
+            };
+            stanzas
+                .iter()
+                .filter(|s| field(s, "Package").as_deref() == Some("chromium"))
+                .filter_map(|s| field(s, "Version"))
+                // ⚠ The UPSTREAM part, which is what the binary reports and a
+                // profile records: `154.0.8037.92-1xtradeb1.2404.1` is
+                // `154.0.8037.92`. [`deb_download`] matches on the same part.
+                .map(|v| v.split('-').next().unwrap_or_default().to_owned())
+                .filter(|v| !v.is_empty())
+                .max_by_key(|v| b_ids_schema::version_order(v))
+                .ok_or_else(|| IndexRefusal::NoSuchBuild {
+                    version: "newest".to_owned(),
+                    known: 0,
+                    nearest: Vec::new(),
+                })
+        }
+        Family::Firefox => Err(IndexRefusal::NoIndexForFamily(family)),
+    }
 }
