@@ -97,8 +97,8 @@ attestations. Corpus releases after `v0.0.1` are tagged
 first of them:
 
 ```bash
-gh release download v1.2026.10.11.1 --repo Azathothas/b-ids --pattern 'b-ids-corpus-v1.2026.10.11.1.tar.gz'
-gh attestation verify b-ids-corpus-v1.2026.10.11.1.tar.gz --repo Azathothas/b-ids
+gh release download v1.2026.10.11.2 --repo Azathothas/b-ids --pattern 'b-ids-corpus-v1.2026.10.11.2.tar.gz'
+gh attestation verify b-ids-corpus-v1.2026.10.11.2.tar.gz --repo Azathothas/b-ids
 ```
 
 A checksum beside an archive verifies transport; the attestation binds the
