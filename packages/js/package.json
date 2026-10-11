@@ -5,6 +5,7 @@
   },
   "files": [
     "index.mjs",
+    "corpus.mjs",
     "corpus.json",
     "LICENSE"
   ],

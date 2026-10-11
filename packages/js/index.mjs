@@ -12,7 +12,7 @@
 // implementation and this follows it, so a consumer moving between the two is
 // not learning a second interface.
 
-import data from './corpus.json' with { type: 'json' };
+import data from './corpus.mjs';
 
 /// What corpus this build embedded.
 ///

@@ -726,15 +726,21 @@
       "derived": true
     },
     {
+      "path": "packages/js/corpus.mjs",
+      "sha256": "be82fe9ef286d109107fc2d6d1bb664a02486ef40e2b45ab46bfa23a910379b9",
+      "bytes": 257446,
+      "derived": true
+    },
+    {
       "path": "packages/js/index.mjs",
-      "sha256": "5419b1177193c576e50feca45e057d3b6cbbfa76450ac7fc7ae571f2d6e2e5f7",
-      "bytes": 4049,
+      "sha256": "d8d3707de9b444b8ceb1da0aeb21ce87b6fbc4b4e88def8d17cf1d1eacb509ce",
+      "bytes": 4026,
       "derived": true
     },
     {
       "path": "packages/js/package.json",
-      "sha256": "a1e7f738d5f29409c5f1468f4d1b245522a226507af6a44645399b094cb28dd6",
-      "bytes": 403,
+      "sha256": "eec767717dcffb5662fbbaf3accbc249be7b2f87a4b648f0bf8f6d66e7364f64",
+      "bytes": 421,
       "derived": true
     },
     {
