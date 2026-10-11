@@ -1,0 +1,17 @@
+# h2, for chromium-154.0.8037.92-linux64-stable
+#
+# ⛔ NO SNIPPET IS GENERATED FOR THIS PAIR, and that is the answer
+# rather than a gap. The support matrix records this stack as unable to
+# emit what this profile carries, so a snippet here would produce a
+# client that is almost right, which is more distinguishing than an
+# honestly old one.
+#
+# What it cannot do, each supported by an immutable upstream
+# source:
+#
+#   the priority block inside a headers frame: both send-path constructors hardcode no dependency, and the closure that would carry it is passed empty
+#     source: https://github.com/hyperium/h2/blob/cb9574bb2c18d1904eca74e98b31c8986b0d8b32/src/frame/headers.rs#L123
+#     patchable in this tree: yes
+#
+# A hole that closes upstream is a hole this project re-reads. It is not
+# a permanent verdict about the stack.

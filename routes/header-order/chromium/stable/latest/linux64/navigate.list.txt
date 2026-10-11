@@ -1,4 +1,3 @@
-cache-control
 sec-ch-ua
 sec-ch-ua-mobile
 sec-ch-ua-platform
