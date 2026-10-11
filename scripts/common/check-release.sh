@@ -11,8 +11,11 @@
 #      produce identical checksums. Nothing in the assembler reads a clock;
 #   2. the suite that owns the release rules is present, case by case, and
 #      passes. ⚠ THE ASSERTIONS ARE THE CRATE'S;
-#   3. ⛔ THE TAG THIS BUILD WOULD TAKE DOES NOT ALREADY EXIST in this
-#      repository, read from git rather than assumed;
+#   3. ⛔ THE TAG THIS BUILD TAKES, read from git rather than assumed. On a
+#      run a pushed tag started, that tag must name the commit being built;
+#      anywhere else it is today's first free counter. Whether a tag may still
+#      be RELEASED is `b-ids-corpus release --existing`'s question, asked
+#      against the published releases by the release job;
 #   4. a deterministic archive of the tree is byte-identical over two runs,
 #      where this host's tar can make one. ⚠ A SKIP IS REPORTED AS A SKIP.
 #
@@ -25,7 +28,7 @@
 #   sh scripts/common/check-release.sh --dry-run
 #   sh scripts/common/check-release.sh --dry-run --json
 #
-# Exit codes: 0 the build is reproducible and the tag is free, 1 it is not,
+# Exit codes: 0 the build is reproducible and its tag is sound, 1 it is not,
 # 2 could not run.
 #
 # ⛔ Read the exit code from this process, unpiped.
@@ -154,9 +157,20 @@ CASES=$(awk '/^running [0-9]+ tests/ { print $2; exit }' "$OUT/tests.log")
 TODAY=$(date -u +%Y-%m-%d)
 LAYOUT=$(awk -F'"' '/^pub const LAYOUT: &str = /{ print $2; exit }' crates/b-ids-corpus/src/route.rs)
 DOTTED=$(printf '%s' "$TODAY" | tr '-' '.')
-TAG="$LAYOUT.$DOTTED.1"
-if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null 2>&1; then
-  note "$TAG already exists, so this build cannot be released under it. Bump the counter"
+# ⛔ IT ASKED WHETHER TODAY'S `.1` WAS FREE, and that answer is "no" on the run
+# a pushed `.1` starts and on every gate run for the rest of that day. Run
+# 38116250091 refused the first dated release for the tag that triggered it.
+if [ "${GITHUB_REF_TYPE:-}" = tag ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
+  TAG="$GITHUB_REF_NAME"
+  tagged=$(git rev-parse -q --verify "refs/tags/$TAG^{commit}" 2>/dev/null || true)
+  [ "$tagged" = "$(git rev-parse HEAD)" ] ||
+    note "$TAG does not name the commit being built, so this build is not the one it would release"
+else
+  N=1
+  while git rev-parse -q --verify "refs/tags/$LAYOUT.$DOTTED.$N" >/dev/null 2>&1; do
+    N=$((N + 1))
+  done
+  TAG="$LAYOUT.$DOTTED.$N"
 fi
 TAGS=$(git tag --list | wc -l | tr -d ' ')
 
@@ -214,7 +228,7 @@ fi
 if [ "$COUNT" = 0 ]; then
   printf 'release ok: %s artefact(s), %s byte(s), identical over two builds.\n' "$FILES" "$BYTES"
   printf '  built from corpus %s\n' "$FROM"
-  printf '  %s would be free, over %s existing tag(s). archive: %s\n' "$TAG" "$TAGS" "$ARCHIVE"
+  printf '  %s is the tag this build takes, over %s existing tag(s). archive: %s\n' "$TAG" "$TAGS" "$ARCHIVE"
   [ "$ARCHIVE" != skipped ] || printf '  ⚠ A SKIP IS NOT A PASS: this tar cannot make a deterministic archive.\n'
   printf '  ⛔ Nothing was tagged, uploaded or pushed.\n'
   exit 0

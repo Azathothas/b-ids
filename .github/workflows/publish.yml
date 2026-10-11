@@ -380,7 +380,11 @@ jobs:
           TAG: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          prev=$(git tag --list 'v1.*' --sort=-version:refname | grep -vxF "$TAG" | head -1 || true)
+          # ⛔ THE PREVIOUS RELEASE, read from the releases rather than the
+          # tags. A tag whose release was never cut has no archive to download,
+          # and the first dated tag, v1.2026.10.11.1, is exactly that.
+          prev=$(gh release list --limit 200 --json tagName --jq '.[].tagName' |
+            grep -E '^v1\.' | grep -vxF "$TAG" | sort -V -r | head -1 || true)
           if [ -n "$prev" ]; then
             mkdir -p "$RUNNER_TEMP/before"
             gh release download "$prev" \

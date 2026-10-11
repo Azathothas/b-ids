@@ -50,6 +50,11 @@ request 12.
   path written twice;
 - the Chromium lane installs the archive's `chromium-sandbox` whether or not
   the packager recommends it, which its 154 build stopped doing;
+- the release check reports the tag a build takes instead of failing all day
+  once that day's first tag exists, and on a tag run it checks the tag names
+  the commit being built. It refused the first dated release for the tag
+  that triggered it. The release job finds the previous release among the
+  published releases rather than among the tags;
 - the capture run opens its review request in a worktree of its own, so a
   landing that moved `source` earlier in the run no longer blocks it;
 - a run's review request closes an older bot request when it carries every

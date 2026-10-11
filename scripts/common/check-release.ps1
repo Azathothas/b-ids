@@ -188,10 +188,24 @@ $layout = ''
 foreach ($line in (Get-Content -LiteralPath 'crates/b-ids-corpus/src/route.rs')) {
     if ($line -match '^pub const LAYOUT: &str = "([^"]+)";') { $layout = $Matches[1]; break }
 }
-$tag = $layout + '.' + ($today -replace '-', '.') + '.1'
-& git rev-parse -q --verify ("refs/tags/" + $tag) > $null 2>&1
-if ($LASTEXITCODE -eq 0) {
-    [void]$problems.Add("  $tag already exists, so this build cannot be released under it. Bump the counter")
+# ⛔ IT ASKED WHETHER TODAY'S `.1` WAS FREE, and that answer is "no" on the run
+# a pushed `.1` starts and on every gate run for the rest of that day. Run
+# 38116250091 refused the first dated release for the tag that triggered it.
+if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME) {
+    $tag = $env:GITHUB_REF_NAME
+    $tagged = (& git rev-parse -q --verify ("refs/tags/" + $tag + '^{commit}') 2>$null)
+    $head = (& git rev-parse HEAD)
+    if ("$tagged" -ne "$head") {
+        [void]$problems.Add("  $tag does not name the commit being built, so this build is not the one it would release")
+    }
+} else {
+    $n = 1
+    while ($true) {
+        & git rev-parse -q --verify ("refs/tags/" + $layout + '.' + ($today -replace '-', '.') + '.' + $n) > $null 2>&1
+        if ($LASTEXITCODE -ne 0) { break }
+        $n++
+    }
+    $tag = $layout + '.' + ($today -replace '-', '.') + '.' + $n
 }
 $tags = @(& git tag --list).Count
 
@@ -249,7 +263,7 @@ if ($Json) {
 if ($count -eq 0) {
     Write-Output "release ok: $files artefact(s), $bytes byte(s), identical over two builds."
     Write-Output "  built from corpus $from"
-    Write-Output "  $tag would be free, over $tags existing tag(s). archive: $archive"
+    Write-Output "  $tag is the tag this build takes, over $tags existing tag(s). archive: $archive"
     if ($archive -eq 'skipped') {
         Write-Output "  `u{26A0} A SKIP IS NOT A PASS: this tar cannot make a deterministic archive."
     }
