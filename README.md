@@ -92,11 +92,13 @@ show two independent sources, so their updates always wait for review.
 ## Verify a release
 
 Release archives are checksummed and receive GitHub build-provenance
-attestations. For the initial release:
+attestations. Corpus releases after `v0.0.1` are tagged
+`v1.YYYY.MM.DD.N`: the schema major, the release date, and a counter. For the
+first of them:
 
 ```bash
-gh release download v0.0.1 --repo Azathothas/b-ids --pattern 'b-ids-corpus-v0.0.1.tar.gz'
-gh attestation verify b-ids-corpus-v0.0.1.tar.gz --repo Azathothas/b-ids
+gh release download v1.2026.10.11.1 --repo Azathothas/b-ids --pattern 'b-ids-corpus-v1.2026.10.11.1.tar.gz'
+gh attestation verify b-ids-corpus-v1.2026.10.11.1.tar.gz --repo Azathothas/b-ids
 ```
 
 A checksum beside an archive verifies transport; the attestation binds the

@@ -2,13 +2,17 @@
 
 What shipped, when, and where the evidence is. Newest first.
 
-## Unreleased
+## v1.2026.10.11.1
 
 ### 2026-10-11 - the scheduled pipeline lands data again, and says when it cannot
 
 **Record:** [`docs/HUMAN.md`](docs/HUMAN.md) section 5, and the workflow headers
 of `capture.yml`, `staleness.yml`, `cold-start.yml` and `health.yml`.
-**Deployed:** no tag. The workflows take effect on the default branch.
+**Deployed:** yes, by tag `v1.2026.10.11.1` through the release workflow. The
+corpus holds 22 profiles: Chrome stable 155 on Linux and Windows and Chrome for
+Testing 155 landed without review, and Chromium 154, Edge 155, Firefox 157 on
+Linux and Firefox 156.0.1 on Windows were merged by the operator from pull
+request 12.
 
 - fixed every scheduled capture failing since 2026-09-09: `capture.yml` read
   `.tmp/10-first-profile/` after the capture script moved to
