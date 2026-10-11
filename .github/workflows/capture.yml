@@ -714,6 +714,29 @@ jobs:
               [ -n "$label" ] || continue
               gh pr edit "$branch" --add-label "$label" || echo "no label $label"
             done < "$dir/labels"
+
+            # ⛔ SUPERSEDE RATHER THAN ACCUMULATE, which CI-04 asks for and
+            # nothing did: runs 38111228825 and 38112012556 opened two requests
+            # carrying the same four captures. An older bot request is closed
+            # ONLY when every profile and raw file it carries is in this one,
+            # so closing it can lose no capture.
+            new=$(gh pr view "$branch" --json number --jq .number)
+            for old in $(gh pr list --base "$base" --state open --limit 100 \
+                --json number,headRefName,author \
+                --jq ".[] | select(.author.is_bot) | select(.headRefName | startswith(\"capture/run-\")) | select(.headRefName != \"$branch\") | .number"); do
+              missing=0
+              for f in $(gh pr view "$old" --json files --jq '.files[].path' |
+                  grep -E '^(corpus|raw)/v1/' | grep -vE '/(index|latest)\.json$'); do
+                git -C "$wt" cat-file -e "HEAD:$f" 2>/dev/null || { missing=1; break; }
+              done
+              if [ "$missing" = 0 ]; then
+                gh pr close "$old" --delete-branch \
+                  --comment "Superseded by #$new, which carries every capture this request did."
+                echo "closed #$old, superseded by #$new"
+              else
+                echo "kept #$old: it carries a capture #$new does not"
+              fi
+            done
           done
 
   # ⭐ THE DATA BRANCH, REGENERATED FROM WHAT LANDED, IN THIS RUN. A push made

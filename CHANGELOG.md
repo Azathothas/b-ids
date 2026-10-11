@@ -48,6 +48,9 @@ of `capture.yml`, `staleness.yml`, `cold-start.yml` and `health.yml`.
   the packager recommends it, which its 154 build stopped doing;
 - the capture run opens its review request in a worktree of its own, so a
   landing that moved `source` earlier in the run no longer blocks it;
+- a run's review request closes an older bot request when it carries every
+  capture that one did, so unmerged captures no longer open a new request each
+  week;
 - `check-corpus` reads the history of a materialised branch even when its root
   is named explicitly, as the build script asks; cold-start passes the root to
   the build alone. Seven PowerShell checks no longer trust an exit code that
