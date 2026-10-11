@@ -35,6 +35,9 @@ of `capture.yml`, `staleness.yml`, `cold-start.yml` and `health.yml`.
   the corpus held Chrome 152 against a serving 155;
 - added `health.yml`, which keeps one issue open per failing scheduled
   workflow and closes it on the next success;
+- fixed the published JavaScript package, which threw `SyntaxError` on import
+  under Node 18.19, the version Ubuntu 24.04 packages. It imported its data
+  with JSON import attributes, and now reads it from `corpus.mjs`;
 - fixed `provision.yml` handing the Edge build to the Chrome index, and gave
   the PowerShell provisioning twin the Chromium, gzip, snap and companion
   handling its POSIX half already had.
