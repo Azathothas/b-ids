@@ -71,7 +71,11 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
 # ⭐ THE CORPUS ROOT IS RESOLVED RATHER THAN ASSUMED TO BE THIS TREE. Until
 # PUB-13 this passed the repository root as `--after`, which stopped holding a
 # corpus the day corpus/ left the default branch. docs/history/todo/publish.md, PUB-13.
-$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+# ⛔ COLLECTED, THEN THE FIRST LINE TAKEN. Piping a native process into
+# Select-Object -First 1 leaves $LASTEXITCODE unset, so the test below
+# read whatever an earlier command left there.
+$rootLines = @(& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1'))
+$corpusRoot = if ($rootLines.Count -gt 0) { $rootLines[0] } else { $null }
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-pr-body: no corpus is reachable, so the generator has nothing to run over')
     exit 2

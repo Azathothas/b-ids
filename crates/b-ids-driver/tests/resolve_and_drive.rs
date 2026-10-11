@@ -715,6 +715,26 @@ fn resolve_and_drive_the_chromium_archive_names_a_build_by_its_upstream_version(
         got.companions
     );
 
+    // ⛔ AND THE SANDBOX HELPER WHEN THE PACKAGER STOPS RECOMMENDING IT, which
+    // the archive's 154 build did: capture.yml run 38109657659 installed it
+    // without the helper and the browser refused to start.
+    let unrecommended = index.replace("Recommends: chromium-sandbox\n", "");
+    assert!(!unrecommended.contains("Recommends:"));
+    let got = b_ids_driver::acquire::download(
+        Family::Chromium,
+        &unrecommended,
+        "152.0.7977.75",
+        b_ids_driver::acquire::Platform::Linux64,
+    )
+    .expect("the archive publishes this build");
+    assert!(
+        got.companions
+            .iter()
+            .any(|u| u.contains("chromium-sandbox_")),
+        "the sandbox helper was dropped when nothing recommended it: {:?}",
+        got.companions
+    );
+
     // ⛔ THE UPSTREAM MATCH IS ANCHORED. A prefix that is not the whole
     // upstream part is refused rather than answered with the nearest build.
     let refused = b_ids_driver::acquire::download(

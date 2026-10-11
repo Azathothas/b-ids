@@ -78,7 +78,11 @@ Push-Location -LiteralPath $root
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
 # check does not carry a second one. docs/history/todo/publish.md, PUB-11.
-$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+# ⛔ COLLECTED, THEN THE FIRST LINE TAKEN. Piping a native process into
+# Select-Object -First 1 leaves $LASTEXITCODE unset, so the test below
+# read whatever an earlier command left there.
+$rootLines = @(& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1'))
+$corpusRoot = if ($rootLines.Count -gt 0) { $rootLines[0] } else { $null }
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-corpus: no corpus is reachable, so nothing was checked')
     exit 2
@@ -98,6 +102,13 @@ $corpusRoot = "$corpusRoot".Trim()
 $corpusRef = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') -Ref | Select-Object -First 1)
 if ($null -eq $corpusRef) { $corpusRef = '' }
 $corpusRef = "$corpusRef".Trim()
+# ⛔ AN EXPLICIT ROOT THAT IS A MATERIALISED BRANCH STILL HAS A HISTORY. The
+# resolver answers an empty ref for any explicit root, and the materialised copy
+# records the commit it was read from beside itself. cold-start.yml run
+# 38109659488 failed without this, reporting every file PUB-13 moved as deleted.
+if ($corpusRef -eq '' -and (Test-Path -LiteralPath ($corpusRoot + '.ref'))) {
+    $corpusRef = (Get-Content -LiteralPath ($corpusRoot + '.ref') -TotalCount 1).Trim()
+}
 # ⛔ EXPORTED ONLY NOW, because cargo is downstream of this decision but the
 # question above must not be. The b-ids crate's build script embeds the corpus
 # at build time and reads exactly this variable.

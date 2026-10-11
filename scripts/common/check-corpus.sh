@@ -88,6 +88,15 @@ CORPUS_ROOT=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh") || {
 # moved out, it reported `nothing edited after publication` having asked main's
 # history about files that are not on main. docs/history/todo/publish.md, PUB-11.
 CORPUS_REF=$(sh "$REPO_ROOT/scripts/common/corpus-root.sh" --ref)
+# ⛔ AN EXPLICIT ROOT THAT IS A MATERIALISED BRANCH STILL HAS A HISTORY. The
+# resolver answers an empty ref for any explicit root, and the materialised copy
+# records the commit it was read from beside itself. Without this, a caller who
+# exported B_IDS_CORPUS_ROOT as the build script asks was told that every file
+# PUB-13 moved off the default branch had been deleted: cold-start.yml run
+# 38109659488 failed exactly so.
+if [ -z "$CORPUS_REF" ] && [ -f "$CORPUS_ROOT.ref" ]; then
+  CORPUS_REF=$(cat "$CORPUS_ROOT.ref")
+fi
 # ⛔ EXPORTED ONLY NOW, because cargo is downstream of this decision. The b-ids
 # crate's build script embeds the corpus at build time and reads exactly this
 # variable, calling it the seam PUB-11 needs; a check that resolved a root and

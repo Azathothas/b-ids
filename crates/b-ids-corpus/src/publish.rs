@@ -108,6 +108,14 @@ fn write_artefact(
     derived: bool,
     artefacts: &mut Vec<Artefact>,
 ) -> Result<(), String> {
+    // ⛔ ONE ARTEFACT PER PATH. Two generators naming one path would leave the
+    // second file on disk and both checksums in the manifest, which is how the
+    // anchor lists of two channels of one build collided on run 38109657659.
+    if artefacts.iter().any(|a| a.path == path) {
+        return Err(format!(
+            "{path} would be written twice; two artefacts may not share a path"
+        ));
+    }
     let full = out.join(path);
     if let Some(parent) = full.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
@@ -279,25 +287,37 @@ pub fn build(root: &str, out: &Path) -> Result<Built, String> {
     // ⛔ A MALFORMED BODY IS A REFUSAL, never a skip, which is the rule the
     // `anchors` command already holds. A profile that does not carry the
     // extension is the ordinary case and produces no file.
+    let mut lists = Vec::new();
     for profile in &profiles {
         match crate::trust::anchor_list(profile) {
-            Ok(list) => {
-                let text = serde_json::to_string_pretty(&list)
-                    .map_err(|e| format!("serialising {}: {e}", list.profile_id))?;
-                put(
-                    out,
-                    &format!(
-                        "anchors/{}-{}-{}.json",
-                        list.browser.to_ascii_lowercase(),
-                        list.version,
-                        list.platform
-                    ),
-                    format!("{text}\n").as_bytes(),
-                    &mut artefacts,
-                )?;
-            }
+            Ok(list) => lists.push(list),
             Err(crate::trust::NotAList::Absent) => {}
             Err(why) => return Err(format!("{}: {why}", profile.id)),
+        }
+    }
+    for list in &lists {
+        let text = serde_json::to_string_pretty(list)
+            .map_err(|e| format!("serialising {}: {e}", list.profile_id))?;
+        let body = format!("{text}\n");
+        put(
+            out,
+            &format!("anchors/{}", list.file_name()),
+            body.as_bytes(),
+            &mut artefacts,
+        )?;
+        let legacy = list.legacy_file_name();
+        if lists
+            .iter()
+            .filter(|other| other.legacy_file_name() == legacy)
+            .count()
+            == 1
+        {
+            put(
+                out,
+                &format!("anchors/{legacy}"),
+                body.as_bytes(),
+                &mut artefacts,
+            )?;
         }
     }
 

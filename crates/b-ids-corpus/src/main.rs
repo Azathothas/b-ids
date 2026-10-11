@@ -1016,12 +1016,7 @@ fn anchors(root: &str, out_dir: &str) -> ExitCode {
     }
 
     for list in &lists {
-        let path = std::path::Path::new(out_dir).join(format!(
-            "{}-{}-{}.json",
-            list.browser.to_ascii_lowercase(),
-            list.version,
-            list.platform
-        ));
+        let path = std::path::Path::new(out_dir).join(list.file_name());
         let text = match serde_json::to_string_pretty(list) {
             Ok(text) => format!("{text}\n"),
             Err(err) => {

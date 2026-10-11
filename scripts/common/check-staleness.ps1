@@ -66,7 +66,11 @@ Set-Location -LiteralPath $root
 # ⭐ THE DEFAULT IS THE RESOLVED ROOT rather than the working tree.
 # docs/history/todo/publish.md, PUB-11.
 if (-not $Corpus) {
-    $resolved = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+    # ⛔ COLLECTED, THEN THE FIRST LINE TAKEN. Piping a native process into
+    # Select-Object -First 1 leaves $LASTEXITCODE unset, so the test below
+    # read whatever an earlier command left there.
+    $rootLines = @(& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1'))
+    $resolved = if ($rootLines.Count -gt 0) { $rootLines[0] } else { $null }
     if ($LASTEXITCODE -ne 0 -or -not $resolved) {
         [Console]::Error.WriteLine('check-staleness: no corpus is reachable, so nothing was checked')
         exit 2

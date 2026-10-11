@@ -833,12 +833,19 @@ fn deb_download(
         field(stanza, "Recommends").unwrap_or_default()
     );
     let base = base.trim_end_matches('/');
+    // ⛔ AND THE SUID SANDBOX HELPER WHETHER OR NOT THE PACKAGER NAMES IT. A
+    // capture refuses `--no-sandbox`, so without the helper the browser starts
+    // and opens nothing. Measured: the archive's 152 build Recommended
+    // `chromium-sandbox` and its 154 build does not, so capture.yml run
+    // 38109657659 installed 154 without it and the browser wrote "No usable
+    // sandbox!" and exited.
+    let required = |name: &str| name == "chromium-sandbox";
     let companions: Vec<String> = stanzas
         .iter()
         .filter(|s| field(s, "Version").as_deref() == Some(deb_version.as_str()))
         .filter_map(|s| {
             let name = field(s, "Package")?;
-            if name == "chromium" || !named_in(&wanted, &name) {
+            if name == "chromium" || !(named_in(&wanted, &name) || required(&name)) {
                 return None;
             }
             field(s, "Filename").map(|f| format!("{base}/{f}"))

@@ -664,33 +664,50 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           base=source
           git fetch --no-tags origin "+refs/heads/$base:refs/remotes/origin/$base"
+          # ⛔ A WORKTREE PER REQUEST, NEVER A CHECKOUT OF THIS ONE. This
+          # checkout holds the corpus it read at the start of the run, and the
+          # landing step above may have moved the source branch since: switching
+          # onto it refused with "your local changes would be overwritten" on
+          # run 38109657659, after the landing had succeeded.
           for dir in "$REQUESTS"/*/; do
             [ -d "$dir" ] || continue
             branch=$(cat "$dir/branch")
             title=$(cat "$dir/title")
             echo "== $branch onto $base =="
+            wt=.tmp/collect/request-worktree
+            rm -rf "$wt"
+            git worktree prune
             if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-              git fetch origin "$branch"
+              git fetch --no-tags origin "+refs/heads/$branch:refs/remotes/origin/$branch"
               author=$(git log -1 --format='%an' "origin/$branch")
               if [ "$author" != 'github-actions[bot]' ]; then
                 echo "⛔ $branch has a commit by $author, so this run will not touch it"
                 continue
               fi
-              git checkout -B "$branch" "origin/$branch"
+              git worktree add -B "$branch" "$wt" "origin/$branch"
             else
-              git checkout -B "$branch" "origin/$base"
+              git worktree add -B "$branch" "$wt" "origin/$base"
             fi
             # ⛔ THE VECTORS GO WITH THE PROFILES. A profile whose capture vector
             # is on another branch leaves the gate red until both land, and there
             # is no order of two merges that avoids it.
-            cp -r "$TREE/corpus" "$TREE/raw" "$TREE/vectors" .
-            git add corpus raw vectors
-            if git diff --cached --quiet; then
-              echo "nothing to commit on $branch"
-              continue
-            fi
-            git commit -m "$title"
-            git push --force-with-lease origin "$branch"
+            cp -r "$TREE/corpus" "$TREE/raw" "$TREE/vectors" "$wt"/
+            set +e
+            (
+              set -e
+              cd "$wt"
+              git add corpus raw vectors
+              if git diff --cached --quiet; then
+                echo "nothing to commit on $branch"
+                exit 3
+              fi
+              git commit -q -m "$title"
+              git push --force-with-lease origin "$branch"
+            )
+            rc=$?
+            set -e
+            [ "$rc" != 3 ] || continue
+            [ "$rc" = 0 ] || { echo "⛔ could not push $branch"; exit 1; }
             if gh pr view "$branch" >/dev/null 2>&1; then
               gh pr edit "$branch" --title "$title" --body-file "$dir/body.md"
             else

@@ -118,19 +118,25 @@ jobs:
         run: |
           root=$(sh scripts/common/corpus-root.sh)
           echo "the corpus resolved to $root ($(sh scripts/common/corpus-root.sh --source))"
-          echo "B_IDS_CORPUS_ROOT=$root" >> "$GITHUB_ENV"
+          echo "root=$root" >> "$GITHUB_OUTPUT"
 
       # ⚠ THE POWERSHELL HALF ON WINDOWS, because the sh half would print a
       # POSIX path a native cargo cannot open.
+      # ⛔ THE OUTPUT IS COLLECTED BEFORE THE FIRST LINE IS TAKEN. Piping a
+      # native process into `Select-Object -First 1` stops it after that line,
+      # and $LASTEXITCODE then reports the stop rather than its answer: run
+      # 38109659488 failed here with a root that had resolved.
       - name: the corpus root, resolved from the clone
         id: corpus_ps
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $root = (pwsh -NoProfile -File scripts\common\corpus-root.ps1 | Select-Object -First 1)
-          if ($LASTEXITCODE -ne 0 -or -not $root) { exit 1 }
+          $lines = @(pwsh -NoProfile -File scripts\common\corpus-root.ps1)
+          $rc = $LASTEXITCODE
+          $root = if ($lines.Count -gt 0) { "$($lines[0])".Trim() } else { '' }
+          if ($rc -ne 0 -or -not $root) { Write-Output "corpus-root exited $rc"; exit 1 }
           Write-Output ('the corpus resolved to ' + $root)
-          ('B_IDS_CORPUS_ROOT=' + $root) | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          ('root=' + $root) | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       # ⚠ THE FETCH IS ITS OWN STAGE because it is the one that reaches the
       # network for every dependency in the lock file. A registry outage or a
@@ -140,9 +146,14 @@ jobs:
         shell: bash
         run: cargo fetch --locked
 
+      # ⛔ THE ROOT IS GIVEN TO THE BUILD AND TO NOTHING ELSE. The gate below
+      # resolves its own, as a person running it would; exporting the root to
+      # the whole job changed what the gate's checks read.
       - name: the whole workspace, built from cold
         id: build
         shell: bash
+        env:
+          B_IDS_CORPUS_ROOT: ${{ steps.corpus.outputs.root }}${{ steps.corpus_ps.outputs.root }}
         run: cargo build --locked --workspace
 
       # ⛔ INSTALLED, NOT SKIPPED, exactly as ci.yml does it. The gate refuses a

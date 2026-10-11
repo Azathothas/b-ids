@@ -46,6 +46,38 @@ pub struct AnchorList {
     pub identifiers: Vec<String>,
 }
 
+impl AnchorList {
+    /// The file this list is published as: the profile's own identifier.
+    ///
+    /// ⛔ **The identifier, because it is the one key that cannot collide.**
+    /// The name was browser, version and platform until 2026-10-11, and two
+    /// channels of one build share all three: capture.yml run 38109657659 took
+    /// Chrome stable and Chrome for Testing at `155.0.8059.39` on linux64, the
+    /// second file overwrote the first, and the publication carried a checksum
+    /// for bytes it no longer held.
+    #[must_use]
+    pub fn file_name(&self) -> String {
+        format!("{}.json", self.profile_id)
+    }
+
+    /// The name this list was published under before 2026-10-11: browser,
+    /// version and platform.
+    ///
+    /// ⚠ **Still published, and only where exactly one list claims it.** A
+    /// published path never goes away, because a consumer pinning it would
+    /// break, so every name that was ever unambiguous keeps its bytes. A name
+    /// two channels share is never written, so it can never be overwritten.
+    #[must_use]
+    pub fn legacy_file_name(&self) -> String {
+        format!(
+            "{}-{}-{}.json",
+            self.browser.to_ascii_lowercase(),
+            self.version,
+            self.platform
+        )
+    }
+}
+
 /// Why a profile's extension body could not be read as a list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NotAList {

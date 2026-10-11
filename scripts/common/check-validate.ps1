@@ -86,7 +86,11 @@ Push-Location -LiteralPath $root
 # as long as that holds a corpus, and a materialised copy of the data branch
 # once it does not. corpus-root.ps1 is the one answer to the question and this
 # check does not carry a second one. docs/history/todo/publish.md, PUB-11.
-$corpusRoot = (& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1') | Select-Object -First 1)
+# ⛔ COLLECTED, THEN THE FIRST LINE TAKEN. Piping a native process into
+# Select-Object -First 1 leaves $LASTEXITCODE unset, so the test below
+# read whatever an earlier command left there.
+$rootLines = @(& pwsh -NoProfile -File (Join-Path $root 'scripts/common/corpus-root.ps1'))
+$corpusRoot = if ($rootLines.Count -gt 0) { $rootLines[0] } else { $null }
 if ($LASTEXITCODE -ne 0 -or -not $corpusRoot) {
     [Console]::Error.WriteLine('check-validate: no corpus is reachable, so nothing was checked')
     exit 2

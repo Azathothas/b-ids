@@ -27,8 +27,12 @@ the extension is distinct from a profile that carries a two-byte empty list.
 | Chromium | `152.0.7977.75` | `linux64` | 206 | 32 |
 
 The generated artifacts are published under
-[`anchors/`](https://github.com/Azathothas/b-ids/tree/data/anchors). Each file
-records its profile, browser, version, platform, capture instant, declared
+[`anchors/`](https://github.com/Azathothas/b-ids/tree/data/anchors), one file
+per profile named by its identifier, such as
+`chrome-152.0.7977.82-linux64-stable.json`. The older
+`browser-version-platform` names remain wherever exactly one profile owns
+them; two channels of one build share that name, so it is not written for
+them. Each file records its profile, browser, version, platform, capture instant, declared
 extension length, and ordered identifiers.
 
 These measurements establish a difference between the captured 151 and 152

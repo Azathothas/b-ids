@@ -38,6 +38,20 @@ of `capture.yml`, `staleness.yml`, `cold-start.yml` and `health.yml`.
 - fixed the published JavaScript package, which threw `SyntaxError` on import
   under Node 18.19, the version Ubuntu 24.04 packages. It imported its data
   with JSON import attributes, and now reads it from `corpus.mjs`;
+- anchor lists are also published as `anchors/PROFILE_ID.json`. The old
+  `browser-version-platform` name omitted the channel, so Chrome stable and
+  Chrome for Testing at one build overwrote each other while both checksums
+  were published. Every old name that one profile owns is still published with
+  the same bytes; a shared one is never written. The assembler now refuses any
+  path written twice;
+- the Chromium lane installs the archive's `chromium-sandbox` whether or not
+  the packager recommends it, which its 154 build stopped doing;
+- the capture run opens its review request in a worktree of its own, so a
+  landing that moved `source` earlier in the run no longer blocks it;
+- `check-corpus` reads the history of a materialised branch even when its root
+  is named explicitly, as the build script asks; cold-start passes the root to
+  the build alone. Seven PowerShell checks no longer trust an exit code that
+  `Select-Object -First 1` leaves unset;
 - fixed `provision.yml` handing the Edge build to the Chrome index, and gave
   the PowerShell provisioning twin the Chromium, gzip, snap and companion
   handling its POSIX half already had.
