@@ -133,7 +133,7 @@ try {
             if ($inJobs -and $line -match '^  ([A-Za-z0-9_.-]+):\s*$') {
                 $current = @{
                     name = $Matches[1]; timeout = $false; matrix = $false
-                    failFast = ''; needs = ''; cond = ''
+                    failFast = ''; needs = ''; cond = ''; calls = $false
                 }
                 $jobs.Add($current)
                 $jobCount++
@@ -142,6 +142,9 @@ try {
             }
             if ($null -ne $current) {
                 if ($line -match '^    timeout-minutes:') { $current.timeout = $true; $inStrategy = $false; continue }
+                # ⚠ A JOB THAT CALLS A REUSABLE WORKFLOW may not declare a
+                # timeout; the called workflow's own jobs carry theirs.
+                if ($line -match '^    uses:') { $current.calls = $true }
                 if ($line -match '^    needs:') { $current.needs = $line; $inStrategy = $false; continue }
                 if ($line -match '^    if:') { $current.cond = $line; $inStrategy = $false; continue }
                 if ($line -match '^    strategy:') { $inStrategy = $true; continue }
@@ -152,7 +155,7 @@ try {
         }
 
         foreach ($j in $jobs) {
-            if (-not $j.timeout) {
+            if (-not $j.timeout -and -not $j.calls) {
                 $problems.Add("${file}: job $($j.name): no timeout-minutes. A hung step holds a runner for the platform default.")
             }
             if ($j.matrix -and $j.failFast -ne 'false' -and $AssertFailFastFalse) {

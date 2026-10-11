@@ -79,7 +79,7 @@ The repository maintains itself on a schedule, without credentials:
    sources, no provenance regression, a diff limited to the fields its change
    class predicts, and formats that round-trip. Every other route goes into
    one pull request for review.
-3. A landing dispatches `publish.yml`, which regenerates `data`.
+3. The same run then calls `publish.yml`, which regenerates `data`.
 4. `staleness.yml` compares the corpus with the build the vendor is serving.
    When the corpus is behind, it dispatches a capture. When the corpus has
    been behind for more than 14 days, the run fails.

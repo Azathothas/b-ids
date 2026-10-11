@@ -129,6 +129,7 @@ REPORT=$(for wf in $FILES; do
       if (job == "") return
       names[njobs] = job
       timeout[job] = has_timeout
+      calls[job] = calls_workflow
       matrix[job] = has_matrix
       failfast[job] = ff
       needs[job] = need_list
@@ -153,10 +154,15 @@ REPORT=$(for wf in $FILES; do
       record()
       job = $1; sub(/:$/, "", job)
       has_timeout = 0; has_matrix = 0; ff = ""; need_list = ""; ifline = ""
+      calls_workflow = 0
       in_strategy = 0
       next
     }
     job != "" && /^    timeout-minutes:/ { has_timeout = 1; in_strategy = 0; next }
+    # ⚠ A JOB THAT CALLS A REUSABLE WORKFLOW may not declare a timeout, which
+    # the platform refuses; the jobs of the called workflow carry theirs, and
+    # this check reads that file too.
+    job != "" && /^    uses:/ { calls_workflow = 1 }
     job != "" && /^    needs:/ { need_list = $0; in_strategy = 0; next }
     job != "" && /^    if:/ { ifline = $0; in_strategy = 0; next }
     job != "" && /^    strategy:/ { in_strategy = 1; next }
@@ -167,7 +173,7 @@ REPORT=$(for wf in $FILES; do
       record()
       for (i = 0; i < njobs; i++) {
         j = names[i]
-        if (!timeout[j])
+        if (!timeout[j] && !calls[j])
           print "P" file ": job " j ": no timeout-minutes. A hung step holds a runner for the platform default."
         if (matrix[j] && failfast[j] != "false" && assert_ff == 1)
           print "P" file ": job " j ": declares a matrix and does not declare fail-fast: false. One lane failing cancels its siblings."

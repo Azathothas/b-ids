@@ -23,8 +23,8 @@ of `capture.yml`, `staleness.yml`, `cold-start.yml` and `health.yml`.
   root was never resolved. Its Windows gate also refused itself under
   `-Fast -Strict`, and its Ubuntu gate lacked PSScriptAnalyzer;
 - routes whose own changes meet every `CI-04` merge condition now land on
-  `source` without review, and `publish.yml` is dispatched to regenerate
-  `data`. Only the remaining routes go into one pull request. Two
+  `source` without review, and the same run calls `publish.yml` to regenerate
+  `data`, so a failed publication fails the capture run. Only the remaining routes go into one pull request. Two
   independent sources now match on `major.minor.build`, because the vendor
   channel never serves two platforms the same patch number;
 - the capture verdict refuses a validator that printed no result and checks

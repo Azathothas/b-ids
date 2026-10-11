@@ -55,6 +55,12 @@ name: publish
 
 on:
   workflow_dispatch:
+  # ⭐ CALLED BY capture.yml AFTER A LANDING, as a job of that run. A dispatch
+  # made with the run's own token starts a run whose failure nothing hears:
+  # the platform raises no workflow_run event for it, so health.yml never saw
+  # the publish that failed after the first unattended landing. Called, a
+  # failure here is a failure of the capture run, and that one is heard.
+  workflow_call:
   push:
     # ⛔ BOTH BRANCHES, AND THE SECOND ONE IS THE POINT SINCE PUB-13. A push to
     # the SOURCE branch is a new capture, which is the change a consumer of the

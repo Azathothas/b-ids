@@ -338,13 +338,11 @@ jobs:
     # ⚠ IT ALSO NEEDS A REPOSITORY SETTING THIS FILE CANNOT GRANT: Actions must
     # be allowed to create pull requests. That is the operator's to enable, and
     # a refusal fails the run, so health.yml reports it as an issue.
-    # ⚠ `actions: write` IS FOR ONE CALL: dispatching publish.yml after a
-    # route lands, because a push made with the run's own token triggers no
-    # workflow and the data branch would otherwise wait for an unrelated push.
     permissions:
       contents: write
       pull-requests: write
-      actions: write
+    outputs:
+      landed: ${{ steps.land.outputs.landed }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -526,7 +524,7 @@ jobs:
       # ⛔ NO FORCE. The push is a fast-forward of the source branch or the
       # remote refuses it.
       # ⚠ A push made with the run's own token triggers no workflow, so the
-      # publication of the data branch is dispatched explicitly.
+      # data branch is published by the `publish` job of this same run.
       - name: land the routes that meet every condition
         id: land
         shell: bash
@@ -619,13 +617,6 @@ jobs:
             echo "dir=$rest_dir"
             echo "tree=$rest_tree"
           } >> "$GITHUB_OUTPUT"
-
-      - name: publish what landed
-        if: steps.land.outputs.landed != '0'
-        shell: bash
-        run: gh workflow run publish.yml --ref "${{ github.event.repository.default_branch }}"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       # ⭐ A NO-OP RUN OPENS NOTHING AND COMMENTS NOTHING. Silence is the correct
       # output for a browser that did not change, and a bot that writes on a
@@ -724,3 +715,22 @@ jobs:
               gh pr edit "$branch" --add-label "$label" || echo "no label $label"
             done < "$dir/labels"
           done
+
+  # ⭐ THE DATA BRANCH, REGENERATED FROM WHAT LANDED, IN THIS RUN. A push made
+  # with the run's own token triggers no workflow, and a dispatch of one makes
+  # a run whose failure no workflow_run event reports. Calling publish.yml as a
+  # job keeps its result in this run, where health.yml hears it.
+  # ⚠ It runs whenever something landed, even if the collect job failed later:
+  # what landed is on the source branch either way.
+  # ⚠ The permissions are the most publish.yml's jobs ask for; its release job
+  # runs only on a pushed tag and is skipped here.
+  publish:
+    # manual: sh scripts/common/check-data-branch.sh
+    name: publish what landed
+    needs: [collect]
+    if: always() && needs.collect.outputs.landed != '' && needs.collect.outputs.landed != '0'
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/publish.yml
