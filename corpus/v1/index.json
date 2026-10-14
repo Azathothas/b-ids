@@ -403,6 +403,27 @@
       }
     },
     {
+      "id": "chromium-155.0.8059.39-linux64-stable",
+      "browser": "Chromium",
+      "version": "155.0.8059.39",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-10-14T10:16:13Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chromium/stable/linux64/155.0.8059.39.json",
+        "sha256": "cdaa8035d01074b8f090e72e350fd383cc616cb86314a3595d8514d455c1649a",
+        "bytes": 17038
+      },
+      "hello": {
+        "path": "raw/v1/chromium/stable/linux64/155.0.8059.39.hello.hex",
+        "sha256": "0cc3b97613d3695752b00d35edbad01e79ccb7bf50c2ee6c9e947cbf69b8c2ff",
+        "bytes": 3990
+      }
+    },
+    {
       "id": "edge-151.0.4129.101-linux64-stable",
       "browser": "Edge",
       "version": "151.0.4129.101",
