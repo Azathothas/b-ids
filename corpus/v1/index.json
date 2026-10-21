@@ -67,6 +67,27 @@
       }
     },
     {
+      "id": "chrome-156.0.8078.47-linux64-for-testing",
+      "browser": "Chrome",
+      "version": "156.0.8078.47",
+      "channel": "for-testing",
+      "platform": "linux64",
+      "captured_at": "2026-10-21T10:13:06Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/for-testing/linux64/156.0.8078.47.json",
+        "sha256": "d0abbb2bbb884f574aca5ca0a9eccbc1bc3529c87c46d893dcc1194e03810319",
+        "bytes": 16729
+      },
+      "hello": {
+        "path": "raw/v1/chrome/for-testing/linux64/156.0.8078.47.hello.hex",
+        "sha256": "be99eedcd8a886864fee4a673752f6a17d3b22a7c7be467d23519f8c791bb423",
+        "bytes": 3810
+      }
+    },
+    {
       "id": "chrome-151.0.7922.76-win64-for-testing",
       "browser": "Chrome",
       "version": "151.0.7922.76",
@@ -127,6 +148,27 @@
         "path": "raw/v1/chrome/for-testing/win64/155.0.8059.79.hello.hex",
         "sha256": "5ae9922d119da8027ffb8e7a634c3576dd3c52610d9a3768f7dd20ef15610667",
         "bytes": 3938
+      }
+    },
+    {
+      "id": "chrome-156.0.8078.47-win64-for-testing",
+      "browser": "Chrome",
+      "version": "156.0.8078.47",
+      "channel": "for-testing",
+      "platform": "win64",
+      "captured_at": "2026-10-21T10:13:28Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/for-testing/win64/156.0.8078.47.json",
+        "sha256": "5b5af380e19b1f9d77c2f2bcbe18e59f7ffd4bae6b94c1b7f5afb3e8313acbfd",
+        "bytes": 16902
+      },
+      "hello": {
+        "path": "raw/v1/chrome/for-testing/win64/156.0.8078.47.hello.hex",
+        "sha256": "bd809db65fbd00a7655db315812db4559fc0ceb9a8f433fc257c023204203fb4",
+        "bytes": 3874
       }
     },
     {
@@ -232,6 +274,27 @@
         "path": "raw/v1/chrome/stable/linux64/155.0.8059.79.hello.hex",
         "sha256": "139351de49d30c70a2e696aea1b3550216fabcedacc1cee8d62bc12cd9d7369a",
         "bytes": 3862
+      }
+    },
+    {
+      "id": "chrome-156.0.8078.47-linux64-stable",
+      "browser": "Chrome",
+      "version": "156.0.8078.47",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-10-21T10:12:55Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/linux64/156.0.8078.47.json",
+        "sha256": "4af13b8c6c8e06fa50ef6e2c30f5f9c40699bc1ad17440551ed10623a481cc15",
+        "bytes": 16692
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/linux64/156.0.8078.47.hello.hex",
+        "sha256": "947bc9e4b29417d3ac3125939e803fade33820ed5b4053ec1550b67d28bf635e",
+        "bytes": 3798
       }
     },
     {
@@ -361,6 +424,27 @@
       }
     },
     {
+      "id": "chrome-156.0.8078.48-win64-stable",
+      "browser": "Chrome",
+      "version": "156.0.8078.48",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-10-21T10:15:02Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/win64/156.0.8078.48.json",
+        "sha256": "340d2563bef212ae34e249b0651d1526ddcc5a70744ef68b4c77122d95103aa9",
+        "bytes": 16997
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/win64/156.0.8078.48.hello.hex",
+        "sha256": "eb7f829122fb9f7d82040b4de9fc7c868a394d259c8cb0a653f83c500de58ee4",
+        "bytes": 3926
+      }
+    },
+    {
       "id": "chromium-152.0.7977.75-linux64-stable",
       "browser": "Chromium",
       "version": "152.0.7977.75",
@@ -442,6 +526,27 @@
         "path": "raw/v1/edge/stable/linux64/155.0.4283.45.hello.hex",
         "sha256": "1f96d00087fbd7d368b9e9ea5d98d97a519ed6fd6fd7f3f80c8057803c74537b",
         "bytes": 3610
+      }
+    },
+    {
+      "id": "edge-155.0.4283.62-linux64-stable",
+      "browser": "Edge",
+      "version": "155.0.4283.62",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-10-21T10:13:04Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/edge/stable/linux64/155.0.4283.62.json",
+        "sha256": "fa7a7cf984ab757fe4c98a656bf9f95aed6453cb45343390fad8afa3c27b49ac",
+        "bytes": 16190
+      },
+      "hello": {
+        "path": "raw/v1/edge/stable/linux64/155.0.4283.62.hello.hex",
+        "sha256": "b9a4391819390ad80b4052de1a324851839138fa3739bfbd876c2cc85dda85e2",
+        "bytes": 3546
       }
     },
     {
