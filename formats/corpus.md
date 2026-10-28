@@ -10,16 +10,19 @@ This table carries the keys and the capture instant only. The handshake, the fra
 | chrome-155.0.8059.39-linux64-for-testing | Chrome | 155.0.8059.39 | for-testing | false | linux | x86_64 | 2026-10-11T03:51:41Z |
 | chrome-155.0.8059.79-linux64-for-testing | Chrome | 155.0.8059.79 | for-testing | false | linux | x86_64 | 2026-10-14T10:16:14Z |
 | chrome-156.0.8078.47-linux64-for-testing | Chrome | 156.0.8078.47 | for-testing | false | linux | x86_64 | 2026-10-21T10:13:06Z |
+| chrome-156.0.8078.73-linux64-for-testing | Chrome | 156.0.8078.73 | for-testing | false | linux | x86_64 | 2026-10-28T11:22:49Z |
 | chrome-151.0.7922.76-win64-for-testing | Chrome | 151.0.7922.76 | for-testing | false | windows | x86_64 | 2026-09-04T08:00:47Z |
 | chrome-155.0.8059.39-win64-for-testing | Chrome | 155.0.8059.39 | for-testing | false | windows | x86_64 | 2026-10-11T03:51:37Z |
 | chrome-155.0.8059.79-win64-for-testing | Chrome | 155.0.8059.79 | for-testing | false | windows | x86_64 | 2026-10-14T10:16:56Z |
 | chrome-156.0.8078.47-win64-for-testing | Chrome | 156.0.8078.47 | for-testing | false | windows | x86_64 | 2026-10-21T10:13:28Z |
+| chrome-156.0.8078.73-win64-for-testing | Chrome | 156.0.8078.73 | for-testing | false | windows | x86_64 | 2026-10-28T11:23:21Z |
 | chrome-151.0.7922.173-linux64-stable | Chrome | 151.0.7922.173 | stable | true | linux | x86_64 | 2026-09-02T02:23:31Z |
 | chrome-152.0.7977.75-linux64-stable | Chrome | 152.0.7977.75 | stable | true | linux | x86_64 | 2026-09-02T14:08:20Z |
 | chrome-152.0.7977.82-linux64-stable | Chrome | 152.0.7977.82 | stable | true | linux | x86_64 | 2026-09-04T08:00:39Z |
 | chrome-155.0.8059.39-linux64-stable | Chrome | 155.0.8059.39 | stable | true | linux | x86_64 | 2026-10-11T03:51:24Z |
 | chrome-155.0.8059.79-linux64-stable | Chrome | 155.0.8059.79 | stable | true | linux | x86_64 | 2026-10-14T10:16:28Z |
 | chrome-156.0.8078.47-linux64-stable | Chrome | 156.0.8078.47 | stable | true | linux | x86_64 | 2026-10-21T10:12:55Z |
+| chrome-156.0.8078.73-linux64-stable | Chrome | 156.0.8078.73 | stable | true | linux | x86_64 | 2026-10-28T11:22:56Z |
 | chrome-151.0.7922.174-win64-stable | Chrome | 151.0.7922.174 | stable | true | windows | x86_64 | 2026-09-02T01:31:39Z |
 | chrome-151.0.7922.76-win64-stable | Chrome | 151.0.7922.76 | stable | true | windows | x86_64 | 2026-09-01T08:26:33Z |
 | chrome-152.0.7977.76-win64-stable | Chrome | 152.0.7977.76 | stable | true | windows | x86_64 | 2026-09-02T14:53:12Z |
@@ -27,6 +30,7 @@ This table carries the keys and the capture instant only. The handshake, the fra
 | chrome-155.0.8059.40-win64-stable | Chrome | 155.0.8059.40 | stable | true | windows | x86_64 | 2026-10-11T03:52:07Z |
 | chrome-155.0.8059.80-win64-stable | Chrome | 155.0.8059.80 | stable | true | windows | x86_64 | 2026-10-14T10:17:32Z |
 | chrome-156.0.8078.48-win64-stable | Chrome | 156.0.8078.48 | stable | true | windows | x86_64 | 2026-10-21T10:15:02Z |
+| chrome-156.0.8078.74-win64-stable | Chrome | 156.0.8078.74 | stable | true | windows | x86_64 | 2026-10-28T11:24:04Z |
 | chromium-152.0.7977.75-linux64-stable | Chromium | 152.0.7977.75 | stable | false | linux | x86_64 | 2026-09-04T14:14:01Z |
 | chromium-154.0.8037.92-linux64-stable | Chromium | 154.0.8037.92 | stable | false | linux | x86_64 | 2026-10-11T04:50:20Z |
 | edge-151.0.4129.101-linux64-stable | Edge | 151.0.4129.101 | stable | true | linux | x86_64 | 2026-09-02T13:52:53Z |
