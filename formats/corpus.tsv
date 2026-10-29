@@ -31,6 +31,8 @@ edge-155.0.4283.45-linux64-stable	Edge	155.0.4283.45	stable	true	linux	x86_64	20
 edge-155.0.4283.62-linux64-stable	Edge	155.0.4283.62	stable	true	linux	x86_64	2026-10-21T10:13:04Z
 firefox-154.0.1-linux64-stable	Firefox	154.0.1	stable	true	linux	x86_64	2026-09-04T08:00:39Z
 firefox-157.0-linux64-stable	Firefox	157.0	stable	true	linux	x86_64	2026-10-11T04:50:01Z
+firefox-158.0.1-linux64-stable	Firefox	158.0.1	stable	true	linux	x86_64	2026-10-29T13:16:28Z
 firefox-154.0.1-win64-stable	Firefox	154.0.1	stable	true	windows	x86_64	2026-09-04T06:44:56Z
 firefox-154.0-win64-stable	Firefox	154.0	stable	true	windows	x86_64	2026-09-04T14:14:20Z
 firefox-156.0.1-win64-stable	Firefox	156.0.1	stable	true	windows	x86_64	2026-10-11T04:50:09Z
+firefox-158.0.1-win64-stable	Firefox	158.0.1	stable	true	windows	x86_64	2026-10-29T13:16:38Z
