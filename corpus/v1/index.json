@@ -634,6 +634,27 @@
       }
     },
     {
+      "id": "edge-156.0.4314.50-linux64-stable",
+      "browser": "Edge",
+      "version": "156.0.4314.50",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-10-29T13:16:31Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/edge/stable/linux64/156.0.4314.50.json",
+        "sha256": "6e1a1bd8b6906273de94283a10c5964a7789a580d733bc9db7842df49a6a02c8",
+        "bytes": 16313
+      },
+      "hello": {
+        "path": "raw/v1/edge/stable/linux64/156.0.4314.50.hello.hex",
+        "sha256": "f3b85860572c9a593c3daa554b177650a9ceff67204b19ae86ea7570eb30a452",
+        "bytes": 3610
+      }
+    },
+    {
       "id": "firefox-154.0.1-linux64-stable",
       "browser": "Firefox",
       "version": "154.0.1",
