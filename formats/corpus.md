@@ -41,7 +41,9 @@ This table carries the keys and the capture instant only. The handshake, the fra
 | firefox-154.0.1-linux64-stable | Firefox | 154.0.1 | stable | true | linux | x86_64 | 2026-09-04T08:00:39Z |
 | firefox-157.0-linux64-stable | Firefox | 157.0 | stable | true | linux | x86_64 | 2026-10-11T04:50:01Z |
 | firefox-158.0.1-linux64-stable | Firefox | 158.0.1 | stable | true | linux | x86_64 | 2026-10-29T13:16:28Z |
+| firefox-159.0-linux64-stable | Firefox | 159.0 | stable | true | linux | x86_64 | 2026-11-05T14:46:40Z |
 | firefox-154.0.1-win64-stable | Firefox | 154.0.1 | stable | true | windows | x86_64 | 2026-09-04T06:44:56Z |
 | firefox-154.0-win64-stable | Firefox | 154.0 | stable | true | windows | x86_64 | 2026-09-04T14:14:20Z |
 | firefox-156.0.1-win64-stable | Firefox | 156.0.1 | stable | true | windows | x86_64 | 2026-10-11T04:50:09Z |
 | firefox-158.0.1-win64-stable | Firefox | 158.0.1 | stable | true | windows | x86_64 | 2026-10-29T13:16:38Z |
+| firefox-159.0-win64-stable | Firefox | 159.0 | stable | true | windows | x86_64 | 2026-11-05T14:47:05Z |

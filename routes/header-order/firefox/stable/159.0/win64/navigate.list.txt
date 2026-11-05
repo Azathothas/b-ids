@@ -1,0 +1,11 @@
+user-agent
+accept
+accept-language
+accept-encoding
+upgrade-insecure-requests
+sec-fetch-dest
+sec-fetch-mode
+sec-fetch-site
+sec-fetch-user
+priority
+te
