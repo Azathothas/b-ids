@@ -109,6 +109,27 @@
       }
     },
     {
+      "id": "chrome-157.0.8103.50-linux64-for-testing",
+      "browser": "Chrome",
+      "version": "157.0.8103.50",
+      "channel": "for-testing",
+      "platform": "linux64",
+      "captured_at": "2026-11-11T12:45:14Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/for-testing/linux64/157.0.8103.50.json",
+        "sha256": "a509ae346f3cd210241d981ed55c49bafda112bcf6e1dc6754ce960f40dad493",
+        "bytes": 16994
+      },
+      "hello": {
+        "path": "raw/v1/chrome/for-testing/linux64/157.0.8103.50.hello.hex",
+        "sha256": "31e89b72216b5c8887f5d501f8fb6e976c52a5a6c5598243525bb1b6da99e0c0",
+        "bytes": 3874
+      }
+    },
+    {
       "id": "chrome-151.0.7922.76-win64-for-testing",
       "browser": "Chrome",
       "version": "151.0.7922.76",
@@ -211,6 +232,27 @@
         "path": "raw/v1/chrome/for-testing/win64/156.0.8078.73.hello.hex",
         "sha256": "ff00df551d1cff22c645fc7bf2701b7d1c799c0aeb2a9b4ee1ac744b571aaf75",
         "bytes": 3938
+      }
+    },
+    {
+      "id": "chrome-157.0.8103.50-win64-for-testing",
+      "browser": "Chrome",
+      "version": "157.0.8103.50",
+      "channel": "for-testing",
+      "platform": "win64",
+      "captured_at": "2026-11-11T12:45:38Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/for-testing/win64/157.0.8103.50.json",
+        "sha256": "286111694569a8b59d45cef3170a5f9c1a22d9d80ade4f360093990462e1ccbc",
+        "bytes": 16905
+      },
+      "hello": {
+        "path": "raw/v1/chrome/for-testing/win64/157.0.8103.50.hello.hex",
+        "sha256": "72ffb8a0e6b1d328d106c70fdec8525ddbdb4edb6800949e63a8348c0ce39d7a",
+        "bytes": 3874
       }
     },
     {
@@ -718,6 +760,27 @@
       }
     },
     {
+      "id": "edge-157.0.4341.46-linux64-stable",
+      "browser": "Edge",
+      "version": "157.0.4341.46",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-11-11T12:45:10Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/edge/stable/linux64/157.0.4341.46.json",
+        "sha256": "2400744a7660e9a7fb5da8388956e54a09a5b5241b0a53ee0a1eab1475c8ef7c",
+        "bytes": 15928
+      },
+      "hello": {
+        "path": "raw/v1/edge/stable/linux64/157.0.4341.46.hello.hex",
+        "sha256": "f00ef2b27afd62ddd14c94d760040f47577f467ec1dd6a049f0306e19b970542",
+        "bytes": 3418
+      }
+    },
+    {
       "id": "firefox-154.0.1-linux64-stable",
       "browser": "Firefox",
       "version": "154.0.1",
@@ -882,6 +945,27 @@
       "hello": {
         "path": "raw/v1/firefox/stable/win64/158.0.1.hello.hex",
         "sha256": "51840920c64a34713345601e315daec2b6e5d3979e29c89ee0e87a4bd6e6ee70",
+        "bytes": 3738
+      }
+    },
+    {
+      "id": "firefox-159.0.1-win64-stable",
+      "browser": "Firefox",
+      "version": "159.0.1",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-11-11T12:45:26Z",
+      "trust": "trust-store",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/firefox/stable/win64/159.0.1.json",
+        "sha256": "174f1bfe32463d015fb0f8bab4e2d999b21f51be0ec9779a2052e54646929f76",
+        "bytes": 14709
+      },
+      "hello": {
+        "path": "raw/v1/firefox/stable/win64/159.0.1.hello.hex",
+        "sha256": "a5aeff9029e8ddd9889f30319476f6319f01a91151cd2a2c560d653f0273fd08",
         "bytes": 3738
       }
     },
