@@ -26,6 +26,7 @@ This table carries the keys and the capture instant only. The handshake, the fra
 | chrome-157.0.8103.38-linux64-stable | Chrome | 157.0.8103.38 | stable | true | linux | x86_64 | 2026-11-04T13:01:29Z |
 | chrome-157.0.8103.50-linux64-stable | Chrome | 157.0.8103.50 | stable | true | linux | x86_64 | 2026-11-11T12:45:15Z |
 | chrome-157.0.8103.78-linux64-stable | Chrome | 157.0.8103.78 | stable | true | linux | x86_64 | 2026-11-12T15:25:54Z |
+| chrome-158.0.8127.36-linux64-stable | Chrome | 158.0.8127.36 | stable | true | linux | x86_64 | 2026-11-18T14:02:42Z |
 | chrome-151.0.7922.174-win64-stable | Chrome | 151.0.7922.174 | stable | true | windows | x86_64 | 2026-09-02T01:31:39Z |
 | chrome-151.0.7922.76-win64-stable | Chrome | 151.0.7922.76 | stable | true | windows | x86_64 | 2026-09-01T08:26:33Z |
 | chrome-152.0.7977.76-win64-stable | Chrome | 152.0.7977.76 | stable | true | windows | x86_64 | 2026-09-02T14:53:12Z |

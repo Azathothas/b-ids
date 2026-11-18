@@ -13,7 +13,7 @@ honestly old one.
 ⚠ **A cell comes from a run and a hole comes from a reading.**
 `formats/formats.md` carries the matrix itself.
 
-This build generated **90** snippet(s) and **180** hole
+This build generated **92** snippet(s) and **184** hole
 file(s), over these stacks:
 
 - `b-ids-emit`

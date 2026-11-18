@@ -2,8 +2,8 @@
   "schema": "corpus-publish/2",
   "license": "0BSD",
   "layout": "v1",
-  "generated_from": "d7b577150c78c7860bac82d752cc5cfe947e1f403197f8bb9285b242fae21be6",
-  "profiles": 45,
+  "generated_from": "89f6994b46397c549d7ba3c0971f22e5ccd3f291eeb070191710c5bf5fea1e65",
+  "profiles": 46,
   "artefacts": [
     {
       "path": "LICENSE",
@@ -300,6 +300,18 @@
       "derived": true
     },
     {
+      "path": "anchors/chrome-158.0.8127.36-linux64-stable.json",
+      "sha256": "a8b4e3ca17a940dad014f33f29c019678c0932ab5603c61f9f606e986e67fa09",
+      "bytes": 763,
+      "derived": true
+    },
+    {
+      "path": "anchors/chrome-158.0.8127.36-linux64.json",
+      "sha256": "a8b4e3ca17a940dad014f33f29c019678c0932ab5603c61f9f606e986e67fa09",
+      "bytes": 763,
+      "derived": true
+    },
+    {
       "path": "anchors/chromium-152.0.7977.75-linux64-stable.json",
       "sha256": "9ffb07e64923bbea310b44b2155b5619dab0df9b0152e6f997ef0865cdf5e674",
       "bytes": 831,
@@ -325,7 +337,7 @@
     },
     {
       "path": "configs/README.md",
-      "sha256": "d8a4e1bbd2ec05b89db47b320257409c9b51cefe3ba7683eb441592250f66c3c",
+      "sha256": "4626895745715bc959f9ca43ecef0d1c7cb5903ca95898cac1029e4e151e2898",
       "bytes": 940,
       "derived": true
     },
@@ -1046,6 +1058,42 @@
     {
       "path": "configs/chrome/stable/linux64/157.0.8103.78/utls.txt",
       "sha256": "c68a699e2dc5114ef53d391cc91bdd5cfe321dfd3bc9e5cc1a52903d73539638",
+      "bytes": 861,
+      "derived": true
+    },
+    {
+      "path": "configs/chrome/stable/linux64/158.0.8127.36/b-ids-emit.rs",
+      "sha256": "798164352bcc0ef506856fc8dc856ed910a14cc0644b4e6dca43ab2357de45bc",
+      "bytes": 4948,
+      "derived": true
+    },
+    {
+      "path": "configs/chrome/stable/linux64/158.0.8127.36/detect.conf",
+      "sha256": "1f683c5f1ea258680babdc0ac17dbc96a12a41cc64fc11a1a2ab67fe4cb08ad4",
+      "bytes": 1014,
+      "derived": true
+    },
+    {
+      "path": "configs/chrome/stable/linux64/158.0.8127.36/h2.txt",
+      "sha256": "6589fb0e28a4a94e760c280f72f5ba0dfc9f3c8818a4f72219c43152468696f3",
+      "bytes": 835,
+      "derived": true
+    },
+    {
+      "path": "configs/chrome/stable/linux64/158.0.8127.36/impit.txt",
+      "sha256": "c4e3638a7b68c5e69ee2b37c5dbca70878daca720543f6ea98ba22cf67bfea23",
+      "bytes": 800,
+      "derived": true
+    },
+    {
+      "path": "configs/chrome/stable/linux64/158.0.8127.36/rustls.txt",
+      "sha256": "7351c7aa256bd4737e276f10d5244ee7f0fbf204d41e1e68c4453f30187da2b1",
+      "bytes": 1201,
+      "derived": true
+    },
+    {
+      "path": "configs/chrome/stable/linux64/158.0.8127.36/utls.txt",
+      "sha256": "d8644815b2d690bd809fc13ae345b1eef083cec4dce52363631d58bd1f26589f",
       "bytes": 861,
       "derived": true
     },
@@ -2070,6 +2118,12 @@
       "derived": false
     },
     {
+      "path": "corpus/v1/chrome/stable/linux64/158.0.8127.36.json",
+      "sha256": "ec70a86a572e8803f24ea543fc9f9c2ab9d98dacf72f24dc5b48ffcef47e6f26",
+      "bytes": 17081,
+      "derived": false
+    },
+    {
       "path": "corpus/v1/chrome/stable/win64/151.0.7922.174.json",
       "sha256": "7e552890738bdee26f3738fb6db6145842cc592823ec7bde47371f37c3adc31c",
       "bytes": 15732,
@@ -2221,38 +2275,38 @@
     },
     {
       "path": "corpus/v1/index.json",
-      "sha256": "6a10339f58dde17277e753867813006d11dad8a646ae766a8a6851e4c1e83cdd",
-      "bytes": 32028,
+      "sha256": "c7896dd48914d9bbb57b60e472cbbac7bcd6b619fac4b9e6305da68e70d1af7f",
+      "bytes": 32741,
       "derived": true
     },
     {
       "path": "corpus/v1/latest.json",
-      "sha256": "9bc613eb606bda7049dc2af0107613f04080fc6f67006f266b3a8a500ac4f407",
+      "sha256": "4d00e3dc1a7c91ceb383d173931c881e02714ba4aa03888fa7ac12a5ef5e5ec5",
       "bytes": 1189,
       "derived": true
     },
     {
       "path": "formats/corpus.csv",
-      "sha256": "1c910ef099c35bb329c390dab5b1d85b8368ceee93b2363110fa1171b30a4444",
-      "bytes": 4698,
+      "sha256": "11f9d2fb025f43458a0d9b335392d61f82c414381a34df32319081da068cb18c",
+      "bytes": 4801,
       "derived": true
     },
     {
       "path": "formats/corpus.json",
-      "sha256": "eef708c205a30bd0627eb8343fbf69a244af7bd2aec79a05349f212d9c2dc698",
-      "bytes": 765628,
+      "sha256": "07e89cea115a523a1ce1057c10b8775e1cd9df383a61717c2904a2f810328bf3",
+      "bytes": 783436,
       "derived": true
     },
     {
       "path": "formats/corpus.md",
-      "sha256": "c531c1de28144522688619e1b62507310b41f59c71dc205c23c54aee0661454a",
-      "bytes": 5852,
+      "sha256": "11b07a183c881a3ac7b30dd67ca11c9526b7a7f19095d2dfee6dc2d1c4091c7c",
+      "bytes": 5973,
       "derived": true
     },
     {
       "path": "formats/corpus.ndjson",
-      "sha256": "9c31a4ba32af76640eb1b35e3842b1608e051605642127eac905c97d9ee0232d",
-      "bytes": 602641,
+      "sha256": "574525cc7565ce60b8ee376950a7177688eb18b0f8c0944ce6a77c7c85b05375",
+      "bytes": 616748,
       "derived": true
     },
     {
@@ -2263,26 +2317,26 @@
     },
     {
       "path": "formats/corpus.sql",
-      "sha256": "a8d088d9af755caebd33bd2056cb0311c1f9d54363bf4c179580a7cf51d63099",
-      "bytes": 609705,
+      "sha256": "5c41d5f49b8767e8ecb5359fe48638862874004cc4890c932f1d43a44687e207",
+      "bytes": 623957,
       "derived": true
     },
     {
       "path": "formats/corpus.toml",
-      "sha256": "a95a80a9552a4d151872d3dbba35d641221f49173cb48714ac8468a6d740bd07",
-      "bytes": 651501,
+      "sha256": "b6a62b9fd3cb8b196a97d981d7d44cbbcc2dffffa7907a52881aa622a7f5e19b",
+      "bytes": 666710,
       "derived": true
     },
     {
       "path": "formats/corpus.tsv",
-      "sha256": "f5c0f7053ff50c6026e34ff532dbf818e8c449cb493b4bdc3037ac55f762a97c",
-      "bytes": 4698,
+      "sha256": "c8df35e709cc39264f4490f45e9dd2cb43d06447eddfe5553dcd8e5105aa1ad9",
+      "bytes": 4801,
       "derived": true
     },
     {
       "path": "formats/corpus.yaml",
-      "sha256": "10b13e4b75cb859d163b4dfe3b92e749a75a1986a635f0395d414cc1ab0eae49",
-      "bytes": 700195,
+      "sha256": "e2be69d8014764c57b129afff663fc577557a5d7234b3376652747238972d672",
+      "bytes": 716520,
       "derived": true
     },
     {
@@ -2293,14 +2347,14 @@
     },
     {
       "path": "packages/js/corpus.json",
-      "sha256": "dbd2419b4c899c1c4ddfb72947ae2aa0005fad243cf91d7ca74b35e6e889061e",
-      "bytes": 836412,
+      "sha256": "ba927a893fcf2a68e7d80a154bf86745c89948d3dabab325e573a02255b0abad",
+      "bytes": 855792,
       "derived": true
     },
     {
       "path": "packages/js/corpus.mjs",
-      "sha256": "681f9ff3d21c6cc3af901e286303c81c48eb8b97896ce1b51a427861a8be6af2",
-      "bytes": 836509,
+      "sha256": "ff56cded61461b39f2f52cf37923c1b6ee1d9a7e263a04c74f44bcc2049638c4",
+      "bytes": 855889,
       "derived": true
     },
     {
@@ -2311,7 +2365,7 @@
     },
     {
       "path": "packages/js/package.json",
-      "sha256": "17d5e9d2589d439f1b98279b67b781a7128a380f88a3b16dfb4074163a71b102",
+      "sha256": "90eadc7e94b914254f775a59e192c6287c435feebaf8e9b304d784badf6aace4",
       "bytes": 421,
       "derived": true
     },
@@ -2433,6 +2487,12 @@
       "path": "pcap/v1/chrome/stable/linux64/157.0.8103.78.pcapng",
       "sha256": "fd3da4aec5e30c4be365d2a4cb398ab1d2938b30fbef6fd07a18b940616c0320",
       "bytes": 3064,
+      "derived": true
+    },
+    {
+      "path": "pcap/v1/chrome/stable/linux64/158.0.8127.36.pcapng",
+      "sha256": "976b5819344bf3585e00d73922384291070a91dd88b84e492f2b8536263004d4",
+      "bytes": 3160,
       "derived": true
     },
     {
@@ -2703,6 +2763,12 @@
       "path": "raw/v1/chrome/stable/linux64/157.0.8103.78.hello.hex",
       "sha256": "2296931cfb4a5a1e6196cbe03eb39e5250275dba6970ed1df8d55fe3b315b6b0",
       "bytes": 3798,
+      "derived": false
+    },
+    {
+      "path": "raw/v1/chrome/stable/linux64/158.0.8127.36.hello.hex",
+      "sha256": "97b1a31aaf57434823eb48898486bcf5559803f9b7126e624ce89cf322608d01",
+      "bytes": 3990,
       "derived": false
     },
     {
@@ -3396,9 +3462,27 @@
       "derived": true
     },
     {
+      "path": "routes/accept-language/chrome/stable/158.0.8127.36/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chrome/stable/158.0.8127.36/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/accept-language/chrome/stable/158.0.8127.36/linux64/navigate.txt",
+      "sha256": "6b133d39c5c555d1042c8b62ed6d0beb3edd2f2794a7432e0b629bf9b5f4fec2",
+      "bytes": 14,
+      "derived": true
+    },
+    {
       "path": "routes/accept-language/chrome/stable/index.txt",
-      "sha256": "02ccfdbca2dd210589527c833685cb17b7adc55003fee8dc0529ccbb239b9540",
-      "bytes": 325,
+      "sha256": "761b380b1f92c51a96529d6af9ec5fbe295d2d97f9ce1dc4e208ddedd7f00642",
+      "bytes": 340,
       "derived": true
     },
     {
@@ -4128,9 +4212,21 @@
       "derived": true
     },
     {
+      "path": "routes/alpn/chrome/stable/158.0.8127.36/index.txt",
+      "sha256": "08cc6c1573c3659a4f7999fc618df793bfabd8a2530ff03cdacb44f5a7d45d8a",
+      "bytes": 17,
+      "derived": true
+    },
+    {
+      "path": "routes/alpn/chrome/stable/158.0.8127.36/linux64.list.txt",
+      "sha256": "f922ee8146071813c94038689cdced3bc1a4a7ff0d40887b1ede7246949c1114",
+      "bytes": 12,
+      "derived": true
+    },
+    {
       "path": "routes/alpn/chrome/stable/index.txt",
-      "sha256": "02ccfdbca2dd210589527c833685cb17b7adc55003fee8dc0529ccbb239b9540",
-      "bytes": 325,
+      "sha256": "761b380b1f92c51a96529d6af9ec5fbe295d2d97f9ce1dc4e208ddedd7f00642",
+      "bytes": 340,
       "derived": true
     },
     {
@@ -4740,9 +4836,21 @@
       "derived": true
     },
     {
+      "path": "routes/client-hello-hex/chrome/stable/158.0.8127.36/index.txt",
+      "sha256": "3d5c53b59d204dc6fee6bc2851dce674bbf124a5c84b29e93d15f03d887c2f65",
+      "bytes": 12,
+      "derived": true
+    },
+    {
+      "path": "routes/client-hello-hex/chrome/stable/158.0.8127.36/linux64.txt",
+      "sha256": "97b1a31aaf57434823eb48898486bcf5559803f9b7126e624ce89cf322608d01",
+      "bytes": 3990,
+      "derived": true
+    },
+    {
       "path": "routes/client-hello-hex/chrome/stable/index.txt",
-      "sha256": "02ccfdbca2dd210589527c833685cb17b7adc55003fee8dc0529ccbb239b9540",
-      "bytes": 325,
+      "sha256": "761b380b1f92c51a96529d6af9ec5fbe295d2d97f9ce1dc4e208ddedd7f00642",
+      "bytes": 340,
       "derived": true
     },
     {
@@ -4753,8 +4861,8 @@
     },
     {
       "path": "routes/client-hello-hex/chrome/stable/latest/linux64.txt",
-      "sha256": "2296931cfb4a5a1e6196cbe03eb39e5250275dba6970ed1df8d55fe3b315b6b0",
-      "bytes": 3798,
+      "sha256": "97b1a31aaf57434823eb48898486bcf5559803f9b7126e624ce89cf322608d01",
+      "bytes": 3990,
       "derived": true
     },
     {
@@ -5538,9 +5646,27 @@
       "derived": true
     },
     {
+      "path": "routes/header-order/chrome/stable/158.0.8127.36/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chrome/stable/158.0.8127.36/linux64/index.txt",
+      "sha256": "051a465f8178bb1e32e4586605cb519d07297a748ff8050ca69f471c7f4094ff",
+      "bytes": 18,
+      "derived": true
+    },
+    {
+      "path": "routes/header-order/chrome/stable/158.0.8127.36/linux64/navigate.list.txt",
+      "sha256": "29ef6a3b82d6e0ef4599d936b293bf0f899e8d9c75d9fc91a9e0bfcab5dc14a9",
+      "bytes": 191,
+      "derived": true
+    },
+    {
       "path": "routes/header-order/chrome/stable/index.txt",
-      "sha256": "02ccfdbca2dd210589527c833685cb17b7adc55003fee8dc0529ccbb239b9540",
-      "bytes": 325,
+      "sha256": "761b380b1f92c51a96529d6af9ec5fbe295d2d97f9ce1dc4e208ddedd7f00642",
+      "bytes": 340,
       "derived": true
     },
     {
@@ -5923,8 +6049,8 @@
     },
     {
       "path": "routes/routes.json",
-      "sha256": "543334cb3074f10989702481fb36a7d3b3e293e1e91a256afa69f98a79755600",
-      "bytes": 290339,
+      "sha256": "0323603e312947ef5c28121929111737f87a5adb14785210a79b966592fb840b",
+      "bytes": 296525,
       "derived": true
     },
     {
@@ -6468,9 +6594,27 @@
       "derived": true
     },
     {
+      "path": "routes/sec-ch-ua/chrome/stable/158.0.8127.36/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chrome/stable/158.0.8127.36/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/sec-ch-ua/chrome/stable/158.0.8127.36/linux64/navigate.txt",
+      "sha256": "183387b7c83a2892bf61e94f30230c75b67224995a8299e8ded41c20cef1c54c",
+      "bytes": 65,
+      "derived": true
+    },
+    {
       "path": "routes/sec-ch-ua/chrome/stable/index.txt",
-      "sha256": "02ccfdbca2dd210589527c833685cb17b7adc55003fee8dc0529ccbb239b9540",
-      "bytes": 325,
+      "sha256": "761b380b1f92c51a96529d6af9ec5fbe295d2d97f9ce1dc4e208ddedd7f00642",
+      "bytes": 340,
       "derived": true
     },
     {
@@ -6487,7 +6631,7 @@
     },
     {
       "path": "routes/sec-ch-ua/chrome/stable/latest/linux64/navigate.txt",
-      "sha256": "883585f23c88f524570bfc4c0dce450eebafaad8d70f1d1fe84edb0f491943e3",
+      "sha256": "183387b7c83a2892bf61e94f30230c75b67224995a8299e8ded41c20cef1c54c",
       "bytes": 65,
       "derived": true
     },
@@ -7200,9 +7344,27 @@
       "derived": true
     },
     {
+      "path": "routes/user-agent/chrome/stable/158.0.8127.36/index.txt",
+      "sha256": "ce1bcbe97f077c979a82202a9e53e6fe097bc0e37a1acc629a47f31776becf52",
+      "bytes": 9,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chrome/stable/158.0.8127.36/linux64/index.txt",
+      "sha256": "0b42f4b44a5050a51fbbd4f6f0290b246fe9f6a17f9453a6393f25f821a7575d",
+      "bytes": 13,
+      "derived": true
+    },
+    {
+      "path": "routes/user-agent/chrome/stable/158.0.8127.36/linux64/navigate.txt",
+      "sha256": "e066ad385e9699b449b5999276adcaa2c365e14188c434e2d1aa3898db294069",
+      "bytes": 101,
+      "derived": true
+    },
+    {
       "path": "routes/user-agent/chrome/stable/index.txt",
-      "sha256": "02ccfdbca2dd210589527c833685cb17b7adc55003fee8dc0529ccbb239b9540",
-      "bytes": 325,
+      "sha256": "761b380b1f92c51a96529d6af9ec5fbe295d2d97f9ce1dc4e208ddedd7f00642",
+      "bytes": 340,
       "derived": true
     },
     {
@@ -7219,7 +7381,7 @@
     },
     {
       "path": "routes/user-agent/chrome/stable/latest/linux64/navigate.txt",
-      "sha256": "0b218694a111a2577fded7d3a0d22c87b9c7227b132cf417dc6a5a98031e5dab",
+      "sha256": "e066ad385e9699b449b5999276adcaa2c365e14188c434e2d1aa3898db294069",
       "bytes": 101,
       "derived": true
     },
@@ -7579,8 +7741,8 @@
     },
     {
       "path": "vectors/ja4/v1.json",
-      "sha256": "4b17f66a91395811a13b7f1fdab6335ad2f471cb3d95e533adaee2ec3e16cd1a",
-      "bytes": 33961,
+      "sha256": "d15378b1d062398fa7cdb8ac40e7c26c8f169b28b38145eeb0007b1539578d6a",
+      "bytes": 34647,
       "derived": true
     }
   ]
