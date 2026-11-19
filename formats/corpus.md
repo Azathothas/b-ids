@@ -38,6 +38,7 @@ This table carries the keys and the capture instant only. The handshake, the fra
 | chrome-157.0.8103.39-win64-stable | Chrome | 157.0.8103.39 | stable | true | windows | x86_64 | 2026-11-04T13:03:00Z |
 | chrome-157.0.8103.51-win64-stable | Chrome | 157.0.8103.51 | stable | true | windows | x86_64 | 2026-11-11T12:46:22Z |
 | chrome-157.0.8103.79-win64-stable | Chrome | 157.0.8103.79 | stable | true | windows | x86_64 | 2026-11-12T15:26:46Z |
+| chrome-158.0.8127.37-win64-stable | Chrome | 158.0.8127.37 | stable | true | windows | x86_64 | 2026-11-19T15:54:57Z |
 | chromium-152.0.7977.75-linux64-stable | Chromium | 152.0.7977.75 | stable | false | linux | x86_64 | 2026-09-04T14:14:01Z |
 | chromium-154.0.8037.92-linux64-stable | Chromium | 154.0.8037.92 | stable | false | linux | x86_64 | 2026-10-11T04:50:20Z |
 | edge-151.0.4129.101-linux64-stable | Edge | 151.0.4129.101 | stable | true | linux | x86_64 | 2026-09-02T13:52:53Z |
