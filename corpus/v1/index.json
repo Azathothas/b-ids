@@ -109,6 +109,27 @@
       }
     },
     {
+      "id": "chrome-158.0.8127.88-linux64-for-testing",
+      "browser": "Chrome",
+      "version": "158.0.8127.88",
+      "channel": "for-testing",
+      "platform": "linux64",
+      "captured_at": "2026-11-25T15:39:01Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/for-testing/linux64/158.0.8127.88.json",
+        "sha256": "919d096943e9ccc52fdbac76ab13871e9b902cca5f5ef1710759c064bc738bc5",
+        "bytes": 16735
+      },
+      "hello": {
+        "path": "raw/v1/chrome/for-testing/linux64/158.0.8127.88.hello.hex",
+        "sha256": "254fc500bfbc4fffe4a8e1e90d4d6f788a6e3c161cd9b84405fcff8636379c2f",
+        "bytes": 3810
+      }
+    },
+    {
       "id": "chrome-151.0.7922.76-win64-for-testing",
       "browser": "Chrome",
       "version": "151.0.7922.76",
@@ -819,6 +840,27 @@
       "hello": {
         "path": "raw/v1/edge/stable/linux64/155.0.4283.62.hello.hex",
         "sha256": "b9a4391819390ad80b4052de1a324851839138fa3739bfbd876c2cc85dda85e2",
+        "bytes": 3546
+      }
+    },
+    {
+      "id": "edge-158.0.4370.33-linux64-stable",
+      "browser": "Edge",
+      "version": "158.0.4370.33",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-11-25T15:39:01Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/edge/stable/linux64/158.0.4370.33.json",
+        "sha256": "914274cf3ef73b92a0764fd3c701a38bf2860a2d535afa8ea45f2e220127eb2e",
+        "bytes": 16186
+      },
+      "hello": {
+        "path": "raw/v1/edge/stable/linux64/158.0.4370.33.hello.hex",
+        "sha256": "fdbd4edd91dcf5546c4997d2861836992cfcab75e7245ad5899e565ce8ec6122",
         "bytes": 3546
       }
     },
