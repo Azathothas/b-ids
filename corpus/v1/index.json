@@ -445,6 +445,27 @@
       }
     },
     {
+      "id": "chrome-158.0.8127.88-linux64-stable",
+      "browser": "Chrome",
+      "version": "158.0.8127.88",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-11-25T15:39:16Z",
+      "trust": "spki-pin",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/chrome/stable/linux64/158.0.8127.88.json",
+        "sha256": "7c5fe8c263a82213950887410e1b1599c2cdc4acea8ee9e886847b1881ff61fa",
+        "bytes": 16953
+      },
+      "hello": {
+        "path": "raw/v1/chrome/stable/linux64/158.0.8127.88.hello.hex",
+        "sha256": "f127057be95a1f2f9107da2326eb0499700f621195669499b119c2add19ada67",
+        "bytes": 3926
+      }
+    },
+    {
       "id": "chrome-151.0.7922.174-win64-stable",
       "browser": "Chrome",
       "version": "151.0.7922.174",
@@ -886,6 +907,27 @@
       }
     },
     {
+      "id": "firefox-160.0-linux64-stable",
+      "browser": "Firefox",
+      "version": "160.0",
+      "channel": "stable",
+      "platform": "linux64",
+      "captured_at": "2026-11-25T15:38:59Z",
+      "trust": "trust-store",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/firefox/stable/linux64/160.0.json",
+        "sha256": "09e43d8cb42786b63f78d4d596e1165848d1674292fb22628363a4aa505f684e",
+        "bytes": 14667
+      },
+      "hello": {
+        "path": "raw/v1/firefox/stable/linux64/160.0.hello.hex",
+        "sha256": "921374f818e23e7c197d0890027e1a5b4a23a30545c6ef4f10ea6d17972c24f6",
+        "bytes": 3738
+      }
+    },
+    {
       "id": "firefox-154.0.1-win64-stable",
       "browser": "Firefox",
       "version": "154.0.1",
@@ -987,6 +1029,27 @@
       "hello": {
         "path": "raw/v1/firefox/stable/win64/159.0.hello.hex",
         "sha256": "afb294dd73217a9794d79b3f8932a16df271ff5b4476d846c73d1ff964deb8cb",
+        "bytes": 3738
+      }
+    },
+    {
+      "id": "firefox-160.0-win64-stable",
+      "browser": "Firefox",
+      "version": "160.0",
+      "channel": "stable",
+      "platform": "win64",
+      "captured_at": "2026-11-25T15:39:27Z",
+      "trust": "trust-store",
+      "supersedes": null,
+      "draft": false,
+      "profile": {
+        "path": "corpus/v1/firefox/stable/win64/160.0.json",
+        "sha256": "4fd8bb932c3a813b6f6372c25b7e9917bb070f6361dc1408fdfd4a39f1eae0c3",
+        "bytes": 14705
+      },
+      "hello": {
+        "path": "raw/v1/firefox/stable/win64/160.0.hello.hex",
+        "sha256": "4a3f0b11103e6743cb26b5d554dcec715e985af7e2e6b5812724f3cb2d3a2592",
         "bytes": 3738
       }
     }
